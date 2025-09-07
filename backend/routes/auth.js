@@ -78,7 +78,7 @@ router.get('/google/callback',
       role: req.user.role
     }));
     
-    res.redirect(`http://localhost:3000?login=success&user=${userData}`);
+    res.redirect(`https://football-betting-app.onrender.com?login=success&user=${userData}`);
   }
 );
 
