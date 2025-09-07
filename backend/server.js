@@ -7,22 +7,33 @@ require('dotenv').config();
 
 const app = express();
 
-// CORS - עדכון ל-production frontend
+// CORS - תיקון מלא לproduction OAuth
 app.use(cors({
-  origin: 'https://football-betting-app.onrender.com',
-  credentials: true
+  origin: [
+    'https://football-betting-app.onrender.com',
+    'https://football-betting-backend.onrender.com',
+    'http://localhost:3000' // לפיתוח
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Set-Cookie'],
+  exposedHeaders: ['Set-Cookie']
 }));
 
 app.use(express.json());
 
-// Session middleware - חייב להיות לפני passport
+// Session middleware - תיקון מלא לproduction HTTPS
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
+  name: 'football-betting-session',
   cookie: { 
-    secure: false, // true רק עבור HTTPS
-    maxAge: 24 * 60 * 60 * 1000 // 24 שעות
+    secure: true, // חובה לHTTPS production
+    sameSite: 'none', // חובה לcross-domain OAuth
+    maxAge: 24 * 60 * 60 * 1000, // 24 שעות
+    httpOnly: true,
+    domain: undefined // לא מגדיר domain ספציפי
   }
 }));
 
@@ -100,7 +111,13 @@ app.get('/api/debug', async (req, res) => {
     res.json({
       status: 'OK',
       timestamp: new Date(),
-      database: stats
+      database: stats,
+      environment: process.env.NODE_ENV || 'development',
+      sessionConfig: {
+        secure: true,
+        sameSite: 'none',
+        httpOnly: true
+      }
     });
   } catch (error) {
     res.status(500).json({
@@ -119,7 +136,7 @@ app.get('/api/setup', async (req, res) => {
     await User.deleteMany({});
     
     const users = await User.insertMany([
-      { name: 'Ediel Klein', email: 'ediel@example.com', role: 'admin' },
+      { name: 'Ediel Klein', email: 'adielklein@gmail.com', role: 'admin' },
       { name: 'Guy Yariv', email: 'guy@example.com', role: 'player' }
     ]);
     
@@ -133,6 +150,8 @@ app.get('/', (req, res) => {
   res.json({ 
     message: 'Football Betting API with Google OAuth!',
     status: 'Running',
+    environment: process.env.NODE_ENV || 'development',
+    cors: 'Configured for production',
     endpoints: {
       debug: '/api/debug',
       auth: '/api/auth/*',
@@ -147,6 +166,8 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`🌐 Main URL: http://localhost:${PORT}`);
-  console.log(`🔍 Debug URL: http://localhost:${PORT}/api/debug`);
+  console.log(`🌐 Environment: production`);
+  console.log(`🔒 CORS configured for: football-betting-app.onrender.com`);
+  console.log(`🍪 Cookies: secure=true, sameSite=none`);
+  console.log(`🔍 Debug URL: https://football-betting-backend.onrender.com/api/debug`);
 });
