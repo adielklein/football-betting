@@ -1,186 +1,29 @@
 const express = require('express');
-const passport = require('passport');
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const router = express.Router();
 
-// מאחסן קודים זמניים (במציאות צריך Redis או DB)
-const tempCodes = new Map();
-
-// פונקציה לייצור קוד רנדומלי
-function generateCode() {
-  return Math.floor(1000 + Math.random() * 9000).toString();
-}
-
-// Google OAuth Strategy עם אדמין אוטומטי (הישן - נשאר לתאימות)
-passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: "/api/auth/google/callback"
-}, async (accessToken, refreshToken, profile, done) => {
+// Login with username and password
+router.post('/login', async (req, res) => {
   try {
-    console.log('Google profile:', profile.displayName, profile.emails[0].value);
+    const { username, password } = req.body;
     
-    const email = profile.emails[0].value;
-    
-    // רשימת אדמינים - הוסף כאן אימיילים נוספים לפי הצורך
-    const adminEmails = ['adielklein@gmail.com'];
-    const isAdmin = adminEmails.includes(email);
-    
-    // Search for existing user
-    let user = await User.findOne({ email });
-    
+    if (!username || !password) {
+      return res.status(400).json({ message: 'שם משתמש וסיסמה נדרשים' });
+    }
+
+    console.log('Login attempt:', username);
+
+    // Find user by username
+    const user = await User.findOne({ username });
     if (!user) {
-      // Create new user
-      user = new User({
-        name: profile.displayName,
-        email: email,
-        role: isAdmin ? 'admin' : 'player'
-      });
-      await user.save();
-      console.log(`New ${isAdmin ? 'ADMIN' : 'player'} created:`, user.name);
-    } else {
-      // אם המשתמש קיים אבל צריך להיות אדמין
-      if (isAdmin && user.role !== 'admin') {
-        user.role = 'admin';
-        await user.save();
-        console.log(`Updated ${user.name} to ADMIN`);
-      }
-      console.log('Existing user logged in:', user.name, `(${user.role})`);
-    }
-    
-    return done(null, user);
-  } catch (error) {
-    console.error('OAuth error:', error);
-    return done(error, null);
-  }
-}));
-
-// Passport serialization
-passport.serializeUser((user, done) => {
-  done(null, user._id);
-});
-
-passport.deserializeUser(async (id, done) => {
-  try {
-    const user = await User.findById(id);
-    done(null, user);
-  } catch (error) {
-    done(error, null);
-  }
-});
-
-// ========== התחברות חדשה עם אימייל וקוד ==========
-
-// בקשת קוד התחברות
-router.post('/request-login', async (req, res) => {
-  try {
-    const { email, name } = req.body;
-    
-    if (!email || !name) {
-      return res.status(400).json({ message: 'אימייל ושם נדרשים' });
+      return res.status(401).json({ message: 'שם משתמש או סיסמה שגויים' });
     }
 
-    console.log('בקשת קוד עבור:', email, name);
-
-    // בדוק אם זה אדמין
-    const adminEmails = ['adielklein@gmail.com'];
-    const isAdmin = adminEmails.includes(email);
-
-    // חפש או צור משתמש
-    let user = await User.findOne({ email });
-    
-    if (!user) {
-      user = new User({
-        name,
-        email,
-        role: isAdmin ? 'admin' : 'player'
-      });
-      await user.save();
-      console.log(`משתמש חדש נוצר: ${name} (${user.role})`);
-    } else {
-      // עדכן שם אם השתנה
-      if (user.name !== name) {
-        user.name = name;
-        await user.save();
-      }
-      
-      // עדכן לאדמין אם צריך
-      if (isAdmin && user.role !== 'admin') {
-        user.role = 'admin';
-        await user.save();
-        console.log(`${name} עודכן לאדמין`);
-      }
-    }
-
-    // צור קוד
-    const code = generateCode();
-    const expiry = Date.now() + 10 * 60 * 1000; // תוקף של 10 דקות
-    
-    tempCodes.set(email, {
-      code,
-      expiry,
-      userId: user._id
-    });
-
-    console.log(`קוד נוצר עבור ${email}: ${code}`);
-
-    // במציאות - שלח SMS או מייל. לבינתיים רק log
-    console.log(`
-    ==========================================
-    📧 קוד התחברות עבור ${name}:
-    📞 ${code}
-    ⏰ תוקף: 10 דקות
-    ==========================================
-    `);
-
-    res.json({ 
-      message: 'קוד נשלח בהצלחה',
-      email,
-      // לבדיקה - בפרודקשן אל תחזיר את הקוד!
-      debug_code: process.env.NODE_ENV === 'development' ? code : undefined
-    });
-
-  } catch (error) {
-    console.error('שגיאה בבקשת קוד:', error);
-    res.status(500).json({ message: 'שגיאה פנימית' });
-  }
-});
-
-// אימות קוד והתחברות
-router.post('/verify-login', async (req, res) => {
-  try {
-    const { email, code } = req.body;
-    
-    if (!email || !code) {
-      return res.status(400).json({ message: 'אימייל וקוד נדרשים' });
-    }
-
-    console.log('אימות קוד עבור:', email, 'קוד:', code);
-
-    // בדוק אם יש קוד
-    const storedData = tempCodes.get(email);
-    if (!storedData) {
-      return res.status(400).json({ message: 'לא נמצא קוד עבור אימייל זה' });
-    }
-
-    // בדוק תוקף
-    if (Date.now() > storedData.expiry) {
-      tempCodes.delete(email);
-      return res.status(400).json({ message: 'הקוד פג תוקף' });
-    }
-
-    // בדוק קוד
-    if (storedData.code !== code) {
-      return res.status(400).json({ message: 'קוד שגוי' });
-    }
-
-    // קוד תקין - מחק אותו ואמת משתמש
-    tempCodes.delete(email);
-    
-    const user = await User.findById(storedData.userId);
-    if (!user) {
-      return res.status(404).json({ message: 'משתמש לא נמצא' });
+    // Check password
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ message: 'שם משתמש או סיסמה שגויים' });
     }
 
     console.log(`התחברות מוצלחת: ${user.name} (${user.role})`);
@@ -190,68 +33,61 @@ router.post('/verify-login', async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
-        email: user.email,
+        username: user.username,
         role: user.role
       }
     });
 
   } catch (error) {
-    console.error('שגיאה באימות קוד:', error);
+    console.error('Login error:', error);
     res.status(500).json({ message: 'שגיאה פנימית' });
   }
 });
 
-// ========== Routes ישנים (נשארים לתאימות) ==========
+// Setup initial admin (run once)
+router.post('/setup', async (req, res) => {
+  try {
+    // Check if admin already exists
+    const existingAdmin = await User.findOne({ username: 'adielklein' });
+    if (existingAdmin) {
+      return res.status(400).json({ message: 'אדמין כבר קיים' });
+    }
 
-// Google OAuth routes
-router.get('/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
-);
+    // Hash password
+    const hashedPassword = await bcrypt.hash('adiel123', 10);
 
-router.get('/google/callback',
-  passport.authenticate('google', { failureRedirect: '/login-failed' }),
-  (req, res) => {
-    // Success - redirect back to Frontend - עדכון לproduction
-    const userData = encodeURIComponent(JSON.stringify({
-      id: req.user._id,
-      name: req.user.name,
-      email: req.user.email,
-      role: req.user.role
-    }));
-    
-    res.redirect(`https://football-betting-app.onrender.com?login=success&user=${userData}`);
-  }
-);
+    // Create admin user
+    const adminUser = new User({
+      name: 'אדיאל קליין',
+      username: 'adielklein',
+      password: hashedPassword,
+      role: 'admin'
+    });
 
-// Logout
-router.post('/logout', (req, res) => {
-  req.logout((err) => {
-    if (err) return res.status(500).json({ message: 'Logout failed' });
-    res.json({ message: 'Logged out successfully' });
-  });
-});
+    await adminUser.save();
+    console.log('Admin user created: adielklein');
 
-// Get current user
-router.get('/me', (req, res) => {
-  if (req.user) {
     res.json({
+      message: 'משתמש אדמין נוצר בהצלחה',
       user: {
-        id: req.user._id,
-        name: req.user.name,
-        email: req.user.email,
-        role: req.user.role
+        id: adminUser._id,
+        name: adminUser.name,
+        username: adminUser.username,
+        role: adminUser.role
       }
     });
-  } else {
-    res.status(401).json({ message: 'Not authenticated' });
+
+  } catch (error) {
+    console.error('Setup admin error:', error);
+    res.status(500).json({ message: 'שגיאה ביצירת אדמין' });
   }
 });
 
-// Get all users
+// Get all users (for admin)
 router.get('/users', async (req, res) => {
   try {
     console.log('Getting all users...');
-    const users = await User.find().select('name email role');
+    const users = await User.find().select('name username role');
     console.log('Found users:', users.length);
     res.json(users);
   } catch (error) {
@@ -260,40 +96,65 @@ router.get('/users', async (req, res) => {
   }
 });
 
-// Legacy login (for testing)
-router.post('/login', async (req, res) => {
+// Add new user (admin only)
+router.post('/users', async (req, res) => {
   try {
-    const { email } = req.body;
-    let user = await User.findOne({ email });
+    console.log('Creating new user:', req.body);
+    const { name, username, password, role = 'player' } = req.body;
     
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    if (!name || !username || !password) {
+      return res.status(400).json({ message: 'שם, שם משתמש וסיסמה נדרשים' });
     }
     
-    res.json({
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ message: 'שם משתמש כבר קיים' });
+    }
+    
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    const user = new User({ 
+      name, 
+      username, 
+      password: hashedPassword,
+      role 
+    });
+    await user.save();
+    
+    console.log('User created successfully:', user);
+    res.status(201).json({
       user: {
         id: user._id,
         name: user.name,
-        email: user.email,
+        username: user.username,
         role: user.role
       }
     });
   } catch (error) {
+    console.error('Error creating user:', error);
     res.status(500).json({ message: error.message });
   }
 });
 
-// Update user
+// Update user (admin only)
 router.patch('/users/:id', async (req, res) => {
   try {
     console.log(`Updating user ${req.params.id}:`, req.body);
-    const { name, email, role } = req.body;
+    const { name, username, role, password } = req.body;
+    
+    const updateData = { name, username, role };
+    
+    // If password is provided, hash it
+    if (password) {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
     
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { name, email, role },
+      updateData,
       { new: true }
-    ).select('name email role');
+    ).select('name username role');
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -307,7 +168,7 @@ router.patch('/users/:id', async (req, res) => {
   }
 });
 
-// Delete user
+// Delete user (admin only)
 router.delete('/users/:id', async (req, res) => {
   try {
     console.log('Deleting user:', req.params.id);
@@ -327,39 +188,6 @@ router.delete('/users/:id', async (req, res) => {
     res.json({ message: 'User deleted successfully' });
   } catch (error) {
     console.error('Error deleting user:', error);
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Add new user
-router.post('/register', async (req, res) => {
-  try {
-    console.log('Registering new user:', req.body);
-    const { name, email, role = 'player' } = req.body;
-    
-    if (!name || !email) {
-      return res.status(400).json({ message: 'Name and email are required' });
-    }
-    
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
-    
-    const user = new User({ name, email, role });
-    await user.save();
-    
-    console.log('User registered successfully:', user);
-    res.status(201).json({
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role
-      }
-    });
-  } catch (error) {
-    console.error('Error registering user:', error);
     res.status(500).json({ message: error.message });
   }
 });
