@@ -7,9 +7,9 @@ require('dotenv').config();
 
 const app = express();
 
-// CORS - חשוב לאפשר credentials
+// CORS - עדכון ל-production frontend
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: 'https://football-betting-app.onrender.com',
   credentials: true
 }));
 

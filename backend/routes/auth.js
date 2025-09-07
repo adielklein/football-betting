@@ -70,7 +70,7 @@ router.get('/google',
 router.get('/google/callback',
   passport.authenticate('google', { failureRedirect: '/login-failed' }),
   (req, res) => {
-    // Success - redirect back to Frontend
+    // Success - redirect back to Frontend - עדכון לproduction
     const userData = encodeURIComponent(JSON.stringify({
       id: req.user._id,
       name: req.user.name,
