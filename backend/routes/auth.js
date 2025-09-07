@@ -4,7 +4,15 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User');
 const router = express.Router();
 
-// Google OAuth Strategy עם אדמין אוטומטי
+// מאחסן קודים זמניים (במציאות צריך Redis או DB)
+const tempCodes = new Map();
+
+// פונקציה לייצור קוד רנדומלי
+function generateCode() {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
+// Google OAuth Strategy עם אדמין אוטומטי (הישן - נשאר לתאימות)
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -61,6 +69,139 @@ passport.deserializeUser(async (id, done) => {
     done(error, null);
   }
 });
+
+// ========== התחברות חדשה עם אימייל וקוד ==========
+
+// בקשת קוד התחברות
+router.post('/request-login', async (req, res) => {
+  try {
+    const { email, name } = req.body;
+    
+    if (!email || !name) {
+      return res.status(400).json({ message: 'אימייל ושם נדרשים' });
+    }
+
+    console.log('בקשת קוד עבור:', email, name);
+
+    // בדוק אם זה אדמין
+    const adminEmails = ['adielklein@gmail.com'];
+    const isAdmin = adminEmails.includes(email);
+
+    // חפש או צור משתמש
+    let user = await User.findOne({ email });
+    
+    if (!user) {
+      user = new User({
+        name,
+        email,
+        role: isAdmin ? 'admin' : 'player'
+      });
+      await user.save();
+      console.log(`משתמש חדש נוצר: ${name} (${user.role})`);
+    } else {
+      // עדכן שם אם השתנה
+      if (user.name !== name) {
+        user.name = name;
+        await user.save();
+      }
+      
+      // עדכן לאדמין אם צריך
+      if (isAdmin && user.role !== 'admin') {
+        user.role = 'admin';
+        await user.save();
+        console.log(`${name} עודכן לאדמין`);
+      }
+    }
+
+    // צור קוד
+    const code = generateCode();
+    const expiry = Date.now() + 10 * 60 * 1000; // תוקף של 10 דקות
+    
+    tempCodes.set(email, {
+      code,
+      expiry,
+      userId: user._id
+    });
+
+    console.log(`קוד נוצר עבור ${email}: ${code}`);
+
+    // במציאות - שלח SMS או מייל. לבינתיים רק log
+    console.log(`
+    ==========================================
+    📧 קוד התחברות עבור ${name}:
+    📞 ${code}
+    ⏰ תוקף: 10 דקות
+    ==========================================
+    `);
+
+    res.json({ 
+      message: 'קוד נשלח בהצלחה',
+      email,
+      // לבדיקה - בפרודקשן אל תחזיר את הקוד!
+      debug_code: process.env.NODE_ENV === 'development' ? code : undefined
+    });
+
+  } catch (error) {
+    console.error('שגיאה בבקשת קוד:', error);
+    res.status(500).json({ message: 'שגיאה פנימית' });
+  }
+});
+
+// אימות קוד והתחברות
+router.post('/verify-login', async (req, res) => {
+  try {
+    const { email, code } = req.body;
+    
+    if (!email || !code) {
+      return res.status(400).json({ message: 'אימייל וקוד נדרשים' });
+    }
+
+    console.log('אימות קוד עבור:', email, 'קוד:', code);
+
+    // בדוק אם יש קוד
+    const storedData = tempCodes.get(email);
+    if (!storedData) {
+      return res.status(400).json({ message: 'לא נמצא קוד עבור אימייל זה' });
+    }
+
+    // בדוק תוקף
+    if (Date.now() > storedData.expiry) {
+      tempCodes.delete(email);
+      return res.status(400).json({ message: 'הקוד פג תוקף' });
+    }
+
+    // בדוק קוד
+    if (storedData.code !== code) {
+      return res.status(400).json({ message: 'קוד שגוי' });
+    }
+
+    // קוד תקין - מחק אותו ואמת משתמש
+    tempCodes.delete(email);
+    
+    const user = await User.findById(storedData.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'משתמש לא נמצא' });
+    }
+
+    console.log(`התחברות מוצלחת: ${user.name} (${user.role})`);
+
+    res.json({
+      message: 'התחברות מוצלחת',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+
+  } catch (error) {
+    console.error('שגיאה באימות קוד:', error);
+    res.status(500).json({ message: 'שגיאה פנימית' });
+  }
+});
+
+// ========== Routes ישנים (נשארים לתאימות) ==========
 
 // Google OAuth routes
 router.get('/google',
