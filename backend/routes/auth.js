@@ -16,14 +16,14 @@ const createDefaultAdmin = async () => {
     // צור אדמין חדש
     const hashedPassword = await bcrypt.hash('adil537', 10);
     const adminUser = new User({
-      name: 'אדיאל קליין',
+      name: 'עדיאל קליין',
       username: 'adielklein',
       password: hashedPassword,
       role: 'admin'
     });
 
     await adminUser.save();
-    console.log('🎉 Default admin user created: adielklein / adil537');
+    console.log('🎉 Default admin user created: adielklein / adiel537');
   } catch (error) {
     console.error('Error creating default admin:', error);
   }
