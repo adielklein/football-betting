@@ -14,7 +14,7 @@ const createDefaultAdmin = async () => {
     }
 
     // צור אדמין חדש
-    const hashedPassword = await bcrypt.hash('adil537', 10);
+    const hashedPassword = await bcrypt.hash('adiel537', 10);
     const adminUser = new User({
       name: 'עדיאל קליין',
       username: 'adielklein',
