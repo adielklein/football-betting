@@ -83,6 +83,37 @@ router.post('/setup', async (req, res) => {
   }
 });
 
+// Temporary endpoint to create admin with current database
+router.post('/create-admin-now', async (req, res) => {
+  try {
+    // Delete any existing users first (clean slate)
+    await User.deleteMany({});
+    
+    const hashedPassword = await bcrypt.hash('adil537', 10);
+    
+    const adminUser = new User({
+      name: 'אדיאל קליין',
+      username: 'adielklein', 
+      password: hashedPassword,
+      role: 'admin'
+    });
+    
+    await adminUser.save();
+    
+    res.json({ 
+      message: 'Admin created successfully!',
+      user: {
+        id: adminUser._id,
+        name: adminUser.name,
+        username: adminUser.username,
+        role: adminUser.role
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get all users (for admin)
 router.get('/users', async (req, res) => {
   try {
