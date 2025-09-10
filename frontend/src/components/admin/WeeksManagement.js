@@ -27,7 +27,7 @@ function WeeksManagement({
   const createNewWeek = async () => {
     const weekName = newWeekName.trim() || `Week ${weeks.length + 1}`;
     try {
-      const response = await fetch('http://localhost:5000/api/weeks', {
+      const response = await fetch('https://football-betting-backend.onrender.com/api/auth/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
