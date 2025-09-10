@@ -1,13 +1,22 @@
 const API_BASE_URL = 'https://football-betting-backend.onrender.com/api';
 
 export const api = {
-  // Auth
-  getUsers: () => fetch(`${API_BASE_URL}/auth/users`).then(res => res.json()),
-  login: (email) => fetch(`${API_BASE_URL}/auth/login`, {
+  // Auth with username/password
+  login: (username, password) => fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email })
+    body: JSON.stringify({ username, password })
   }).then(res => res.json()),
+
+  setupAdmin: () => fetch(`${API_BASE_URL}/auth/setup`, {
+    method: 'POST'
+  }).then(res => res.json()),
+
+  createAdminNow: () => fetch(`${API_BASE_URL}/auth/create-admin-now`, {
+    method: 'POST'
+  }).then(res => res.json()),
+
+  getUsers: () => fetch(`${API_BASE_URL}/auth/users`).then(res => res.json()),
   
   // User Management
   updateUser: (userId, userData) => fetch(`${API_BASE_URL}/auth/users/${userId}`, {
@@ -30,7 +39,7 @@ export const api = {
     return res.json();
   }),
   
-  registerUser: (userData) => fetch(`${API_BASE_URL}/auth/register`, {
+  registerUser: (userData) => fetch(`${API_BASE_URL}/auth/users`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(userData)
@@ -77,16 +86,13 @@ export const api = {
       console.log('API: Updating week - Original ID:', weekId);
       console.log('API: Data to update:', data);
       
-      // ניקוי מזהה השבוע
       const cleanWeekId = String(weekId).replace(/[^a-fA-F0-9]/g, '').substring(0, 24);
       console.log('API: Clean week ID:', cleanWeekId);
       
-      // בדיקה שהמזהה תקין
       if (!cleanWeekId || cleanWeekId.length !== 24) {
         throw new Error('מזהה שבוע לא תקין');
       }
       
-      // יצירת URL נקי
       const url = `${API_BASE_URL}/weeks/${cleanWeekId}`;
       console.log('API: Request URL:', url);
       
@@ -105,7 +111,6 @@ export const api = {
         const errorText = await response.text();
         console.error('API: Error response:', errorText);
         
-        // בדיקה אם זה HTML error page
         if (errorText.includes('<!DOCTYPE html>')) {
           throw new Error(`נתיב לא נמצא - בדוק שהשרת רץ נכון`);
         }
@@ -125,6 +130,18 @@ export const api = {
   
   // Matches
   getMatches: (weekId) => fetch(`${API_BASE_URL}/matches/week/${weekId}`).then(res => res.json()),
+  
+  createMatch: (data) => fetch(`${API_BASE_URL}/matches`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  }).then(res => res.json()),
+  
+  updateMatch: (matchId, data) => fetch(`${API_BASE_URL}/matches/${matchId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  }).then(res => res.json()),
   
   // Bets
   getUserBets: (userId, weekId) => fetch(`${API_BASE_URL}/bets/user/${userId}/week/${weekId}`).then(res => res.json()),
