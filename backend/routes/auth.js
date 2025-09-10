@@ -3,6 +3,35 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const router = express.Router();
 
+// אוטומטית צור אדמין בהפעלת השרת
+const createDefaultAdmin = async () => {
+  try {
+    // בדוק אם יש כבר אדמין
+    const existingAdmin = await User.findOne({ username: 'adielklein' });
+    if (existingAdmin) {
+      console.log('✅ Admin user already exists');
+      return;
+    }
+
+    // צור אדמין חדש
+    const hashedPassword = await bcrypt.hash('adil537', 10);
+    const adminUser = new User({
+      name: 'אדיאל קליין',
+      username: 'adielklein',
+      password: hashedPassword,
+      role: 'admin'
+    });
+
+    await adminUser.save();
+    console.log('🎉 Default admin user created: adielklein / adil537');
+  } catch (error) {
+    console.error('Error creating default admin:', error);
+  }
+};
+
+// הרץ יצירת אדמין כשהמודול נטען
+setTimeout(createDefaultAdmin, 2000); // חכה 2 שניות שהDB יתחבר
+
 // Login with username and password
 router.post('/login', async (req, res) => {
   try {
@@ -41,76 +70,6 @@ router.post('/login', async (req, res) => {
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'שגיאה פנימית' });
-  }
-});
-
-// Setup initial admin (run once)
-router.post('/setup', async (req, res) => {
-  try {
-    // Check if admin already exists
-    const existingAdmin = await User.findOne({ username: 'adielklein' });
-    if (existingAdmin) {
-      return res.status(400).json({ message: 'אדמין כבר קיים' });
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash('adil537', 10);
-
-    // Create admin user
-    const adminUser = new User({
-      name: 'אדיאל קליין',
-      username: 'adielklein',
-      password: hashedPassword,
-      role: 'admin'
-    });
-
-    await adminUser.save();
-    console.log('Admin user created: adielklein');
-
-    res.json({
-      message: 'משתמש אדמין נוצר בהצלחה',
-      user: {
-        id: adminUser._id,
-        name: adminUser.name,
-        username: adminUser.username,
-        role: adminUser.role
-      }
-    });
-
-  } catch (error) {
-    console.error('Setup admin error:', error);
-    res.status(500).json({ message: 'שגיאה ביצירת אדמין' });
-  }
-});
-
-// Temporary endpoint to create admin with current database
-router.post('/create-admin-now', async (req, res) => {
-  try {
-    // Delete any existing users first (clean slate)
-    await User.deleteMany({});
-    
-    const hashedPassword = await bcrypt.hash('adil537', 10);
-    
-    const adminUser = new User({
-      name: 'אדיאל קליין',
-      username: 'adielklein', 
-      password: hashedPassword,
-      role: 'admin'
-    });
-    
-    await adminUser.save();
-    
-    res.json({ 
-      message: 'Admin created successfully!',
-      user: {
-        id: adminUser._id,
-        name: adminUser.name,
-        username: adminUser.username,
-        role: adminUser.role
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
   }
 });
 
@@ -220,6 +179,24 @@ router.delete('/users/:id', async (req, res) => {
   } catch (error) {
     console.error('Error deleting user:', error);
     res.status(500).json({ message: error.message });
+  }
+});
+
+// Debug endpoint to check admin status
+router.get('/check-admin', async (req, res) => {
+  try {
+    const admin = await User.findOne({ username: 'adielklein' });
+    res.json({
+      adminExists: !!admin,
+      adminDetails: admin ? {
+        name: admin.name,
+        username: admin.username,
+        role: admin.role
+      } : null,
+      totalUsers: await User.countDocuments()
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
