@@ -54,7 +54,7 @@ router.post('/setup', async (req, res) => {
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash('adiel123', 10);
+    const hashedPassword = await bcrypt.hash('adil537', 10);
 
     // Create admin user
     const adminUser = new User({
