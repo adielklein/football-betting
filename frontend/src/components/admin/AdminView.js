@@ -15,6 +15,10 @@ function AdminView({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('weeks');
   const [loading, setLoading] = useState(true);
 
+  const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:5000/api'
+    : 'https://football-betting-backend.onrender.com/api';
+
   useEffect(() => {
     loadData();
   }, []);
@@ -52,7 +56,7 @@ function AdminView({ user, onLogout }) {
     try {
       const [matchesData, betsResponse] = await Promise.all([
         api.getMatches(weekId),
-        fetch(`http://localhost:5000/api/bets/week/${weekId}`)
+        fetch(`${API_URL}/bets/week/${weekId}`)  // תיקון: השתמש ב-API_URL
       ]);
       
       const betsData = await betsResponse.json();
