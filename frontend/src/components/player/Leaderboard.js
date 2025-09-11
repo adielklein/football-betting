@@ -152,7 +152,6 @@ function Leaderboard({ leaderboard, user }) {
   ];
 
   const seasons = [
-    { value: '2024-25', label: 'עונת 2024-25' },
     { value: '2025-26', label: 'עונת 2025-26' },
     { value: '2026-27', label: 'עונת 2026-27' }
   ];

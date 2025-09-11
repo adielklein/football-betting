@@ -45,7 +45,7 @@ router.post('/', async (req, res) => {
     const week = new Week({ 
       name, 
       month: parseInt(month),
-      season: season || '2024-25'
+      season: season || '2025-26'
     });
     await week.save();
     

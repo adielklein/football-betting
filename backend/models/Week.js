@@ -17,7 +17,7 @@ const weekSchema = new mongoose.Schema({
   season: {
     type: String,
     required: [true, 'Season is required'],
-    default: '2024-25',
+    default: '2025-26',
     trim: true
   },
   active: { 
