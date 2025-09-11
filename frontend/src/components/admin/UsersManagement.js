@@ -5,6 +5,10 @@ function UsersManagement({ users, loadData, user }) {
   const [editingUser, setEditingUser] = useState(null);
   const [editForm, setEditForm] = useState({});
 
+  const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:5000/api'
+    : 'https://football-betting-backend.onrender.com/api';
+
   const handleAddUser = async () => {
     if (!newUser.name || !newUser.username || !newUser.password) {
       alert('יש למלא שם, שם משתמש וסיסמה');
@@ -12,7 +16,7 @@ function UsersManagement({ users, loadData, user }) {
     }
 
     try {
-      const response = await fetch('https://football-betting-backend.onrender.com/api/auth/users', {
+      const response = await fetch(`${API_URL}/auth/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newUser)
@@ -60,7 +64,7 @@ function UsersManagement({ users, loadData, user }) {
         updateData.password = editForm.password;
       }
 
-      const response = await fetch(`https://football-betting-backend.onrender.com/api/auth/users/${userId}`, {
+      const response = await fetch(`${API_URL}/auth/users/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updateData)
@@ -89,7 +93,7 @@ function UsersManagement({ users, loadData, user }) {
 
     if (window.confirm(`האם אתה בטוח שברצונך למחוק את ${userName}?`)) {
       try {
-        const response = await fetch(`https://football-betting-backend.onrender.com/api/auth/users/${userId}`, {
+        const response = await fetch(`${API_URL}/auth/users/${userId}`, {
           method: 'DELETE'
         });
 
@@ -280,9 +284,9 @@ function UsersManagement({ users, loadData, user }) {
                                   onClick={() => handleDeleteUser(userItem._id, userItem.name)}
                                   className="btn"
                                   style={{ fontSize: '12px', padding: '4px 8px', backgroundColor: '#dc3545', color: 'white' }}
-                                >
-                                  מחק
-                                </button>
+                              >
+                                מחק
+                              </button>
                               )}
                             </>
                           )}

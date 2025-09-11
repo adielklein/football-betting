@@ -2,6 +2,10 @@ import React from 'react';
 
 function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData }) {
   
+  const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:5000/api'
+    : 'https://football-betting-backend.onrender.com/api';
+  
   const saveBet = async (playerId, matchId, team1Goals, team2Goals) => {
     try {
       const betData = {
@@ -14,7 +18,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
 
       console.log('שומר הימור:', betData);
 
-      const response = await fetch('http://localhost:5000/api/bets', {
+      const response = await fetch(`${API_URL}/bets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(betData)
@@ -55,7 +59,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
     <div className="card">
       <h2>עריכת הימורים - {selectedWeek.name}</h2>
       
-      {/* כפתורי פקד משופרים */}
+      {/* כפתורי פקודה משופרים */}
       <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
         <button 
           onClick={async () => {
@@ -73,7 +77,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
           onClick={async () => {
             try {
               console.log('מחשב ניקוד מחדש לשבוע:', selectedWeek._id);
-              const response = await fetch(`http://localhost:5000/api/scores/calculate/${selectedWeek._id}`, {
+              const response = await fetch(`${API_URL}/scores/calculate/${selectedWeek._id}`, {
                 method: 'POST'
               });
               

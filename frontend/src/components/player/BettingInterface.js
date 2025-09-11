@@ -4,6 +4,10 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [betValues, setBetValues] = useState({});
 
+  const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:5000/api'
+    : 'https://football-betting-backend.onrender.com/api';
+
   const updateBet = async (matchId, team1Goals, team2Goals) => {
     if (selectedWeek?.locked) {
       alert('ההימורים נעולים לשבוע זה');
@@ -22,7 +26,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
     setIsSubmitting(true);
     
     try {
-      const response = await fetch('http://localhost:5000/api/bets', {
+      const response = await fetch(`${API_URL}/bets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

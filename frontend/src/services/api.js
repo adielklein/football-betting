@@ -1,4 +1,6 @@
-const API_BASE_URL = 'https://football-betting-backend.onrender.com/api';
+const API_BASE_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:5000/api'
+  : 'https://football-betting-backend.onrender.com/api';
 
 export const api = {
   // Auth with username/password

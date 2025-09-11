@@ -5,15 +5,19 @@ function HistoryViewer({ weeks, user }) {
   const [historyData, setHistoryData] = useState({ matches: [], bets: [], allBets: [] });
   const [loading, setLoading] = useState(false);
 
+  const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:5000/api'
+    : 'https://football-betting-backend.onrender.com/api';
+
   const loadHistoryData = async (weekId) => {
     if (!weekId) return;
     
     setLoading(true);
     try {
       const [matchesResponse, userBetsResponse, allBetsResponse] = await Promise.all([
-        fetch(`http://localhost:5000/api/matches/week/${weekId}`),
-        fetch(`http://localhost:5000/api/bets/user/${user.id}/week/${weekId}`),
-        fetch(`http://localhost:5000/api/bets/week/${weekId}`)
+        fetch(`${API_URL}/matches/week/${weekId}`),
+        fetch(`${API_URL}/bets/user/${user.id}/week/${weekId}`),
+        fetch(`${API_URL}/bets/week/${weekId}`)
       ]);
 
       const matches = await matchesResponse.json();
@@ -107,7 +111,7 @@ function HistoryViewer({ weeks, user }) {
       const lockTime = new Date(week.lockTime);
       const now = new Date();
       
-      console.log(`🔍 בודק זמן נעילה של "${week.name}":`, {
+      console.log(`📍 בודק זמן נעילה של "${week.name}":`, {
         lockTime: lockTime.toLocaleString('he-IL'),
         now: now.toLocaleString('he-IL'),
         passed: now >= lockTime

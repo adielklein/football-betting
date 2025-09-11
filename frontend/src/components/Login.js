@@ -6,6 +6,10 @@ function Login({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
+  const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:5000/api'
+    : 'https://football-betting-backend.onrender.com/api';
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!username || !password) {
@@ -17,7 +21,7 @@ function Login({ onLogin }) {
     setMessage('');
     
     try {
-      const response = await fetch('https://football-betting-backend.onrender.com/api/auth/login', {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
