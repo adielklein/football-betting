@@ -24,10 +24,14 @@ function WeeksManagement({
     time: ''
   });
 
+  const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:5000/api'
+    : 'https://football-betting-backend.onrender.com/api';
+
   const createNewWeek = async () => {
     const weekName = newWeekName.trim() || `Week ${weeks.length + 1}`;
     try {
-      const response = await fetch('https://football-betting-backend.onrender.com/api/auth/users', {
+      const response = await fetch(`${API_URL}/weeks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -69,7 +73,7 @@ function WeeksManagement({
       if (newMonth) updateData.month = parseInt(newMonth);
       if (newSeason) updateData.season = newSeason;
       
-      const response = await fetch(`http://localhost:5000/api/weeks/${cleanWeekId}`, {
+      const response = await fetch(`${API_URL}/weeks/${cleanWeekId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updateData)
@@ -129,16 +133,16 @@ function WeeksManagement({
         return;
       }
 
-      console.log('🔍 פרטי המשחק הראשון:', firstMatch);
-      console.log('🔍 תאריך:', firstMatch.date, 'שעה:', firstMatch.time);
+      console.log('🕐 פרטי המשחק הראשון:', firstMatch);
+      console.log('🕐 תאריך:', firstMatch.date, 'שעה:', firstMatch.time);
 
       // פירוק התאריך DD.MM (כמו 10.08)
       const [day, month] = firstMatch.date.split('.');
-      console.log('🔍 אחרי פירוק תאריך:', { day: day, month: month });
+      console.log('🕐 אחרי פירוק תאריך:', { day: day, month: month });
 
       // פירוק השעה HH:MM (כמו 20:00)
       const [hour, minute] = firstMatch.time.split(':');
-      console.log('🔍 אחרי פירוק שעה:', { hour: hour, minute: minute });
+      console.log('🕐 אחרי פירוק שעה:', { hour: hour, minute: minute });
 
       // יצירת התאריך
       // שים לב: new Date(year, monthIndex, day, hour, minute)
@@ -152,7 +156,7 @@ function WeeksManagement({
         parseInt(minute) // דקה
       );
 
-      console.log('🔍 זמן נעילה שחושב:', {
+      console.log('🕐 זמן נעילה שחושב:', {
         input: `${firstMatch.date} ${firstMatch.time}`,
         year: currentYear,
         month: parseInt(month) - 1,
@@ -165,8 +169,8 @@ function WeeksManagement({
 
       // בדיקה שהתאריך הגיוני
       const now = new Date();
-      console.log('🔍 זמן נוכחי:', now.toLocaleString('he-IL'));
-      console.log('🔍 האם עבר הזמן?', lockTime < now);
+      console.log('🕐 זמן נוכחי:', now.toLocaleString('he-IL'));
+      console.log('🕐 האם עבר הזמן?', lockTime < now);
 
       let confirmMessage;
       if (lockTime < now) {
@@ -184,7 +188,7 @@ function WeeksManagement({
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/weeks/${selectedWeek._id}/activate`, {
+      const response = await fetch(`${API_URL}/weeks/${selectedWeek._id}/activate`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lockTime: lockTime.toISOString() })
@@ -226,7 +230,7 @@ function WeeksManagement({
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/matches', {
+      const response = await fetch(`${API_URL}/matches`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -254,7 +258,7 @@ function WeeksManagement({
     try {
       console.log('שולח תוצאה:', { matchId, team1Goals, team2Goals });
       
-      const matchResponse = await fetch(`http://localhost:5000/api/matches/${matchId}/result`, {
+      const matchResponse = await fetch(`${API_URL}/matches/${matchId}/result`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -270,7 +274,7 @@ function WeeksManagement({
       const updatedMatch = await matchResponse.json();
       console.log('תגובה מהשרת:', updatedMatch);
 
-      const scoresResponse = await fetch(`http://localhost:5000/api/scores/calculate/${selectedWeek._id}`, {
+      const scoresResponse = await fetch(`${API_URL}/scores/calculate/${selectedWeek._id}`, {
         method: 'POST'
       });
 
@@ -299,7 +303,7 @@ function WeeksManagement({
     if (window.confirm(`האם אתה בטוח שברצונך למחוק את המשחק:\n${matchName}?\n\nפעולה זו תמחק גם את כל ההימורים הקשורים למשחק!`)) {
       try {
         console.log('📡 שולח בקשת מחיקה...');
-        const response = await fetch(`http://localhost:5000/api/matches/${matchId}`, {
+        const response = await fetch(`${API_URL}/matches/${matchId}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json'
@@ -310,7 +314,7 @@ function WeeksManagement({
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('⌐ שגיאת שרת:', errorText);
+          console.error('❌ שגיאת שרת:', errorText);
           throw new Error(`שגיאה במחיקת משחק: ${response.status} - ${errorText}`);
         }
 
@@ -318,8 +322,8 @@ function WeeksManagement({
         await loadWeekData(selectedWeek._id);
         alert('✅ משחק נמחק בהצלחה!');
       } catch (error) {
-        console.error('⌐ שגיאה במחיקת משחק:', error);
-        alert(`⌐ שגיאה במחיקת המשחק: ${error.message}`);
+        console.error('❌ שגיאה במחיקת משחק:', error);
+        alert(`❌ שגיאה במחיקת המשחק: ${error.message}`);
       }
     }
   };
@@ -358,9 +362,9 @@ function WeeksManagement({
   ];
 
   const seasons = [
+    { value: '2024-25', label: 'עונת 2024-25' },
     { value: '2025-26', label: 'עונת 2025-26' },
     { value: '2026-27', label: 'עונת 2026-27' }
-
   ];
 
   return (
@@ -539,7 +543,7 @@ function WeeksManagement({
         )}
       </div>
 
-      {/* הוספת משחק */}
+      {/* הוסף משחק */}
       {selectedWeek && selectedWeek._id && (
         <div className="card">
           <h2>הוסף משחק ל{selectedWeek.name || 'השבוע'}</h2>

@@ -7,6 +7,10 @@ function Leaderboard({ leaderboard, user }) {
   const [selectedSeason, setSelectedSeason] = useState('2024-25');
   const [loading, setLoading] = useState(false);
 
+  const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:5000/api'
+    : 'https://football-betting-backend.onrender.com/api';
+
   useEffect(() => {
     loadScoresData();
   }, [selectedMonth, selectedSeason]);
@@ -18,8 +22,8 @@ function Leaderboard({ leaderboard, user }) {
       
       // טען את כל הנתונים של הניקוד
       const [scoresResponse, weeksResponse] = await Promise.all([
-        fetch('http://localhost:5000/api/scores/detailed'),
-        fetch('http://localhost:5000/api/weeks')
+        fetch(`${API_URL}/scores/detailed`),
+        fetch(`${API_URL}/weeks`)
       ]);
 
       let scoresData = [];
@@ -148,6 +152,7 @@ function Leaderboard({ leaderboard, user }) {
   ];
 
   const seasons = [
+    { value: '2024-25', label: 'עונת 2024-25' },
     { value: '2025-26', label: 'עונת 2025-26' },
     { value: '2026-27', label: 'עונת 2026-27' }
   ];

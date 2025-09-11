@@ -14,6 +14,10 @@ function PlayerView({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('betting');
   const [loading, setLoading] = useState(true);
 
+  const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:5000/api'
+    : 'https://football-betting-backend.onrender.com/api';
+
   useEffect(() => {
     loadData();
   }, []);
@@ -24,7 +28,7 @@ function PlayerView({ user, onLogout }) {
       
       const [weeksData, leaderboardResponse] = await Promise.all([
         api.getWeeks(),
-        fetch('http://localhost:5000/api/scores/leaderboard')
+        fetch(`${API_URL}/scores/leaderboard`)
       ]);
       
       setWeeks(Array.isArray(weeksData) ? weeksData : []);
@@ -67,7 +71,7 @@ function PlayerView({ user, onLogout }) {
           await loadWeekData(activeUnlockedWeek._id);
           console.log('✅ נמצא שבוע פעיל אמיתי:', activeUnlockedWeek.name);
         } else {
-          // אם אין שבוע פעיל אמיתי - אל תציג כלום
+          // אם אין שבוע פעיל אמיתי - אל תציג כלום בהימורים נוכחי
           console.log('❌ אין שבוע פעיל אמיתי - לא מציג כלום בהימורים נוכחי');
           setSelectedWeek(null);
           setMatches([]);
@@ -114,7 +118,7 @@ function PlayerView({ user, onLogout }) {
   const handleBetUpdate = async () => {
     if (selectedWeek && selectedWeek._id) {
       await loadWeekData(selectedWeek._id);
-      const leaderboardResponse = await fetch('http://localhost:5000/api/scores/leaderboard');
+      const leaderboardResponse = await fetch(`${API_URL}/scores/leaderboard`);
       const leaderData = await leaderboardResponse.json();
       const playersOnly = leaderData.filter(entry => 
         entry.user && entry.user.role !== 'admin'
