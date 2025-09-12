@@ -120,6 +120,36 @@ function WeeksManagement({
     }
   };
 
+  // פונקציה חדשה למציאת המשחק הכי מוקדם
+  const findEarliestMatch = (matches) => {
+    if (!matches || matches.length === 0) return null;
+    
+    return matches.reduce((earliest, match) => {
+      // המרה לאובייקט Date לצורך השוואה
+      const [currentDay, currentMonth] = match.date.split('.');
+      const [currentHour, currentMinute] = match.time.split(':');
+      const currentDate = new Date(
+        new Date().getFullYear(),
+        parseInt(currentMonth) - 1,
+        parseInt(currentDay),
+        parseInt(currentHour),
+        parseInt(currentMinute)
+      );
+
+      const [earliestDay, earliestMonth] = earliest.date.split('.');
+      const [earliestHour, earliestMinute] = earliest.time.split(':');
+      const earliestDate = new Date(
+        new Date().getFullYear(),
+        parseInt(earliestMonth) - 1,
+        parseInt(earliestDay),
+        parseInt(earliestHour),
+        parseInt(earliestMinute)
+      );
+
+      return currentDate < earliestDate ? match : earliest;
+    });
+  };
+
   const activateWeek = async () => {
     if (!selectedWeek || !selectedWeek._id || matches.length === 0) {
       alert('יש להוסיף משחקים לפני הפעלת השבוע');
@@ -127,22 +157,25 @@ function WeeksManagement({
     }
 
     try {
-      const firstMatch = matches[0];
-      if (!firstMatch || !firstMatch.date || !firstMatch.time) {
-        alert('פרטי המשחק הראשון חסרים');
+      // מצא את המשחק הכי מוקדם במקום הראשון ברשימה
+      const earliestMatch = findEarliestMatch(matches);
+      
+      if (!earliestMatch || !earliestMatch.date || !earliestMatch.time) {
+        alert('לא נמצא משחק תקין עם תאריך ושעה');
         return;
       }
 
-      console.log('🕐 פרטי המשחק הראשון:', firstMatch);
-      console.log('🕐 תאריך:', firstMatch.date, 'שעה:', firstMatch.time);
+      console.log('🏆 המשחק הכי מוקדם:', `${earliestMatch.team1} נגד ${earliestMatch.team2}`);
+      console.log('🔍 תאריך המשחק המוקדם:', earliestMatch.date);
+      console.log('🔍 שעת המשחק המוקדם:', earliestMatch.time);
 
       // פירוק התאריך DD.MM (כמו 10.08)
-      const [day, month] = firstMatch.date.split('.');
-      console.log('🕐 אחרי פירוק תאריך:', { day: day, month: month });
+      const [day, month] = earliestMatch.date.split('.');
+      console.log('🔍 אחרי פירוק תאריך:', { day: day, month: month });
 
       // פירוק השעה HH:MM (כמו 20:00)
-      const [hour, minute] = firstMatch.time.split(':');
-      console.log('🕐 אחרי פירוק שעה:', { hour: hour, minute: minute });
+      const [hour, minute] = earliestMatch.time.split(':');
+      console.log('🔍 אחרי פירוק שעה:', { hour: hour, minute: minute });
 
       // יצירת התאריך
       // שים לב: new Date(year, monthIndex, day, hour, minute)
@@ -156,8 +189,8 @@ function WeeksManagement({
         parseInt(minute) // דקה
       );
 
-      console.log('🕐 זמן נעילה שחושב:', {
-        input: `${firstMatch.date} ${firstMatch.time}`,
+      console.log('🔍 זמן נעילה שחושב:', {
+        input: `${earliestMatch.date} ${earliestMatch.time}`,
         year: currentYear,
         month: parseInt(month) - 1,
         day: parseInt(day),
@@ -169,18 +202,20 @@ function WeeksManagement({
 
       // בדיקה שהתאריך הגיוני
       const now = new Date();
-      console.log('🕐 זמן נוכחי:', now.toLocaleString('he-IL'));
-      console.log('🕐 האם עבר הזמן?', lockTime < now);
+      console.log('🔍 זמן נוכחי:', now.toLocaleString('he-IL'));
+      console.log('🔍 האם עבר הזמן?', lockTime < now);
 
       let confirmMessage;
       if (lockTime < now) {
         confirmMessage = `⚠️ זמן הנעילה שחושב כבר עבר!\n` +
+          `משחק מוקדם: ${earliestMatch.team1} נגד ${earliestMatch.team2}\n` +
           `זמן נעילה: ${lockTime.toLocaleString('he-IL')}\n` +
           `זמן נוכחי: ${now.toLocaleString('he-IL')}\n\n` +
           `האם אתה בטוח שרצית להפעיל את השבוע?`;
       } else {
         confirmMessage = `השבוע יינעל אוטומטית ב:\n` +
           `${lockTime.toLocaleString('he-IL')}\n\n` +
+          `משחק מוקדם: ${earliestMatch.team1} נגד ${earliestMatch.team2}\n` +
           `האם זה נכון?`;
       }
 
@@ -203,6 +238,46 @@ function WeeksManagement({
     } catch (error) {
       console.error('שגיאה בהפעלת שבוע:', error);
       alert('שגיאה בהפעלת השבוע: ' + error.message);
+    }
+  };
+
+  // פונקציה חדשה לכיבוי שבוע
+  const deactivateWeek = async () => {
+    if (!selectedWeek || !selectedWeek._id) {
+      alert('יש לבחור שבוע קודם');
+      return;
+    }
+
+    if (!selectedWeek.active) {
+      alert('השבוע כבר לא פעיל');
+      return;
+    }
+
+    if (selectedWeek.locked) {
+      alert('לא ניתן לכבות שבוע שכבר נעול');
+      return;
+    }
+
+    if (window.confirm(`האם אתה בטוח שרצית לכבות את השבוע "${selectedWeek.name}"?\n\nהשחקנים לא יוכלו יותר לראות אותו או להמר בו.`)) {
+      try {
+        console.log('מכבה שבוע:', selectedWeek._id);
+        
+        const response = await fetch(`${API_URL}/weeks/${selectedWeek._id}/deactivate`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!response.ok) {
+          throw new Error(`שגיאה בכיבוי שבוע: ${response.status}`);
+        }
+
+        console.log('השבוע כובה בהצלחה');
+        alert('השבוע כובה בהצלחה! עכשיו אתה יכול לערוך אותו.');
+        await loadData();
+      } catch (error) {
+        console.error('שגיאה בכיבוי שבוע:', error);
+        alert('שגיאה בכיבוי השבוע: ' + error.message);
+      }
     }
   };
 
@@ -432,9 +507,17 @@ function WeeksManagement({
             })}
           </select>
 
+          {/* כפתור הפעלה - רק אם השבוע לא פעיל */}
           {selectedWeek && !selectedWeek.active && (
             <button onClick={activateWeek} className="btn btn-success">
               הפעל שבוע
+            </button>
+          )}
+
+          {/* כפתור כיבוי - רק אם השבוע פעיל אבל לא נעול */}
+          {selectedWeek && selectedWeek.active && !selectedWeek.locked && (
+            <button onClick={deactivateWeek} className="btn" style={{ backgroundColor: '#ffc107', color: 'white' }}>
+              כבה שבוע
             </button>
           )}
 
@@ -443,7 +526,7 @@ function WeeksManagement({
               <button
                 onClick={() => setEditingWeek(editingWeek === selectedWeek._id ? null : selectedWeek._id)}
                 className="btn"
-                style={{ backgroundColor: '#ffc107', color: 'white' }}
+                style={{ backgroundColor: '#17a2b8', color: 'white' }}
               >
                 ערוך
               </button>
@@ -457,17 +540,30 @@ function WeeksManagement({
             </>
           )}
 
-          {selectedWeek?.active && (
-            <span style={{ 
+          {/* הצגת סטטוס השבוע */}
+          {selectedWeek && (
+            <div style={{ 
               padding: '0.5rem 1rem', 
-              backgroundColor: '#d4edda', 
-              color: '#155724', 
               borderRadius: '4px',
-              fontSize: '14px'
+              fontSize: '14px',
+              fontWeight: '500'
             }}>
-              שבוע פעיל
-              {selectedWeek.locked && ' (נעול)'}
-            </span>
+              {!selectedWeek.active && (
+                <span style={{ backgroundColor: '#f8d7da', color: '#721c24' }}>
+                  ⚪ לא פעיל
+                </span>
+              )}
+              {selectedWeek.active && !selectedWeek.locked && (
+                <span style={{ backgroundColor: '#d4edda', color: '#155724' }}>
+                  ✅ פעיל
+                </span>
+              )}
+              {selectedWeek.active && selectedWeek.locked && (
+                <span style={{ backgroundColor: '#cce5ff', color: '#0066cc' }}>
+                  🔒 נעול
+                </span>
+              )}
+            </div>
           )}
         </div>
 
@@ -503,7 +599,7 @@ function WeeksManagement({
               <div>
                 <label style={{ fontSize: '12px', color: '#666' }}>עונה:</label>
                 <select
-                  defaultValue={selectedWeek.season || '2024-25'}
+                  defaultValue={selectedWeek.season || '2025-26'}
                   className="input"
                   id="edit-week-season"
                 >

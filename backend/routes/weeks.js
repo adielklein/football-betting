@@ -121,6 +121,45 @@ router.patch('/:id/activate', async (req, res) => {
   }
 });
 
+// Deactivate week (החזרה מפעיל ללא פעיל) - חדש!
+router.patch('/:id/deactivate', async (req, res) => {
+  try {
+    const weekId = req.params.id;
+    console.log(`כיבוי שבוע ${weekId}`);
+    
+    // בדוק שהשבוע קיים ופעיל
+    const currentWeek = await Week.findById(weekId);
+    if (!currentWeek) {
+      return res.status(404).json({ message: 'Week not found' });
+    }
+    
+    if (!currentWeek.active) {
+      return res.status(400).json({ message: 'השבוע כבר לא פעיל' });
+    }
+    
+    if (currentWeek.locked) {
+      return res.status(400).json({ message: 'לא ניתן לכבות שבוע שכבר נעול' });
+    }
+    
+    // כבה את השבוע - הסר פעילות וזמן נעילה
+    const week = await Week.findByIdAndUpdate(
+      weekId,
+      { 
+        active: false,
+        locked: false,
+        lockTime: null  // נקה את זמן הנעילה
+      },
+      { new: true }
+    );
+    
+    console.log('השבוע כובה בהצלחה:', week);
+    res.json(week);
+  } catch (error) {
+    console.error('שגיאה בכיבוי שבוע:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Lock week
 router.patch('/:id/lock', async (req, res) => {
   try {
