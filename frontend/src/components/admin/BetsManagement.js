@@ -48,7 +48,10 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
 
       const response = await fetch(`${API_URL}/bets`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Requested-By-User-Id': user.id  // 🆕 שלח את ה-admin ID ב-header
+        },
         body: JSON.stringify(betData)
       });
 
