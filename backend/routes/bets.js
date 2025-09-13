@@ -4,7 +4,8 @@ const Match = require('../models/Match');
 const Week = require('../models/Week');
 const User = require('../models/User'); // 🆕 נוסף לבדיקת תפקיד משתמש
 const router = express.Router();
-const isAdmin = user && user.role === 'admin';
+const user = await User.findById(userId);
+    const isAdmin = user && user.role === 'admin';
 
 // Get user bets for a week
 router.get('/user/:userId/week/:weekId', async (req, res) => {
