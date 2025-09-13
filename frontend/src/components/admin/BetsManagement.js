@@ -40,8 +40,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
         matchId: matchId,
         weekId: selectedWeek._id,
         team1Goals: parseInt(team1Goals) || 0,
-        team2Goals: parseInt(team2Goals) || 0,
-        isAdmin: true
+        team2Goals: parseInt(team2Goals) || 0
       };
 
       console.log('💾 שומר הימור:', betData);

@@ -34,8 +34,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
           matchId,
           weekId: selectedWeek._id,
           team1Goals: parseInt(team1Goals) || 0,
-          team2Goals: parseInt(team2Goals) || 0,
-          isAdmin: False
+          team2Goals: parseInt(team2Goals) || 0
         })
       });
 

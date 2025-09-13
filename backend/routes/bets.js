@@ -35,10 +35,11 @@ router.get('/week/:weekId', async (req, res) => {
 // Create or update bet
 router.post('/', async (req, res) => {
   try {
-    const { userId, matchId, weekId, team1Goals, team2Goals , isAdmin} = req.body;
+    const { userId, matchId, weekId, team1Goals, team2Goals } = req.body;
     
     // 🆕 בדוק אם המשתמש הוא אדמין
-
+    const user = await User.findById(userId);
+    const isAdmin = user && user.role === 'admin';
     
     console.log(`🔍 בדיקת הרשאות: משתמש ${user?.name}, תפקיד: ${user?.role}, אדמין: ${isAdmin}`);
     
@@ -126,14 +127,14 @@ router.patch('/:id', async (req, res) => {
     
     const week = existingBet.weekId;
     const user = existingBet.userId;
-    const isAdmin = existingBet.isAdmin;
+    const isAdmin = user && user.role === 'admin';
     
     console.log(`🔍 עדכון הימור: משתמש ${user?.name}, תפקיד: ${user?.role}, אדמין: ${isAdmin}`);
     
     // 🆕 אדמין מחורג מכל בדיקות הנעילה
     if (!isAdmin) {
       // בדיקות נעילה זהות
-      if (week.locked && !isAdmin) {
+      if (week.locked) {
         console.log(`🔒 Bet update blocked - Week ${week.name} is locked (User is not admin)`);
         return res.status(400).json({ message: 'Betting is locked for this week' });
       }
