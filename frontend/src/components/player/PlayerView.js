@@ -4,6 +4,7 @@ import PlayerHeader from './PlayerHeader';
 import BettingInterface from './BettingInterface';
 import Leaderboard from './Leaderboard';
 import HistoryViewer from './HistoryViewer';
+import AllBetsViewer from './AllBetsViewer'; // ← הוספת הקומפוננטה החדשה
 
 function PlayerView({ user, onLogout }) {
   const [weeks, setWeeks] = useState([]);
@@ -132,6 +133,28 @@ function PlayerView({ user, onLogout }) {
     return userEntry ? userEntry.totalScore : 0;
   };
 
+  // פונקציה לבדיקה אם יש שבוע נעול לצפייה בהימורים של כולם
+  const getLockedWeekForAllBets = () => {
+    if (!weeks || weeks.length === 0) return null;
+    
+    // חפש שבוע שהוא פעיל ונעול או שעבר זמן הנעילה
+    const lockedWeek = weeks.find(w => {
+      if (!w || !w.active) return false;
+      
+      if (w.locked) return true;
+      
+      if (w.lockTime) {
+        const lockTime = new Date(w.lockTime);
+        const now = new Date();
+        return now >= lockTime;
+      }
+      
+      return false;
+    });
+    
+    return lockedWeek || null;
+  };
+
   if (loading) {
     return (
       <div style={{ 
@@ -192,6 +215,16 @@ function PlayerView({ user, onLogout }) {
             הימורים נוכחי
           </button>
           <button 
+            onClick={() => setActiveTab('allbets')}
+            className="btn"
+            style={{ 
+              backgroundColor: activeTab === 'allbets' ? '#007bff' : '#f8f9fa', 
+              color: activeTab === 'allbets' ? 'white' : '#333' 
+            }}
+          >
+            הימורי כולם
+          </button>
+          <button 
             onClick={() => setActiveTab('leaderboard')}
             className="btn"
             style={{ 
@@ -220,6 +253,14 @@ function PlayerView({ user, onLogout }) {
             bets={bets}
             user={user}
             onBetUpdate={handleBetUpdate}
+          />
+        )}
+
+        {activeTab === 'allbets' && (
+          <AllBetsViewer 
+            selectedWeek={getLockedWeekForAllBets()}
+            matches={getLockedWeekForAllBets() ? matches : []}
+            user={user}
           />
         )}
 
