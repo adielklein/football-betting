@@ -30,7 +30,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
           console.log('👑 Admin override: Allowing bet edit in locked week');
         } else {
           // זה לא אמור לקרות, אבל ביטחון כפול
-          alert('🔒 11השבוע נעול - לא ניתן לערוך הימורים');
+          alert('🔒 השבוע נעול - 2לא ניתן לערוך הימורים');
           return false;
         }
       }
@@ -62,7 +62,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
         // הודעות שגיאה ברורות יותר
         if (response.status === 400) {
           if (errorData.message.includes('locked')) {
-            alert('🔒 השבוע נעול - לא ניתן להמר יותר');
+            alert('🔒 השבוע נעול - 1לא ניתן להמר יותר');
           } else if (errorData.message.includes('expired')) {
             alert('⏰ זמן ההימורים הסתיים');
           } else if (errorData.message.includes('not active')) {
