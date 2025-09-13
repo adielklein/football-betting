@@ -37,22 +37,32 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
       }
 
       const betData = {
-        userId: playerId,
+        userId: playerId,  // מי ההימור שייך אליו
         matchId: matchId,
         weekId: selectedWeek._id,
         team1Goals: parseInt(team1Goals) || 0,
-        team2Goals: parseInt(team2Goals) || 0
+        team2Goals: parseInt(team2Goals) || 0,
+        requestedByUserId: user.id  // 🆕 מי ביקש את השינוי (האדמין הנוכחי)
       };
 
-      console.log('💾 שומר הימור:', betData);
+      // 🔍 DEBUG: בדיקה מה אכן נשלח
+      console.log('🔍 DEBUG - בדיקת שדות:');
+      console.log('playerId:', playerId);
+      console.log('user.id (admin):', user.id);
+      console.log('user.role:', user.role);
+      console.log('betData להיות נשלח:', JSON.stringify(betData, null, 2));
+
+      console.log('💾 שומר הימור:', { 
+        ...betData, 
+        adminRequesting: user.name 
+      });
 
       const response = await fetch(`${API_URL}/bets`, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          'X-Requested-By-User-Id': user.id  // 🆕 שלח את ה-admin ID ב-header
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(betData)
+        body: JSON.stringify(betData)  // עם requestedByUserId בתוך betData
       });
 
       if (response.ok) {
