@@ -4,8 +4,6 @@ const Match = require('../models/Match');
 const Week = require('../models/Week');
 const User = require('../models/User'); // 🆕 נוסף לבדיקת תפקיד משתמש
 const router = express.Router();
-const user = await User.findById(userId);
-    const isAdmin = user && user.role === 'admin';
 
 // Get user bets for a week
 router.get('/user/:userId/week/:weekId', async (req, res) => {
@@ -136,9 +134,9 @@ router.patch('/:id', async (req, res) => {
     // 🆕 אדמין מחורג מכל בדיקות הנעילה
     if (!isAdmin) {
       // בדיקות נעילה זהות
-      if (week.locked) {
+      if (week.locked && !isAdmin) {
         console.log(`🔒 Bet update blocked - Week ${week.name} is locked (User is not admin)`);
-        return res.status(400).json({ message: 'Betting is locked for this week' });
+        return res.status(400).json({ message: 'Betting is locked for this week1' });
       }
       
       if (week.lockTime && new Date() >= new Date(week.lockTime)) {
