@@ -30,7 +30,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
           console.log('👑 Admin override: Allowing bet edit in locked week');
         } else {
           // זה לא אמור לקרות, אבל ביטחון כפול
-          alert('🔒 השבוע נעול - לא ניתן לערוך הימורים');
+          alert('🔒 11השבוע נעול - לא ניתן לערוך הימורים');
           return false;
         }
       }
