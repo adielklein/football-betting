@@ -1,6 +1,6 @@
 import React from 'react';
 
-function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData }) {
+function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, user }) {
   
   const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000/api'
@@ -8,18 +8,29 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
   
   const saveBet = async (playerId, matchId, team1Goals, team2Goals) => {
     try {
-      // בדיקה לפני שליחה - האם השבוע נעול
-      if (!selectedWeek || selectedWeek.locked) {
-        alert('השבוע נעול - לא ניתן לעדכן הימורים');
+      // 🆕 בדיקה מוקדמת - רק אזהרה לאדמין, לא חסימה
+      if (!selectedWeek) {
+        alert('שגיאה: אין שבוע נבחר');
         return false;
       }
 
-      // בדיקה אם עבר זמן הנעילה
-      if (selectedWeek.lockTime) {
-        const lockTime = new Date(selectedWeek.lockTime);
-        const now = new Date();
-        if (now >= lockTime) {
-          alert('זמן ההימורים הסתיים לשבוע זה');
+      // 🆕 האדמין מקבל אזהרה אבל יכול להמשיך
+      const isCurrentUserAdmin = user && user.role === 'admin';
+      
+      if (selectedWeek.locked || (selectedWeek.lockTime && new Date() >= new Date(selectedWeek.lockTime))) {
+        if (isCurrentUserAdmin) {
+          const confirmMessage = '👑 אתה מתחבר כאדמין!\n\n' +
+            'השבוע נעול לשחקנים רגילים, אבל אתה יכול לערוך הימורים.\n' +
+            'האם אתה בטוח שרצית להמשיך?';
+          
+          if (!window.confirm(confirmMessage)) {
+            return false;
+          }
+          
+          console.log('👑 Admin override: Allowing bet edit in locked week');
+        } else {
+          // זה לא אמור לקרות, אבל ביטחון כפול
+          alert('🔒 השבוע נעול - לא ניתן לערוך הימורים');
           return false;
         }
       }
@@ -80,6 +91,31 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
     return names[league] || league;
   };
 
+  // 🆕 פונקציה לבדיקה אם יש להציג אזהרת נעילה
+  const getWeekStatusForAdmin = () => {
+    if (!selectedWeek) return null;
+    
+    const isLocked = selectedWeek.locked || (selectedWeek.lockTime && new Date() >= new Date(selectedWeek.lockTime));
+    const isCurrentUserAdmin = user && user.role === 'admin';
+    
+    if (isLocked && isCurrentUserAdmin) {
+      return {
+        type: 'admin-override',
+        message: '👑 מצב אדמין: השבוע נעול לשחקנים אבל אתה יכול לערוך'
+      };
+    } else if (isLocked) {
+      return {
+        type: 'locked',
+        message: '🔒 השבוע נעול - ניתן לצפות בהימורים אבל לא לערוך'
+      };
+    }
+    
+    return {
+      type: 'active',
+      message: '✅ ניתן לערוך הימורים'
+    };
+  };
+
   if (!selectedWeek) {
     return (
       <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
@@ -89,6 +125,8 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
     );
   }
 
+  const weekStatus = getWeekStatusForAdmin();
+  
   return (
     <div className="card">
       <h2>עריכת הימורים - {selectedWeek.name}</h2>
@@ -158,16 +196,20 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
         </div>
       </div>
 
-      {/* הודעת סטטוס השבוע */}
-      {selectedWeek && (
-        <div style={{ marginBottom: '1rem', padding: '1rem', borderRadius: '8px', 
-                      backgroundColor: selectedWeek.locked || (selectedWeek.lockTime && new Date() >= new Date(selectedWeek.lockTime)) 
-                        ? '#f8d7da' : '#d4edda',
-                      color: selectedWeek.locked || (selectedWeek.lockTime && new Date() >= new Date(selectedWeek.lockTime)) 
-                        ? '#721c24' : '#155724' }}>
-          {selectedWeek.locked ? '🔒 השבוע נעול - ניתן לצפות בהימורים אבל לא לערוך' :
-           (selectedWeek.lockTime && new Date() >= new Date(selectedWeek.lockTime)) ? '⏰ זמן ההימורים הסתיים' :
-           '✅ ניתן לערוך הימורים'}
+      {/* 🆕 הודעת סטטוס השבוע - מותאמת לאדמין */}
+      {weekStatus && (
+        <div style={{ 
+          marginBottom: '1rem', 
+          padding: '1rem', 
+          borderRadius: '8px',
+          backgroundColor: 
+            weekStatus.type === 'admin-override' ? '#fff3cd' :
+            weekStatus.type === 'locked' ? '#f8d7da' : '#d4edda',
+          color: 
+            weekStatus.type === 'admin-override' ? '#856404' :
+            weekStatus.type === 'locked' ? '#721c24' : '#155724'
+        }}>
+          {weekStatus.message}
         </div>
       )}
       
@@ -229,6 +271,10 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
                     {matches.map(match => {
                       const bet = playerBets.find(b => b && b.matchId && b.matchId._id === match._id);
                       
+                      // 🆕 האדמין יכול תמיד לערוך
+                      const isCurrentUserAdmin = user && user.role === 'admin';
+                      const canEdit = isCurrentUserAdmin || weekStatus?.type === 'active';
+                      
                       return (
                         <td key={match._id} style={{ 
                           padding: '12px', 
@@ -250,7 +296,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
                                   fontSize: '12px'
                                 }}
                                 placeholder="0"
-                                disabled={selectedWeek?.locked || (selectedWeek?.lockTime && new Date() >= new Date(selectedWeek.lockTime))}
+                                disabled={!canEdit}
                               />
                               <span style={{ margin: '0 4px', fontSize: '14px' }}>-</span>
                               <input
@@ -266,7 +312,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
                                   fontSize: '12px'
                                 }}
                                 placeholder="0"
-                                disabled={selectedWeek?.locked || (selectedWeek?.lockTime && new Date() >= new Date(selectedWeek.lockTime))}
+                                disabled={!canEdit}
                               />
                             </div>
                             <div style={{ fontSize: '9px', color: '#666', marginBottom: '4px' }}>
@@ -294,20 +340,20 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
                                   }, 1000);
                                 }
                               }}
-                              disabled={selectedWeek?.locked || (selectedWeek?.lockTime && new Date() >= new Date(selectedWeek.lockTime))}
+                              disabled={!canEdit}
                               style={{ 
                                 fontSize: '10px', 
                                 padding: '4px 8px',
-                                backgroundColor: selectedWeek?.locked || (selectedWeek?.lockTime && new Date() >= new Date(selectedWeek.lockTime)) 
-                                  ? '#6c757d' : '#007bff',
+                                backgroundColor: !canEdit ? '#6c757d' : 
+                                  (isCurrentUserAdmin && weekStatus?.type === 'admin-override') ? '#ffc107' : '#007bff',
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: '3px',
-                                cursor: selectedWeek?.locked || (selectedWeek?.lockTime && new Date() >= new Date(selectedWeek.lockTime)) 
-                                  ? 'not-allowed' : 'pointer'
+                                cursor: !canEdit ? 'not-allowed' : 'pointer'
                               }}
                             >
-                              {selectedWeek?.locked || (selectedWeek?.lockTime && new Date() >= new Date(selectedWeek.lockTime)) ? 'נעול' : 'שמור'}
+                              {!canEdit ? 'נעול' : 
+                               (isCurrentUserAdmin && weekStatus?.type === 'admin-override') ? '👑 שמור' : 'שמור'}
                             </button>
                           </div>
                           
