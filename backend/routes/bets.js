@@ -39,7 +39,7 @@ router.post('/', async (req, res) => {
     
     // 🆕 בדוק אם המשתמש הוא אדמין
     const user = await User.findById(userId);
-    const isAdmin = user && user.role === 'admin';
+    const isAdmin = user.role === 'admin';
     
     console.log(`🔍 בדיקת הרשאות: משתמש ${user?.name}, תפקיד: ${user?.role}, אדמין: ${isAdmin}`);
     
