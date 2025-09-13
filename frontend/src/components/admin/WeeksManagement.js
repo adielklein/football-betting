@@ -331,8 +331,9 @@ function WeeksManagement({
     if (!matchId) return;
     
     try {
-      console.log('שולח תוצאה:', { matchId, team1Goals, team2Goals });
+      console.log('🎯 מעדכן תוצאת משחק:', { matchId, team1Goals, team2Goals });
       
+      // שלב 1: עדכן תוצאת המשחק
       const matchResponse = await fetch(`${API_URL}/matches/${matchId}/result`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -347,8 +348,10 @@ function WeeksManagement({
       }
 
       const updatedMatch = await matchResponse.json();
-      console.log('תגובה מהשרת:', updatedMatch);
+      console.log('✅ תוצאת משחק עודכנה:', updatedMatch);
 
+      // שלב 2: חשב ניקוד מחדש לכל השחקנים
+      console.log('🧮 מחשב ניקוד מחדש לכל השחקנים...');
       const scoresResponse = await fetch(`${API_URL}/scores/calculate/${selectedWeek._id}`, {
         method: 'POST'
       });
@@ -357,13 +360,26 @@ function WeeksManagement({
         throw new Error(`שגיאה בחישוב ניקוד: ${scoresResponse.status}`);
       }
 
-      console.log('טוען נתונים מחדש...');
+      const scoresResult = await scoresResponse.json();
+      console.log('✅ ניקוד חושב מחדש:', scoresResult);
+
+      // שלב 3: טען נתונים מחדש
+      console.log('🔄 טוען נתונים מחדש...');
       await loadWeekData(selectedWeek._id);
       setEditingMatch({});
-      alert('תוצאה נשמרה וניקוד חושב מחדש!');
+
+      // הודעת הצלחה מפורטת
+      alert(`✅ תוצאה נשמרה בהצלחה!
+
+🎯 תוצאה: ${team1Goals}-${team2Goals}
+🧮 ניקוד חושב מחדש לכל השחקנים
+📊 לוח התוצאות עודכן אוטומטית
+
+השחקנים יראו את העדכון בפעם הבאה שיכנסו לאפליקציה.`);
+
     } catch (error) {
-      console.error('שגיאה בעדכון תוצאה:', error);
-      alert('שגיאה בעדכון התוצאה');
+      console.error('❌ שגיאה בעדכון תוצאה:', error);
+      alert('❌ שגיאה בעדכון התוצאה: ' + error.message);
     }
   };
 

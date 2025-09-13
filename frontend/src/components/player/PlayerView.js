@@ -4,7 +4,7 @@ import PlayerHeader from './PlayerHeader';
 import BettingInterface from './BettingInterface';
 import Leaderboard from './Leaderboard';
 import HistoryViewer from './HistoryViewer';
-import AllBetsViewer from './AllBetsViewer'; // ← הוספת הקומפוננטה החדשה
+import AllBetsViewer from './AllBetsViewer';
 
 function PlayerView({ user, onLogout }) {
   const [weeks, setWeeks] = useState([]);
@@ -116,43 +116,31 @@ function PlayerView({ user, onLogout }) {
     }
   };
 
-  const handleBetUpdate = async () => {
-    if (selectedWeek && selectedWeek._id) {
-      await loadWeekData(selectedWeek._id);
+  // פונקציה לרענון דירוגים - תיקרא מעדכון תוצאות
+  const refreshLeaderboard = async () => {
+    try {
       const leaderboardResponse = await fetch(`${API_URL}/scores/leaderboard`);
       const leaderData = await leaderboardResponse.json();
       const playersOnly = leaderData.filter(entry => 
         entry.user && entry.user.role !== 'admin'
       );
       setLeaderboard(playersOnly);
+      console.log('✅ לוח התוצאות רוענן');
+    } catch (error) {
+      console.error('Error refreshing leaderboard:', error);
+    }
+  };
+
+  const handleBetUpdate = async () => {
+    if (selectedWeek && selectedWeek._id) {
+      await loadWeekData(selectedWeek._id);
+      await refreshLeaderboard();
     }
   };
 
   const getUserTotalScore = () => {
     const userEntry = leaderboard.find(entry => entry.user._id === user.id);
     return userEntry ? userEntry.totalScore : 0;
-  };
-
-  // פונקציה לבדיקה אם יש שבוע נעול לצפייה בהימורים של כולם
-  const getLockedWeekForAllBets = () => {
-    if (!weeks || weeks.length === 0) return null;
-    
-    // חפש שבוע שהוא פעיל ונעול או שעבר זמן הנעילה
-    const lockedWeek = weeks.find(w => {
-      if (!w || !w.active) return false;
-      
-      if (w.locked) return true;
-      
-      if (w.lockTime) {
-        const lockTime = new Date(w.lockTime);
-        const now = new Date();
-        return now >= lockTime;
-      }
-      
-      return false;
-    });
-    
-    return lockedWeek || null;
   };
 
   if (loading) {
@@ -258,8 +246,7 @@ function PlayerView({ user, onLogout }) {
 
         {activeTab === 'allbets' && (
           <AllBetsViewer 
-            selectedWeek={getLockedWeekForAllBets()}
-            matches={getLockedWeekForAllBets() ? matches : []}
+            weeks={weeks}
             user={user}
           />
         )}
