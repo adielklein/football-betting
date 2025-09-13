@@ -1,6 +1,6 @@
 import React from 'react';
 
-function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData }) {
+function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, user }) {
   
   const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000/api'
@@ -8,6 +8,33 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
   
   const saveBet = async (playerId, matchId, team1Goals, team2Goals) => {
     try {
+      // 🆕 בדיקה מוקדמת - רק אזהרה לאדמין, לא חסימה
+      if (!selectedWeek) {
+        alert('שגיאה: אין שבוע נבחר');
+        return false;
+      }
+
+      // 🆕 האדמין מקבל אזהרה אבל יכול להמשיך
+      const isCurrentUserAdmin = user && user.role === 'admin';
+      
+      if (selectedWeek.locked || (selectedWeek.lockTime && new Date() >= new Date(selectedWeek.lockTime))) {
+        if (isCurrentUserAdmin) {
+          const confirmMessage = '👑 אתה מתחבר כאדמין!\n\n' +
+            'השבוע נעול לשחקנים רגילים, אבל אתה יכול לערוך הימורים.\n' +
+            'האם אתה בטוח שרצית להמשיך?';
+          
+          if (!window.confirm(confirmMessage)) {
+            return false;
+          }
+          
+          console.log('👑 Admin override: Allowing bet edit in locked week');
+        } else {
+          // זה לא אמור לקרות, אבל ביטחון כפול
+          alert('🔒 השבוע נעול - לא ניתן לערוך הימורים');
+          return false;
+        }
+      }
+
       const betData = {
         userId: playerId,
         matchId: matchId,
@@ -16,7 +43,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
         team2Goals: parseInt(team2Goals) || 0
       };
 
-      console.log('שומר הימור:', betData);
+      console.log('💾 שומר הימור:', betData);
 
       const response = await fetch(`${API_URL}/bets`, {
         method: 'POST',
@@ -25,14 +52,32 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
       });
 
       if (response.ok) {
+        console.log('✅ הימור נשמר בהצלחה');
         await loadWeekData(selectedWeek._id);
         return true;
       } else {
-        console.error('שגיאה בשמירת הימור:', response.status);
+        const errorData = await response.json();
+        console.error('❌ שגיאה בשמירת הימור:', response.status, errorData);
+        
+        // הודעות שגיאה ברורות יותר
+        if (response.status === 400) {
+          if (errorData.message.includes('locked')) {
+            alert('🔒 השבוע נעול - לא ניתן להמר יותר');
+          } else if (errorData.message.includes('expired')) {
+            alert('⏰ זמן ההימורים הסתיים');
+          } else if (errorData.message.includes('not active')) {
+            alert('❌ השבוע לא פעיל');
+          } else {
+            alert('שגיאה בשמירת ההימור: ' + errorData.message);
+          }
+        } else {
+          alert('שגיאה בשמירת ההימור - קוד שגיאה: ' + response.status);
+        }
         return false;
       }
     } catch (error) {
-      console.error('שגיאה:', error);
+      console.error('❌ שגיאת רשת:', error);
+      alert('שגיאה ברשת - בדוק את החיבור לאינטרנט');
       return false;
     }
   };
@@ -46,6 +91,31 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
     return names[league] || league;
   };
 
+  // 🆕 פונקציה לבדיקה אם יש להציג אזהרת נעילה
+  const getWeekStatusForAdmin = () => {
+    if (!selectedWeek) return null;
+    
+    const isLocked = selectedWeek.locked || (selectedWeek.lockTime && new Date() >= new Date(selectedWeek.lockTime));
+    const isCurrentUserAdmin = user && user.role === 'admin';
+    
+    if (isLocked && isCurrentUserAdmin) {
+      return {
+        type: 'admin-override',
+        message: '👑 מצב אדמין: השבוע נעול לשחקנים אבל אתה יכול לערוך'
+      };
+    } else if (isLocked) {
+      return {
+        type: 'locked',
+        message: '🔒 השבוע נעול - ניתן לצפות בהימורים אבל לא לערוך'
+      };
+    }
+    
+    return {
+      type: 'active',
+      message: '✅ ניתן לערוך הימורים'
+    };
+  };
+
   if (!selectedWeek) {
     return (
       <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
@@ -55,6 +125,8 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
     );
   }
 
+  const weekStatus = getWeekStatusForAdmin();
+  
   return (
     <div className="card">
       <h2>עריכת הימורים - {selectedWeek.name}</h2>
@@ -63,9 +135,9 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
       <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
         <button 
           onClick={async () => {
-            console.log('רענון נתונים - מתחיל...');
+            console.log('🔄 רענון נתונים - מתחיל...');
             await loadWeekData(selectedWeek._id);
-            console.log('רענון נתונים - הושלם');
+            console.log('🔄 רענון נתונים - הושלם');
           }}
           className="btn"
           style={{ backgroundColor: '#28a745', color: 'white' }}
@@ -76,22 +148,22 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
         <button 
           onClick={async () => {
             try {
-              console.log('מחשב ניקוד מחדש לשבוע:', selectedWeek._id);
+              console.log('🧮 מחשב ניקוד מחדש לשבוע:', selectedWeek._id);
               const response = await fetch(`${API_URL}/scores/calculate/${selectedWeek._id}`, {
                 method: 'POST'
               });
               
               if (response.ok) {
-                console.log('חישוב ניקוד הושלם בהצלחה');
+                console.log('✅ חישוב ניקוד הושלם בהצלחה');
                 await loadWeekData(selectedWeek._id);
-                alert('ניקוד חושב מחדש בהצלחה!');
+                alert('✅ ניקוד חושב מחדש בהצלחה!');
               } else {
-                console.error('שגיאה בחישוב ניקוד:', response.status);
-                alert('שגיאה בחישוב ניקוד');
+                console.error('❌ שגיאה בחישוב ניקוד:', response.status);
+                alert('❌ שגיאה בחישוב ניקוד');
               }
             } catch (error) {
-              console.error('שגיאה בחישוב ניקוד:', error);
-              alert('שגיאה בחישוב ניקוד');
+              console.error('❌ שגיאה בחישוב ניקוד:', error);
+              alert('❌ שגיאה בחישוב ניקוד');
             }
           }}
           className="btn"
@@ -102,11 +174,16 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
 
         <button 
           onClick={() => {
-            console.log('=== פרטי שבוע ===');
+            console.log('=== 🔍 פרטי שבוע ===');
             console.log('שבוע:', selectedWeek);
             console.log('משחקים:', matches);
             console.log('הימורים:', allBets);
             console.log('משתמשים:', users);
+            console.log('נעול:', selectedWeek?.locked);
+            console.log('זמן נעילה:', selectedWeek?.lockTime);
+            if (selectedWeek?.lockTime) {
+              console.log('זמן נעילה מפורמט:', new Date(selectedWeek.lockTime).toLocaleString('he-IL'));
+            }
           }}
           className="btn"
           style={{ backgroundColor: '#6c757d', color: 'white' }}
@@ -118,6 +195,23 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
           משחקים: {matches.length} | הימורים: {allBets.length} | שחקנים: {users.filter(u => u.role !== 'admin').length}
         </div>
       </div>
+
+      {/* 🆕 הודעת סטטוס השבוע - מותאמת לאדמין */}
+      {weekStatus && (
+        <div style={{ 
+          marginBottom: '1rem', 
+          padding: '1rem', 
+          borderRadius: '8px',
+          backgroundColor: 
+            weekStatus.type === 'admin-override' ? '#fff3cd' :
+            weekStatus.type === 'locked' ? '#f8d7da' : '#d4edda',
+          color: 
+            weekStatus.type === 'admin-override' ? '#856404' :
+            weekStatus.type === 'locked' ? '#721c24' : '#155724'
+        }}>
+          {weekStatus.message}
+        </div>
+      )}
       
       {matches.length === 0 ? (
         <p style={{ textAlign: 'center', color: '#666', padding: '2rem' }}>
@@ -153,7 +247,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
                         fontSize: '11px',
                         fontWeight: 'bold'
                       }}>
-                        תוצאה: {match.result.team2Goals}-{match.result.team1Goals}
+                        תוצאה: {match.result.team1Goals}-{match.result.team2Goals}
                       </div>
                     )}
                   </th>
@@ -177,6 +271,10 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
                     {matches.map(match => {
                       const bet = playerBets.find(b => b && b.matchId && b.matchId._id === match._id);
                       
+                      // 🆕 האדמין יכול תמיד לערוך
+                      const isCurrentUserAdmin = user && user.role === 'admin';
+                      const canEdit = isCurrentUserAdmin || weekStatus?.type === 'active';
+                      
                       return (
                         <td key={match._id} style={{ 
                           padding: '12px', 
@@ -198,6 +296,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
                                   fontSize: '12px'
                                 }}
                                 placeholder="0"
+                                disabled={!canEdit}
                               />
                               <span style={{ margin: '0 4px', fontSize: '14px' }}>-</span>
                               <input
@@ -213,6 +312,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
                                   fontSize: '12px'
                                 }}
                                 placeholder="0"
+                                disabled={!canEdit}
                               />
                             </div>
                             <div style={{ fontSize: '9px', color: '#666', marginBottom: '4px' }}>
@@ -238,21 +338,22 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
                                     team1Input.style.backgroundColor = '';
                                     team2Input.style.backgroundColor = '';
                                   }, 1000);
-                                } else {
-                                  alert('שגיאה בשמירת הימור');
                                 }
                               }}
+                              disabled={!canEdit}
                               style={{ 
                                 fontSize: '10px', 
                                 padding: '4px 8px',
-                                backgroundColor: '#007bff',
+                                backgroundColor: !canEdit ? '#6c757d' : 
+                                  (isCurrentUserAdmin && weekStatus?.type === 'admin-override') ? '#ffc107' : '#007bff',
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: '3px',
-                                cursor: 'pointer'
+                                cursor: !canEdit ? 'not-allowed' : 'pointer'
                               }}
                             >
-                              שמור
+                              {!canEdit ? 'נעול' : 
+                               (isCurrentUserAdmin && weekStatus?.type === 'admin-override') ? '👑 שמור' : 'שמור'}
                             </button>
                           </div>
                           
@@ -260,7 +361,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
                           {bet && match.result && match.result.team1Goals !== undefined && (
                             <div style={{ fontSize: '11px', marginTop: '4px' }}>
                               <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>
-                                הימור: {bet.prediction.team2Goals}-{bet.prediction.team1Goals}
+                                הימור: {bet.prediction.team1Goals}-{bet.prediction.team2Goals}
                               </div>
                               <span 
                                 style={{
@@ -273,7 +374,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData })
                                   cursor: 'pointer'
                                 }}
                                 onClick={() => {
-                                  console.log('=== פרטי הימור ===');
+                                  console.log('=== 🎯 פרטי הימור ===');
                                   console.log('שחקן:', player.name);
                                   console.log('משחק:', `${match.team1} נגד ${match.team2}`);
                                   console.log('הימור שחקן:', `${bet.prediction.team1Goals}-${bet.prediction.team2Goals}`);
