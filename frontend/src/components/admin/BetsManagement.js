@@ -8,21 +8,17 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
   
   const saveBet = async (playerId, matchId, team1Goals, team2Goals) => {
     try {
-      // 🆕 בדיקה מוקדמת - רק אזהרה לאדמין, לא חסימה
       if (!selectedWeek) {
         alert('שגיאה: אין שבוע נבחר');
         return false;
       }
 
-      // 🆕 האדמין מקבל אזהרה אבל יכול להמשיך
       const isCurrentUserAdmin = user && user.role === 'admin';
       
       if (selectedWeek.locked || (selectedWeek.lockTime && new Date() >= new Date(selectedWeek.lockTime))) {
         if (isCurrentUserAdmin) {
           const playerName = users.find(u => u._id === playerId)?.name || 'משתמש לא ידוע';
-          const confirmMessage = '👑 אתה מתחבר כאדמין!\n\n' +
-            `השבוע נעול לשחקנים רגילים, אבל אתה יכול לערוך הימור של ${playerName}.\n` +
-            'האם אתה בטוח שרצית להמשיך?';
+          const confirmMessage = `👑 אתה מתחבר כאדמין!\n\nהשבוע נעול לשחקנים רגילים, אבל אתה יכול לערוך הימור של ${playerName}.\nהאם אתה בטוח שרצית להמשיך?`;
           
           if (!window.confirm(confirmMessage)) {
             return false;
@@ -30,39 +26,31 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
           
           console.log('👑 Admin override: Allowing bet edit in locked week for player:', playerName);
         } else {
-          // זה לא אמור לקרות, אבל ביטחון כפול
           alert('🔒 השבוע נעול - לא ניתן לערוך הימורים');
           return false;
         }
       }
 
+      // הוספת requestedByUserId לbetData
       const betData = {
-        userId: playerId,  // מי ההימור שייך אליו
+        userId: playerId,
         matchId: matchId,
         weekId: selectedWeek._id,
         team1Goals: parseInt(team1Goals) || 0,
         team2Goals: parseInt(team2Goals) || 0,
-        requestedByUserId: user.id  // 🆕 מי ביקש את השינוי (האדמין הנוכחי)
+        requestedByUserId: user.id  // זה החסר!
       };
 
-      // 🔍 DEBUG: בדיקה מה אכן נשלח
       console.log('🔍 DEBUG - בדיקת שדות:');
       console.log('playerId:', playerId);
       console.log('user.id (admin):', user.id);
       console.log('user.role:', user.role);
-      console.log('betData להיות נשלח:', JSON.stringify(betData, null, 2));
-
-      console.log('💾 שומר הימור:', { 
-        ...betData, 
-        adminRequesting: user.name 
-      });
+      console.log('betData:', JSON.stringify(betData, null, 2));
 
       const response = await fetch(`${API_URL}/bets`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(betData)  // עם requestedByUserId בתוך betData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(betData)
       });
 
       if (response.ok) {
@@ -73,7 +61,6 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
         const errorData = await response.json();
         console.error('❌ שגיאה בשמירת הימור:', response.status, errorData);
         
-        // הודעות שגיאה ברורות יותר
         if (response.status === 400) {
           if (errorData.message.includes('locked')) {
             alert('🔒 השבוע נעול - לא ניתן להמר יותר');
@@ -105,7 +92,6 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
     return names[league] || league;
   };
 
-  // 🆕 פונקציה לבדיקה אם יש להציג אזהרת נעילה
   const getWeekStatusForAdmin = () => {
     if (!selectedWeek) return null;
     
@@ -145,13 +131,12 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
     <div className="card">
       <h2>עריכת הימורים - {selectedWeek.name}</h2>
       
-      {/* כפתורי פקודה משופרים */}
       <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
         <button 
           onClick={async () => {
-            console.log('🔄 רענון נתונים - מתחיל...');
+            console.log('🔄 רענון נתונים...');
             await loadWeekData(selectedWeek._id);
-            console.log('🔄 רענון נתונים - הושלם');
+            console.log('🔄 רענון הושלם');
           }}
           className="btn"
           style={{ backgroundColor: '#28a745', color: 'white' }}
@@ -162,17 +147,17 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
         <button 
           onClick={async () => {
             try {
-              console.log('🧮 מחשב ניקוד מחדש לשבוע:', selectedWeek._id);
+              console.log('🧮 מחשב ניקוד מחדש...');
               const response = await fetch(`${API_URL}/scores/calculate/${selectedWeek._id}`, {
                 method: 'POST'
               });
               
               if (response.ok) {
-                console.log('✅ חישוב ניקוד הושלם בהצלחה');
+                console.log('✅ חישוב ניקוד הושלם');
                 await loadWeekData(selectedWeek._id);
                 alert('✅ ניקוד חושב מחדש בהצלחה!');
               } else {
-                console.error('❌ שגיאה בחישוב ניקוד:', response.status);
+                console.error('❌ שגיאה בחישוב ניקוד');
                 alert('❌ שגיאה בחישוב ניקוד');
               }
             } catch (error) {
@@ -185,32 +170,8 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
         >
           🧮 חשב ניקוד מחדש
         </button>
-
-        <button 
-          onClick={() => {
-            console.log('=== 🔍 פרטי שבוע ===');
-            console.log('שבוע:', selectedWeek);
-            console.log('משחקים:', matches);
-            console.log('הימורים:', allBets);
-            console.log('משתמשים:', users);
-            console.log('נעול:', selectedWeek?.locked);
-            console.log('זמן נעילה:', selectedWeek?.lockTime);
-            if (selectedWeek?.lockTime) {
-              console.log('זמן נעילה מפורמט:', new Date(selectedWeek.lockTime).toLocaleString('he-IL'));
-            }
-          }}
-          className="btn"
-          style={{ backgroundColor: '#6c757d', color: 'white' }}
-        >
-          🔍 הצג נתונים בקונסול
-        </button>
-        
-        <div style={{ fontSize: '14px', padding: '8px', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-          משחקים: {matches.length} | הימורים: {allBets.length} | שחקנים: {users.filter(u => u.role !== 'admin').length}
-        </div>
       </div>
 
-      {/* 🆕 הודעת סטטוס השבוע - מותאמת לאדמין */}
       {weekStatus && (
         <div style={{ 
           marginBottom: '1rem', 
@@ -285,7 +246,6 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                     {matches.map(match => {
                       const bet = playerBets.find(b => b && b.matchId && b.matchId._id === match._id);
                       
-                      // 🆕 האדמין יכול תמיד לערוך
                       const isCurrentUserAdmin = user && user.role === 'admin';
                       const canEdit = isCurrentUserAdmin || weekStatus?.type === 'active';
                       
@@ -371,7 +331,6 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                             </button>
                           </div>
                           
-                          {/* הצגת ניקוד עם אפשרות לחיצה לפרטים */}
                           {bet && match.result && match.result.team1Goals !== undefined && (
                             <div style={{ fontSize: '11px', marginTop: '4px' }}>
                               <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>
@@ -386,17 +345,6 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                                   backgroundColor: bet.points === 3 ? '#d4edda' : bet.points === 1 ? '#cce5ff' : '#f8d7da',
                                   color: bet.points === 3 ? '#155724' : bet.points === 1 ? '#0066cc' : '#721c24',
                                   cursor: 'pointer'
-                                }}
-                                onClick={() => {
-                                  console.log('=== 🎯 פרטי הימור ===');
-                                  console.log('שחקן:', player.name);
-                                  console.log('משחק:', `${match.team1} נגד ${match.team2}`);
-                                  console.log('הימור שחקן:', `${bet.prediction.team1Goals}-${bet.prediction.team2Goals}`);
-                                  console.log('תוצאה אמיתית:', `${match.result.team1Goals}-${match.result.team2Goals}`);
-                                  console.log('נקודות שקיבל:', bet.points);
-                                  console.log('ID הימור:', bet._id);
-                                  console.log('פרטי הימור מלא:', bet);
-                                  console.log('פרטי משחק מלא:', match);
                                 }}
                                 title="לחץ לפרטים בקונסול"
                               >
