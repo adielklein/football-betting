@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 
 function Leaderboard({ leaderboard, user }) {
   const [monthlyScores, setMonthlyScores] = useState([]);
-  const [weeklyScores, setWeeklyScores] = useState([]);
+  const [selectedWeekScores, setSelectedWeekScores] = useState([]);
+  const [availableWeeks, setAvailableWeeks] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(8); // אוגוסט כברירת מחדל
-  const [selectedSeason, setSelectedSeason] = useState('2024-25');
+  const [selectedSeason, setSelectedSeason] = useState('2025-26');
+  const [selectedWeekId, setSelectedWeekId] = useState('');
   const [loading, setLoading] = useState(false);
 
   const API_URL = window.location.hostname === 'localhost' 
@@ -15,12 +17,18 @@ function Leaderboard({ leaderboard, user }) {
     loadScoresData();
   }, [selectedMonth, selectedSeason]);
 
+  useEffect(() => {
+    if (selectedWeekId && availableWeeks.length > 0) {
+      loadWeekScores();
+    }
+  }, [selectedWeekId]);
+
   const loadScoresData = async () => {
     setLoading(true);
     try {
       console.log('🔍 טוען נתוני ניקוד לחודש:', selectedMonth, 'עונה:', selectedSeason);
       
-      // טען את כל הנתונים של הניקוד
+      // טען את כל הנתונים
       const [scoresResponse, weeksResponse] = await Promise.all([
         fetch(`${API_URL}/scores/detailed`),
         fetch(`${API_URL}/weeks`)
@@ -31,61 +39,66 @@ function Leaderboard({ leaderboard, user }) {
 
       if (scoresResponse.ok) {
         scoresData = await scoresResponse.json();
-        console.log('🔍 נתוני ניקוד שהתקבלו:', scoresData);
-      } else {
-        console.error('❌ שגיאה בטעינת נתוני ניקוד');
+        console.log('📊 נתוני ניקוד:', scoresData.slice(0, 3)); // הראה דוגמא
       }
       
       if (weeksResponse.ok) {
         weeksData = await weeksResponse.json();
-        console.log('🔍 נתוני שבועות שהתקבלו:', weeksData);
-      } else {
-        console.error('❌ שגיאה בטעינת נתוני שבועות');
+        console.log('📅 נתוני שבועות:', weeksData);
       }
 
-      // חשב ניקוד חודשי ושבועי
-      calculateScores(scoresData, weeksData);
+      // חישוב ניקוד חודשי ושבועות זמינים
+      calculateMonthlyScores(scoresData, weeksData);
       
     } catch (error) {
       console.error('Error loading scores data:', error);
-      // אם יש שגיאה, השתמש בנתונים הקיימים
       setMonthlyScores([]);
-      setWeeklyScores([]);
+      setAvailableWeeks([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const calculateScores = (scoresData, weeksData) => {
-    console.log('🔍 מחשב ניקוד לחודש:', selectedMonth, 'עונה:', selectedSeason);
+  const calculateMonthlyScores = (scoresData, weeksData) => {
+    console.log('🔍 מחשב ניקוד חודשי לחודש:', selectedMonth, 'עונה:', selectedSeason);
     
-    // קבץ לפי משתמש ועל פי חודש ועונה
-    const userScores = {};
-    const weeklyData = {};
-
     // סנן שבועות לפי החודש והעונה הנבחרים
     const monthWeeks = weeksData.filter(week => {
+      if (!week) return false;
+      
       const weekMonth = week.month || new Date(week.createdAt).getMonth() + 1;
-      const weekSeason = week.season || '2024-25';
+      const weekSeason = week.season || '2025-26'; // ברירת מחדל מעודכנת
       
-      console.log(`🔍 שבוע "${week.name}" - חודש: ${weekMonth}, עונה: ${weekSeason}, מחפש חודש: ${selectedMonth}, עונה: ${selectedSeason}`);
+      const matches = weekMonth === selectedMonth && weekSeason === selectedSeason;
       
-      return weekMonth === selectedMonth && weekSeason === selectedSeason;
+      if (matches) {
+        console.log(`✅ שבוע "${week.name}" נכלל - חודש: ${weekMonth}, עונה: ${weekSeason}`);
+      } else {
+        console.log(`❌ שבוע "${week.name}" לא נכלל - חודש: ${weekMonth}, עונה: ${weekSeason} (מחפש: ${selectedMonth}, ${selectedSeason})`);
+      }
+      
+      return matches;
     });
     
-    console.log('🔍 שבועות שנמצאו לחודש', selectedMonth, 'ועונה', selectedSeason, ':', monthWeeks);
+    console.log('🔍 שבועות שנמצאו לחודש:', monthWeeks.map(w => w.name));
+    setAvailableWeeks(monthWeeks);
+    
+    // קבע שבוע ראשון כברירת מחדל
+    if (monthWeeks.length > 0 && !selectedWeekId) {
+      setSelectedWeekId(monthWeeks[0]._id);
+    }
     
     const monthWeekIds = monthWeeks.map(week => week._id);
-
-    // עבור על כל הניקוד
+    
+    // חשב ניקוד חודשי
+    const userScores = {};
+    
     scoresData.forEach(score => {
       if (!score.userId || score.userId.role === 'admin') return;
       
       const userId = score.userId._id;
       const userName = score.userId.name;
-      const weekId = score.weekId._id || score.weekId; // תמיכה בשני פורמטים
-      
-      console.log('🔍 בודק ניקוד:', userName, 'שבוע ID:', weekId, 'ניקוד:', score.weeklyScore);
+      const weekId = score.weekId && score.weekId._id ? score.weekId._id : score.weekId;
       
       // אתחל משתמש אם לא קיים
       if (!userScores[userId]) {
@@ -98,57 +111,73 @@ function Leaderboard({ leaderboard, user }) {
 
       // אם השבוע שייך לחודש והעונה הנבחרים
       if (monthWeekIds.includes(weekId)) {
-        console.log('✅ שבוע שייך לחודש ועונה, מוסיף ניקוד:', score.weeklyScore);
+        console.log(`✅ מוסיף ניקוד ${score.weeklyScore} למשתמש ${userName} עבור שבוע ${weekId}`);
         userScores[userId].monthlyScore += score.weeklyScore || 0;
-        
-        // שמור נתונים שבועיים
-        if (!weeklyData[weekId]) {
-          const week = monthWeeks.find(w => w._id === weekId);
-          weeklyData[weekId] = {
-            weekName: week ? week.name : 'שבוע לא ידוע',
-            players: {}
-          };
-        }
-        
-        weeklyData[weekId].players[userId] = {
-          name: userName,
-          score: score.weeklyScore || 0
-        };
-      } else {
-        console.log('❌ שבוע לא שייך לחודש והעונה הנבחרים');
       }
     });
 
     console.log('🔍 ניקוד חודשי שחושב:', userScores);
 
-    // ממן לפי ניקוד
+    // ממן לפי ניקוד חודשי
     const monthlyArray = Object.values(userScores).sort((a, b) => b.monthlyScore - a.monthlyScore);
     setMonthlyScores(monthlyArray);
+  };
 
-    // ארגן נתונים שבועיים
-    const weeklyArray = Object.entries(weeklyData).map(([weekId, data]) => ({
-      weekId,
-      weekName: data.weekName,
-      players: Object.values(data.players).sort((a, b) => b.score - a.score)
-    }));
-    
-    console.log('🔍 נתונים שבועיים:', weeklyArray);
-    setWeeklyScores(weeklyArray);
+  const loadWeekScores = async () => {
+    if (!selectedWeekId) {
+      setSelectedWeekScores([]);
+      return;
+    }
+
+    try {
+      console.log('🔍 טוען ניקוד לשבוע:', selectedWeekId);
+      
+      const betsResponse = await fetch(`${API_URL}/bets/week/${selectedWeekId}`);
+      
+      if (!betsResponse.ok) {
+        console.error('❌ שגיאה בטעינת הימורי השבוע');
+        setSelectedWeekScores([]);
+        return;
+      }
+
+      const betsData = await betsResponse.json();
+      console.log('📊 הימורי השבוע:', betsData);
+      
+      // חשב ניקוד לפי שחקן
+      const weekScores = {};
+      
+      betsData.forEach(bet => {
+        if (!bet.userId || bet.userId.role === 'admin') return;
+        
+        const userId = bet.userId._id;
+        const userName = bet.userId.name;
+        const points = bet.points || 0;
+        
+        if (!weekScores[userId]) {
+          weekScores[userId] = {
+            name: userName,
+            score: 0
+          };
+        }
+        
+        weekScores[userId].score += points;
+      });
+      
+      const weekScoresArray = Object.values(weekScores).sort((a, b) => b.score - a.score);
+      console.log('🔍 ניקוד שבועי שחושב:', weekScoresArray);
+      setSelectedWeekScores(weekScoresArray);
+      
+    } catch (error) {
+      console.error('Error loading week scores:', error);
+      setSelectedWeekScores([]);
+    }
   };
 
   const months = [
-    { value: 1, label: 'ינואר' },
-    { value: 2, label: 'פברואר' },
-    { value: 3, label: 'מרץ' },
-    { value: 4, label: 'אפריל' },
-    { value: 5, label: 'מאי' },
-    { value: 6, label: 'יוני' },
-    { value: 7, label: 'יולי' },
-    { value: 8, label: 'אוגוסט' },
-    { value: 9, label: 'ספטמבר' },
-    { value: 10, label: 'אוקטובר' },
-    { value: 11, label: 'נובמבר' },
-    { value: 12, label: 'דצמבר' }
+    { value: 1, label: 'ינואר' }, { value: 2, label: 'פברואר' }, { value: 3, label: 'מרץ' },
+    { value: 4, label: 'אפריל' }, { value: 5, label: 'מאי' }, { value: 6, label: 'יוני' },
+    { value: 7, label: 'יולי' }, { value: 8, label: 'אוגוסט' }, { value: 9, label: 'ספטמבר' },
+    { value: 10, label: 'אוקטובר' }, { value: 11, label: 'נובמבר' }, { value: 12, label: 'דצמבר' }
   ];
 
   const seasons = [
@@ -159,7 +188,7 @@ function Leaderboard({ leaderboard, user }) {
   return (
     <div>
       {/* בחירת עונה וחודש */}
-      <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+      <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
         <div>
           <label style={{ fontSize: '14px', color: '#666', marginRight: '0.5rem' }}>עונה:</label>
           <select 
@@ -191,6 +220,24 @@ function Leaderboard({ leaderboard, user }) {
             ))}
           </select>
         </div>
+
+        {availableWeeks.length > 0 && (
+          <div>
+            <label style={{ fontSize: '14px', color: '#666', marginRight: '0.5rem' }}>שבוע:</label>
+            <select 
+              value={selectedWeekId} 
+              onChange={(e) => setSelectedWeekId(e.target.value)}
+              className="input"
+              style={{ width: '200px' }}
+            >
+              {availableWeeks.map(week => (
+                <option key={week._id} value={week._id}>
+                  {week.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {loading && (
@@ -199,9 +246,99 @@ function Leaderboard({ leaderboard, user }) {
         </div>
       )}
 
-      {/* לוח תוצאות כללי */}
+      {/* 1. דירוג חודשי - ראשון */}
       <div className="card" style={{ marginBottom: '2rem' }}>
-        <h2>דירוג כללי - {selectedSeason}</h2>
+        <h2>דירוג חודש {months.find(m => m.value === selectedMonth)?.label} - {selectedSeason}</h2>
+        {!loading && (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', border: '1px solid #ddd' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#e8f5e8' }}>
+                  <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid #ddd' }}>מקום</th>
+                  <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid #ddd' }}>שחקן</th>
+                  <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid #ddd' }}>ניקוד חודשי</th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthlyScores.map((player, index) => (
+                  <tr key={player.name} style={{ 
+                    backgroundColor: player.name === user.name ? '#e3f2fd' : 'transparent' 
+                  }}>
+                    <td style={{ padding: '12px' }}>
+                      {index === 0 && '🥇 '}
+                      {index === 1 && '🥈 '}
+                      {index === 2 && '🥉 '}
+                      {index + 1}
+                    </td>
+                    <td style={{ padding: '12px', fontWeight: '500' }}>
+                      {player.name}
+                      {player.name === user.name && <span style={{ color: '#1976d2', fontSize: '12px' }}> (אתה)</span>}
+                    </td>
+                    <td style={{ padding: '12px', fontWeight: 'bold', fontSize: '16px' }}>
+                      {player.monthlyScore}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        
+        {monthlyScores.length === 0 && !loading && (
+          <div style={{ textAlign: 'center', color: '#666', padding: '2rem' }}>
+            אין נתונים לחודש {months.find(m => m.value === selectedMonth)?.label} בעונת {selectedSeason}
+          </div>
+        )}
+      </div>
+
+      {/* 2. פירוט שבוע נבחר - שני */}
+      {availableWeeks.length > 0 && selectedWeekId && (
+        <div className="card" style={{ marginBottom: '2rem' }}>
+          <h2>פירוט שבוע: {availableWeeks.find(w => w._id === selectedWeekId)?.name}</h2>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#fff3cd' }}>
+                  <th style={{ padding: '8px', textAlign: 'right', fontSize: '14px' }}>מקום</th>
+                  <th style={{ padding: '8px', textAlign: 'right', fontSize: '14px' }}>שחקן</th>
+                  <th style={{ padding: '8px', textAlign: 'right', fontSize: '14px' }}>ניקוד השבוע</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedWeekScores.map((player, index) => (
+                  <tr key={player.name} style={{ 
+                    backgroundColor: player.name === user.name ? '#e3f2fd' : 'transparent' 
+                  }}>
+                    <td style={{ padding: '8px', fontSize: '14px' }}>
+                      {index === 0 && '🥇 '}
+                      {index === 1 && '🥈 '}
+                      {index === 2 && '🥉 '}
+                      {index + 1}
+                    </td>
+                    <td style={{ padding: '8px', fontWeight: '500', fontSize: '14px' }}>
+                      {player.name}
+                      {player.name === user.name && <span style={{ color: '#1976d2', fontSize: '11px' }}> (אתה)</span>}
+                    </td>
+                    <td style={{ padding: '8px', fontWeight: 'bold', fontSize: '14px' }}>
+                      {player.score}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          {selectedWeekScores.length === 0 && (
+            <div style={{ textAlign: 'center', color: '#666', padding: '1rem' }}>
+              אין נתוני ניקוד לשבוע זה
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 3. לוח תוצאות כללי - שלישי */}
+      <div className="card">
+        <h2>היר×•×× ××›××לי - {selectedSeason}</h2>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', border: '1px solid #ddd' }}>
             <thead>
@@ -237,109 +374,7 @@ function Leaderboard({ leaderboard, user }) {
         
         {leaderboard.length === 0 && (
           <div style={{ textAlign: 'center', color: '#666', padding: '2rem' }}>
-            אין נתוני דירוג עדיין
-          </div>
-        )}
-      </div>
-
-      {/* לוח תוצאות חודשי */}
-      <div className="card" style={{ marginBottom: '2rem' }}>
-        <h2>דירוג חודש {months.find(m => m.value === selectedMonth)?.label} - {selectedSeason}</h2>
-        {!loading && (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', border: '1px solid #ddd' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#e8f5e8' }}>
-                  <th style={{ padding: '12px', textAlign: 'right' }}>מקום</th>
-                  <th style={{ padding: '12px', textAlign: 'right' }}>שחקן</th>
-                  <th style={{ padding: '12px', textAlign: 'right' }}>ניקוד חודשי</th>
-                </tr>
-              </thead>
-              <tbody>
-                {monthlyScores.map((player, index) => (
-                  <tr key={player.name} style={{ 
-                    backgroundColor: player.name === user.name ? '#e3f2fd' : 'transparent' 
-                  }}>
-                    <td style={{ padding: '12px' }}>
-                      {index === 0 && '🥇 '}
-                      {index === 1 && '🥈 '}
-                      {index === 2 && '🥉 '}
-                      {index + 1}
-                    </td>
-                    <td style={{ padding: '12px', fontWeight: '500' }}>
-                      {player.name}
-                      {player.name === user.name && <span style={{ color: '#1976d2', fontSize: '12px' }}> (אתה)</span>}
-                    </td>
-                    <td style={{ padding: '12px', fontWeight: 'bold', fontSize: '16px' }}>
-                      {player.monthlyScore}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        
-        {monthlyScores.length === 0 && !loading && (
-          <div style={{ textAlign: 'center', color: '#666', padding: '2rem' }}>
-            אין נתונים לחודש {months.find(m => m.value === selectedMonth)?.label} בעונת {selectedSeason}
-          </div>
-        )}
-      </div>
-
-      {/* לוח תוצאות שבועי */}
-      <div className="card">
-        <h2>פירוט שבועות - {months.find(m => m.value === selectedMonth)?.label} {selectedSeason}</h2>
-        {!loading && weeklyScores.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {weeklyScores.map(week => (
-              <div key={week.weekId} style={{ 
-                border: '1px solid #ddd', 
-                borderRadius: '8px', 
-                padding: '1rem',
-                backgroundColor: '#f9f9f9'
-              }}>
-                <h4 style={{ margin: '0 0 1rem 0', color: '#333' }}>{week.weekName}</h4>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%' }}>
-                    <thead>
-                      <tr style={{ backgroundColor: '#fff3cd' }}>
-                        <th style={{ padding: '8px', textAlign: 'right', fontSize: '14px' }}>מקום</th>
-                        <th style={{ padding: '8px', textAlign: 'right', fontSize: '14px' }}>שחקן</th>
-                        <th style={{ padding: '8px', textAlign: 'right', fontSize: '14px' }}>ניקוד השבוע</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {week.players.map((player, index) => (
-                        <tr key={player.name} style={{ 
-                          backgroundColor: player.name === user.name ? '#e3f2fd' : 'transparent' 
-                        }}>
-                          <td style={{ padding: '8px', fontSize: '14px' }}>
-                            {index === 0 && '🥇 '}
-                            {index === 1 && '🥈 '}
-                            {index === 2 && '🥉 '}
-                            {index + 1}
-                          </td>
-                          <td style={{ padding: '8px', fontWeight: '500', fontSize: '14px' }}>
-                            {player.name}
-                            {player.name === user.name && <span style={{ color: '#1976d2', fontSize: '11px' }}> (אתה)</span>}
-                          </td>
-                          <td style={{ padding: '8px', fontWeight: 'bold', fontSize: '14px' }}>
-                            {player.score}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        
-        {weeklyScores.length === 0 && !loading && (
-          <div style={{ textAlign: 'center', color: '#666', padding: '2rem' }}>
-            אין שבועות לחודש {months.find(m => m.value === selectedMonth)?.label} בעונת {selectedSeason}
+            אין נתוני הירוץ עדיין
           </div>
         )}
       </div>
