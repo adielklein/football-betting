@@ -19,15 +19,16 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
       
       if (selectedWeek.locked || (selectedWeek.lockTime && new Date() >= new Date(selectedWeek.lockTime))) {
         if (isCurrentUserAdmin) {
+          const playerName = users.find(u => u._id === playerId)?.name || 'משתמש לא ידוע';
           const confirmMessage = '👑 אתה מתחבר כאדמין!\n\n' +
-            'השבוע נעול לשחקנים רגילים, אבל אתה יכול לערוך הימורים.\n' +
+            `השבוע נעול לשחקנים רגילים, אבל אתה יכול לערוך הימור של ${playerName}.\n` +
             'האם אתה בטוח שרצית להמשיך?';
           
           if (!window.confirm(confirmMessage)) {
             return false;
           }
           
-          console.log('👑 Admin override: Allowing bet edit in locked week');
+          console.log('👑 Admin override: Allowing bet edit in locked week for player:', playerName);
         } else {
           // זה לא אמור לקרות, אבל ביטחון כפול
           alert('🔒 השבוע נעול - לא ניתן לערוך הימורים');

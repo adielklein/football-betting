@@ -149,7 +149,7 @@ router.patch('/:id', async (req, res) => {
         return res.status(400).json({ message: 'This week is not active' });
       }
     } else {
-      console.log(`👑 Admin override: ${user.name} can update bets even if week is locked`);
+      console.log(`👑 Admin override: ${requesterUser.name} can update bets even if week is locked`);
     }
     
     const bet = await Bet.findByIdAndUpdate(
@@ -161,7 +161,7 @@ router.patch('/:id', async (req, res) => {
       { new: true }
     );
     
-    console.log(`✅ Bet update allowed for bet ${req.params.id}${isAdmin ? ' (ADMIN)' : ''}`);
+    console.log(`✅ Bet update allowed for bet ${req.params.id}${isAdmin ? ` (REQUESTED BY ADMIN: ${requesterUser.name})` : ''}`);
     res.json(bet);
   } catch (error) {
     console.error('Error in bet update:', error);
