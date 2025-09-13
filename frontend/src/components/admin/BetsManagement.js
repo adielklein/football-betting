@@ -40,7 +40,8 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
         matchId: matchId,
         weekId: selectedWeek._id,
         team1Goals: parseInt(team1Goals) || 0,
-        team2Goals: parseInt(team2Goals) || 0
+        team2Goals: parseInt(team2Goals) || 0,
+        isAdmin: true
       };
 
       console.log('💾 שומר הימור:', betData);
@@ -62,7 +63,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
         // הודעות שגיאה ברורות יותר
         if (response.status === 400) {
           if (errorData.message.includes('locked')) {
-            alert('🔒 השבוע נעול1 - לא ניתן להמר יותר');
+            alert('🔒 השבוע נעול - לא ניתן להמר יותר');
           } else if (errorData.message.includes('expired')) {
             alert('⏰ זמן ההימורים הסתיים');
           } else if (errorData.message.includes('not active')) {
