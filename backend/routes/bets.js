@@ -126,7 +126,7 @@ router.patch('/:id', async (req, res) => {
     
     const week = existingBet.weekId;
     const user = existingBet.userId;
-    const isAdmin = user && user.role === 'admin';
+    const isAdmin = existingBet.isAdmin;
     
     console.log(`🔍 עדכון הימור: משתמש ${user?.name}, תפקיד: ${user?.role}, אדמין: ${isAdmin}`);
     
