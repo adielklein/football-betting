@@ -35,13 +35,18 @@ router.get('/week/:weekId', async (req, res) => {
 // Create or update bet
 router.post('/', async (req, res) => {
   try {
-    const { userId, matchId, weekId, team1Goals, team2Goals } = req.body;
+    const { userId, matchId, weekId, team1Goals, team2Goals, requestedByUserId } = req.body;
     
-    // 🆕 בדוק אם המשתמש הוא אדמין
-    const user = await User.findById(userId);
-    const isAdmin = user && user.role === 'admin';
+    // 🆕 DEBUG: מה נתקבל בשרת
+    console.log('🔍 DEBUG: Request body:', JSON.stringify(req.body, null, 2));
     
-    console.log(`🔍 בדיקת הרשאות: משתמש ${user?.name}, תפקיד: ${user?.role}, אדמין: ${isAdmin}`);
+    // 🆕 בדוק מי ביקש את השינוי (אדמין או השחקן עצמו)
+    const requesterId = requestedByUserId || userId; // אם לא סופק requestedByUserId, השתמש ב-userId
+    const requesterUser = await User.findById(requesterId);
+    const isAdmin = requesterUser && requesterUser.role === 'admin';
+    
+    console.log(`🔍 בדיקת הרשאות: מבקש ${requesterUser?.name}, תפקיד: ${requesterUser?.role}, אדמין: ${isAdmin}`);
+    console.log(`🎯 הימור עבור שחקן: ${userId}, מבקש: ${requesterId}`);
     
     // בדיקה מלאה - עם חריגה לאדמין
     const week = await Week.findById(weekId);
@@ -86,7 +91,7 @@ router.post('/', async (req, res) => {
       }
     } else {
       // 🆕 הודעה לאדמין
-      console.log(`👑 Admin override: ${user.name} can edit bets even if week is locked`);
+      console.log(`👑 Admin override: ${requesterUser.name} can edit bets even if week is locked`);
     }
     
     const prediction = {
@@ -95,7 +100,7 @@ router.post('/', async (req, res) => {
     };
     
     // אם הגענו עד כאן - הדימור מורשה
-    console.log(`✅ Bet allowed for user ${userId} on week ${week.name}${isAdmin ? ' (ADMIN)' : ''}`);
+    console.log(`✅ Bet allowed for user ${userId} on week ${week.name}${isAdmin ? ` (REQUESTED BY ADMIN: ${requesterUser.name})` : ''}`);
     
     // Update existing bet or create new one
     const bet = await Bet.findOneAndUpdate(
@@ -114,22 +119,26 @@ router.post('/', async (req, res) => {
 // Update bet (עם חריגה לאדמין)
 router.patch('/:id', async (req, res) => {
   try {
-    const { prediction } = req.body;
+    const { prediction, requestedByUserId } = req.body;
     
     // מצא את הדימור הקיים
     const existingBet = await Bet.findById(req.params.id)
       .populate('weekId')
-      .populate('userId'); // 🆕 נוסף לבדיקת תפקיד
+      .populate('userId'); // לבדיקת תפקיד הבעל המקורי של ההימור
     
     if (!existingBet) {
       return res.status(404).json({ message: 'Bet not found' });
     }
     
     const week = existingBet.weekId;
-    const user = existingBet.userId;
-    const isAdmin = user && user.role === 'admin';
+    const betOwner = existingBet.userId;
     
-    console.log(`🔍 עדכון הימור: משתמש ${user?.name}, תפקיד: ${user?.role}, אדמין: ${isAdmin}`);
+    // 🆕 בדוק מי ביקש את השינוי
+    const requesterId = requestedByUserId || betOwner._id;
+    const requesterUser = await User.findById(requesterId);
+    const isAdmin = requesterUser && requesterUser.role === 'admin';
+    
+    console.log(`🔍 עדכון הימור: בעלים ${betOwner?.name}, מבקש ${requesterUser?.name}, תפקיד מבקש: ${requesterUser?.role}, אדמין: ${isAdmin}`);
     
     // 🆕 אדמין מחורג מכל בדיקות הנעילה
     if (!isAdmin) {
