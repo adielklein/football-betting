@@ -1,4 +1,35 @@
+const express = require('express');
+const Bet = require('../models/Bet');
+const Match = require('../models/Match');
+const Week = require('../models/Week');
+const router = express.Router();
 
+// Get user bets for a week
+router.get('/user/:userId/week/:weekId', async (req, res) => {
+  try {
+    const bets = await Bet.find({ 
+      userId: req.params.userId, 
+      weekId: req.params.weekId 
+    }).populate('matchId');
+    
+    res.json(bets);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get all bets for a week (admin view)
+router.get('/week/:weekId', async (req, res) => {
+  try {
+    const bets = await Bet.find({ weekId: req.params.weekId })
+      .populate('userId', 'name email')
+      .populate('matchId');
+    
+    res.json(bets);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 // Create or update bet
 router.post('/', async (req, res) => {
@@ -67,7 +98,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// תיקון גם לנתיב העדכון
+// Update bet (NEW)
 router.patch('/:id', async (req, res) => {
   try {
     const { prediction } = req.body;
@@ -113,3 +144,5 @@ router.patch('/:id', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+module.exports = router;
