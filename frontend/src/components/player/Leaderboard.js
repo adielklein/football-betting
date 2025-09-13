@@ -338,7 +338,7 @@ function Leaderboard({ leaderboard, user }) {
 
       {/* 3. לוח תוצאות כללי - שלישי */}
       <div className="card">
-        <h2>היר×•×× ××›××לי - {selectedSeason}</h2>
+        <h2>דירוג כללי - {selectedSeason}</h2>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', border: '1px solid #ddd' }}>
             <thead>
