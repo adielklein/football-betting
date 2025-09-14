@@ -4,7 +4,7 @@ function Leaderboard({ leaderboard, user }) {
   const [monthlyScores, setMonthlyScores] = useState([]);
   const [selectedWeekScores, setSelectedWeekScores] = useState([]);
   const [availableWeeks, setAvailableWeeks] = useState([]);
-  const [selectedMonth, setSelectedMonth] = useState(8); // אוגוסט כברירת מחדל
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // ✅ החודש הנוכחי במקום אוגוסט קבוע
   const [selectedSeason, setSelectedSeason] = useState('2025-26');
   const [selectedWeekId, setSelectedWeekId] = useState('');
   const [loading, setLoading] = useState(false);
@@ -83,9 +83,15 @@ function Leaderboard({ leaderboard, user }) {
     console.log('🔍 שבועות שנמצאו לחודש:', monthWeeks.map(w => w.name));
     setAvailableWeeks(monthWeeks);
     
-    // קבע שבוע ראשון כברירת מחדל
+    // ✅ קבע שבוע ראשון כברירת מחדל רק אם יש שבועות ואין שבוע נבחר כבר
     if (monthWeeks.length > 0 && !selectedWeekId) {
+      console.log('🎯 קובע שבוע ראשון כברירת מחדל:', monthWeeks[0].name);
       setSelectedWeekId(monthWeeks[0]._id);
+    } else if (monthWeeks.length === 0) {
+      // אם אין שבועות לחודש הזה, נקה את הבחירה
+      console.log('🧹 אין שבועות לחודש הזה, מנקה בחירה');
+      setSelectedWeekId('');
+      setSelectedWeekScores([]);
     }
     
     const monthWeekIds = monthWeeks.map(week => week._id);
@@ -187,7 +193,7 @@ function Leaderboard({ leaderboard, user }) {
 
   return (
     <div>
-      {/* בחירת עונה וחודש */}
+      {/* ✅ בחירת עונה וחודש - ללא בחירת שבוע */}
       <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
         <div>
           <label style={{ fontSize: '14px', color: '#666', marginRight: '0.5rem' }}>עונה:</label>
@@ -209,7 +215,11 @@ function Leaderboard({ leaderboard, user }) {
           <label style={{ fontSize: '14px', color: '#666', marginRight: '0.5rem' }}>חודש:</label>
           <select 
             value={selectedMonth} 
-            onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+            onChange={(e) => {
+              setSelectedMonth(parseInt(e.target.value));
+              // ✅ כשמשנים חודש, נקה את בחירת השבוע כדי שיבחר אוטומטית
+              setSelectedWeekId('');
+            }}
             className="input"
             style={{ width: '150px' }}
           >
@@ -220,24 +230,6 @@ function Leaderboard({ leaderboard, user }) {
             ))}
           </select>
         </div>
-
-        {availableWeeks.length > 0 && (
-          <div>
-            <label style={{ fontSize: '14px', color: '#666', marginRight: '0.5rem' }}>שבוע:</label>
-            <select 
-              value={selectedWeekId} 
-              onChange={(e) => setSelectedWeekId(e.target.value)}
-              className="input"
-              style={{ width: '200px' }}
-            >
-              {availableWeeks.map(week => (
-                <option key={week._id} value={week._id}>
-                  {week.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
       </div>
 
       {loading && (
@@ -246,9 +238,9 @@ function Leaderboard({ leaderboard, user }) {
         </div>
       )}
 
-      {/* 1. דירוג חודשי - ראשון */}
+      {/* 1. הירוג חודשי - ראשון */}
       <div className="card" style={{ marginBottom: '2rem' }}>
-        <h2>דירוג חודש {months.find(m => m.value === selectedMonth)?.label} - {selectedSeason}</h2>
+        <h2>הירוג חודש {months.find(m => m.value === selectedMonth)?.label} - {selectedSeason}</h2>
         {!loading && (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', border: '1px solid #ddd' }}>
@@ -291,44 +283,65 @@ function Leaderboard({ leaderboard, user }) {
         )}
       </div>
 
-      {/* 2. פירוט שבוע נבחר - שני */}
-      {availableWeeks.length > 0 && selectedWeekId && (
+      {/* 2. ✅ פירוט שבוע נבחר - שני, עם בחירת השבוע כאן */}
+      {availableWeeks.length > 0 && (
         <div className="card" style={{ marginBottom: '2rem' }}>
-          <h2>פירוט שבוע: {availableWeeks.find(w => w._id === selectedWeekId)?.name}</h2>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#fff3cd' }}>
-                  <th style={{ padding: '8px', textAlign: 'right', fontSize: '14px' }}>מקום</th>
-                  <th style={{ padding: '8px', textAlign: 'right', fontSize: '14px' }}>שחקן</th>
-                  <th style={{ padding: '8px', textAlign: 'right', fontSize: '14px' }}>ניקוד השבוע</th>
-                </tr>
-              </thead>
-              <tbody>
-                {selectedWeekScores.map((player, index) => (
-                  <tr key={player.name} style={{ 
-                    backgroundColor: player.name === user.name ? '#e3f2fd' : 'transparent' 
-                  }}>
-                    <td style={{ padding: '8px', fontSize: '14px' }}>
-                      {index === 0 && '🥇 '}
-                      {index === 1 && '🥈 '}
-                      {index === 2 && '🥉 '}
-                      {index + 1}
-                    </td>
-                    <td style={{ padding: '8px', fontWeight: '500', fontSize: '14px' }}>
-                      {player.name}
-                      {player.name === user.name && <span style={{ color: '#1976d2', fontSize: '11px' }}> (אתה)</span>}
-                    </td>
-                    <td style={{ padding: '8px', fontWeight: 'bold', fontSize: '14px' }}>
-                      {player.score}
-                    </td>
-                  </tr>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h2>פירוט שבוע</h2>
+            {/* ✅ בחירת שבוע מועברת לכאן */}
+            <div>
+              <label style={{ fontSize: '14px', color: '#666', marginRight: '0.5rem' }}>שבוע:</label>
+              <select 
+                value={selectedWeekId} 
+                onChange={(e) => setSelectedWeekId(e.target.value)}
+                className="input"
+                style={{ width: '200px' }}
+              >
+                {availableWeeks.map(week => (
+                  <option key={week._id} value={week._id}>
+                    {week.name}
+                  </option>
                 ))}
-              </tbody>
-            </table>
+              </select>
+            </div>
           </div>
+
+          {selectedWeekId && (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#fff3cd' }}>
+                    <th style={{ padding: '8px', textAlign: 'right', fontSize: '14px' }}>מקום</th>
+                    <th style={{ padding: '8px', textAlign: 'right', fontSize: '14px' }}>שחקן</th>
+                    <th style={{ padding: '8px', textAlign: 'right', fontSize: '14px' }}>ניקוד השבוע</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedWeekScores.map((player, index) => (
+                    <tr key={player.name} style={{ 
+                      backgroundColor: player.name === user.name ? '#e3f2fd' : 'transparent' 
+                    }}>
+                      <td style={{ padding: '8px', fontSize: '14px' }}>
+                        {index === 0 && '🥇 '}
+                        {index === 1 && '🥈 '}
+                        {index === 2 && '🥉 '}
+                        {index + 1}
+                      </td>
+                      <td style={{ padding: '8px', fontWeight: '500', fontSize: '14px' }}>
+                        {player.name}
+                        {player.name === user.name && <span style={{ color: '#1976d2', fontSize: '11px' }}> (אתה)</span>}
+                      </td>
+                      <td style={{ padding: '8px', fontWeight: 'bold', fontSize: '14px' }}>
+                        {player.score}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
           
-          {selectedWeekScores.length === 0 && (
+          {selectedWeekScores.length === 0 && selectedWeekId && (
             <div style={{ textAlign: 'center', color: '#666', padding: '1rem' }}>
               אין נתוני ניקוד לשבוע זה
             </div>
@@ -338,7 +351,7 @@ function Leaderboard({ leaderboard, user }) {
 
       {/* 3. לוח תוצאות כללי - שלישי */}
       <div className="card">
-        <h2>דירוג כללי - {selectedSeason}</h2>
+        <h2>הירוג כללי - {selectedSeason}</h2>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', border: '1px solid #ddd' }}>
             <thead>
