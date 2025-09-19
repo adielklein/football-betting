@@ -238,9 +238,9 @@ function Leaderboard({ leaderboard, user }) {
         </div>
       )}
 
-      {/* 1. הירוג חודשי - ראשון */}
+      {/* 1. דירוג חודשי - ראשון */}
       <div className="card" style={{ marginBottom: '2rem' }}>
-        <h2>הירוג חודש {months.find(m => m.value === selectedMonth)?.label} - {selectedSeason}</h2>
+        <h2>דירוג חודש {months.find(m => m.value === selectedMonth)?.label} - {selectedSeason}</h2>
         {!loading && (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', border: '1px solid #ddd' }}>
@@ -351,7 +351,7 @@ function Leaderboard({ leaderboard, user }) {
 
       {/* 3. לוח תוצאות כללי - שלישי */}
       <div className="card">
-        <h2>הירוג כללי - {selectedSeason}</h2>
+        <h2>דירוג כללי - {selectedSeason}</h2>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', border: '1px solid #ddd' }}>
             <thead>
@@ -387,7 +387,7 @@ function Leaderboard({ leaderboard, user }) {
         
         {leaderboard.length === 0 && (
           <div style={{ textAlign: 'center', color: '#666', padding: '2rem' }}>
-            אין נתוני הירוץ עדיין
+            אין נתוני דירוג עדיין
           </div>
         )}
       </div>
