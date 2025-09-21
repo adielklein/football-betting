@@ -248,7 +248,7 @@ function AllBetsViewer({ weeks, user }) {
                             fontSize: '11px',
                             fontWeight: 'bold'
                           }}>
-                            תוצאה: {match.result.team1Goals}-{match.result.team2Goals}
+                            תוצאה: {match.result.team2Goals}-{match.result.team1Goals}
                           </div>
                         )}
                       </th>
@@ -303,7 +303,7 @@ function AllBetsViewer({ weeks, user }) {
                                     fontWeight: 'bold',
                                     color: '#333'
                                   }}>
-                                    {bet.prediction.team1Goals}-{bet.prediction.team2Goals}
+                                    {bet.prediction.team2Goals}-{bet.prediction.team1Goals}
                                   </div>
                                 ) : (
                                   <div style={{ color: '#999', fontSize: '12px' }}>לא הימר</div>
