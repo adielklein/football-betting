@@ -1,13 +1,23 @@
 import React, { useState } from 'react';
+import { getThemesByCategory, getTheme } from '../../themes'; // 🆕 יבוא ערכות הנושא
 
 function UsersManagement({ users, loadData, user }) {
-  const [newUser, setNewUser] = useState({ name: '', username: '', password: '', role: 'player' });
+  const [newUser, setNewUser] = useState({ 
+    name: '', 
+    username: '', 
+    password: '', 
+    role: 'player',
+    theme: 'default' // 🆕 ערכת נושא בסיסית
+  });
   const [editingUser, setEditingUser] = useState(null);
   const [editForm, setEditForm] = useState({});
 
   const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
+
+  // 🆕 קבלת ערכות נושא מקובצות לפי קטגוריה
+  const themeCategories = getThemesByCategory();
 
   const handleAddUser = async () => {
     if (!newUser.name || !newUser.username || !newUser.password) {
@@ -19,11 +29,17 @@ function UsersManagement({ users, loadData, user }) {
       const response = await fetch(`${API_URL}/auth/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUser)
+        body: JSON.stringify(newUser) // כולל theme
       });
 
       if (response.ok) {
-        setNewUser({ name: '', username: '', password: '', role: 'player' });
+        setNewUser({ 
+          name: '', 
+          username: '', 
+          password: '', 
+          role: 'player',
+          theme: 'default' 
+        });
         await loadData();
         alert('משתמש חדש נוסף בהצלחה!');
       } else {
@@ -42,6 +58,7 @@ function UsersManagement({ users, loadData, user }) {
       name: userItem.name,
       username: userItem.username,
       role: userItem.role,
+      theme: userItem.theme || 'default', // 🆕 ערכת נושא נוכחית
       password: '' // סיסמה חדשה (אופציונלי)
     });
   };
@@ -57,7 +74,8 @@ function UsersManagement({ users, loadData, user }) {
       const updateData = {
         name: editForm.name,
         username: editForm.username,
-        role: editForm.role
+        role: editForm.role,
+        theme: editForm.theme // 🆕 ערכת נושא
       };
 
       if (editForm.password && editForm.password.trim()) {
@@ -111,12 +129,52 @@ function UsersManagement({ users, loadData, user }) {
     }
   };
 
+  // 🆕 רכיב בחירת ערכת נושא
+  const ThemeSelector = ({ value, onChange, style = {} }) => (
+    <select
+      value={value}
+      onChange={onChange}
+      className="input"
+      style={style}
+    >
+      <option value="default">בחר ערכת נושא</option>
+      {Object.entries(themeCategories).map(([categoryName, themes]) => (
+        <optgroup key={categoryName} label={categoryName}>
+          {themes.map(theme => (
+            <option key={theme.key} value={theme.key}>
+              {theme.icon} {theme.name}
+            </option>
+          ))}
+        </optgroup>
+      ))}
+    </select>
+  );
+
+  // 🆕 תצוגת ערכת נושא נוכחית
+  const ThemeDisplay = ({ themeName }) => {
+    const theme = getTheme(themeName);
+    return (
+      <span style={{
+        padding: '4px 8px',
+        backgroundColor: theme.colors.primary,
+        color: theme.colors.primary === '#ffffff' ? '#000' : '#fff',
+        borderRadius: '4px',
+        fontSize: '12px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px'
+      }}>
+        {theme.icon} {theme.name}
+      </span>
+    );
+  };
+
   return (
     <div>
       {/* הוסף משתמש חדש */}
       <div className="card">
         <h2>הוסף משתמש חדש</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto auto', gap: '1rem', alignItems: 'end' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1.5fr auto auto', gap: '1rem', alignItems: 'end' }}>
           <input
             type="text"
             placeholder="שם מלא"
@@ -137,6 +195,11 @@ function UsersManagement({ users, loadData, user }) {
             value={newUser.password}
             onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
             className="input"
+          />
+          {/* 🆕 בחירת ערכת נושא */}
+          <ThemeSelector
+            value={newUser.theme}
+            onChange={(e) => setNewUser(prev => ({ ...prev, theme: e.target.value }))}
           />
           <select
             value={newUser.role}
@@ -167,6 +230,7 @@ function UsersManagement({ users, loadData, user }) {
                 <tr style={{ backgroundColor: '#f8f9fa' }}>
                   <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid #ddd' }}>שם</th>
                   <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid #ddd' }}>שם משתמש</th>
+                  <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid #ddd' }}>ערכת נושא</th>
                   <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid #ddd' }}>תפקיד</th>
                   <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid #ddd' }}>סיסמה חדשה</th>
                   <th style={{ padding: '12px', textAlign: 'center', borderBottom: '2px solid #ddd' }}>פעולות</th>
@@ -207,6 +271,19 @@ function UsersManagement({ users, loadData, user }) {
                           />
                         ) : (
                           <span>{userItem.username || 'ללא שם משתמש'}</span>
+                        )}
+                      </td>
+
+                      {/* 🆕 ערכת נושא */}
+                      <td style={{ padding: '12px' }}>
+                        {isEditing ? (
+                          <ThemeSelector
+                            value={editForm.theme || 'default'}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, theme: e.target.value }))}
+                            style={{ width: '180px' }}
+                          />
+                        ) : (
+                          <ThemeDisplay themeName={userItem.theme || 'default'} />
                         )}
                       </td>
 
@@ -284,9 +361,9 @@ function UsersManagement({ users, loadData, user }) {
                                   onClick={() => handleDeleteUser(userItem._id, userItem.name)}
                                   className="btn"
                                   style={{ fontSize: '12px', padding: '4px 8px', backgroundColor: '#dc3545', color: 'white' }}
-                              >
-                                מחק
-                              </button>
+                                >
+                                  מחק
+                                </button>
                               )}
                             </>
                           )}

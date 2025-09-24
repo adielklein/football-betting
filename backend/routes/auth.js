@@ -19,7 +19,8 @@ const createDefaultAdmin = async () => {
       name: 'עדיאל קליין',
       username: 'adielklein',
       password: hashedPassword,
-      role: 'admin'
+      role: 'admin',
+      theme: 'default' // ערכת נושא בסיסית לאדמין
     });
 
     await adminUser.save();
@@ -63,7 +64,8 @@ router.post('/login', async (req, res) => {
         id: user._id,
         name: user.name,
         username: user.username,
-        role: user.role
+        role: user.role,
+        theme: user.theme || 'default' // 🆕 הוסף ערכת נושא לתגובה
       }
     });
 
@@ -77,7 +79,7 @@ router.post('/login', async (req, res) => {
 router.get('/users', async (req, res) => {
   try {
     console.log('Getting all users...');
-    const users = await User.find().select('name username role');
+    const users = await User.find().select('name username role theme'); // 🆕 הוסף theme לבחירה
     console.log('Found users:', users.length);
     res.json(users);
   } catch (error) {
@@ -90,7 +92,7 @@ router.get('/users', async (req, res) => {
 router.post('/users', async (req, res) => {
   try {
     console.log('Creating new user:', req.body);
-    const { name, username, password, role = 'player' } = req.body;
+    const { name, username, password, role = 'player', theme = 'default' } = req.body; // 🆕 הוסף theme
     
     if (!name || !username || !password) {
       return res.status(400).json({ message: 'שם, שם משתמש וסיסמה נדרשים' });
@@ -108,7 +110,8 @@ router.post('/users', async (req, res) => {
       name, 
       username, 
       password: hashedPassword,
-      role 
+      role,
+      theme // 🆕 שמירת ערכת הנושא
     });
     await user.save();
     
@@ -118,7 +121,8 @@ router.post('/users', async (req, res) => {
         id: user._id,
         name: user.name,
         username: user.username,
-        role: user.role
+        role: user.role,
+        theme: user.theme // 🆕 החזר ערכת נושא
       }
     });
   } catch (error) {
@@ -131,9 +135,14 @@ router.post('/users', async (req, res) => {
 router.patch('/users/:id', async (req, res) => {
   try {
     console.log(`Updating user ${req.params.id}:`, req.body);
-    const { name, username, role, password } = req.body;
+    const { name, username, role, password, theme } = req.body; // 🆕 הוסף theme
     
     const updateData = { name, username, role };
+    
+    // אם סופק theme, הוסף אותו
+    if (theme) {
+      updateData.theme = theme;
+    }
     
     // If password is provided, hash it
     if (password) {
@@ -144,7 +153,7 @@ router.patch('/users/:id', async (req, res) => {
       req.params.id,
       updateData,
       { new: true }
-    ).select('name username role');
+    ).select('name username role theme'); // 🆕 הוסף theme לבחירה
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -191,7 +200,8 @@ router.get('/check-admin', async (req, res) => {
       adminDetails: admin ? {
         name: admin.name,
         username: admin.username,
-        role: admin.role
+        role: admin.role,
+        theme: admin.theme // 🆕 הוסף theme לבדיקה
       } : null,
       totalUsers: await User.countDocuments()
     });
