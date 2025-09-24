@@ -1,133 +1,267 @@
-body {
+/* 🆕 CSS Variables לערכות נושא */
+:root {
+  /* ערכי ברירת מחדל */
+  --theme-primary: #007bff;
+  --theme-secondary: #6c757d;
+  --theme-accent: #28a745;
+  --theme-background: #ffffff;
+  --theme-header-bg: linear-gradient(135deg, #1e3a8a 0%, #059669 100%);
+  --theme-text: #333333;
+  --theme-text-light: #666666;
+  --theme-icon: "⚽";
+}
+
+* {
+  box-sizing: border-box;
   margin: 0;
+  padding: 0;
+}
+
+body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--theme-background); /* 🆕 צבע דינמי */
+  color: var(--theme-text); /* 🆕 צבע דינמי */
   direction: rtl;
-  text-align: right;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-}
-
-/* Layout */
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 0 20px;
 }
 
+/* 🆕 Header עם ערכת נושא */
 .header {
-  background: linear-gradient(135deg, #1e3a8a 0%, #059669 100%);
+  background: var(--theme-header-bg);
   color: white;
-  padding: 1rem 0;
-  margin-bottom: 2rem;
+  padding: 2rem 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: relative;
 }
 
-/* Cards */
-.card {
-  background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e5e5;
+.header::before {
+  content: var(--theme-icon);
+  position: absolute;
+  top: 50%;
+  left: 20px;
+  transform: translateY(-50%);
+  font-size: 2rem;
+  opacity: 0.3;
 }
 
-/* Buttons */
+.header h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.header p {
+  margin: 0.5rem 0 0 0;
+  opacity: 0.9;
+}
+
+/* כפתורים עם ערכות נושא */
 .btn {
+  display: inline-block;
   padding: 0.75rem 1.5rem;
+  margin: 0.25rem;
+  background-color: var(--theme-primary); /* 🆕 צבע דינמי */
+  color: white;
+  text-decoration: none;
   border: none;
-  border-radius: 5px;
+  border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
   transition: all 0.2s ease;
-  text-decoration: none;
-  display: inline-block;
-  text-align: center;
 }
 
 .btn:hover {
+  background-color: var(--theme-secondary); /* 🆕 צבע דינמי */
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.btn:disabled {
+  background-color: var(--theme-text-light);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .btn-primary {
-  background-color: #007bff;
-  color: white;
+  background-color: var(--theme-primary);
 }
 
 .btn-primary:hover {
-  background-color: #0056b3;
+  background-color: var(--theme-secondary);
 }
 
 .btn-success {
-  background-color: #28a745;
-  color: white;
+  background-color: var(--theme-accent);
 }
 
 .btn-success:hover {
-  background-color: #1e7e34;
+  background-color: var(--theme-primary);
 }
 
-.btn-danger {
-  background-color: #dc3545;
-  color: white;
+/* כרטיסים */
+.card {
+  background: var(--theme-background);
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: box-shadow 0.2s ease;
 }
 
-.btn-danger:hover {
-  background-color: #c82333;
+.card:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
-/* Inputs */
+.card h2 {
+  margin: 0 0 1rem 0;
+  color: var(--theme-text);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.card h3 {
+  margin: 0 0 0.75rem 0;
+  color: var(--theme-primary); /* 🆕 צבע דינמי */
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+/* שדות קלט */
 .input {
+  width: 100%;
   padding: 0.75rem;
-  border: 1px solid #ddd;
+  border: 2px solid #e0e0e0;
   border-radius: 4px;
   font-size: 14px;
-  width: 100%;
-  box-sizing: border-box;
+  transition: all 0.2s ease;
+  background-color: var(--theme-background);
+  color: var(--theme-text);
 }
 
 .input:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  border-color: var(--theme-primary); /* 🆕 צבע דינמי */
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
 }
 
-/* Tables */
-.table {
+.input::placeholder {
+  color: var(--theme-text-light);
+}
+
+/* טבלאות */
+table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 1rem;
 }
 
-.table th,
-.table td {
-  padding: 12px;
-  border-bottom: 1px solid #dee2e6;
-  text-align: right;
-}
-
-.table th {
+th {
   background-color: #f8f9fa;
+  color: var(--theme-text);
   font-weight: 600;
+  padding: 1rem;
+  text-align: right;
+  border-bottom: 2px solid var(--theme-primary); /* 🆕 צבע דינמי */
 }
 
-/* Responsive */
+td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #e0e0e0;
+  color: var(--theme-text);
+}
+
+tr:hover {
+  background-color: #f8f9fa;
+}
+
+/* התראות */
+.alert {
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  border-left: 4px solid var(--theme-primary);
+}
+
+.alert-success {
+  background-color: #d4edda;
+  border-left-color: var(--theme-accent);
+  color: #155724;
+}
+
+.alert-error {
+  background-color: #f8d7da;
+  border-left-color: #dc3545;
+  color: #721c24;
+}
+
+.alert-warning {
+  background-color: #fff3cd;
+  border-left-color: #ffc107;
+  color: #856404;
+}
+
+/* עיצוב מיוחד לערכות נושא */
+.theme-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background-color: var(--theme-primary);
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
   .container {
-    padding: 0.5rem;
+    padding: 0 15px;
+  }
+  
+  .header {
+    padding: 1.5rem 0;
+  }
+  
+  .header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .card {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .btn {
+    padding: 0.6rem 1.2rem;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header h1 {
+    font-size: 1.25rem;
   }
   
   .card {
     padding: 1rem;
-    margin-bottom: 1rem;
   }
   
   .btn {
@@ -136,45 +270,27 @@ code {
   }
 }
 
-/* תיקון מיקום הודעות וחלונות קופצים */
-.swal2-container {
-  z-index: 10000 !important;
+/* אנימציות */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.swal2-popup {
-  font-family: inherit !important;
-  direction: rtl !important;
+.fade-in {
+  animation: fadeIn 0.3s ease;
 }
 
-/* תיקון כללי לכל החלונות הקופצים */
-div[role="dialog"],
-div[class*="dialog"],
-div[class*="modal"],
-div[class*="popup"] {
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  z-index: 9999 !important;
-  max-width: 90vw !important;
-  max-height: 90vh !important;
-}
-
-/* תיקון עבור הודעות הדפדפן */
-div[style*="position: fixed"] {
-  z-index: 10000 !important;
-}
-
-/* תיקון עבור alert ו-confirm */
-.browser-alert,
-.browser-confirm {
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  z-index: 10001 !important;
-  background: white !important;
-  padding: 20px !important;
-  border-radius: 8px !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+/* מצב כהה אוטומטי (אופציונלי) */
+@media (prefers-color-scheme: dark) {
+  .auto-dark-mode {
+    --theme-background: #1a1a1a;
+    --theme-text: #ffffff;
+    --theme-text-light: #cccccc;
+  }
 }

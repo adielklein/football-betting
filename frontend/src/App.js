@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
 import AdminView from './components/admin/AdminView';
 import PlayerView from './components/player/PlayerView';
+import ThemeProvider from './components/ThemeProvider'; // 🆕 ערכות נושא
 import './index.css';
 
 function App() {
@@ -14,10 +15,10 @@ function App() {
     if (savedUser) {
       try {
         const parsedUser = JSON.parse(savedUser);
-        console.log('משתמש נטען מהזכרון:', parsedUser.name);
+        console.log('✅ משתמש נטען מהזכרון:', parsedUser.name);
         setCurrentUser(parsedUser);
       } catch (error) {
-        console.error('שגיאה בטעינת משתמש:', error);
+        console.error('❌ שגיאה בטעינת משתמש:', error);
         localStorage.removeItem('football_betting_user');
       }
     }
@@ -25,7 +26,7 @@ function App() {
   }, []);
 
   const handleLogin = (user) => {
-    console.log('התחברות מוצלחת:', user.name, user.role);
+    console.log('✅ התחברות מוצלחת:', user.name, user.role);
     setCurrentUser(user);
     
     // שמור משתמש בLocalStorage
@@ -34,15 +35,15 @@ function App() {
 
   const handleLogout = async () => {
     try {
-      console.log('מתנתק...');
+      console.log('🚪 מתנתק...');
       
       // נקה את המשתמש מהזכרון המקומי
       localStorage.removeItem('football_betting_user');
       setCurrentUser(null);
       
-      console.log('התנתקות הושלמה');
+      console.log('✅ התנתקות הושלמה');
     } catch (error) {
-      console.error('שגיאה בהתנתקות:', error);
+      console.error('❌ שגיאה בהתנתקות:', error);
       // גם במקרה של שגיאה, נקה את המשתמש
       localStorage.removeItem('football_betting_user');
       setCurrentUser(null);
@@ -64,12 +65,12 @@ function App() {
           width: '40px',
           height: '40px',
           border: '4px solid #f3f3f3',
-          borderTop: '4px solid #007bff',
+          borderTop: '4px solid var(--theme-primary, #007bff)', // 🆕 צבע דינמי
           borderRadius: '50%',
           animation: 'spin 1s linear infinite',
           marginBottom: '1rem'
         }}></div>
-        <h2 style={{ color: '#666', fontSize: '1.2rem' }}>טוען...</h2>
+        <h2 style={{ color: 'var(--theme-text, #666)', fontSize: '1.2rem' }}>טוען...</h2> {/* 🆕 צבע דינמי */}
         
         <style>{`
           @keyframes spin {
@@ -81,15 +82,20 @@ function App() {
     );
   }
 
-  if (!currentUser) {
-    return <Login onLogin={handleLogin} />;
-  }
-
-  if (currentUser.role === 'admin') {
-    return <AdminView user={currentUser} onLogout={handleLogout} />;
-  }
-
-  return <PlayerView user={currentUser} onLogout={handleLogout} />;
+  // 🆕 עטיפת האפליקציה ב-ThemeProvider
+  return (
+    <ThemeProvider user={currentUser}>
+      <div className="App">
+        {!currentUser ? (
+          <Login onLogin={handleLogin} />
+        ) : currentUser.role === 'admin' ? (
+          <AdminView user={currentUser} onLogout={handleLogout} />
+        ) : (
+          <PlayerView user={currentUser} onLogout={handleLogout} />
+        )}
+      </div>
+    </ThemeProvider>
+  );
 }
 
 export default App;
