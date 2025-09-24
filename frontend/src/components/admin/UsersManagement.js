@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { getThemesByCategory, getTheme } from '../../themes'; // 🆕 יבוא ערכות הנושא
 
 function UsersManagement({ users, loadData, user }) {
   const [newUser, setNewUser] = useState({ 
@@ -16,7 +15,7 @@ function UsersManagement({ users, loadData, user }) {
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
 
-  // 🆕 ערכות נושא מקובצות (אם אין קובץ themes.js)
+  // 🆕 ערכות נושא מקובצות
   const getThemesByCategory = () => {
     return {
       'בסיסי': [
@@ -56,7 +55,22 @@ function UsersManagement({ users, loadData, user }) {
       barcelona: { name: 'ברצלונה', icon: '🔵', colors: { primary: '#A50044' } },
       real_madrid: { name: 'ריאל מדריד', icon: '👑', colors: { primary: '#ffffff' } },
       liverpool: { name: 'ליברפול', icon: '🐦', colors: { primary: '#C8102E' } },
-      manchester_united: { name: 'מנצ\'סטר יונייטד', icon: '👹', colors: { primary: '#DA020E' } }
+      manchester_united: { name: 'מנצ\'סטר יונייטד', icon: '👹', colors: { primary: '#DA020E' } },
+      manchester_city: { name: 'מנצ\'סטר סיטי', icon: '💙', colors: { primary: '#6CABDD' } },
+      chelsea: { name: 'צ\'לסי', icon: '🦁', colors: { primary: '#034694' } },
+      arsenal: { name: 'ארסנל', icon: '🔴', colors: { primary: '#EF0107' } },
+      tottenham: { name: 'טוטנהאם', icon: '🐓', colors: { primary: '#132257' } },
+      atletico_madrid: { name: 'אתלטיקו מדריד', icon: '🔺', colors: { primary: '#CE3524' } },
+      valencia: { name: 'ולנסיה', icon: '🦇', colors: { primary: '#FF6600' } },
+      sevilla: { name: 'סביליה', icon: '⚪', colors: { primary: '#D4001F' } },
+      brazil: { name: 'ברזיל', icon: '🇧🇷', colors: { primary: '#FEDF00' } },
+      argentina: { name: 'ארגנטינה', icon: '🇦🇷', colors: { primary: '#74ACDF' } },
+      germany: { name: 'גרמניה', icon: '🇩🇪', colors: { primary: '#000000' } },
+      france: { name: 'צרפת', icon: '🇫🇷', colors: { primary: '#0055A4' } },
+      italy: { name: 'איטליה', icon: '🇮🇹', colors: { primary: '#009246' } },
+      spain: { name: 'ספרד', icon: '🇪🇸', colors: { primary: '#AA151B' } },
+      england: { name: 'אנגליה', icon: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', colors: { primary: '#ffffff' } },
+      portugal: { name: 'פורטוגל', icon: '🇵🇹', colors: { primary: '#006600' } }
     };
     return themes[themeName] || themes.default;
   };
@@ -113,7 +127,7 @@ function UsersManagement({ users, loadData, user }) {
     setEditForm({});
   };
 
-  // 🆕 פונקציית saveEdit עם תיקון localStorage
+  // 🆕 פונקציית saveEdit עם תיקון localStorage ורענון נתונים
   const saveEdit = async (userId) => {
     try {
       // אם לא הוכנסה סיסמה חדשה, לא לשלוח אותה
@@ -137,6 +151,9 @@ function UsersManagement({ users, loadData, user }) {
       if (response.ok) {
         // 🆕 אם זה המשתמש הנוכחי, עדכן את localStorage ורענן הדף
         if (userId === user?.id) {
+          // 🔧 תיקון: עדכן נתונים לפני רענון הדף
+          await loadData();
+          
           const currentUser = JSON.parse(localStorage.getItem('football_betting_user'));
           currentUser.theme = editForm.theme;
           localStorage.setItem('football_betting_user', JSON.stringify(currentUser));
