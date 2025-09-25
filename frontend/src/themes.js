@@ -303,12 +303,12 @@ export const getThemesByCategory = () => {
   return categories;
 };
 
-// פונקציה להחלת ערכת נושא על הדף
+// פונקציה מעודכנת להחלת ערכת נושא - עם debug משופר
 export const applyTheme = (user) => {
   const themeName = user?.theme || 'default';
   const theme = getTheme(themeName);
   
-  console.log('🎨 מחיל ערכת נושא:', themeName, theme.name, theme.logoType);
+  console.log('🎨 מתחיל להחיל ערכת נושא:', themeName, theme.name, theme.logoType);
   
   const root = document.documentElement;
   root.style.setProperty('--theme-primary', theme.colors.primary);
@@ -321,31 +321,99 @@ export const applyTheme = (user) => {
   
   // טיפול בסמל - תמונה או אמוג'י
   const headerElements = document.querySelectorAll('.header');
+  console.log('🔍 מצא', headerElements.length, 'אלמנטים של header');
   
   if (theme.logoType === 'image') {
+    console.log('🖼️ מחיל תמונה:', theme.logo);
     root.style.setProperty('--theme-icon', '""');
     root.style.setProperty('--theme-icon-image', `url('${theme.logo}')`);
     
     // הוסף קלאס לתמונות
-    headerElements.forEach(header => {
+    headerElements.forEach((header, index) => {
+      console.log(`🎯 מוסיף has-image-logo לheader ${index}`);
       header.classList.add('has-image-logo');
     });
     
-    console.log('🖼️ מציג תמונה:', theme.logo);
+    console.log('✅ הוחל לוגו תמונה:', theme.logo);
   } else {
+    console.log('😀 מחיל אמוג\'י:', theme.logo);
     root.style.setProperty('--theme-icon', `"${theme.logo}"`);
     root.style.setProperty('--theme-icon-image', 'none');
     
     // הסר קלאס לתמונות
-    headerElements.forEach(header => {
+    headerElements.forEach((header, index) => {
+      console.log(`❌ מסיר has-image-logo מheader ${index}`);
       header.classList.remove('has-image-logo');
     });
     
-    console.log('😀 מציג אמוג\'י:', theme.logo);
+    console.log('✅ הוחל לוגו אמוג\'י:', theme.logo);
   }
+  
+  // 🔧 debug - בדוק מה בפועל קרה
+  setTimeout(() => {
+    const updatedHeaders = document.querySelectorAll('.header');
+    console.log('🔍 אחרי עדכון - מצא', updatedHeaders.length, 'headers');
+    updatedHeaders.forEach((header, index) => {
+      const hasImageClass = header.classList.contains('has-image-logo');
+      console.log(`📊 Header ${index}: has-image-logo = ${hasImageClass}`);
+    });
+    
+    const iconValue = root.style.getPropertyValue('--theme-icon');
+    const iconImageValue = root.style.getPropertyValue('--theme-icon-image');
+    console.log('📊 CSS Variables:', {
+      '--theme-icon': iconValue,
+      '--theme-icon-image': iconImageValue
+    });
+  }, 50);
   
   console.log('✅ ערכת נושא הוחלה:', theme.name);
 };
+
+// 🔧 פונקציות debug - הוסף בסוף קובץ themes.js (לפני הif של module.exports)
+
+// פונקציה לבדיקה מהירה מהקונסול
+export const debugTheme = () => {
+  const headers = document.querySelectorAll('.header');
+  const root = document.documentElement;
+  
+  console.log('🔍 Theme Debug Info:');
+  console.log('Headers found:', headers.length);
+  
+  headers.forEach((header, i) => {
+    console.log(`Header ${i}:`, {
+      hasImageLogo: header.classList.contains('has-image-logo'),
+      classes: Array.from(header.classList)
+    });
+  });
+  
+  console.log('CSS Variables:', {
+    '--theme-icon': root.style.getPropertyValue('--theme-icon'),
+    '--theme-icon-image': root.style.getPropertyValue('--theme-icon-image'),
+    '--theme-primary': root.style.getPropertyValue('--theme-primary')
+  });
+  
+  return 'Debug complete - check console logs above';
+};
+
+// פונקציה לרענון כפוי של ערכת נושא מהקונסול
+export const forceApplyTheme = () => {
+  const savedUser = localStorage.getItem('football_betting_user');
+  if (savedUser) {
+    const user = JSON.parse(savedUser);
+    console.log('🔄 Force applying theme for user:', user.name, user.theme);
+    applyTheme(user);
+    return 'Theme force applied!';
+  } else {
+    console.log('❌ No user found in localStorage');
+    return 'No user found';
+  }
+};
+
+// הוסף פונקציות לwindow לשימוש מהקונסול
+if (typeof window !== 'undefined') {
+  window.debugTheme = debugTheme;
+  window.forceApplyTheme = forceApplyTheme;
+}
 
 // אם זה Node.js (Backend)
 if (typeof module !== 'undefined' && module.exports) {
