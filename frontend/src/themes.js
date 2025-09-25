@@ -322,7 +322,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #DC143C 0%, #B22222 100%)'
     },
-    logo: 'https://images.seeklogo.com/logo-png/29/1/hapoel-tel-aviv-logo-png_seeklogo-292405.png',
+    logo: 'https://www.htafc.co.il/wp-content/uploads/2024/07/team-logo-hapoel-01.png',
     logoType: 'image',
     category: 'ליגת העל הישראלית'
   }
