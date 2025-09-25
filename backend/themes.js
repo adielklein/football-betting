@@ -81,7 +81,7 @@ const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #6CABDD 0%, #1C2C5B 100%)'
     },
-    logo: 'https://cdn.freebiesupply.com/logos/large/2x/manchester-city-fc-logo-png-transparent.png',
+    logo: 'https://football-logos.cc/logos/england/700x700/manchester-city.png',
     logoType: 'image',
     category: 'פרמיירליג'
   },
