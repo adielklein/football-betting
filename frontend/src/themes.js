@@ -308,7 +308,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #FFD700 0%, #0047AB 100%)'
     },
-    logo: 'https://logos-world.net/wp-content/uploads/2020/12/Maccabi-Tel-Aviv-Logo.png',
+    logo: 'https://maccabi.co.il/mtpic/logos/maccabi%20logo%20300.png',
     logoType: 'image',
     category: 'ליגת העל הישראלית'
   },
