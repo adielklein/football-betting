@@ -56,7 +56,7 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'שם משתמש או סיסמה שגויים' });
     }
 
-    console.log(`התחברות מוצלחת: ${user.name} (${user.role})`);
+    console.log(`התחברות מוצלחת: ${user.name} (${user.role}) - ערכת נושא: ${user.theme || 'default'}`);
 
     res.json({
       message: 'התחברות מוצלחת',
@@ -140,8 +140,9 @@ router.patch('/users/:id', async (req, res) => {
     const updateData = { name, username, role };
     
     // אם סופק theme, הוסף אותו
-    if (theme) {
+    if (theme !== undefined) {
       updateData.theme = theme;
+      console.log(`🎨 Updating theme to: ${theme}`);
     }
     
     // If password is provided, hash it

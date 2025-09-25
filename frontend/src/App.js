@@ -16,7 +16,13 @@ function App() {
       try {
         const parsedUser = JSON.parse(savedUser);
         console.log('✅ משתמש נטען מהזכרון:', parsedUser.name);
-        console.log('🎨 ערכת הנושא שלו:', parsedUser.theme);
+        console.log('🎨 ערכת הנושא שלו:', parsedUser.theme || 'default');
+        
+        // וודא שיש שדה theme
+        if (!parsedUser.theme) {
+          parsedUser.theme = 'default';
+          localStorage.setItem('football_betting_user', JSON.stringify(parsedUser));
+        }
         
         setCurrentUser(parsedUser);
         applyTheme(parsedUser); // 🎨 החל ערכת נושא
@@ -24,6 +30,7 @@ function App() {
       } catch (error) {
         console.error('❌ שגיאה בטעינת משתמש:', error);
         localStorage.removeItem('football_betting_user');
+        applyTheme(null); // החל ערכת בסיסית
       }
     } else {
       applyTheme(null); // החל ערכת בסיסית
@@ -33,7 +40,12 @@ function App() {
 
   const handleLogin = (user) => {
     console.log('✅ התחברות מוצלחת:', user.name);
-    console.log('🎨 ערכת נושא:', user.theme);
+    console.log('🎨 ערכת נושא:', user.theme || 'default');
+    
+    // וודא שיש שדה theme
+    if (!user.theme) {
+      user.theme = 'default';
+    }
     
     setCurrentUser(user);
     localStorage.setItem('football_betting_user', JSON.stringify(user));
@@ -51,6 +63,7 @@ function App() {
       console.error('❌ שגיאה בהתנתקות:', error);
       localStorage.removeItem('football_betting_user');
       setCurrentUser(null);
+      applyTheme(null); // החזר לערכת בסיסית
     }
   };
 

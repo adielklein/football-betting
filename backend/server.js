@@ -19,6 +19,41 @@ app.use(cors({
 
 app.use(express.json());
 
+// 🆕 Migration endpoint - להוספת שדה theme למשתמשים קיימים
+app.post('/api/migrate/add-theme-field', async (req, res) => {
+  try {
+    console.log('🔄 Starting theme field migration...');
+    
+    const User = require('./models/User');
+    
+    // עדכן רק משתמשים שאין להם שדה theme
+    const result = await User.updateMany(
+      { theme: { $exists: false } },
+      { $set: { theme: 'default' } }
+    );
+    
+    console.log(`✅ Updated ${result.modifiedCount} users with theme field`);
+    
+    // החזר את כל המשתמשים עם הtheme החדש
+    const allUsers = await User.find({}).select('name username role theme');
+    
+    res.json({
+      success: true,
+      message: `Migration completed successfully. Updated ${result.modifiedCount} users.`,
+      modifiedCount: result.modifiedCount,
+      users: allUsers
+    });
+    
+  } catch (error) {
+    console.error('❌ Migration error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Migration failed: ' + error.message,
+      error: error.message
+    });
+  }
+});
+
 // חיבור למונגו
 const connectMongoDB = async () => {
   try {
@@ -113,6 +148,7 @@ app.get('/', (req, res) => {
     authSystem: 'Username/Password',
     endpoints: {
       debug: '/api/debug',
+      migrate: '/api/migrate/add-theme-field',
       auth: '/api/auth/*',
       weeks: '/api/weeks/*',
       matches: '/api/matches/*',
@@ -128,4 +164,5 @@ app.listen(PORT, () => {
   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔒 Auth System: Username/Password`);
   console.log(`🔍 Debug URL: http://localhost:${PORT}/api/debug`);
+  console.log(`🔄 Migration URL: http://localhost:${PORT}/api/migrate/add-theme-field`);
 });

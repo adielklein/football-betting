@@ -10,7 +10,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #1e3a8a 0%, #059669 100%)'
     },
-    icon: '⚽',
+    logo: '⚽',
     category: 'בסיסי'
   },
 
@@ -24,7 +24,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #DA020E 0%, #FFE500 100%)'
     },
-    icon: '👹',
+    logo: '👹',
     category: 'פרמיירליג'
   },
 
@@ -37,7 +37,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #C8102E 0%, #F6EB61 100%)'
     },
-    icon: '🐦',
+    logo: '🐦',
     category: 'פרמיירליג'
   },
 
@@ -50,7 +50,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #034694 0%, #DBA111 100%)'
     },
-    icon: '🦁',
+    logo: '🦁',
     category: 'פרמיירליג'
   },
 
@@ -63,7 +63,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #EF0107 0%, #023474 100%)'
     },
-    icon: '🔴',
+    logo: '🔴',
     category: 'פרמיירליג'
   },
 
@@ -76,7 +76,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #6CABDD 0%, #1C2C5B 100%)'
     },
-    icon: '💙',
+    logo: '💙',
     category: 'פרמיירליג'
   },
 
@@ -89,7 +89,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #132257 0%, #ffffff 100%)'
     },
-    icon: '🐓',
+    logo: '🐓',
     category: 'פרמיירליג'
   },
 
@@ -103,7 +103,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #ffffff 0%, #FEBE10 100%)'
     },
-    icon: '👑',
+    logo: '👑',
     category: 'לה ליגה'
   },
 
@@ -116,7 +116,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #A50044 0%, #004D98 100%)'
     },
-    icon: '🔵',
+    logo: '🔵',
     category: 'לה ליגה'
   },
 
@@ -129,7 +129,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #CE3524 0%, #ffffff 100%)'
     },
-    icon: '🔺',
+    logo: '🔺',
     category: 'לה ליגה'
   },
 
@@ -142,7 +142,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #FF6600 0%, #000000 100%)'
     },
-    icon: '🦇',
+    logo: '🦇',
     category: 'לה ליגה'
   },
 
@@ -155,7 +155,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #D4001F 0%, #ffffff 100%)'
     },
-    icon: '⚪',
+    logo: '⚪',
     category: 'לה ליגה'
   },
 
@@ -169,7 +169,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #FEDF00 0%, #009B3A 100%)'
     },
-    icon: '🇧🇷',
+    logo: '🇧🇷',
     category: 'נבחרות'
   },
 
@@ -182,7 +182,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #74ACDF 0%, #ffffff 100%)'
     },
-    icon: '🇦🇷',
+    logo: '🇦🇷',
     category: 'נבחרות'
   },
 
@@ -195,7 +195,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #000000 0%, #DD0000 50%, #FFCE00 100%)'
     },
-    icon: '🇩🇪',
+    logo: '🇩🇪',
     category: 'נבחרות'
   },
 
@@ -208,7 +208,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #0055A4 0%, #EF4135 100%)'
     },
-    icon: '🇫🇷',
+    logo: '🇫🇷',
     category: 'נבחרות'
   },
 
@@ -221,7 +221,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #009246 0%, #CE2B37 100%)'
     },
-    icon: '🇮🇹',
+    logo: '🇮🇹',
     category: 'נבחרות'
   },
 
@@ -234,7 +234,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #AA151B 0%, #F1BF00 100%)'
     },
-    icon: '🇪🇸',
+    logo: '🇪🇸',
     category: 'נבחרות'
   },
 
@@ -247,7 +247,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #ffffff 0%, #CE1124 100%)'
     },
-    icon: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+    logo: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
     category: 'נבחרות'
   },
 
@@ -260,7 +260,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #006600 0%, #FF0000 100%)'
     },
-    icon: '🇵🇹',
+    logo: '🇵🇹',
     category: 'נבחרות'
   }
 };
@@ -288,7 +288,7 @@ export const applyTheme = (user) => {
   const themeName = user?.theme || 'default';
   const theme = getTheme(themeName);
   
-  console.log('🎨 מחיל ערכת נושא:', themeName, theme.name, theme.icon);
+  console.log('🎨 מחיל ערכת נושא:', themeName, theme.name, theme.logo);
   
   const root = document.documentElement;
   root.style.setProperty('--theme-primary', theme.colors.primary);
@@ -296,7 +296,7 @@ export const applyTheme = (user) => {
   root.style.setProperty('--theme-accent', theme.colors.accent);
   root.style.setProperty('--theme-background', theme.colors.background);
   root.style.setProperty('--theme-header-bg', theme.colors.headerBg);
-  root.style.setProperty('--theme-icon', `"${theme.icon}"`);
+  root.style.setProperty('--theme-icon', `"${theme.logo}"`);
   root.style.setProperty('--theme-text', theme.colors.primary === '#ffffff' ? '#000000' : '#333333');
   root.style.setProperty('--theme-text-light', '#666666');
   

@@ -26,6 +26,8 @@ function UsersManagement({ users, loadData, user }) {
     }
 
     try {
+      console.log('🔧 שולח משתמש חדש:', newUser);
+      
       const response = await fetch(`${API_URL}/auth/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -33,6 +35,9 @@ function UsersManagement({ users, loadData, user }) {
       });
 
       if (response.ok) {
+        const result = await response.json();
+        console.log('✅ משתמש חדש נוצר:', result);
+        
         setNewUser({ 
           name: '', 
           username: '', 
@@ -44,15 +49,17 @@ function UsersManagement({ users, loadData, user }) {
         alert('משתמש חדש נוסף בהצלחה!');
       } else {
         const error = await response.json();
+        console.error('❌ שגיאה ביצירת משתמש:', error);
         alert('שגיאה: ' + error.message);
       }
     } catch (error) {
-      console.error('שגיאה בהוספת משתמש:', error);
+      console.error('❌ שגיאה בהוספת משתמש:', error);
       alert('שגיאה בהוספת המשתמש');
     }
   };
 
   const startEditing = (userItem) => {
+    console.log('🖊️ מתחיל עריכה למשתמש:', userItem);
     setEditingUser(userItem._id);
     setEditForm({
       name: userItem.name,
@@ -82,6 +89,8 @@ function UsersManagement({ users, loadData, user }) {
         updateData.password = editForm.password;
       }
 
+      console.log('🔧 שולח עדכון למשתמש:', userId, updateData);
+
       const response = await fetch(`${API_URL}/auth/users/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -89,21 +98,31 @@ function UsersManagement({ users, loadData, user }) {
       });
 
       if (response.ok) {
+        const updatedUser = await response.json();
+        console.log('✅ משתמש עודכן בשרת:', updatedUser);
+        
         // 🔧 אם זה המשתמש הנוכחי, עדכן localStorage ורענן
         if (userId === user?.id) {
-          await loadData(); // עדכן נתונים בטבלה
+          console.log('🎨 עדכון המשתמש הנוכחי - מרענן את הדף...');
           
           const currentUser = JSON.parse(localStorage.getItem('football_betting_user'));
+          
+          // עדכן את כל הפרטים החדשים
           currentUser.theme = editForm.theme;
+          currentUser.name = editForm.name;
+          currentUser.username = editForm.username;
+          currentUser.role = editForm.role;
+          
           localStorage.setItem('football_betting_user', JSON.stringify(currentUser));
           
-          console.log('🎨 עדכנתי ערכת נושא למשתמש הנוכחי:', editForm.theme);
+          console.log('🎨 localStorage עודכן עם:', currentUser);
           
-          alert('ערכת נושא עודכנה בהצלחה! הדף יתרענן...');
+          alert('ערכת נושא עודכנה בהצלחה! הדף יתרענן תוך שנייה...');
           
+          // רענן את הדף כדי שהערכת נושא תיכנס לתוקף
           setTimeout(() => {
             window.location.reload();
-          }, 1000);
+          }, 1500);
           
           return;
         }
@@ -115,10 +134,11 @@ function UsersManagement({ users, loadData, user }) {
         alert('משתמש עודכן בהצלחה!');
       } else {
         const error = await response.json();
+        console.error('❌ שגיאה בעדכון:', error);
         alert('שגיאה: ' + error.message);
       }
     } catch (error) {
-      console.error('שגיאה בעדכון משתמש:', error);
+      console.error('❌ שגיאה בעדכון משתמש:', error);
       alert('שגיאה בעדכון המשתמש');
     }
   };
@@ -129,7 +149,7 @@ function UsersManagement({ users, loadData, user }) {
       return;
     }
 
-    if (window.confirm(`האם אתה בטוח שברצונך למחוק את ${userName}?`)) {
+    if (window.confirm(`האם אתה בטוח שברצונך למחוק את ${userName}?\n\nהפעולה הזו תמחק גם את כל ההימורים והניקוד שלו.`)) {
       try {
         const response = await fetch(`${API_URL}/auth/users/${userId}`, {
           method: 'DELETE'
@@ -162,7 +182,7 @@ function UsersManagement({ users, loadData, user }) {
         <optgroup key={categoryName} label={categoryName}>
           {themes.map(theme => (
             <option key={theme.key} value={theme.key}>
-              {theme.icon} {theme.name}
+              {theme.logo} {theme.name}
             </option>
           ))}
         </optgroup>
@@ -175,16 +195,19 @@ function UsersManagement({ users, loadData, user }) {
     const theme = getTheme(themeName);
     return (
       <span style={{
-        padding: '4px 8px',
+        padding: '6px 12px',
         backgroundColor: theme.colors.primary,
         color: theme.colors.primary === '#ffffff' ? '#000' : '#fff',
-        borderRadius: '4px',
-        fontSize: '12px',
+        borderRadius: '6px',
+        fontSize: '13px',
         display: 'inline-flex',
         alignItems: 'center',
-        gap: '4px'
+        gap: '6px',
+        fontWeight: '500',
+        border: theme.colors.primary === '#ffffff' ? '1px solid #ddd' : 'none'
       }}>
-        {theme.icon} {theme.name}
+        <span style={{ fontSize: '16px' }}>{theme.logo}</span>
+        {theme.name}
       </span>
     );
   };
@@ -194,42 +217,77 @@ function UsersManagement({ users, loadData, user }) {
       {/* הוסף משתמש חדש */}
       <div className="card">
         <h2>הוסף משתמש חדש</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1.5fr auto auto', gap: '1rem', alignItems: 'end' }}>
-          <input
-            type="text"
-            placeholder="שם מלא"
-            value={newUser.name}
-            onChange={(e) => setNewUser(prev => ({ ...prev, name: e.target.value }))}
-            className="input"
-          />
-          <input
-            type="text"
-            placeholder="שם משתמש"
-            value={newUser.username}
-            onChange={(e) => setNewUser(prev => ({ ...prev, username: e.target.value }))}
-            className="input"
-          />
-          <input
-            type="password"
-            placeholder="סיסמה"
-            value={newUser.password}
-            onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
-            className="input"
-          />
-          <ThemeSelector
-            value={newUser.theme}
-            onChange={(e) => setNewUser(prev => ({ ...prev, theme: e.target.value }))}
-          />
-          <select
-            value={newUser.role}
-            onChange={(e) => setNewUser(prev => ({ ...prev, role: e.target.value }))}
-            className="input"
-          >
-            <option value="player">שחקן</option>
-            <option value="admin">מנהל</option>
-          </select>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+          gap: '1rem', 
+          alignItems: 'end' 
+        }}>
+          <div>
+            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
+              שם מלא:
+            </label>
+            <input
+              type="text"
+              placeholder="שם מלא"
+              value={newUser.name}
+              onChange={(e) => setNewUser(prev => ({ ...prev, name: e.target.value }))}
+              className="input"
+            />
+          </div>
+          
+          <div>
+            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
+              שם משתמש:
+            </label>
+            <input
+              type="text"
+              placeholder="שם משתמש"
+              value={newUser.username}
+              onChange={(e) => setNewUser(prev => ({ ...prev, username: e.target.value }))}
+              className="input"
+            />
+          </div>
+          
+          <div>
+            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
+              סיסמה:
+            </label>
+            <input
+              type="password"
+              placeholder="סיסמה"
+              value={newUser.password}
+              onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
+              className="input"
+            />
+          </div>
+          
+          <div>
+            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
+              ערכת נושא:
+            </label>
+            <ThemeSelector
+              value={newUser.theme}
+              onChange={(e) => setNewUser(prev => ({ ...prev, theme: e.target.value }))}
+            />
+          </div>
+          
+          <div>
+            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
+              תפקיד:
+            </label>
+            <select
+              value={newUser.role}
+              onChange={(e) => setNewUser(prev => ({ ...prev, role: e.target.value }))}
+              className="input"
+            >
+              <option value="player">שחקן</option>
+              <option value="admin">מנהל</option>
+            </select>
+          </div>
+          
           <button onClick={handleAddUser} className="btn btn-success">
-            הוסף
+            ➕ הוסף משתמש
           </button>
         </div>
       </div>
@@ -240,7 +298,9 @@ function UsersManagement({ users, loadData, user }) {
         
         {users.length === 0 ? (
           <div style={{ textAlign: 'center', color: '#666', padding: '2rem' }}>
-            אין משתמשים במערכת עדיין
+            <div style={{ fontSize: '48px', marginBottom: '1rem' }}>👥</div>
+            <h3>אין משתמשים במערכת עדיין</h3>
+            <p>השתמש בטופס למעלה כדי להוסיף משתמש ראשון</p>
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
@@ -260,9 +320,13 @@ function UsersManagement({ users, loadData, user }) {
                   if (!userItem || !userItem._id) return null;
                   
                   const isEditing = editingUser === userItem._id;
+                  const isCurrentUser = userItem._id === user?.id;
                   
                   return (
-                    <tr key={userItem._id} style={{ borderBottom: '1px solid #eee' }}>
+                    <tr key={userItem._id} style={{ 
+                      borderBottom: '1px solid #eee',
+                      backgroundColor: isCurrentUser ? '#e3f2fd' : 'transparent'
+                    }}>
                       <td style={{ padding: '12px' }}>
                         {isEditing ? (
                           <input
@@ -271,9 +335,17 @@ function UsersManagement({ users, loadData, user }) {
                             onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
                             className="input"
                             style={{ width: '100%' }}
+                            placeholder="שם מלא"
                           />
                         ) : (
-                          <span style={{ fontWeight: '500' }}>{userItem.name || 'ללא שם'}</span>
+                          <div style={{ fontWeight: '500' }}>
+                            {userItem.name || 'ללא שם'}
+                            {isCurrentUser && (
+                              <div style={{ color: '#1976d2', fontSize: '11px', marginTop: '2px' }}>
+                                👤 זה אתה
+                              </div>
+                            )}
+                          </div>
                         )}
                       </td>
 
@@ -285,9 +357,12 @@ function UsersManagement({ users, loadData, user }) {
                             onChange={(e) => setEditForm(prev => ({ ...prev, username: e.target.value }))}
                             className="input"
                             style={{ width: '100%' }}
+                            placeholder="שם משתמש"
                           />
                         ) : (
-                          <span>{userItem.username || 'ללא שם משתמש'}</span>
+                          <span style={{ fontFamily: 'monospace', fontSize: '14px' }}>
+                            {userItem.username || 'ללא שם משתמש'}
+                          </span>
                         )}
                       </td>
 
@@ -296,7 +371,7 @@ function UsersManagement({ users, loadData, user }) {
                           <ThemeSelector
                             value={editForm.theme || 'default'}
                             onChange={(e) => setEditForm(prev => ({ ...prev, theme: e.target.value }))}
-                            style={{ width: '180px' }}
+                            style={{ minWidth: '200px' }}
                           />
                         ) : (
                           <ThemeDisplay themeName={userItem.theme || 'default'} />
@@ -319,9 +394,10 @@ function UsersManagement({ users, loadData, user }) {
                             backgroundColor: userItem.role === 'admin' ? '#dc3545' : '#28a745',
                             color: 'white',
                             borderRadius: '4px',
-                            fontSize: '12px'
+                            fontSize: '12px',
+                            fontWeight: '500'
                           }}>
-                            {userItem.role === 'admin' ? 'מנהל' : 'שחקן'}
+                            {userItem.role === 'admin' ? '👑 מנהל' : '⚽ שחקן'}
                           </span>
                         )}
                       </td>
@@ -334,10 +410,10 @@ function UsersManagement({ users, loadData, user }) {
                             value={editForm.password || ''}
                             onChange={(e) => setEditForm(prev => ({ ...prev, password: e.target.value }))}
                             className="input"
-                            style={{ width: '140px' }}
+                            style={{ minWidth: '150px' }}
                           />
                         ) : (
-                          <span style={{ color: '#999', fontSize: '12px' }}>••••••</span>
+                          <span style={{ color: '#999', fontSize: '12px' }}>🔒 ••••••</span>
                         )}
                       </td>
 
@@ -348,16 +424,26 @@ function UsersManagement({ users, loadData, user }) {
                               <button
                                 onClick={() => saveEdit(userItem._id)}
                                 className="btn"
-                                style={{ fontSize: '12px', padding: '4px 8px', backgroundColor: '#28a745', color: 'white' }}
+                                style={{ 
+                                  fontSize: '12px', 
+                                  padding: '6px 12px', 
+                                  backgroundColor: '#28a745', 
+                                  color: 'white' 
+                                }}
                               >
-                                שמור
+                                💾 שמור
                               </button>
                               <button
                                 onClick={cancelEditing}
                                 className="btn"
-                                style={{ fontSize: '12px', padding: '4px 8px', backgroundColor: '#6c757d', color: 'white' }}
+                                style={{ 
+                                  fontSize: '12px', 
+                                  padding: '6px 12px', 
+                                  backgroundColor: '#6c757d', 
+                                  color: 'white' 
+                                }}
                               >
-                                ביטול
+                                ❌ ביטול
                               </button>
                             </>
                           ) : (
@@ -365,17 +451,27 @@ function UsersManagement({ users, loadData, user }) {
                               <button
                                 onClick={() => startEditing(userItem)}
                                 className="btn"
-                                style={{ fontSize: '12px', padding: '4px 8px', backgroundColor: '#ffc107', color: 'white' }}
+                                style={{ 
+                                  fontSize: '12px', 
+                                  padding: '6px 12px', 
+                                  backgroundColor: '#ffc107', 
+                                  color: 'white' 
+                                }}
                               >
-                                ערוך
+                                ✏️ ערוך
                               </button>
-                              {userItem._id !== user?.id && (
+                              {!isCurrentUser && (
                                 <button
                                   onClick={() => handleDeleteUser(userItem._id, userItem.name)}
                                   className="btn"
-                                  style={{ fontSize: '12px', padding: '4px 8px', backgroundColor: '#dc3545', color: 'white' }}
+                                  style={{ 
+                                    fontSize: '12px', 
+                                    padding: '6px 12px', 
+                                    backgroundColor: '#dc3545', 
+                                    color: 'white' 
+                                  }}
                                 >
-                                  מחק
+                                  🗑️ מחק
                                 </button>
                               )}
                             </>
