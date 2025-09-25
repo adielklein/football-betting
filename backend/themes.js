@@ -294,7 +294,7 @@ const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #0F7B0F 0%, #228B22 100%)'
     },
-    logo: 'https://cdn.freebiesupply.com/logos/large/2x/maccabi-haifa-logo-png-transparent.png',
+    logo: 'https://logos-world.net/wp-content/uploads/2020/12/Maccabi-Haifa-Logo.png',
     logoType: 'image',
     category: 'ליגת העל הישראלית'
   },
@@ -322,7 +322,7 @@ const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #DC143C 0%, #B22222 100%)'
     },
-    logo: 'https://logos-world.net/wp-content/uploads/2020/12/Hapoel-Tel-Aviv-Logo.png',
+    logo: 'http://seeklogo.com/vector-logo/292405/hapoel-tel-aviv',
     logoType: 'image',
     category: 'ליגת העל הישראלית'
   }

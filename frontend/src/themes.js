@@ -322,7 +322,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #DC143C 0%, #B22222 100%)'
     },
-    logo: 'https://logos-world.net/wp-content/uploads/2020/12/Hapoel-Tel-Aviv-Logo.png',
+    logo: 'http://seeklogo.com/vector-logo/292405/hapoel-tel-aviv',
     logoType: 'image',
     category: 'ליגת העל הישראלית'
   }
