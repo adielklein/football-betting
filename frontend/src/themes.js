@@ -294,7 +294,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #0F7B0F 0%, #228B22 100%)'
     },
-    logo: 'https://logos-world.net/wp-content/uploads/2020/12/Maccabi-Haifa-Logo.png',
+    logo: 'https://cdn.freebiesupply.com/logos/large/2x/maccabi-haifa-logo-png-transparent.png',
     logoType: 'image',
     category: 'ליגת העל הישראלית'
   },
