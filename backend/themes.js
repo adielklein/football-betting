@@ -282,6 +282,49 @@ const THEMES = {
     logo: '🇵🇹',
     logoType: 'emoji',
     category: 'נבחרות'
+  },
+
+  // ליגת העל הישראלית 🇮🇱
+  maccabi_haifa: {
+    name: 'מכבי חיפה',
+    colors: {
+      primary: '#0F7B0F',
+      secondary: '#ffffff',
+      accent: '#228B22',
+      background: '#ffffff',
+      headerBg: 'linear-gradient(135deg, #0F7B0F 0%, #228B22 100%)'
+    },
+    logo: 'https://upload.wikimedia.org/wikipedia/he/7/76/Maccabi_Haifa_FC.png',
+    logoType: 'image',
+    category: 'ליגת העל הישראלית'
+  },
+
+  maccabi_tel_aviv: {
+    name: 'מכבי תל אביב',
+    colors: {
+      primary: '#FFD700',
+      secondary: '#0047AB',
+      accent: '#FFD700',
+      background: '#ffffff',
+      headerBg: 'linear-gradient(135deg, #FFD700 0%, #0047AB 100%)'
+    },
+    logo: 'https://upload.wikimedia.org/wikipedia/he/2/2b/Maccabi_Tel_Aviv_FC.png',
+    logoType: 'image',
+    category: 'ליגת העל הישראלית'
+  },
+
+  hapoel_tel_aviv: {
+    name: 'הפועל תל אביב',
+    colors: {
+      primary: '#DC143C',
+      secondary: '#ffffff',
+      accent: '#B22222',
+      background: '#ffffff',
+      headerBg: 'linear-gradient(135deg, #DC143C 0%, #B22222 100%)'
+    },
+    logo: 'https://upload.wikimedia.org/wikipedia/he/f/f0/Hapoel_Tel_Aviv_FC.png',
+    logoType: 'image',
+    category: 'ליגת העל הישראלית'
   }
 };
 
