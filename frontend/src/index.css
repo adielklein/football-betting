@@ -34,7 +34,7 @@ body {
   padding: 0 20px;
 }
 
-/* 🆕 Header עם ערכת נושא */
+/* 🆕 Header עם ערכת נושא וסמל */
 .header {
   background: var(--theme-header-bg);
   color: white;
@@ -49,19 +49,25 @@ body {
   top: 50%;
   left: 20px;
   transform: translateY(-50%);
-  font-size: 2rem;
-  opacity: 0.3;
+  font-size: 3rem; /* 🔧 גדול יותר */
+  opacity: 0.4; /* 🔧 בולט יותר */
+  z-index: 1;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3); /* 🆕 צל לסמל */
 }
 
 .header h1 {
   margin: 0;
   font-size: 2rem;
   font-weight: 700;
+  position: relative;
+  z-index: 2;
 }
 
 .header p {
   margin: 0.5rem 0 0 0;
   opacity: 0.9;
+  position: relative;
+  z-index: 2;
 }
 
 /* כפתורים עם ערכות נושא */
@@ -244,6 +250,11 @@ tr:hover {
     font-size: 1.5rem;
   }
   
+  .header::before {
+    font-size: 2rem; /* קטן יותר במובייל */
+    left: 10px;
+  }
+  
   .card {
     padding: 1.5rem;
     margin-bottom: 1.5rem;
@@ -258,6 +269,10 @@ tr:hover {
 @media (max-width: 480px) {
   .header h1 {
     font-size: 1.25rem;
+  }
+  
+  .header::before {
+    font-size: 1.5rem;
   }
   
   .card {

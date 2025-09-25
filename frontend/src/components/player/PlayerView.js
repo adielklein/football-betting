@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
+import { applyTheme } from '../../themes'; // 🎨 יבוא פונקציית ערכות נושא
 import PlayerHeader from './PlayerHeader';
 import BettingInterface from './BettingInterface';
 import Leaderboard from './Leaderboard';
@@ -18,6 +19,12 @@ function PlayerView({ user, onLogout }) {
   const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
+
+  // 🎨 החל ערכת נושא כשהקומפוננטה נטענת
+  useEffect(() => {
+    console.log('🎨 PlayerView: מחיל ערכת נושא למשתמש:', user);
+    applyTheme(user);
+  }, [user, user?.theme]); // תגיב גם לשינוי בערכת הנושא
 
   useEffect(() => {
     loadData();
@@ -41,7 +48,7 @@ function PlayerView({ user, onLogout }) {
       );
       setLeaderboard(playersOnly);
       
-      console.log('🔍 כל השבועות שהתקבלו:', weeksData);
+      console.log('🏆 כל השבועות שהתקבלו:', weeksData);
       
       if (weeksData && weeksData.length > 0) {
         // חפש רק שבוע שהוא באמת פעיל ולא נעול ולא עבר זמן הנעילה
@@ -65,21 +72,21 @@ function PlayerView({ user, onLogout }) {
           return true;
         });
         
-        console.log('🔍 שבוע פעיל ואמיתי שנמצא:', activeUnlockedWeek);
+        console.log('🔍 שבוע פעיל אמיתי שנמצא:', activeUnlockedWeek);
         
         if (activeUnlockedWeek && activeUnlockedWeek._id) {
           setSelectedWeek(activeUnlockedWeek);
           await loadWeekData(activeUnlockedWeek._id);
           console.log('✅ נמצא שבוע פעיל אמיתי:', activeUnlockedWeek.name);
         } else {
-          // אם אין שבוע פעיל אמיתי - אל תציג כלום בהימורים נוכחי
-          console.log('❌ אין שבוע פעיל אמיתי - לא מציג כלום בהימורים נוכחי');
+          // אין שבוע פעיל אמיתי - אל תציג כלום בהימורים נוכחי
+          console.log('⌫ אין שבוע פעיל אמיתי - לא מציג כלום בהימורים נוכחי');
           setSelectedWeek(null);
           setMatches([]);
           setBets({});
         }
       } else {
-        console.log('❌ אין שבועות בכלל');
+        console.log('⌫ אין שבועות בכלל');
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -116,7 +123,7 @@ function PlayerView({ user, onLogout }) {
     }
   };
 
-  // פונקציה לרענון דירוגים - תיקרא מעדכון תוצאות
+  // פונקציה לרענון הירוגים - תיקרא מעודכן תוצאות
   const refreshLeaderboard = async () => {
     try {
       const leaderboardResponse = await fetch(`${API_URL}/scores/leaderboard`);

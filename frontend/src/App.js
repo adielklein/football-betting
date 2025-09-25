@@ -2,88 +2,12 @@ import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
 import AdminView from './components/admin/AdminView';
 import PlayerView from './components/player/PlayerView';
+import { applyTheme } from './themes'; // 🎨 יבוא פונקציית ערכות הנושא
 import './index.css';
-
-// 🎨 ערכות נושא מובנות
-const THEMES = {
-  default: {
-    name: 'בסיסי',
-    colors: {
-      primary: '#007bff',
-      secondary: '#6c757d', 
-      accent: '#28a745',
-      background: '#ffffff',
-      headerBg: 'linear-gradient(135deg, #1e3a8a 0%, #059669 100%)'
-    },
-    icon: '⚽'
-  },
-  barcelona: {
-    name: 'ברצלונה',
-    colors: {
-      primary: '#A50044',
-      secondary: '#004D98',
-      accent: '#EDBB00',
-      background: '#ffffff',
-      headerBg: 'linear-gradient(135deg, #A50044 0%, #004D98 100%)'
-    },
-    icon: '🔵'
-  },
-  real_madrid: {
-    name: 'ריאל מדריד',
-    colors: {
-      primary: '#ffffff',
-      secondary: '#FEBE10',
-      accent: '#00529F',
-      background: '#ffffff',
-      headerBg: 'linear-gradient(135deg, #ffffff 0%, #FEBE10 100%)'
-    },
-    icon: '👑'
-  },
-  liverpool: {
-    name: 'ליברפול',
-    colors: {
-      primary: '#C8102E',
-      secondary: '#F6EB61',
-      accent: '#00B2A9',
-      background: '#ffffff',
-      headerBg: 'linear-gradient(135deg, #C8102E 0%, #F6EB61 100%)'
-    },
-    icon: '🐦'
-  },
-  manchester_united: {
-    name: 'מנצ\'סטר יונייטד',
-    colors: {
-      primary: '#DA020E',
-      secondary: '#FFE500',
-      accent: '#DA020E',
-      background: '#ffffff',
-      headerBg: 'linear-gradient(135deg, #DA020E 0%, #FFE500 100%)'
-    },
-    icon: '👹'
-  }
-};
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // החל ערכת נושא
-  const applyTheme = (user) => {
-    const themeName = user?.theme || 'default';
-    const theme = THEMES[themeName] || THEMES.default;
-    
-    console.log('🎨 מחיל ערכת נושא:', themeName, theme.name);
-    
-    const root = document.documentElement;
-    root.style.setProperty('--theme-primary', theme.colors.primary);
-    root.style.setProperty('--theme-secondary', theme.colors.secondary);
-    root.style.setProperty('--theme-accent', theme.colors.accent);
-    root.style.setProperty('--theme-background', theme.colors.background);
-    root.style.setProperty('--theme-header-bg', theme.colors.headerBg);
-    root.style.setProperty('--theme-icon', `"${theme.icon}"`);
-    root.style.setProperty('--theme-text', theme.colors.primary === '#ffffff' ? '#000000' : '#333333');
-    root.style.setProperty('--theme-text-light', '#666666');
-  };
 
   useEffect(() => {
     // בדוק אם יש משתמש שמור בLocalStorage
@@ -95,7 +19,7 @@ function App() {
         console.log('🎨 ערכת הנושא שלו:', parsedUser.theme);
         
         setCurrentUser(parsedUser);
-        applyTheme(parsedUser);
+        applyTheme(parsedUser); // 🎨 החל ערכת נושא
         
       } catch (error) {
         console.error('❌ שגיאה בטעינת משתמש:', error);
@@ -113,7 +37,7 @@ function App() {
     
     setCurrentUser(user);
     localStorage.setItem('football_betting_user', JSON.stringify(user));
-    applyTheme(user);
+    applyTheme(user); // 🎨 החל ערכת נושא
   };
 
   const handleLogout = async () => {
@@ -121,7 +45,7 @@ function App() {
       console.log('🚪 מתנתק...');
       localStorage.removeItem('football_betting_user');
       setCurrentUser(null);
-      applyTheme(null);
+      applyTheme(null); // החזר לערכת בסיסית
       console.log('✅ התנתקות הושלמה');
     } catch (error) {
       console.error('❌ שגיאה בהתנתקות:', error);

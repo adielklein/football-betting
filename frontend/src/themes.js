@@ -1,5 +1,4 @@
-// Frontend: src/themes.js
-// Backend: themes.js (בתיקייה הראשית)
+// src/themes.js - קובץ ערכות נושא מרכזי
 
 export const THEMES = {
   default: {
@@ -282,6 +281,26 @@ export const getThemesByCategory = () => {
     categories[category].push({ key, ...theme });
   });
   return categories;
+};
+
+// פונקציה להחלת ערכת נושא על הדף
+export const applyTheme = (user) => {
+  const themeName = user?.theme || 'default';
+  const theme = getTheme(themeName);
+  
+  console.log('🎨 מחיל ערכת נושא:', themeName, theme.name, theme.icon);
+  
+  const root = document.documentElement;
+  root.style.setProperty('--theme-primary', theme.colors.primary);
+  root.style.setProperty('--theme-secondary', theme.colors.secondary);
+  root.style.setProperty('--theme-accent', theme.colors.accent);
+  root.style.setProperty('--theme-background', theme.colors.background);
+  root.style.setProperty('--theme-header-bg', theme.colors.headerBg);
+  root.style.setProperty('--theme-icon', `"${theme.icon}"`);
+  root.style.setProperty('--theme-text', theme.colors.primary === '#ffffff' ? '#000000' : '#333333');
+  root.style.setProperty('--theme-text-light', '#666666');
+  
+  console.log('✅ ערכת נושא הוחלה:', theme.name);
 };
 
 // אם זה Node.js (Backend)

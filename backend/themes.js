@@ -1,7 +1,6 @@
-// Frontend: src/themes.js
-// Backend: themes.js (בתיקייה הראשית)
+// backend/themes.js - קובץ ערכות נושא לשרת
 
-export const THEMES = {
+const THEMES = {
   default: {
     name: 'בסיסי',
     colors: {
@@ -267,12 +266,12 @@ export const THEMES = {
 };
 
 // פונקציה לקבלת ערכת נושא
-export const getTheme = (themeName = 'default') => {
+const getTheme = (themeName = 'default') => {
   return THEMES[themeName] || THEMES.default;
 };
 
 // פונקציה לקבלת רשימת ערכות לפי קטגוריה
-export const getThemesByCategory = () => {
+const getThemesByCategory = () => {
   const categories = {};
   Object.entries(THEMES).forEach(([key, theme]) => {
     const category = theme.category;
@@ -284,7 +283,4 @@ export const getThemesByCategory = () => {
   return categories;
 };
 
-// אם זה Node.js (Backend)
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { THEMES, getTheme, getThemesByCategory };
-}
+module.exports = { THEMES, getTheme, getThemesByCategory };

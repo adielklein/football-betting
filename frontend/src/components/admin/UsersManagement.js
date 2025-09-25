@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getThemesByCategory, getTheme } from '../../themes'; // 🎨 יבוא מקובץ הערכות
 
 function UsersManagement({ users, loadData, user }) {
   const [newUser, setNewUser] = useState({ 
@@ -6,7 +7,7 @@ function UsersManagement({ users, loadData, user }) {
     username: '', 
     password: '', 
     role: 'player',
-    theme: 'default' // 🆕 ערכת נושא בסיסית
+    theme: 'default'
   });
   const [editingUser, setEditingUser] = useState(null);
   const [editForm, setEditForm] = useState({});
@@ -15,67 +16,7 @@ function UsersManagement({ users, loadData, user }) {
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
 
-  // 🆕 ערכות נושא מקובצות
-  const getThemesByCategory = () => {
-    return {
-      'בסיסי': [
-        { key: 'default', name: 'בסיסי', icon: '⚽' }
-      ],
-      'פרמיירליג': [
-        { key: 'manchester_united', name: 'מנצ\'סטר יונייטד', icon: '👹' },
-        { key: 'liverpool', name: 'ליברפול', icon: '🐦' },
-        { key: 'chelsea', name: 'צ\'לסי', icon: '🦁' },
-        { key: 'arsenal', name: 'ארסנל', icon: '🔴' },
-        { key: 'manchester_city', name: 'מנצ\'סטר סיטי', icon: '💙' },
-        { key: 'tottenham', name: 'טוטנהאם', icon: '🐓' }
-      ],
-      'לה ליגה': [
-        { key: 'real_madrid', name: 'ריאל מדריד', icon: '👑' },
-        { key: 'barcelona', name: 'ברצלונה', icon: '🔵' },
-        { key: 'atletico_madrid', name: 'אתלטיקו מדריד', icon: '🔺' },
-        { key: 'valencia', name: 'ולנסיה', icon: '🦇' },
-        { key: 'sevilla', name: 'סביליה', icon: '⚪' }
-      ],
-      'נבחרות': [
-        { key: 'brazil', name: 'ברזיל', icon: '🇧🇷' },
-        { key: 'argentina', name: 'ארגנטינה', icon: '🇦🇷' },
-        { key: 'germany', name: 'גרמניה', icon: '🇩🇪' },
-        { key: 'france', name: 'צרפת', icon: '🇫🇷' },
-        { key: 'italy', name: 'איטליה', icon: '🇮🇹' },
-        { key: 'spain', name: 'ספרד', icon: '🇪🇸' },
-        { key: 'england', name: 'אנגליה', icon: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-        { key: 'portugal', name: 'פורטוגל', icon: '🇵🇹' }
-      ]
-    };
-  };
-
-  const getTheme = (themeName) => {
-    const themes = {
-      default: { name: 'בסיסי', icon: '⚽', colors: { primary: '#007bff' } },
-      barcelona: { name: 'ברצלונה', icon: '🔵', colors: { primary: '#A50044' } },
-      real_madrid: { name: 'ריאל מדריד', icon: '👑', colors: { primary: '#ffffff' } },
-      liverpool: { name: 'ליברפול', icon: '🐦', colors: { primary: '#C8102E' } },
-      manchester_united: { name: 'מנצ\'סטר יונייטד', icon: '👹', colors: { primary: '#DA020E' } },
-      manchester_city: { name: 'מנצ\'סטר סיטי', icon: '💙', colors: { primary: '#6CABDD' } },
-      chelsea: { name: 'צ\'לסי', icon: '🦁', colors: { primary: '#034694' } },
-      arsenal: { name: 'ארסנל', icon: '🔴', colors: { primary: '#EF0107' } },
-      tottenham: { name: 'טוטנהאם', icon: '🐓', colors: { primary: '#132257' } },
-      atletico_madrid: { name: 'אתלטיקו מדריד', icon: '🔺', colors: { primary: '#CE3524' } },
-      valencia: { name: 'ולנסיה', icon: '🦇', colors: { primary: '#FF6600' } },
-      sevilla: { name: 'סביליה', icon: '⚪', colors: { primary: '#D4001F' } },
-      brazil: { name: 'ברזיל', icon: '🇧🇷', colors: { primary: '#FEDF00' } },
-      argentina: { name: 'ארגנטינה', icon: '🇦🇷', colors: { primary: '#74ACDF' } },
-      germany: { name: 'גרמניה', icon: '🇩🇪', colors: { primary: '#000000' } },
-      france: { name: 'צרפת', icon: '🇫🇷', colors: { primary: '#0055A4' } },
-      italy: { name: 'איטליה', icon: '🇮🇹', colors: { primary: '#009246' } },
-      spain: { name: 'ספרד', icon: '🇪🇸', colors: { primary: '#AA151B' } },
-      england: { name: 'אנגליה', icon: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', colors: { primary: '#ffffff' } },
-      portugal: { name: 'פורטוגל', icon: '🇵🇹', colors: { primary: '#006600' } }
-    };
-    return themes[themeName] || themes.default;
-  };
-
-  // קבלת ערכות נושא מקובצות לפי קטגוריה
+  // 🎨 קבלת ערכות נושא מקובצות לפי קטגוריה
   const themeCategories = getThemesByCategory();
 
   const handleAddUser = async () => {
@@ -88,7 +29,7 @@ function UsersManagement({ users, loadData, user }) {
       const response = await fetch(`${API_URL}/auth/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUser) // כולל theme
+        body: JSON.stringify(newUser)
       });
 
       if (response.ok) {
@@ -117,8 +58,8 @@ function UsersManagement({ users, loadData, user }) {
       name: userItem.name,
       username: userItem.username,
       role: userItem.role,
-      theme: userItem.theme || 'default', // 🆕 ערכת נושא נוכחית
-      password: '' // סיסמה חדשה (אופציונלי)
+      theme: userItem.theme || 'default',
+      password: ''
     });
   };
 
@@ -127,15 +68,14 @@ function UsersManagement({ users, loadData, user }) {
     setEditForm({});
   };
 
-  // 🆕 פונקציית saveEdit עם תיקון localStorage ורענון נתונים
+  // 🔧 פונקציית saveEdit עם תיקון localStorage ורענון נתונים
   const saveEdit = async (userId) => {
     try {
-      // אם לא הוכנסה סיסמה חדשה, לא לשלוח אותה
       const updateData = {
         name: editForm.name,
         username: editForm.username,
         role: editForm.role,
-        theme: editForm.theme // 🆕 ערכת נושא
+        theme: editForm.theme
       };
 
       if (editForm.password && editForm.password.trim()) {
@@ -149,20 +89,18 @@ function UsersManagement({ users, loadData, user }) {
       });
 
       if (response.ok) {
-        // 🆕 אם זה המשתמש הנוכחי, עדכן את localStorage ורענן הדף
+        // 🔧 אם זה המשתמש הנוכחי, עדכן localStorage ורענן
         if (userId === user?.id) {
-          // 🔧 תיקון: עדכן נתונים לפני רענון הדף
-          await loadData();
+          await loadData(); // עדכן נתונים בטבלה
           
           const currentUser = JSON.parse(localStorage.getItem('football_betting_user'));
           currentUser.theme = editForm.theme;
           localStorage.setItem('football_betting_user', JSON.stringify(currentUser));
           
-          console.log('🎨 עודכנתי ערכת נושא למשתמש הנוכחי:', editForm.theme);
+          console.log('🎨 עדכנתי ערכת נושא למשתמש הנוכחי:', editForm.theme);
           
           alert('ערכת נושא עודכנה בהצלחה! הדף יתרענן...');
           
-          // רענן הדף כדי שהערכה תופעל
           setTimeout(() => {
             window.location.reload();
           }, 1000);
@@ -170,7 +108,7 @@ function UsersManagement({ users, loadData, user }) {
           return;
         }
         
-        // עבור משתמשים אחרים - המשך כרגיל
+        // עבור משתמשים אחרים
         setEditingUser(null);
         setEditForm({});
         await loadData();
@@ -211,7 +149,7 @@ function UsersManagement({ users, loadData, user }) {
     }
   };
 
-  // 🆕 רכיב בחירת ערכת נושא
+  // 🎨 רכיב בחירת ערכת נושא
   const ThemeSelector = ({ value, onChange, style = {} }) => (
     <select
       value={value}
@@ -232,7 +170,7 @@ function UsersManagement({ users, loadData, user }) {
     </select>
   );
 
-  // 🆕 תצוגת ערכת נושא נוכחית
+  // 🎨 תצוגת ערכת נושא נוכחית
   const ThemeDisplay = ({ themeName }) => {
     const theme = getTheme(themeName);
     return (
@@ -278,7 +216,6 @@ function UsersManagement({ users, loadData, user }) {
             onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
             className="input"
           />
-          {/* 🆕 בחירת ערכת נושא */}
           <ThemeSelector
             value={newUser.theme}
             onChange={(e) => setNewUser(prev => ({ ...prev, theme: e.target.value }))}
@@ -326,7 +263,6 @@ function UsersManagement({ users, loadData, user }) {
                   
                   return (
                     <tr key={userItem._id} style={{ borderBottom: '1px solid #eee' }}>
-                      {/* שם */}
                       <td style={{ padding: '12px' }}>
                         {isEditing ? (
                           <input
@@ -341,7 +277,6 @@ function UsersManagement({ users, loadData, user }) {
                         )}
                       </td>
 
-                      {/* שם משתמש */}
                       <td style={{ padding: '12px' }}>
                         {isEditing ? (
                           <input
@@ -356,7 +291,6 @@ function UsersManagement({ users, loadData, user }) {
                         )}
                       </td>
 
-                      {/* 🆕 ערכת נושא */}
                       <td style={{ padding: '12px' }}>
                         {isEditing ? (
                           <ThemeSelector
@@ -369,7 +303,6 @@ function UsersManagement({ users, loadData, user }) {
                         )}
                       </td>
 
-                      {/* תפקיד */}
                       <td style={{ padding: '12px' }}>
                         {isEditing ? (
                           <select
@@ -393,7 +326,6 @@ function UsersManagement({ users, loadData, user }) {
                         )}
                       </td>
 
-                      {/* סיסמה חדשה */}
                       <td style={{ padding: '12px' }}>
                         {isEditing ? (
                           <input
@@ -409,7 +341,6 @@ function UsersManagement({ users, loadData, user }) {
                         )}
                       </td>
 
-                      {/* פעולות */}
                       <td style={{ padding: '12px', textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                           {isEditing ? (
