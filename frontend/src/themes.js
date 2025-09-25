@@ -138,7 +138,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #CE3524 0%, #ffffff 100%)'
     },
-    logo: '🔴⚪', // נשאיר אמוג'י כי קשה למצוא לוגו טוב
+    logo: 'https://upload.wikimedia.org/wikipedia/he/f/f9/Atletico_Madrid_Logo_2024.svg',
     logoType: 'emoji',
     category: 'לה ליגה'
   },
