@@ -322,7 +322,7 @@ const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #DC143C 0%, #B22222 100%)'
     },
-    logo: 'http://seeklogo.com/vector-logo/292405/hapoel-tel-aviv',
+    logo: 'https://images.seeklogo.com/logo-png/29/1/hapoel-tel-aviv-logo-png_seeklogo-292405.png',
     logoType: 'image',
     category: 'ליגת העל הישראלית'
   }
