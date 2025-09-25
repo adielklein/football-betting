@@ -49,8 +49,8 @@ body {
   content: var(--theme-icon);
   position: absolute;
   top: 50%;
-  left: 20px;
-  transform: translateY(-50%);
+  left: 50%;
+  transform: translateY(-50%,-50%);
   font-size: 3rem;
   opacity: 0.4;
   z-index: 1;
@@ -67,8 +67,8 @@ body {
   content: '';
   position: absolute;
   top: 50%;
-  left: 20px;
-  transform: translateY(-50%);
+  left: 50%;
+  transform: translateY(-50%, -50%);
   width: 60px;
   height: 60px;
   background-image: var(--theme-icon-image);
@@ -286,13 +286,13 @@ tr:hover {
   
   .header::before {
     font-size: 2rem;
-    left: 10px;
+    left: 50%;
   }
   
   .header.has-image-logo::after {
     width: 40px;
     height: 40px;
-    left: 10px;
+    left: 50%;
   }
   
   .card {

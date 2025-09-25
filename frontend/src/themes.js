@@ -283,8 +283,8 @@ export const THEMES = {
     logoType: 'emoji',
     category: 'נבחרות'
   },
-
-  // ליגת העל הישראלית 🇮🇱
+  
+  // ליגת העל הישראלית 🇮🇱 - עם לוגואים מתוקנים
   maccabi_haifa: {
     name: 'מכבי חיפה',
     colors: {
@@ -294,7 +294,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #0F7B0F 0%, #228B22 100%)'
     },
-    logo: 'https://upload.wikimedia.org/wikipedia/he/7/76/Maccabi_Haifa_FC.png',
+    logo: 'https://logos-world.net/wp-content/uploads/2020/12/Maccabi-Haifa-Logo.png',
     logoType: 'image',
     category: 'ליגת העל הישראלית'
   },
@@ -308,7 +308,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #FFD700 0%, #0047AB 100%)'
     },
-    logo: 'https://upload.wikimedia.org/wikipedia/he/2/2b/Maccabi_Tel_Aviv_FC.png',
+    logo: 'https://logos-world.net/wp-content/uploads/2020/12/Maccabi-Tel-Aviv-Logo.png',
     logoType: 'image',
     category: 'ליגת העל הישראלית'
   },
@@ -322,7 +322,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #DC143C 0%, #B22222 100%)'
     },
-    logo: 'https://upload.wikimedia.org/wikipedia/he/f/f0/Hapoel_Tel_Aviv_FC.png',
+    logo: 'https://logos-world.net/wp-content/uploads/2020/12/Hapoel-Tel-Aviv-Logo.png',
     logoType: 'image',
     category: 'ליגת העל הישראלית'
   }
