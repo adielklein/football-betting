@@ -1,4 +1,4 @@
-// backend/themes.js - קובץ ערכות נושא לשרת
+// backend/themes.js - קובץ ערכות נושא לשרת עם תמונות אמיתיות
 
 const THEMES = {
   default: {
@@ -11,10 +11,11 @@ const THEMES = {
       headerBg: 'linear-gradient(135deg, #1e3a8a 0%, #059669 100%)'
     },
     logo: '⚽',
+    logoType: 'emoji',
     category: 'בסיסי'
   },
 
-  // פרמיירליג
+  // פרמיירליג - עם לוגואים אמיתיים
   manchester_united: {
     name: 'מנצ\'סטר יונייטד',
     colors: {
@@ -24,7 +25,8 @@ const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #DA020E 0%, #FFE500 100%)'
     },
-    logo: '👹',
+    logo: 'https://cdn.freebiesupply.com/logos/large/2x/manchester-united-logo-png-transparent.png',
+    logoType: 'image',
     category: 'פרמיירליג'
   },
 
@@ -37,7 +39,8 @@ const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #C8102E 0%, #F6EB61 100%)'
     },
-    logo: '🐦',
+    logo: 'https://cdn.freebiesupply.com/logos/large/2x/liverpool-fc-logo-png-transparent.png',
+    logoType: 'image',
     category: 'פרמיירליג'
   },
 
@@ -50,7 +53,8 @@ const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #034694 0%, #DBA111 100%)'
     },
-    logo: '🦁',
+    logo: 'https://cdn.freebiesupply.com/logos/large/2x/chelsea-fc-logo-png-transparent.png',
+    logoType: 'image',
     category: 'פרמיירליג'
   },
 
@@ -63,7 +67,8 @@ const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #EF0107 0%, #023474 100%)'
     },
-    logo: '🔴',
+    logo: 'https://cdn.freebiesupply.com/logos/large/2x/arsenal-fc-logo-png-transparent.png',
+    logoType: 'image',
     category: 'פרמיירליג'
   },
 
@@ -76,7 +81,8 @@ const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #6CABDD 0%, #1C2C5B 100%)'
     },
-    logo: '💙',
+    logo: 'https://cdn.freebiesupply.com/logos/large/2x/manchester-city-logo-png-transparent.png',
+    logoType: 'image',
     category: 'פרמיירליג'
   },
 
@@ -89,11 +95,12 @@ const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #132257 0%, #ffffff 100%)'
     },
-    logo: '🐓',
+    logo: 'https://cdn.freebiesupply.com/logos/large/2x/tottenham-hotspur-logo-png-transparent.png',
+    logoType: 'image',
     category: 'פרמיירליג'
   },
 
-  // לה ליגה
+  // לה ליגה - עם לוגואים אמיתיים
   real_madrid: {
     name: 'ריאל מדריד',
     colors: {
@@ -103,7 +110,8 @@ const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #ffffff 0%, #FEBE10 100%)'
     },
-    logo: '👑',
+    logo: 'https://cdn.freebiesupply.com/logos/large/2x/real-madrid-logo-png-transparent.png',
+    logoType: 'image',
     category: 'לה ליגה'
   },
 
@@ -116,7 +124,8 @@ const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #A50044 0%, #004D98 100%)'
     },
-    logo: '🔵',
+    logo: 'https://cdn.freebiesupply.com/logos/large/2x/fc-barcelona-logo-png-transparent.png',
+    logoType: 'image',
     category: 'לה ליגה'
   },
 
@@ -129,7 +138,8 @@ const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #CE3524 0%, #ffffff 100%)'
     },
-    logo: '🔺',
+    logo: '🔴⚪',
+    logoType: 'emoji',
     category: 'לה ליגה'
   },
 
@@ -142,7 +152,8 @@ const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #FF6600 0%, #000000 100%)'
     },
-    logo: '🦇',
+    logo: '🟠🦇',
+    logoType: 'emoji',
     category: 'לה ליגה'
   },
 
@@ -155,11 +166,12 @@ const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #D4001F 0%, #ffffff 100%)'
     },
-    logo: '⚪',
+    logo: '🔴⚪',
+    logoType: 'emoji',
     category: 'לה ליגה'
   },
 
-  // נבחרות
+  // נבחרות - דגלים
   brazil: {
     name: 'ברזיל',
     colors: {
@@ -170,6 +182,7 @@ const THEMES = {
       headerBg: 'linear-gradient(135deg, #FEDF00 0%, #009B3A 100%)'
     },
     logo: '🇧🇷',
+    logoType: 'emoji',
     category: 'נבחרות'
   },
 
@@ -183,6 +196,7 @@ const THEMES = {
       headerBg: 'linear-gradient(135deg, #74ACDF 0%, #ffffff 100%)'
     },
     logo: '🇦🇷',
+    logoType: 'emoji',
     category: 'נבחרות'
   },
 
@@ -196,6 +210,7 @@ const THEMES = {
       headerBg: 'linear-gradient(135deg, #000000 0%, #DD0000 50%, #FFCE00 100%)'
     },
     logo: '🇩🇪',
+    logoType: 'emoji',
     category: 'נבחרות'
   },
 
@@ -209,6 +224,7 @@ const THEMES = {
       headerBg: 'linear-gradient(135deg, #0055A4 0%, #EF4135 100%)'
     },
     logo: '🇫🇷',
+    logoType: 'emoji',
     category: 'נבחרות'
   },
 
@@ -222,6 +238,7 @@ const THEMES = {
       headerBg: 'linear-gradient(135deg, #009246 0%, #CE2B37 100%)'
     },
     logo: '🇮🇹',
+    logoType: 'emoji',
     category: 'נבחרות'
   },
 
@@ -235,6 +252,7 @@ const THEMES = {
       headerBg: 'linear-gradient(135deg, #AA151B 0%, #F1BF00 100%)'
     },
     logo: '🇪🇸',
+    logoType: 'emoji',
     category: 'נבחרות'
   },
 
@@ -248,6 +266,7 @@ const THEMES = {
       headerBg: 'linear-gradient(135deg, #ffffff 0%, #CE1124 100%)'
     },
     logo: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+    logoType: 'emoji',
     category: 'נבחרות'
   },
 
@@ -261,6 +280,7 @@ const THEMES = {
       headerBg: 'linear-gradient(135deg, #006600 0%, #FF0000 100%)'
     },
     logo: '🇵🇹',
+    logoType: 'emoji',
     category: 'נבחרות'
   }
 };

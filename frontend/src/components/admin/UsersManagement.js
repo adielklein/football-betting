@@ -16,7 +16,7 @@ function UsersManagement({ users, loadData, user }) {
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
 
-  // 🎨 קבלת ערכות נושא מקובצות לפי קטגוריה
+  // 🎨 קבלת ערכות נושא מקובצות לפי קטגוריות
   const themeCategories = getThemesByCategory();
 
   const handleAddUser = async () => {
@@ -49,11 +49,11 @@ function UsersManagement({ users, loadData, user }) {
         alert('משתמש חדש נוסף בהצלחה!');
       } else {
         const error = await response.json();
-        console.error('❌ שגיאה ביצירת משתמש:', error);
+        console.error('⌐ שגיאה ביצירת משתמש:', error);
         alert('שגיאה: ' + error.message);
       }
     } catch (error) {
-      console.error('❌ שגיאה בהוספת משתמש:', error);
+      console.error('⌐ שגיאה בהוספת משתמש:', error);
       alert('שגיאה בהוספת המשתמש');
     }
   };
@@ -117,9 +117,9 @@ function UsersManagement({ users, loadData, user }) {
           
           console.log('🎨 localStorage עודכן עם:', currentUser);
           
-          alert('ערכת נושא עודכנה בהצלחה! הדף יתרענן תוך שנייה...');
+          alert('ערכת נושא עודכנה בהצלחה! הדף יתרענן תוך שניה...');
           
-          // רענן את הדף כדי שהערכת נושא תיכנס לתוקף
+          // רענן את הדף כדי שערכת הנושא תיכנס לתוקף
           setTimeout(() => {
             window.location.reload();
           }, 1500);
@@ -134,11 +134,11 @@ function UsersManagement({ users, loadData, user }) {
         alert('משתמש עודכן בהצלחה!');
       } else {
         const error = await response.json();
-        console.error('❌ שגיאה בעדכון:', error);
+        console.error('⌐ שגיאה בעדכון:', error);
         alert('שגיאה: ' + error.message);
       }
     } catch (error) {
-      console.error('❌ שגיאה בעדכון משתמש:', error);
+      console.error('⌐ שגיאה בעדכון משתמש:', error);
       alert('שגיאה בעדכון המשתמש');
     }
   };
@@ -182,7 +182,7 @@ function UsersManagement({ users, loadData, user }) {
         <optgroup key={categoryName} label={categoryName}>
           {themes.map(theme => (
             <option key={theme.key} value={theme.key}>
-              {theme.logo} {theme.name}
+              {theme.logoType === 'emoji' ? theme.logo : '🖼️'} {theme.name}
             </option>
           ))}
         </optgroup>
@@ -190,9 +190,10 @@ function UsersManagement({ users, loadData, user }) {
     </select>
   );
 
-  // 🎨 תצוגת ערכת נושא נוכחית
+  // 🎨 תצוגת ערכת נושא נוכחית - עם תמיכה בתמונות ובאמוג'ים
   const ThemeDisplay = ({ themeName }) => {
     const theme = getTheme(themeName);
+    
     return (
       <span style={{
         padding: '6px 12px',
@@ -206,7 +207,24 @@ function UsersManagement({ users, loadData, user }) {
         fontWeight: '500',
         border: theme.colors.primary === '#ffffff' ? '1px solid #ddd' : 'none'
       }}>
-        <span style={{ fontSize: '16px' }}>{theme.logo}</span>
+        {/* תמיכה בסמלי תמונה ואמוג'י */}
+        {theme.logoType === 'image' ? (
+          <img 
+            src={theme.logo} 
+            alt={theme.name}
+            className="theme-logo-image"
+            onError={(e) => {
+              // אם התמונה לא נטענת, הצג אמוג'י חלופי
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'inline';
+            }}
+          />
+        ) : (
+          <span style={{ fontSize: '16px' }}>{theme.logo}</span>
+        )}
+        {theme.logoType === 'image' && (
+          <span style={{ fontSize: '16px', display: 'none' }}>🖼️</span>
+        )}
         {theme.name}
       </span>
     );
@@ -443,7 +461,7 @@ function UsersManagement({ users, loadData, user }) {
                                   color: 'white' 
                                 }}
                               >
-                                ❌ ביטול
+                                ⌐ ביטול
                               </button>
                             </>
                           ) : (
