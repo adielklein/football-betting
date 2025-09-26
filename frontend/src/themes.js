@@ -152,7 +152,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #FF6600 0%, #000000 100%)'
     },
-    logo: '🟠🦇', // נשאיר אמוג'י
+    logo: '🟠🦇',
     logoType: 'emoji',
     category: 'לה ליגה'
   },
@@ -166,7 +166,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #D4001F 0%, #ffffff 100%)'
     },
-    logo: '🔴⚪', // נשאיר אמוג'י
+    logo: '🔴⚪',
     logoType: 'emoji',
     category: 'לה ליגה'
   },
@@ -346,7 +346,7 @@ export const getThemesByCategory = () => {
   return categories;
 };
 
-// פונקציה מעודכנת להחלת ערכת נושא - עם debug משופר
+// 🆕 פונקציה מעודכנת להחלת ערכת נושא - עם סמלים בheader וברקע
 export const applyTheme = (user) => {
   const themeName = user?.theme || 'default';
   const theme = getTheme(themeName);
@@ -354,6 +354,9 @@ export const applyTheme = (user) => {
   console.log('🎨 מתחיל להחיל ערכת נושא:', themeName, theme.name, theme.logoType);
   
   const root = document.documentElement;
+  const body = document.body;
+  
+  // החל צבעים על CSS Variables
   root.style.setProperty('--theme-primary', theme.colors.primary);
   root.style.setProperty('--theme-secondary', theme.colors.secondary);
   root.style.setProperty('--theme-accent', theme.colors.accent);
@@ -362,18 +365,18 @@ export const applyTheme = (user) => {
   root.style.setProperty('--theme-text', theme.colors.primary === '#ffffff' ? '#000000' : '#333333');
   root.style.setProperty('--theme-text-light', '#666666');
   
-  // טיפול בסמל - תמונה או אמוג'י
-  const headerElements = document.querySelectorAll('.header');
-  console.log('🔍 מצא', headerElements.length, 'אלמנטים של header');
-  
+  // החל סמל בheader וברקע
   if (theme.logoType === 'image') {
     console.log('🖼️ מחיל תמונה:', theme.logo);
     root.style.setProperty('--theme-icon', '""');
     root.style.setProperty('--theme-icon-image', `url('${theme.logo}')`);
     
-    // הוסף קלאס לתמונות
-    headerElements.forEach((header, index) => {
-      console.log(`🎯 מוסיף has-image-logo לheader ${index}`);
+    // הוסף קלאס לbody (לסמל הרקע)
+    body.classList.add('has-image-logo');
+    
+    // הוסף קלאס לכל הheader elements (לסמל בheader)
+    const headerElements = document.querySelectorAll('.header');
+    headerElements.forEach((header) => {
       header.classList.add('has-image-logo');
     });
     
@@ -383,44 +386,30 @@ export const applyTheme = (user) => {
     root.style.setProperty('--theme-icon', `"${theme.logo}"`);
     root.style.setProperty('--theme-icon-image', 'none');
     
-    // הסר קלאס לתמונות
-    headerElements.forEach((header, index) => {
-      console.log(`❌ מסיר has-image-logo מheader ${index}`);
+    // הסר קלאס מbody (לסמל הרקע)
+    body.classList.remove('has-image-logo');
+    
+    // הסר קלאס מכל הheader elements (לסמל בheader)
+    const headerElements = document.querySelectorAll('.header');
+    headerElements.forEach((header) => {
       header.classList.remove('has-image-logo');
     });
     
     console.log('✅ הוחל לוגו אמוג\'י:', theme.logo);
   }
   
-  // 🔧 debug - בדוק מה בפועל קרה
-  setTimeout(() => {
-    const updatedHeaders = document.querySelectorAll('.header');
-    console.log('🔍 אחרי עדכון - מצא', updatedHeaders.length, 'headers');
-    updatedHeaders.forEach((header, index) => {
-      const hasImageClass = header.classList.contains('has-image-logo');
-      console.log(`📊 Header ${index}: has-image-logo = ${hasImageClass}`);
-    });
-    
-    const iconValue = root.style.getPropertyValue('--theme-icon');
-    const iconImageValue = root.style.getPropertyValue('--theme-icon-image');
-    console.log('📊 CSS Variables:', {
-      '--theme-icon': iconValue,
-      '--theme-icon-image': iconImageValue
-    });
-  }, 50);
-  
   console.log('✅ ערכת נושא הוחלה:', theme.name);
 };
 
-// 🔧 פונקציות debug - הוסף בסוף קובץ themes.js (לפני הif של module.exports)
-
-// פונקציה לבדיקה מהירה מהקונסול
+// 🔧 פונקציות debug - הוסף בסוף קובץ themes.js
 export const debugTheme = () => {
   const headers = document.querySelectorAll('.header');
+  const body = document.body;
   const root = document.documentElement;
   
   console.log('🔍 Theme Debug Info:');
   console.log('Headers found:', headers.length);
+  console.log('Body has-image-logo:', body.classList.contains('has-image-logo'));
   
   headers.forEach((header, i) => {
     console.log(`Header ${i}:`, {
