@@ -308,7 +308,7 @@ const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #FFD700 0%, #0047AB 100%)'
     },
-    logo: 'https://upload.wikimedia.org/wikipedia/he/8/82/Maccabi_tlv_fc.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/he/4/45/Maccabi_Tel_Aviv_FC.png',
     logoType: 'image',
     category: 'ליגת העל הישראלית'
   },
