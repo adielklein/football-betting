@@ -346,4 +346,5 @@ const getThemesByCategory = () => {
   return categories;
 };
 
+// ייצוא עבור Node.js
 module.exports = { THEMES, getTheme, getThemesByCategory };

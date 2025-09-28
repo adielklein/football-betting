@@ -1,4 +1,4 @@
-// src/themes.js - קובץ ערכות נושא מרכזי עם תמונות אמיתיות
+// src/themes.js - קובץ ערכות נושא עם תאימות מלאה ל-iOS Safari
 
 export const THEMES = {
   default: {
@@ -294,7 +294,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #0F7B0F 0%, #228B22 100%)'
     },
-    logo: 'https://cdn.freebiesupply.com/logos/large/2x/maccabi-haifa-logo-png-transparent.png',
+    logo: 'https://logos-world.net/wp-content/uploads/2020/12/Maccabi-Haifa-Logo.png',
     logoType: 'image',
     category: 'ליגת העל הישראלית'
   },
@@ -346,12 +346,40 @@ export const getThemesByCategory = () => {
   return categories;
 };
 
-// 🆕 פונקציה מעודכנת להחלת ערכת נושא - עם סמלים בheader וברקע
+// 🍎 פונקציה לזיהוי iOS
+const isIOS = () => {
+  if (typeof window === 'undefined') return false;
+  
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
+         /Safari/.test(navigator.userAgent) && /Mobile/.test(navigator.userAgent);
+};
+
+// 🍎 פונקציה לזיהוי iOS Safari ספציפית
+const isIOSSafari = () => {
+  if (typeof window === 'undefined') return false;
+  
+  const ua = navigator.userAgent;
+  const iOS = /iPad|iPhone|iPod/.test(ua);
+  const safari = /Safari/.test(ua) && !/Chrome/.test(ua) && !/CriOS/.test(ua) && !/FxiOS/.test(ua);
+  
+  return iOS && safari;
+};
+
+// 🍎 פונקציה מעודכנת להחלת ערכת נושא עם תמיכה מלאה ב-iOS
 export const applyTheme = (user) => {
   const themeName = user?.theme || 'default';
   const theme = getTheme(themeName);
   
   console.log('🎨 מתחיל להחיל ערכת נושא:', themeName, theme.name, theme.logoType);
+  
+  // 🍎 זיהוי iOS לתיקונים ספציפיים
+  const isIOSDevice = isIOS();
+  const isIOSSafariDevice = isIOSSafari();
+  
+  if (isIOSDevice) {
+    console.log('🍎 זוהה מכשיר iOS - מחיל תיקונים ספציפיים');
+  }
   
   const root = document.documentElement;
   const body = document.body;
@@ -364,6 +392,19 @@ export const applyTheme = (user) => {
   root.style.setProperty('--theme-header-bg', theme.colors.headerBg);
   root.style.setProperty('--theme-text', theme.colors.primary === '#ffffff' ? '#000000' : '#333333');
   root.style.setProperty('--theme-text-light', '#666666');
+  
+  // 🍎 הוסף קלאס iOS לbody אם צריך
+  if (isIOSDevice) {
+    body.classList.add('ios-device');
+  } else {
+    body.classList.remove('ios-device');
+  }
+  
+  if (isIOSSafariDevice) {
+    body.classList.add('ios-safari');
+  } else {
+    body.classList.remove('ios-safari');
+  }
   
   // החל סמל בheader וברקע
   if (theme.logoType === 'image') {
@@ -378,6 +419,12 @@ export const applyTheme = (user) => {
     const headerElements = document.querySelectorAll('.header');
     headerElements.forEach((header) => {
       header.classList.add('has-image-logo');
+      
+      // 🍎 תיקון ספציפי ל-iOS Safari
+      if (isIOSSafariDevice) {
+        header.style.webkitBackfaceVisibility = 'hidden';
+        header.style.backfaceVisibility = 'hidden';
+      }
     });
     
     console.log('✅ הוחל לוגו תמונה:', theme.logo);
@@ -398,18 +445,44 @@ export const applyTheme = (user) => {
     console.log('✅ הוחל לוגו אמוג\'י:', theme.logo);
   }
   
-  console.log('✅ ערכת נושא הוחלה:', theme.name);
+  // 🍎 תיקונים נוספים ל-iOS אחרי החלת הערכת נושא
+  if (isIOSDevice) {
+    // תיקון מיוחד לרינדור ב-iOS
+    setTimeout(() => {
+      const elementsToFix = document.querySelectorAll('.btn, .card, .input');
+      elementsToFix.forEach(el => {
+        el.style.webkitTransform = 'translate3d(0,0,0)';
+        el.style.transform = 'translate3d(0,0,0)';
+      });
+    }, 100);
+    
+    // 🍎 תיקון position fixed ב-iOS (במיוחד עבור הרקע)
+    const metaViewport = document.querySelector('meta[name="viewport"]');
+    if (metaViewport) {
+      metaViewport.setAttribute('content', 
+        'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'
+      );
+    }
+  }
+  
+  console.log('✅ ערכת נושא הוחלה:', theme.name, isIOSDevice ? '(עם תיקוני iOS)' : '');
 };
 
-// 🔧 פונקציות debug - הוסף בסוף קובץ themes.js
+// 🍎 פונקציות debug מעודכנות עם מידע על iOS
 export const debugTheme = () => {
   const headers = document.querySelectorAll('.header');
   const body = document.body;
   const root = document.documentElement;
   
   console.log('🔍 Theme Debug Info:');
+  console.log('🍎 iOS Device:', isIOS());
+  console.log('🍎 iOS Safari:', isIOSSafari());
   console.log('Headers found:', headers.length);
   console.log('Body has-image-logo:', body.classList.contains('has-image-logo'));
+  console.log('Body iOS classes:', {
+    'ios-device': body.classList.contains('ios-device'),
+    'ios-safari': body.classList.contains('ios-safari')
+  });
   
   headers.forEach((header, i) => {
     console.log(`Header ${i}:`, {
@@ -423,6 +496,17 @@ export const debugTheme = () => {
     '--theme-icon-image': root.style.getPropertyValue('--theme-icon-image'),
     '--theme-primary': root.style.getPropertyValue('--theme-primary')
   });
+  
+  // 🍎 בדיקות ספציפיות ל-iOS
+  if (isIOS()) {
+    console.log('🍎 iOS Specific Checks:');
+    console.log('User Agent:', navigator.userAgent);
+    console.log('Platform:', navigator.platform);
+    console.log('Max Touch Points:', navigator.maxTouchPoints);
+    
+    const viewport = document.querySelector('meta[name="viewport"]');
+    console.log('Viewport Meta:', viewport ? viewport.getAttribute('content') : 'Not found');
+  }
   
   return 'Debug complete - check console logs above';
 };
@@ -441,10 +525,36 @@ export const forceApplyTheme = () => {
   }
 };
 
+// 🍎 פונקציה לבדיקת תאימות iOS
+export const checkIOSCompatibility = () => {
+  const isIOSDevice = isIOS();
+  const isIOSSafariDevice = isIOSSafari();
+  
+  console.log('🍎 iOS Compatibility Check:');
+  console.log('Is iOS Device:', isIOSDevice);
+  console.log('Is iOS Safari:', isIOSSafariDevice);
+  console.log('User Agent:', navigator.userAgent);
+  
+  if (isIOSDevice) {
+    console.log('✅ iOS תיקונים זמינים וקומפטיביליים');
+  } else {
+    console.log('ℹ️ לא מכשיר iOS - תיקונים לא נדרשים');
+  }
+  
+  return {
+    isIOS: isIOSDevice,
+    isIOSSafari: isIOSSafariDevice,
+    userAgent: navigator.userAgent
+  };
+};
+
 // הוסף פונקציות לwindow לשימוש מהקונסול
 if (typeof window !== 'undefined') {
   window.debugTheme = debugTheme;
   window.forceApplyTheme = forceApplyTheme;
+  window.checkIOSCompatibility = checkIOSCompatibility;
+  window.isIOS = isIOS;
+  window.isIOSSafari = isIOSSafari;
 }
 
 // אם זה Node.js (Backend)
