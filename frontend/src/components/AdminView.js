@@ -15,10 +15,6 @@ function AdminView({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('weeks');
   const [loading, setLoading] = useState(true);
 
-  const API_URL = window.location.hostname === 'localhost' 
-    ? 'http://localhost:5000/api'
-    : 'https://football-betting-backend.onrender.com/api';
-
   useEffect(() => {
     loadData();
   }, []);
@@ -26,10 +22,14 @@ function AdminView({ user, onLogout }) {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [weeksData, usersData] = await Promise.all([
-        api.getWeeks(),
-        api.getUsers()
-      ]);
+      
+      // Load weeks
+      const weeksResponse = await fetch('https://football-betting-backend.onrender.com/api/weeks');
+      const weeksData = await weeksResponse.json();
+      
+      // Load users
+      const usersResponse = await fetch('https://football-betting-backend.onrender.com/api/auth/users');
+      const usersData = await usersResponse.json();
       
       setWeeks(Array.isArray(weeksData) ? weeksData.filter(w => w && w._id) : []);
       setUsers(Array.isArray(usersData) ? usersData.filter(u => u && u._id) : []);
@@ -54,11 +54,12 @@ function AdminView({ user, onLogout }) {
     if (!weekId) return;
     
     try {
-      const [matchesData, betsResponse] = await Promise.all([
-        api.getMatches(weekId),
-        fetch(`${API_URL}/bets/week/${weekId}`)
+      const [matchesResponse, betsResponse] = await Promise.all([
+        fetch(`https://football-betting-backend.onrender.com/api/matches/week/${weekId}`),
+        fetch(`https://football-betting-backend.onrender.com/api/bets/week/${weekId}`)
       ]);
       
+      const matchesData = await matchesResponse.json();
       const betsData = await betsResponse.json();
       
       setMatches(Array.isArray(matchesData) ? matchesData : []);

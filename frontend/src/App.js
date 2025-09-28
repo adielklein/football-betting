@@ -46,27 +46,10 @@ function App() {
     setLoading(false);
   }, []); // 🎨 רק פעם אחת בטעינת הדף
 
-  // 🎨 רענון נוסף כאשר currentUser משתנה (למקרה של עדכון מניהול משתמשים)
+  // 🎨 רענון נוסף כאשר currentUser משתנה
   useEffect(() => {
     if (currentUser) {
       console.log('🎨 משתמש השתנה, מרענן ערכת נושא:', currentUser.name, currentUser.theme);
-      
-      // בדוק אם יש עדכון חדש ב-localStorage
-      const savedUser = localStorage.getItem('football_betting_user');
-      if (savedUser) {
-        try {
-          const parsedUser = JSON.parse(savedUser);
-          if (parsedUser.theme !== currentUser.theme) {
-            console.log('🔄 זוהה שינוי ערכת נושא ב-localStorage, מעדכן:', parsedUser.theme);
-            setCurrentUser(parsedUser);
-            applyTheme(parsedUser);
-            return;
-          }
-        } catch (error) {
-          console.error('❌ שגיאה בבדיקת localStorage:', error);
-        }
-      }
-      
       applyTheme(currentUser);
     }
   }, [currentUser]); // כאשר currentUser משתנה
