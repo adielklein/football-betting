@@ -10,6 +10,8 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🎨 App.js - התחלת טעינה, מחפש משתמש שמור...');
+    
     // בדוק אם יש משתמש שמור בLocalStorage
     const savedUser = localStorage.getItem('football_betting_user');
     if (savedUser) {
@@ -22,21 +24,35 @@ function App() {
         if (!parsedUser.theme) {
           parsedUser.theme = 'default';
           localStorage.setItem('football_betting_user', JSON.stringify(parsedUser));
+          console.log('🔧 הוספת ערכת נושא default למשתמש');
         }
         
         setCurrentUser(parsedUser);
-        applyTheme(parsedUser); // 🎨 החל ערכת נושא
+        
+        // 🎨 החל ערכת נושא מיד אחרי טעינת המשתמש
+        console.log('🎨 מחיל ערכת נושא אחרי טעינה:', parsedUser.theme);
+        applyTheme(parsedUser);
         
       } catch (error) {
         console.error('❌ שגיאה בטעינת משתמש:', error);
         localStorage.removeItem('football_betting_user');
-        applyTheme(null); // החל ערכת בסיסית
+        // החל ערכת בסיסית במקרה של שגיאה
+        applyTheme(null);
       }
     } else {
+      console.log('ℹ️ אין משתמש שמור, מחיל ערכת נושא בסיסית');
       applyTheme(null); // החל ערכת בסיסית
     }
     setLoading(false);
-  }, []);
+  }, []); // 🎨 רק פעם אחת בטעינת הדף
+
+  // 🎨 רענון נוסף כאשר currentUser משתנה
+  useEffect(() => {
+    if (currentUser) {
+      console.log('🎨 משתמש השתנה, מרענן ערכת נושא:', currentUser.name, currentUser.theme);
+      applyTheme(currentUser);
+    }
+  }, [currentUser]); // כאשר currentUser משתנה
 
   const handleLogin = (user) => {
     console.log('✅ התחברות מוצלחת:', user.name);
@@ -45,11 +61,15 @@ function App() {
     // וודא שיש שדה theme
     if (!user.theme) {
       user.theme = 'default';
+      console.log('🔧 הוספת ערכת נושא default למשתמש חדש');
     }
     
     setCurrentUser(user);
     localStorage.setItem('football_betting_user', JSON.stringify(user));
-    applyTheme(user); // 🎨 החל ערכת נושא
+    
+    // 🎨 החל ערכת נושא מיד אחרי התחברות
+    console.log('🎨 מחיל ערכת נושא אחרי התחברות:', user.theme);
+    applyTheme(user);
   };
 
   const handleLogout = async () => {
@@ -57,7 +77,11 @@ function App() {
       console.log('🚪 מתנתק...');
       localStorage.removeItem('football_betting_user');
       setCurrentUser(null);
-      applyTheme(null); // החזר לערכת בסיסית
+      
+      // 🎨 החזר לערכת בסיסית אחרי התנתקות
+      console.log('🎨 מחזיר לערכת נושא בסיסית אחרי התנתקות');
+      applyTheme(null);
+      
       console.log('✅ התנתקות הושלמה');
     } catch (error) {
       console.error('❌ שגיאה בהתנתקות:', error);

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { applyTheme } from '../themes'; // 🎨 יבוא פונקציית ערכות הנושא
 
 function Login({ onLogin }) {
   const [username, setUsername] = useState('');
@@ -9,6 +10,12 @@ function Login({ onLogin }) {
   const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
+
+  // 🎨 החל ערכת נושא בסיסית בטעינת דף ההתחברות
+  useEffect(() => {
+    console.log('🎨 Login.js - מחיל ערכת נושא בסיסית בדף התחברות');
+    applyTheme(null); // ערכת נושא בסיסית
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,7 +37,21 @@ function Login({ onLogin }) {
       const data = await response.json();
       
       if (response.ok) {
-        onLogin(data.user);
+        console.log('✅ התחברות מוצלחת ב-Login.js:', data.user.name);
+        console.log('🎨 ערכת הנושא של המשתמש:', data.user.theme || 'default');
+        
+        // 🎨 החל ערכת נושא מיד כאן בLogin לפני המעבר
+        if (data.user.theme) {
+          console.log('🎨 מחיל ערכת נושא בLogin.js לפני מעבר:', data.user.theme);
+          applyTheme(data.user);
+          
+          // 🎨 המתן רגע קטן כדי שהעיצוב יתחיל להתחיל
+          setTimeout(() => {
+            onLogin(data.user);
+          }, 200);
+        } else {
+          onLogin(data.user);
+        }
       } else {
         setMessage(data.message || 'שם משתמש או סיסמה שגויים');
       }
@@ -45,7 +66,7 @@ function Login({ onLogin }) {
   return (
     <div style={{ 
       minHeight: '100vh', 
-      background: 'linear-gradient(135deg, #1e3a8a 0%, #059669 100%)',
+      background: 'var(--theme-header-bg, linear-gradient(135deg, #1e3a8a 0%, #059669 100%))', // 🎨 ישתמש בערכת נושא אם יש
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -56,7 +77,7 @@ function Login({ onLogin }) {
           <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
             🏆 קבוצת הימורים
           </h1>
-          <p style={{ color: '#666' }}>פרמייר ליג • לה ליגה • ליגת העל</p>
+          <p style={{ color: '#666' }}>פרמיירליג • לה ליגה • ליגת העל</p>
         </div>
 
         <form onSubmit={handleSubmit}>
