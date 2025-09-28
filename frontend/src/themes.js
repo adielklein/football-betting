@@ -308,7 +308,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #FFD700 0%, #0047AB 100%)'
     },
-    logo: 'https://maccabi.co.il/mtpic/logos/maccabi%20logo%20300.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/he/8/82/Maccabi_tlv_fc.png',
     logoType: 'image',
     category: 'ליגת העל הישראלית'
   },
