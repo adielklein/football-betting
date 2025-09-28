@@ -294,7 +294,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #0F7B0F 0%, #228B22 100%)'
     },
-    logo: 'https://logos-world.net/wp-content/uploads/2020/12/Maccabi-Haifa-Logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/he/thumb/1/1e/%D7%A1%D7%9E%D7%9C_%D7%9E%D7%9B%D7%91%D7%99_%D7%97%D7%99%D7%A4%D7%94_2023.png/250px-%D7%A1%D7%9E%D7%9C_%D7%9E%D7%9B%D7%91%D7%99_%D7%97%D7%99%D7%A4%D7%94_2023.png',
     logoType: 'image',
     category: 'ליגת העל הישראלית'
   },
@@ -308,7 +308,7 @@ export const THEMES = {
       background: '#ffffff',
       headerBg: 'linear-gradient(135deg, #FFD700 0%, #0047AB 100%)'
     },
-    logo: 'https://upload.wikimedia.org/wikipedia/he/4/45/Maccabi_Tel_Aviv_FC.png',
+    logo: 'https://maccabi.co.il/mtpic/logos/maccabi%20logo%20300.png',
     logoType: 'image',
     category: 'ליגת העל הישראלית'
   },
