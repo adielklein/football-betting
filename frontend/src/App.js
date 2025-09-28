@@ -9,6 +9,10 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:5000/api'
+    : 'https://football-betting-backend.onrender.com/api';
+
   useEffect(() => {
     console.log('🎨 App.js - התחלת טעינה, מחפש משתמש שמור...');
     
@@ -33,6 +37,9 @@ function App() {
         console.log('🎨 מחיל ערכת נושא אחרי טעינה:', parsedUser.theme);
         applyTheme(parsedUser);
         
+        // 🆕 בדוק עם השרת אם יש עדכונים לערכת הנושא
+        checkForThemeUpdates(parsedUser);
+        
       } catch (error) {
         console.error('❌ שגיאה בטעינת משתמש:', error);
         localStorage.removeItem('football_betting_user');
@@ -45,6 +52,52 @@ function App() {
     }
     setLoading(false);
   }, []); // 🎨 רק פעם אחת בטעינת הדף
+
+  // 🆕 פונקציה לבדיקת עדכוני ערכת נושא מהשרת
+  const checkForThemeUpdates = async (localUser) => {
+    try {
+      console.log('🔄 בודק עדכונים מהשרת למשתמש:', localUser.name);
+      
+      const response = await fetch(`${API_URL}/auth/users`);
+      if (!response.ok) {
+        console.log('🔄 לא ניתן לבדוק עדכונים מהשרת - ממשיך עם נתוני המטמון');
+        return;
+      }
+      
+      const users = await response.json();
+      const serverUser = users.find(u => u._id === localUser.id);
+      
+      if (serverUser && serverUser.theme !== localUser.theme) {
+        console.log('🎨 נמצא עדכון ערכת נושא!');
+        console.log('🔄 מטמון:', localUser.theme, '→ שרת:', serverUser.theme);
+        
+        // עדכן את הנתונים המקומיים
+        const updatedUser = {
+          ...localUser,
+          theme: serverUser.theme,
+          name: serverUser.name || localUser.name,
+          username: serverUser.username || localUser.username,
+          role: serverUser.role || localUser.role
+        };
+        
+        // שמור ב-localStorage
+        localStorage.setItem('football_betting_user', JSON.stringify(updatedUser));
+        
+        // עדכן state
+        setCurrentUser(updatedUser);
+        
+        // החל ערכת נושא חדשה
+        console.log('🎨 מחיל ערכת נושא מעודכנת:', serverUser.theme);
+        applyTheme(updatedUser);
+        
+        console.log('✅ ערכת נושא עודכנה בהצלחה!');
+      } else {
+        console.log('✅ ערכת הנושא מעודכנת');
+      }
+    } catch (error) {
+      console.log('🔄 שגיאה בבדיקת עדכונים - ממשיך עם נתוני המטמון:', error.message);
+    }
+  };
 
   // 🎨 רענון נוסף כאשר currentUser משתנה
   useEffect(() => {
