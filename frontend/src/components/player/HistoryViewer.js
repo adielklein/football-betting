@@ -4,10 +4,79 @@ function HistoryViewer({ weeks, user }) {
   const [selectedHistoryWeek, setSelectedHistoryWeek] = useState(null);
   const [historyData, setHistoryData] = useState({ matches: [], bets: [], allBets: [] });
   const [loading, setLoading] = useState(false);
+  
+  // 🆕 סינונים חדשים
+  const [selectedSeason, setSelectedSeason] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [availableSeasons, setAvailableSeasons] = useState([]);
+  const [availableMonths, setAvailableMonths] = useState([]);
+  const [filteredWeeks, setFilteredWeeks] = useState([]);
 
   const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
+
+  // 🆕 חישוב עונות וחודשים זמינים
+  useEffect(() => {
+    if (!weeks || weeks.length === 0) return;
+    
+    // מצא עונות ייחודיות
+    const seasons = [...new Set(weeks.map(w => w.season || '2025-26'))].sort().reverse();
+    setAvailableSeasons(seasons);
+    
+    // קבע עונה ראשונה אם אין
+    if (!selectedSeason && seasons.length > 0) {
+      setSelectedSeason(seasons[0]);
+    }
+  }, [weeks]);
+
+  // 🆕 עדכון חודשים זמינים כשמשנים עונה
+  useEffect(() => {
+    if (!weeks || !selectedSeason) return;
+    
+    // סנן שבועות לפי עונה
+    const weeksInSeason = weeks.filter(w => (w.season || '2025-26') === selectedSeason);
+    
+    // מצא חודשים ייחודיים
+    const months = [...new Set(weeksInSeason.map(w => w.month))].sort((a, b) => a - b);
+    setAvailableMonths(months);
+    
+    // קבע חודש ראשון אם אין
+    if (!selectedMonth && months.length > 0) {
+      setSelectedMonth(months[0]);
+    }
+  }, [weeks, selectedSeason]);
+
+  // 🆕 עדכון שבועות מסוננים
+  useEffect(() => {
+    if (!weeks) return;
+    
+    let filtered = weeks;
+    
+    // סינון לפי עונה
+    if (selectedSeason) {
+      filtered = filtered.filter(w => (w.season || '2025-26') === selectedSeason);
+    }
+    
+    // סינון לפי חודש
+    if (selectedMonth) {
+      filtered = filtered.filter(w => w.month === selectedMonth);
+    }
+    
+    // מיון לפי תאריך יצירה (חדשים ראשון)
+    filtered = filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    setFilteredWeeks(filtered);
+    
+    // 🆕 קבע שבוע ראשון אוטומטית אם יש
+    if (filtered.length > 0 && !selectedHistoryWeek) {
+      setSelectedHistoryWeek(filtered[0]);
+      loadHistoryData(filtered[0]._id);
+    } else if (filtered.length === 0) {
+      setSelectedHistoryWeek(null);
+      setHistoryData({ matches: [], bets: [], allBets: [] });
+    }
+  }, [weeks, selectedSeason, selectedMonth]);
 
   const loadHistoryData = async (weekId) => {
     if (!weekId) return;
@@ -26,12 +95,10 @@ function HistoryViewer({ weeks, user }) {
 
       console.log('היסטוריה - נתונים נטענו:', { matches, userBetsArray, allBets });
 
-      // Convert user bets to object
       const userBetsObj = {};
       if (Array.isArray(userBetsArray)) {
         userBetsArray.forEach(bet => {
           if (bet && bet.matchId) {
-            // אם matchId הוא object עם _id
             const matchId = typeof bet.matchId === 'object' ? bet.matchId._id : bet.matchId;
             userBetsObj[matchId] = bet.prediction;
           }
@@ -48,22 +115,28 @@ function HistoryViewer({ weeks, user }) {
     }
   };
 
-  const getLeagueColor = (league) => {
+  const getLeagueColor = (match) => {
+    if (match.leagueId && typeof match.leagueId === 'object' && match.leagueId.color) {
+      return match.leagueId.color;
+    }
     const colors = {
       'english': '#dc3545',
       'spanish': '#007bff', 
       'world': '#6f42c1'
     };
-    return colors[league] || '#6c757d';
+    return colors[match.league] || '#6c757d';
   };
 
-  const getLeagueName = (league) => {
+  const getLeagueName = (match) => {
+    if (match.leagueId && typeof match.leagueId === 'object' && match.leagueId.name) {
+      return match.leagueId.name;
+    }
     const names = {
-      'english': 'פרמייר ליג',
+      'english': 'פרמיירליג',
       'spanish': 'לה ליגה',
       'world': 'ליגת העל'
     };
-    return names[league] || league;
+    return names[match.league] || 'ליגה';
   };
 
   const calculateUserWeekScore = () => {
@@ -96,79 +169,182 @@ function HistoryViewer({ weeks, user }) {
     return Object.values(playerScores).sort((a, b) => b.score - a.score);
   };
 
-  // פונקציה מדויקת יותר לבדיקת סטטוס שבוע
-  const getWeekStatus = (week) => {
-    if (!week.active) {
-      return 'לא פעיל';
-    }
-    
-    if (week.locked) {
-      return 'הסתיים';
-    }
-    
-    // אם פעיל אבל לא נעול, בדוק אם עבר זמן הנעילה
-    if (week.lockTime) {
-      const lockTime = new Date(week.lockTime);
-      const now = new Date();
-      
-      console.log(`📍 בודק זמן נעילה של "${week.name}":`, {
-        lockTime: lockTime.toLocaleString('he-IL'),
-        now: now.toLocaleString('he-IL'),
-        passed: now >= lockTime
-      });
-      
-      if (now >= lockTime) {
-        return 'הסתיים (עבר זמן)';
-      } else {
-        return 'פתוח להימורים';
-      }
-    }
-    
-    return 'פתוח להימורים';
-  };
-
-  // הראה את כל השבועות
-  const availableWeeks = weeks.filter(week => week && week._id);
-
-  console.log('השבועות הזמינים להיסטוריה:', availableWeeks);
+  const months = [
+    { value: 1, label: 'ינואר' }, { value: 2, label: 'פברואר' }, { value: 3, label: 'מרץ' },
+    { value: 4, label: 'אפריל' }, { value: 5, label: 'מאי' }, { value: 6, label: 'יוני' },
+    { value: 7, label: 'יולי' }, { value: 8, label: 'אוגוסט' }, { value: 9, label: 'ספטמבר' },
+    { value: 10, label: 'אוקטובר' }, { value: 11, label: 'נובמבר' }, { value: 12, label: 'דצמבר' }
+  ];
 
   return (
     <div className="card">
-      <h2>היסטוריית שבועות</h2>
+      <h2>📚 היסטוריית שבועות</h2>
       
-      <div style={{ marginBottom: '1rem' }}>
-        <select 
-          value={selectedHistoryWeek?._id || ''} 
-          onChange={(e) => {
-            const week = weeks.find(w => w._id === e.target.value);
-            setSelectedHistoryWeek(week);
-            if (week) loadHistoryData(week._id);
-          }}
-          className="input"
-          style={{ width: '300px' }}
-        >
-          <option value="">בחר שבוע לצפייה</option>
-          {availableWeeks.map(week => {
-            const status = getWeekStatus(week);
-            
-            return (
-              <option key={week._id} value={week._id}>
-                {week.name} ({status})
-              </option>
-            );
-          })}
-        </select>
-        
-        {availableWeeks.length === 0 && (
-          <p style={{ color: '#666', marginTop: '1rem' }}>
-            אין שבועות זמינים עדיין
-          </p>
-        )}
+      {/* 🆕 סינונים מדורגים */}
+      <div style={{ 
+        marginBottom: '1.5rem', 
+        padding: '1rem', 
+        backgroundColor: '#f8f9fa', 
+        borderRadius: '8px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1rem'
+      }}>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* בחירת עונה */}
+          <div style={{ flex: '1', minWidth: '150px' }}>
+            <label style={{ 
+              display: 'block', 
+              fontSize: '12px', 
+              fontWeight: '600', 
+              color: '#666', 
+              marginBottom: '4px' 
+            }}>
+              1️⃣ בחר עונה:
+            </label>
+            <select 
+              value={selectedSeason} 
+              onChange={(e) => {
+                setSelectedSeason(e.target.value);
+                setSelectedMonth('');
+                setSelectedHistoryWeek(null);
+              }}
+              className="input"
+              style={{ width: '100%' }}
+            >
+              <option value="">כל העונות</option>
+              {availableSeasons.map(season => (
+                <option key={season} value={season}>
+                  עונת {season}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* בחירת חודש */}
+          <div style={{ flex: '1', minWidth: '150px' }}>
+            <label style={{ 
+              display: 'block', 
+              fontSize: '12px', 
+              fontWeight: '600', 
+              color: '#666', 
+              marginBottom: '4px' 
+            }}>
+              2️⃣ בחר חודש:
+            </label>
+            <select 
+              value={selectedMonth} 
+              onChange={(e) => {
+                setSelectedMonth(parseInt(e.target.value) || '');
+                setSelectedHistoryWeek(null);
+              }}
+              className="input"
+              style={{ width: '100%' }}
+              disabled={!selectedSeason || availableMonths.length === 0}
+            >
+              <option value="">כל החודשים</option>
+              {availableMonths.map(monthNum => (
+                <option key={monthNum} value={monthNum}>
+                  {months.find(m => m.value === monthNum)?.label || `חודש ${monthNum}`}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* בחירת שבוע */}
+          <div style={{ flex: '1', minWidth: '200px' }}>
+            <label style={{ 
+              display: 'block', 
+              fontSize: '12px', 
+              fontWeight: '600', 
+              color: '#666', 
+              marginBottom: '4px' 
+            }}>
+              3️⃣ בחר שבוע:
+            </label>
+            <select 
+              value={selectedHistoryWeek?._id || ''} 
+              onChange={(e) => {
+                const week = filteredWeeks.find(w => w._id === e.target.value);
+                setSelectedHistoryWeek(week);
+                if (week) loadHistoryData(week._id);
+              }}
+              className="input"
+              style={{ width: '100%' }}
+              disabled={filteredWeeks.length === 0}
+            >
+              <option value="">בחר שבוע</option>
+              {filteredWeeks.map(week => (
+                <option key={week._id} value={week._id}>
+                  {week.name} - {months.find(m => m.value === week.month)?.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* סיכום סינון */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '0.5rem', 
+          fontSize: '13px', 
+          color: '#666',
+          flexWrap: 'wrap'
+        }}>
+          <span>📊 סינון:</span>
+          {selectedSeason && (
+            <span style={{ 
+              padding: '2px 8px', 
+              backgroundColor: '#e3f2fd', 
+              borderRadius: '4px',
+              fontWeight: '500'
+            }}>
+              {selectedSeason}
+            </span>
+          )}
+          {selectedMonth && (
+            <span style={{ 
+              padding: '2px 8px', 
+              backgroundColor: '#fff3cd', 
+              borderRadius: '4px',
+              fontWeight: '500'
+            }}>
+              {months.find(m => m.value === selectedMonth)?.label}
+            </span>
+          )}
+          <span style={{ color: '#999' }}>•</span>
+          <span style={{ fontWeight: '600' }}>
+            {filteredWeeks.length} שבועות נמצאו
+          </span>
+        </div>
       </div>
 
       {loading && (
         <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
-          טוען נתונים...
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid #f3f3f3',
+            borderTop: '4px solid #007bff',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1rem'
+          }}></div>
+          טוען היסטוריה...
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
+      )}
+
+      {!selectedHistoryWeek && !loading && filteredWeeks.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+          <div style={{ fontSize: '48px', marginBottom: '1rem' }}>📭</div>
+          <h3>אין שבועות מסוננים</h3>
+          <p>נסה לשנות את הסינון למעלה</p>
         </div>
       )}
 
@@ -185,8 +361,8 @@ function HistoryViewer({ weeks, user }) {
           }}>
             <div>
               <h3 style={{ margin: 0 }}>שבוע: {selectedHistoryWeek.name}</h3>
-              <p style={{ margin: 0, color: '#666' }}>
-                {getWeekStatus(selectedHistoryWeek)}
+              <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
+                {months.find(m => m.value === selectedHistoryWeek.month)?.label} {selectedHistoryWeek.season}
               </p>
             </div>
             <div style={{ textAlign: 'center' }}>
@@ -231,13 +407,13 @@ function HistoryViewer({ weeks, user }) {
                         <div>
                           <span style={{
                             padding: '2px 6px',
-                            backgroundColor: getLeagueColor(match.league),
+                            backgroundColor: getLeagueColor(match),
                             color: 'white',
                             borderRadius: '3px',
                             fontSize: '10px',
                             marginRight: '8px'
                           }}>
-                            {getLeagueName(match.league)}
+                            {getLeagueName(match)}
                           </span>
                           <strong>{match.team1} נגד {match.team2}</strong>
                         </div>
@@ -246,7 +422,6 @@ function HistoryViewer({ weeks, user }) {
                         </span>
                       </div>
 
-                      {/* ההימור שלך - מודגש ובמיקום בולט */}
                       <div style={{ 
                         textAlign: 'center',
                         marginBottom: '1rem',
@@ -266,7 +441,6 @@ function HistoryViewer({ weeks, user }) {
                         }}>
                           {bet ? `${bet.team1Goals} - ${bet.team2Goals}` : 'לא הימרת'}
                         </div>
-                        {/* התוצאה האמיתית תחת ההימור עם שמות הקבוצות */}
                         {hasResult && (
                           <div style={{ 
                             fontSize: '18px', 
@@ -278,14 +452,13 @@ function HistoryViewer({ weeks, user }) {
                             {`${match.team1} ${match.result.team1Goals} - ${match.result.team2Goals} ${match.team2}`}
                           </div>
                         )}
-                        {!hasResult && (
+                        {!hasResult && bet && (
                           <div style={{ fontSize: '10px', color: '#666', marginTop: '0.2rem' }}>
-                            {bet && `${match.team1} ${bet.team1Goals} - ${bet.team2Goals} ${match.team2}`}
+                            {`${match.team1} ${bet.team1Goals} - ${bet.team2Goals} ${match.team2}`}
                           </div>
                         )}
                       </div>
 
-                      {/* הניקוד */}
                       <div style={{ textAlign: 'center' }}>
                         {hasResult && bet && (
                           <span style={{
@@ -352,9 +525,9 @@ function HistoryViewer({ weeks, user }) {
         </>
       )}
 
-      {!selectedHistoryWeek && !loading && (
+      {!selectedHistoryWeek && !loading && filteredWeeks.length > 0 && (
         <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
-          בחר שבוע מהרשימה למעלה כדי לראות את ההיסטוריה
+          <p>בחר שבוע מהרשימה למעלה כדי לראות את ההיסטוריה</p>
         </div>
       )}
     </div>

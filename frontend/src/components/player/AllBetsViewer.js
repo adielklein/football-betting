@@ -6,31 +6,115 @@ function AllBetsViewer({ weeks, user }) {
   const [allBets, setAllBets] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
+  
+  // 🆕 סינונים חדשים
+  const [selectedSeason, setSelectedSeason] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [availableSeasons, setAvailableSeasons] = useState([]);
+  const [availableMonths, setAvailableMonths] = useState([]);
+  const [filteredWeeks, setFilteredWeeks] = useState([]);
 
   const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
 
-  // מציאת כל השבועות הנעולים או שעבר זמן הנעילה
-  const getLockedWeeks = () => {
-    if (!weeks || weeks.length === 0) return [];
+  // 🆕 חישוב עונות וחודשים זמינים
+  useEffect(() => {
+    if (!weeks || weeks.length === 0) return;
     
-    return weeks.filter(w => {
+    // רק שבועות נעולים או שעבר זמן הנעילה
+    const lockedWeeks = weeks.filter(w => {
       if (!w || !w.active) return false;
-      
-      // שבוע נעול
       if (w.locked) return true;
-      
-      // או שעבר זמן הנעילה
       if (w.lockTime) {
         const lockTime = new Date(w.lockTime);
         const now = new Date();
         return now >= lockTime;
       }
-      
       return false;
-    }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // הכי חדשים קודם
-  };
+    });
+    
+    // מצא עונות ייחודיות
+    const seasons = [...new Set(lockedWeeks.map(w => w.season || '2025-26'))].sort().reverse();
+    setAvailableSeasons(seasons);
+    
+    // קבע עונה ראשונה אם אין
+    if (!selectedSeason && seasons.length > 0) {
+      setSelectedSeason(seasons[0]);
+    }
+  }, [weeks]);
+
+  // 🆕 עדכון חודשים זמינים כשמשנים עונה
+  useEffect(() => {
+    if (!weeks || !selectedSeason) return;
+    
+    // רק שבועות נעולים
+    const lockedWeeks = weeks.filter(w => {
+      if (!w || !w.active) return false;
+      if (w.locked) return true;
+      if (w.lockTime) {
+        const lockTime = new Date(w.lockTime);
+        const now = new Date();
+        return now >= lockTime;
+      }
+      return false;
+    });
+    
+    // סנן שבועות לפי עונה
+    const weeksInSeason = lockedWeeks.filter(w => (w.season || '2025-26') === selectedSeason);
+    
+    // מצא חודשים ייחודיים
+    const months = [...new Set(weeksInSeason.map(w => w.month))].sort((a, b) => a - b);
+    setAvailableMonths(months);
+    
+    // קבע חודש ראשון אם אין
+    if (!selectedMonth && months.length > 0) {
+      setSelectedMonth(months[0]);
+    }
+  }, [weeks, selectedSeason]);
+
+  // 🆕 עדכון שבועות מסוננים
+  useEffect(() => {
+    if (!weeks) return;
+    
+    // רק שבועות נעולים
+    let filtered = weeks.filter(w => {
+      if (!w || !w.active) return false;
+      if (w.locked) return true;
+      if (w.lockTime) {
+        const lockTime = new Date(w.lockTime);
+        const now = new Date();
+        return now >= lockTime;
+      }
+      return false;
+    });
+    
+    // סינון לפי עונה
+    if (selectedSeason) {
+      filtered = filtered.filter(w => (w.season || '2025-26') === selectedSeason);
+    }
+    
+    // סינון לפי חודש
+    if (selectedMonth) {
+      filtered = filtered.filter(w => w.month === selectedMonth);
+    }
+    
+    // מיון לפי תאריך יצירה (חדשים ראשון)
+    filtered = filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    setFilteredWeeks(filtered);
+    
+    // 🆕 קבע שבוע ראשון אוטומטית אם יש
+    if (filtered.length > 0 && !selectedWeek) {
+      setSelectedWeek(filtered[0]);
+      loadWeekData(filtered[0]._id);
+    } else if (filtered.length === 0) {
+      setSelectedWeek(null);
+      setMatches([]);
+      setAllBets([]);
+      setUsers([]);
+    }
+  }, [weeks, selectedSeason, selectedMonth]);
 
   const loadWeekData = async (weekId) => {
     if (!weekId) {
@@ -53,7 +137,6 @@ function AllBetsViewer({ weeks, user }) {
       const betsData = await betsResponse.json();
       const usersData = await usersResponse.json();
       
-      // סינון אדמינים מרשימת המשתמשים
       const playersOnly = usersData.filter(u => u.role !== 'admin');
       
       setMatches(Array.isArray(matchesData) ? matchesData : []);
@@ -69,22 +152,28 @@ function AllBetsViewer({ weeks, user }) {
     }
   };
 
-  const getLeagueColor = (league) => {
+  const getLeagueColor = (match) => {
+    if (match.leagueId && typeof match.leagueId === 'object' && match.leagueId.color) {
+      return match.leagueId.color;
+    }
     const colors = {
       'english': '#dc3545',
       'spanish': '#007bff',
       'world': '#6f42c1'
     };
-    return colors[league] || '#6c757d';
+    return colors[match.league] || '#6c757d';
   };
 
-  const getLeagueName = (league) => {
+  const getLeagueName = (match) => {
+    if (match.leagueId && typeof match.leagueId === 'object' && match.leagueId.name) {
+      return match.leagueId.name;
+    }
     const names = {
-      'english': 'פרמייר ליג',
+      'english': 'פרמיירליג',
       'spanish': 'לה ליגה',
       'world': 'ליגת העל'
     };
-    return names[league] || league;
+    return names[match.league] || 'ליגה';
   };
 
   const getBetForUserAndMatch = (userId, matchId) => {
@@ -102,12 +191,10 @@ function AllBetsViewer({ weeks, user }) {
     const resultTeam1 = result.team1Goals;
     const resultTeam2 = result.team2Goals;
     
-    // Exact result = 3 points
     if (predTeam1 === resultTeam1 && predTeam2 === resultTeam2) {
       return 3;
     }
     
-    // Correct outcome (winner/draw) = 1 point
     const predOutcome = predTeam1 > predTeam2 ? 'home' : predTeam1 < predTeam2 ? 'away' : 'draw';
     const resultOutcome = resultTeam1 > resultTeam2 ? 'home' : resultTeam1 < resultTeam2 ? 'away' : 'draw';
     
@@ -118,8 +205,6 @@ function AllBetsViewer({ weeks, user }) {
     return 0;
   };
 
-  const lockedWeeks = getLockedWeeks();
-
   const months = [
     { value: 1, label: 'ינואר' }, { value: 2, label: 'פברואר' }, { value: 3, label: 'מרץ' },
     { value: 4, label: 'אפריל' }, { value: 5, label: 'מאי' }, { value: 6, label: 'יוני' },
@@ -127,51 +212,178 @@ function AllBetsViewer({ weeks, user }) {
     { value: 10, label: 'אוקטובר' }, { value: 11, label: 'נובמבר' }, { value: 12, label: 'דצמבר' }
   ];
 
-  if (lockedWeeks.length === 0) {
-    return (
-      <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
-        <h2>🔒 אין שבועות נעולים עדיין</h2>
-        <p style={{ color: '#666' }}>
-          ההימורים של כל השחקנים יהיו זמינים לצפייה ברגע שישנם שבועות נעולים
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div>
-      {/* בחירת שבוע */}
+      {/* 🆕 סינונים מדורגים */}
       <div className="card" style={{ marginBottom: '1rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h2>🎯 הימורים של כל השחקנים</h2>
-          <select 
-            value={selectedWeek?._id || ''} 
-            onChange={(e) => {
-              const week = lockedWeeks.find(w => w._id === e.target.value);
-              setSelectedWeek(week || null);
-              if (week) {
-                loadWeekData(week._id);
-              }
-            }}
-            className="input"
-            style={{ width: '300px' }}
-          >
-            <option value="">בחר שבוע נעול לצפייה</option>
-            {lockedWeeks.map(week => {
-              const monthLabel = months.find(m => m.value === week.month)?.label || 'חודש לא ידוע';
-              return (
-                <option key={week._id} value={week._id}>
-                  {week.name} - {monthLabel} {week.season} 🔒
-                </option>
-              );
-            })}
-          </select>
+        </div>
+        
+        <div style={{ 
+          padding: '1rem', 
+          backgroundColor: '#f8f9fa', 
+          borderRadius: '8px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem'
+        }}>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* בחירת עונה */}
+            <div style={{ flex: '1', minWidth: '150px' }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: '12px', 
+                fontWeight: '600', 
+                color: '#666', 
+                marginBottom: '4px' 
+              }}>
+                1️⃣ בחר עונה:
+              </label>
+              <select 
+                value={selectedSeason} 
+                onChange={(e) => {
+                  setSelectedSeason(e.target.value);
+                  setSelectedMonth('');
+                  setSelectedWeek(null);
+                }}
+                className="input"
+                style={{ width: '100%' }}
+              >
+                <option value="">כל העונות</option>
+                {availableSeasons.map(season => (
+                  <option key={season} value={season}>
+                    עונת {season}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* בחירת חודש */}
+            <div style={{ flex: '1', minWidth: '150px' }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: '12px', 
+                fontWeight: '600', 
+                color: '#666', 
+                marginBottom: '4px' 
+              }}>
+                2️⃣ בחר חודש:
+              </label>
+              <select 
+                value={selectedMonth} 
+                onChange={(e) => {
+                  setSelectedMonth(parseInt(e.target.value) || '');
+                  setSelectedWeek(null);
+                }}
+                className="input"
+                style={{ width: '100%' }}
+                disabled={!selectedSeason || availableMonths.length === 0}
+              >
+                <option value="">כל החודשים</option>
+                {availableMonths.map(monthNum => (
+                  <option key={monthNum} value={monthNum}>
+                    {months.find(m => m.value === monthNum)?.label || `חודש ${monthNum}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* בחירת שבוע */}
+            <div style={{ flex: '1', minWidth: '200px' }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: '12px', 
+                fontWeight: '600', 
+                color: '#666', 
+                marginBottom: '4px' 
+              }}>
+                3️⃣ בחר שבוע נעול:
+              </label>
+              <select 
+                value={selectedWeek?._id || ''} 
+                onChange={(e) => {
+                  const week = filteredWeeks.find(w => w._id === e.target.value);
+                  setSelectedWeek(week || null);
+                  if (week) {
+                    loadWeekData(week._id);
+                  }
+                }}
+                className="input"
+                style={{ width: '100%' }}
+                disabled={filteredWeeks.length === 0}
+              >
+                <option value="">בחר שבוע נעול לצפייה</option>
+                {filteredWeeks.map(week => (
+                  <option key={week._id} value={week._id}>
+                    {week.name} - {months.find(m => m.value === week.month)?.label} 🔒
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* סיכום סינון */}
+          <div style={{ 
+            display: 'flex', 
+            gap: '0.5rem', 
+            fontSize: '13px', 
+            color: '#666',
+            flexWrap: 'wrap'
+          }}>
+            <span>📊 סינון:</span>
+            {selectedSeason && (
+              <span style={{ 
+                padding: '2px 8px', 
+                backgroundColor: '#e3f2fd', 
+                borderRadius: '4px',
+                fontWeight: '500'
+              }}>
+                {selectedSeason}
+              </span>
+            )}
+            {selectedMonth && (
+              <span style={{ 
+                padding: '2px 8px', 
+                backgroundColor: '#fff3cd', 
+                borderRadius: '4px',
+                fontWeight: '500'
+              }}>
+                {months.find(m => m.value === selectedMonth)?.label}
+              </span>
+            )}
+            <span style={{ color: '#999' }}>•</span>
+            <span style={{ fontWeight: '600' }}>
+              {filteredWeeks.length} שבועות נעולים נמצאו
+            </span>
+          </div>
+
+          {/* 🔒 הודעה על שבועות נעולים */}
+          {filteredWeeks.length === 0 && selectedSeason && (
+            <div style={{ 
+              padding: '0.75rem', 
+              backgroundColor: '#fff3cd', 
+              borderRadius: '4px',
+              fontSize: '14px',
+              color: '#856404'
+            }}>
+              ⚠️ אין שבועות נעולים עבור הסינון הנבחר. הימורים גלויים רק לשבועות שהסתיימו.
+            </div>
+          )}
         </div>
       </div>
 
-      {!selectedWeek ? (
+      {!selectedWeek && filteredWeeks.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
-          <p style={{ color: '#666' }}>בחר שבוע מהרשימה למעלה כדי לראות את ההימורים של כל השחקנים</p>
+          <div style={{ fontSize: '48px', marginBottom: '1rem' }}>🔒</div>
+          <h2>אין שבועות נעולים עדיין</h2>
+          <p style={{ color: '#666' }}>
+            ההימורים של כל השחקנים יהיו זמינים לצפייה ברגע שיהיו שבועות נעולים
+          </p>
+        </div>
+      ) : !selectedWeek ? (
+        <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
+          <p style={{ color: '#666' }}>בחר שבוע מהרשימה למעלה כדי לראות את ההימורים של כולם</p>
         </div>
       ) : loading ? (
         <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
@@ -222,14 +434,14 @@ function AllBetsViewer({ weeks, user }) {
                         <div style={{ marginBottom: '4px' }}>
                           <span style={{
                             padding: '2px 6px',
-                            backgroundColor: getLeagueColor(match.league),
+                            backgroundColor: getLeagueColor(match),
                             color: 'white',
                             borderRadius: '3px',
                             fontSize: '10px',
                             marginBottom: '4px',
                             display: 'inline-block'
                           }}>
-                            {getLeagueName(match.league)}
+                            {getLeagueName(match)}
                           </span>
                         </div>
                         <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>
@@ -310,7 +522,6 @@ function AllBetsViewer({ weeks, user }) {
                                 )}
                               </div>
                               
-                              {/* הצגת נקודות אם יש תוצאה */}
                               {bet && match.result && match.result.team1Goals !== undefined && (
                                 <div style={{ fontSize: '11px' }}>
                                   <span style={{
