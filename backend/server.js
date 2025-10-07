@@ -10,7 +10,7 @@ app.use(cors({
   origin: [
     'https://football-betting-frontend.onrender.com',
     'https://football-betting-app.onrender.com', 
-    'http://localhost:3000' // לפיתוח
+    'http://localhost:3000'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -26,7 +26,6 @@ app.post('/api/migrate/add-theme-field', async (req, res) => {
     
     const User = require('./models/User');
     
-    // עדכן רק משתמשים שאין להם שדה theme
     const result = await User.updateMany(
       { theme: { $exists: false } },
       { $set: { theme: 'default' } }
@@ -34,7 +33,6 @@ app.post('/api/migrate/add-theme-field', async (req, res) => {
     
     console.log(`✅ Updated ${result.modifiedCount} users with theme field`);
     
-    // החזר את כל המשתמשים עם הtheme החדש
     const allUsers = await User.find({}).select('name username role theme');
     
     res.json({
@@ -68,7 +66,6 @@ const connectMongoDB = async () => {
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('✅ Connected to MongoDB successfully!');
     
-    // בדיקת כמות משתמשים
     const User = require('./models/User');
     const userCount = await User.countDocuments();
     console.log(`👥 Found ${userCount} users in database`);
@@ -86,12 +83,14 @@ const weeksRoutes = require('./routes/weeks');
 const matchesRoutes = require('./routes/matches');
 const betsRoutes = require('./routes/bets');
 const scoresRoutes = require('./routes/scores');
+const leaguesRoutes = require('./routes/leagues'); // 🆕 Leagues routes
 
 app.use('/api/auth', authRoutes);
 app.use('/api/weeks', weeksRoutes);
 app.use('/api/matches', matchesRoutes);
 app.use('/api/bets', betsRoutes);
 app.use('/api/scores', scoresRoutes);
+app.use('/api/leagues', leaguesRoutes); // 🆕 הוסף leagues endpoint
 
 // Debug endpoint
 app.get('/api/debug', async (req, res) => {
@@ -102,23 +101,25 @@ app.get('/api/debug', async (req, res) => {
       matches: 0,
       bets: 0,
       scores: 0,
+      leagues: 0, // 🆕
       mongoConnection: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected',
       mongoHost: mongoose.connection.host || 'Unknown'
     };
     
-    // ספירת רשומות
     try {
       const User = require('./models/User');
       const Week = require('./models/Week');
       const Match = require('./models/Match');
       const Bet = require('./models/Bet');
       const Score = require('./models/Score');
+      const League = require('./models/League'); // 🆕
       
       stats.users = await User.countDocuments();
       stats.weeks = await Week.countDocuments();
       stats.matches = await Match.countDocuments();
       stats.bets = await Bet.countDocuments();
       stats.scores = await Score.countDocuments();
+      stats.leagues = await League.countDocuments(); // 🆕
     } catch (error) {
       console.log('Some models not found, this is normal');
     }
@@ -153,7 +154,8 @@ app.get('/', (req, res) => {
       weeks: '/api/weeks/*',
       matches: '/api/matches/*',
       bets: '/api/bets/*',
-      scores: '/api/scores/*'
+      scores: '/api/scores/*',
+      leagues: '/api/leagues/*' // 🆕
     }
   });
 });
@@ -165,4 +167,5 @@ app.listen(PORT, () => {
   console.log(`🔒 Auth System: Username/Password`);
   console.log(`🔍 Debug URL: http://localhost:${PORT}/api/debug`);
   console.log(`🔄 Migration URL: http://localhost:${PORT}/api/migrate/add-theme-field`);
+  console.log(`🏆 Leagues URL: http://localhost:${PORT}/api/leagues`); // 🆕
 });

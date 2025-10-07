@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 
 function WeeksManagement({ 
@@ -17,16 +17,44 @@ function WeeksManagement({
   const [editingWeek, setEditingWeek] = useState(null);
   const [editingMatch, setEditingMatch] = useState({});
   const [newMatch, setNewMatch] = useState({
-    league: 'english',
+    leagueId: '', // 🆕 שדה חדש
     team1: '',
     team2: '',
     date: '',
     time: ''
   });
+  
+  // 🆕 state לליגות
+  const [leagues, setLeagues] = useState([]);
+  const [loadingLeagues, setLoadingLeagues] = useState(false);
 
   const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
+
+  // 🆕 טעינת ליגות בטעינת הקומפוננטה
+  useEffect(() => {
+    loadLeagues();
+  }, []);
+
+  const loadLeagues = async () => {
+    try {
+      setLoadingLeagues(true);
+      const response = await fetch(`${API_URL}/leagues/active`);
+      const data = await response.json();
+      setLeagues(Array.isArray(data) ? data : []);
+      
+      // 🆕 קבע ליגה ברירת מחדל אם יש
+      if (data.length > 0 && !newMatch.leagueId) {
+        setNewMatch(prev => ({ ...prev, leagueId: data[0]._id }));
+      }
+    } catch (error) {
+      console.error('Error loading leagues:', error);
+      setLeagues([]);
+    } finally {
+      setLoadingLeagues(false);
+    }
+  };
 
   const createNewWeek = async () => {
     const weekName = newWeekName.trim() || `Week ${weeks.length + 1}`;
@@ -85,7 +113,6 @@ function WeeksManagement({
 
       setEditingWeek(null);
       
-      // עדכון מיידי של השבוע הנבחר
       if (selectedWeek && selectedWeek._id === weekId) {
         onWeekSelect({ 
           ...selectedWeek, 
@@ -120,12 +147,10 @@ function WeeksManagement({
     }
   };
 
-  // פונקציה חדשה למציאת המשחק הכי מוקדם
   const findEarliestMatch = (matches) => {
     if (!matches || matches.length === 0) return null;
     
     return matches.reduce((earliest, match) => {
-      // המרה לאובייקט Date לצורך השוואה
       const [currentDay, currentMonth] = match.date.split('.');
       const [currentHour, currentMinute] = match.time.split(':');
       const currentDate = new Date(
@@ -157,7 +182,6 @@ function WeeksManagement({
     }
 
     try {
-      // מצא את המשחק הכי מוקדם במקום הראשון ברשימה
       const earliestMatch = findEarliestMatch(matches);
       
       if (!earliestMatch || !earliestMatch.date || !earliestMatch.time) {
@@ -166,45 +190,24 @@ function WeeksManagement({
       }
 
       console.log('🏆 המשחק הכי מוקדם:', `${earliestMatch.team1} נגד ${earliestMatch.team2}`);
-      console.log('🔍 תאריך המשחק המוקדם:', earliestMatch.date);
-      console.log('🔍 שעת המשחק המוקדם:', earliestMatch.time);
+      console.log('📅 תאריך המשחק המוקדם:', earliestMatch.date);
+      console.log('🕐 שעת המשחק המוקדם:', earliestMatch.time);
 
-      // פירוק התאריך DD.MM (כמו 10.08)
       const [day, month] = earliestMatch.date.split('.');
-      console.log('🔍 אחרי פירוק תאריך:', { day: day, month: month });
-
-      // פירוק השעה HH:MM (כמו 20:00)
       const [hour, minute] = earliestMatch.time.split(':');
-      console.log('🔍 אחרי פירוק שעה:', { hour: hour, minute: minute });
 
-      // יצירת התאריך
-      // שים לב: new Date(year, monthIndex, day, hour, minute)
-      // monthIndex מתחיל מ-0, אז אוגוסט (8) = 7
-      const currentYear = new Date().getFullYear(); // שנה נוכחית
+      const currentYear = new Date().getFullYear();
       const lockTime = new Date(
-        currentYear, // שנה נוכחית (2024)
-        parseInt(month) - 1, // חודש (0-11), אוגוסט = 7
-        parseInt(day), // יום
-        parseInt(hour), // שעה
-        parseInt(minute) // דקה
+        currentYear,
+        parseInt(month) - 1,
+        parseInt(day),
+        parseInt(hour),
+        parseInt(minute)
       );
 
-      console.log('🔍 זמן נעילה שחושב:', {
-        input: `${earliestMatch.date} ${earliestMatch.time}`,
-        year: currentYear,
-        month: parseInt(month) - 1,
-        day: parseInt(day),
-        hour: parseInt(hour),
-        minute: parseInt(minute),
-        calculated: lockTime.toLocaleString('he-IL'),
-        iso: lockTime.toISOString()
-      });
+      console.log('🔍 זמן נעילה שחושב:', lockTime.toLocaleString('he-IL'));
 
-      // בדיקה שהתאריך הגיוני
       const now = new Date();
-      console.log('🔍 זמן נוכחי:', now.toLocaleString('he-IL'));
-      console.log('🔍 האם עבר הזמן?', lockTime < now);
-
       let confirmMessage;
       if (lockTime < now) {
         confirmMessage = `⚠️ זמן הנעילה שחושב כבר עבר!\n` +
@@ -241,7 +244,6 @@ function WeeksManagement({
     }
   };
 
-  // פונקציה חדשה לכיבוי שבוע
   const deactivateWeek = async () => {
     if (!selectedWeek || !selectedWeek._id) {
       alert('יש לבחור שבוע קודם');
@@ -281,24 +283,23 @@ function WeeksManagement({
     }
   };
 
+  // 🆕 הוספת משחק עם leagueId
   const addMatch = async () => {
     if (!selectedWeek || !selectedWeek._id) {
       alert('יש לבחור שבוע קודם');
       return;
     }
 
-    if (!newMatch.team1 || !newMatch.team2 || !newMatch.date || !newMatch.time) {
+    if (!newMatch.leagueId || !newMatch.team1 || !newMatch.team2 || !newMatch.date || !newMatch.time) {
       alert('יש למלא את כל השדות');
       return;
     }
 
-    // בדיקה שהתאריך בפורמט נכון
     if (!newMatch.date.match(/^\d{1,2}\.\d{1,2}$/)) {
       alert('פורמט תאריך לא נכון. השתמש בפורמט DD.MM (לדוגמה: 10.08)');
       return;
     }
 
-    // בדיקה שהשעה בפורמט נכון
     if (!newMatch.time.match(/^\d{1,2}:\d{2}$/)) {
       alert('פורמט שעה לא נכון. השתמש בפורמט HH:MM (לדוגמה: 20:00)');
       return;
@@ -309,16 +310,27 @@ function WeeksManagement({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...newMatch,
-          weekId: selectedWeek._id
+          weekId: selectedWeek._id,
+          leagueId: newMatch.leagueId, // 🆕 שליחת leagueId
+          team1: newMatch.team1,
+          team2: newMatch.team2,
+          date: newMatch.date,
+          time: newMatch.time
         })
       });
 
       if (!response.ok) {
-        throw new Error(`שגיאה בהוספת משחק: ${response.status}`);
+        const error = await response.json();
+        throw new Error(error.message || `שגיאה בהוספת משחק: ${response.status}`);
       }
 
-      setNewMatch({ league: 'english', team1: '', team2: '', date: '', time: '' });
+      setNewMatch({ 
+        leagueId: leagues.length > 0 ? leagues[0]._id : '', 
+        team1: '', 
+        team2: '', 
+        date: '', 
+        time: '' 
+      });
       await loadWeekData(selectedWeek._id);
       alert('משחק נוסף בהצלחה!');
     } catch (error) {
@@ -333,7 +345,6 @@ function WeeksManagement({
     try {
       console.log('🎯 מעדכן תוצאת משחק:', { matchId, team1Goals, team2Goals });
       
-      // שלב 1: עדכן תוצאת המשחק
       const matchResponse = await fetch(`${API_URL}/matches/${matchId}/result`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -350,7 +361,6 @@ function WeeksManagement({
       const updatedMatch = await matchResponse.json();
       console.log('✅ תוצאת משחק עודכנה:', updatedMatch);
 
-      // שלב 2: חשב ניקוד מחדש לכל השחקנים
       console.log('🧮 מחשב ניקוד מחדש לכל השחקנים...');
       const scoresResponse = await fetch(`${API_URL}/scores/calculate/${selectedWeek._id}`, {
         method: 'POST'
@@ -363,19 +373,11 @@ function WeeksManagement({
       const scoresResult = await scoresResponse.json();
       console.log('✅ ניקוד חושב מחדש:', scoresResult);
 
-      // שלב 3: טען נתונים מחדש
       console.log('🔄 טוען נתונים מחדש...');
       await loadWeekData(selectedWeek._id);
       setEditingMatch({});
 
-      // הודעת הצלחה מפורטת
-      alert(`✅ תוצאה נשמרה בהצלחה!
-
-🎯 תוצאה: ${team1Goals}-${team2Goals}
-🧮 ניקוד חושב מחדש לכל השחקנים
-📊 לוח התוצאות עודכן אוטומטית
-
-השחקנים יראו את העדכון בפעם הבאה שיכנסו לאפליקציה.`);
+      alert(`✅ תוצאה נשמרה בהצלחה!\n\n🎯 תוצאה: ${team1Goals}-${team2Goals}\n🧮 ניקוד חושב מחדש לכל השחקנים\n📊 לוח התוצאות עודכן אוטומטית`);
 
     } catch (error) {
       console.error('❌ שגיאה בעדכון תוצאה:', error);
@@ -419,37 +421,39 @@ function WeeksManagement({
     }
   };
 
-  const getLeagueColor = (league) => {
+  // 🆕 פונקציה לקבלת צבע ליגה
+  const getLeagueColor = (match) => {
+    if (match.leagueId && match.leagueId.color) {
+      return match.leagueId.color;
+    }
+    // נסה fallback למפתח הישן
     const colors = {
       'english': '#dc3545',
       'spanish': '#007bff',
       'world': '#6f42c1'
     };
-    return colors[league] || '#6c757d';
+    return colors[match.league] || '#6c757d';
   };
 
-  const getLeagueName = (league) => {
+  // 🆕 פונקציה לקבלת שם ליגה
+  const getLeagueName = (match) => {
+    if (match.leagueId && match.leagueId.name) {
+      return match.leagueId.name;
+    }
+    // נסה fallback למפתח הישן
     const names = {
-      'english': 'פרמייר ליג',
+      'english': 'פרמיירליג',
       'spanish': 'לה ליגה',
       'world': 'ליגת העל'
     };
-    return names[league] || league;
+    return names[match.league] || 'ליגה לא ידועה';
   };
 
   const months = [
-    { value: 1, label: 'ינואר' },
-    { value: 2, label: 'פברואר' },
-    { value: 3, label: 'מרץ' },
-    { value: 4, label: 'אפריל' },
-    { value: 5, label: 'מאי' },
-    { value: 6, label: 'יוני' },
-    { value: 7, label: 'יולי' },
-    { value: 8, label: 'אוגוסט' },
-    { value: 9, label: 'ספטמבר' },
-    { value: 10, label: 'אוקטובר' },
-    { value: 11, label: 'נובמבר' },
-    { value: 12, label: 'דצמבר' }
+    { value: 1, label: 'ינואר' }, { value: 2, label: 'פברואר' }, { value: 3, label: 'מרץ' },
+    { value: 4, label: 'אפריל' }, { value: 5, label: 'מאי' }, { value: 6, label: 'יוני' },
+    { value: 7, label: 'יולי' }, { value: 8, label: 'אוגוסט' }, { value: 9, label: 'ספטמבר' },
+    { value: 10, label: 'אוקטובר' }, { value: 11, label: 'נובמבר' }, { value: 12, label: 'דצמבר' }
   ];
 
   const seasons = [
@@ -523,14 +527,12 @@ function WeeksManagement({
             })}
           </select>
 
-          {/* כפתור הפעלה - רק אם השבוע לא פעיל */}
           {selectedWeek && !selectedWeek.active && (
             <button onClick={activateWeek} className="btn btn-success">
               הפעל שבוע
             </button>
           )}
 
-          {/* כפתור כיבוי - רק אם השבוע פעיל אבל לא נעול */}
           {selectedWeek && selectedWeek.active && !selectedWeek.locked && (
             <button onClick={deactivateWeek} className="btn" style={{ backgroundColor: '#ffc107', color: 'white' }}>
               כבה שבוע
@@ -556,7 +558,6 @@ function WeeksManagement({
             </>
           )}
 
-          {/* הצגת סטטוס השבוע */}
           {selectedWeek && (
             <div style={{ 
               padding: '0.5rem 1rem', 
@@ -583,7 +584,6 @@ function WeeksManagement({
           )}
         </div>
 
-        {/* עריכת פרטי השבוע */}
         {editingWeek === selectedWeek?._id && (
           <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', alignItems: 'end' }}>
@@ -654,24 +654,49 @@ function WeeksManagement({
         )}
       </div>
 
-      {/* הוסף משחק */}
+      {/* הוסף משחק - 🆕 עם בחירת ליגה דינמית */}
       {selectedWeek && selectedWeek._id && (
         <div className="card">
           <h2>הוסף משחק ל{selectedWeek.name || 'השבוע'}</h2>
+          
+          {/* 🆕 הודעת מצב ליגות */}
+          {loadingLeagues && (
+            <div style={{ padding: '0.5rem', backgroundColor: '#fff3cd', borderRadius: '4px', marginBottom: '1rem' }}>
+              ⏳ טוען ליגות...
+            </div>
+          )}
+          
+          {!loadingLeagues && leagues.length === 0 && (
+            <div style={{ padding: '0.5rem', backgroundColor: '#f8d7da', borderRadius: '4px', marginBottom: '1rem' }}>
+              ⚠️ לא נמצאו ליגות פעילות! עבור לטאב "ניהול ליגות" ליצירת ליגות חדשות.
+            </div>
+          )}
+
           <div style={{ marginBottom: '1rem', padding: '0.5rem', backgroundColor: '#e3f2fd', borderRadius: '4px', fontSize: '14px' }}>
             💡 <strong>פורמט תאריכים:</strong> DD.MM (לדוגמה: 10.08 = 10 באוגוסט) | 
             <strong> פורמט שעות:</strong> HH:MM (לדוגמה: 20:00)
           </div>
+          
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
-            <select
-              value={newMatch.league}
-              onChange={(e) => setNewMatch(prev => ({ ...prev, league: e.target.value }))}
-              className="input"
-            >
-              <option value="english">פרמייר ליג</option>
-              <option value="spanish">לה ליגה</option>
-              <option value="world">ליגת העל</option>
-            </select>
+            {/* 🆕 בחירת ליגה דינמית */}
+            <div>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
+                ליגה:
+              </label>
+              <select
+                value={newMatch.leagueId}
+                onChange={(e) => setNewMatch(prev => ({ ...prev, leagueId: e.target.value }))}
+                className="input"
+                disabled={loadingLeagues || leagues.length === 0}
+              >
+                {leagues.length === 0 && <option value="">אין ליגות זמינות</option>}
+                {leagues.map(league => (
+                  <option key={league._id} value={league._id}>
+                    {league.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             
             <input
               type="text"
@@ -704,14 +729,18 @@ function WeeksManagement({
               className="input"
             />
             
-            <button onClick={addMatch} className="btn btn-primary">
+            <button 
+              onClick={addMatch} 
+              className="btn btn-primary"
+              disabled={loadingLeagues || leagues.length === 0}
+            >
               הוסף משחק
             </button>
           </div>
         </div>
       )}
 
-      {/* רשימת משחקים */}
+      {/* רשימת משחקים - 🆕 עם תצוגת ליגה דינמית */}
       {matches.length > 0 && (
         <div className="card">
           <h2>משחקי {selectedWeek?.name || 'השבוע'} ({matches.length})</h2>
@@ -735,15 +764,16 @@ function WeeksManagement({
                   {/* כותרת המשחק עם כפתור מחיקה */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <div>
+                      {/* 🆕 תצוגת ליגה דינמית */}
                       <span style={{
                         padding: '4px 8px',
-                        backgroundColor: getLeagueColor(match.league),
+                        backgroundColor: getLeagueColor(match),
                         color: 'white',
                         borderRadius: '4px',
                         fontSize: '12px',
                         marginRight: '10px'
                       }}>
-                        {getLeagueName(match.league)}
+                        {getLeagueName(match)}
                       </span>
                       <strong>{match.team1} נגד {match.team2}</strong>
                     </div>
@@ -751,7 +781,6 @@ function WeeksManagement({
                       <div style={{ color: '#666', fontSize: '14px' }}>
                         {match.date || 'ללא תאריך'} • {match.time || 'ללא שעה'}
                       </div>
-                      {/* 🗑️ כפתור מחיקת משחק */}
                       <button
                         onClick={() => deleteMatch(match._id, `${match.team1} נגד ${match.team2}`)}
                         style={{ 
@@ -771,7 +800,7 @@ function WeeksManagement({
                     </div>
                   </div>
 
-                  {/* הזנת תוצאה - מותאם לסדר עברית */}
+                  {/* הזנת תוצאה */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'center' }}>
                     <div style={{ textAlign: 'center', fontWeight: '500' }}>
                       {match.team1} (בית)

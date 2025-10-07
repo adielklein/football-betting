@@ -52,6 +52,68 @@ export const api = {
     return res.json();
   }),
   
+  // 🆕 Leagues Management
+  getLeagues: () => fetch(`${API_BASE_URL}/leagues`).then(res => {
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    return res.json();
+  }),
+  
+  getActiveLeagues: () => fetch(`${API_BASE_URL}/leagues/active`).then(res => {
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    return res.json();
+  }),
+  
+  getLeague: (leagueId) => fetch(`${API_BASE_URL}/leagues/${leagueId}`).then(res => {
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    return res.json();
+  }),
+  
+  createLeague: (leagueData) => fetch(`${API_BASE_URL}/leagues`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(leagueData)
+  }).then(res => {
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    return res.json();
+  }),
+  
+  updateLeague: (leagueId, leagueData) => fetch(`${API_BASE_URL}/leagues/${leagueId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(leagueData)
+  }).then(res => {
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    return res.json();
+  }),
+  
+  deleteLeague: (leagueId) => fetch(`${API_BASE_URL}/leagues/${leagueId}`, {
+    method: 'DELETE'
+  }).then(res => {
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    return res.json();
+  }),
+  
+  initializeLeagues: () => fetch(`${API_BASE_URL}/leagues/initialize`, {
+    method: 'POST'
+  }).then(res => {
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    return res.json();
+  }),
+  
   // Setup
   setup: () => fetch(`${API_BASE_URL}/setup`).then(res => res.json()),
   

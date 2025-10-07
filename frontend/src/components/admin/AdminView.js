@@ -4,6 +4,7 @@ import AdminHeader from './AdminHeader';
 import WeeksManagement from './WeeksManagement';
 import UsersManagement from './UsersManagement';
 import BetsManagement from './BetsManagement';
+import LeaguesManagement from './LeaguesManagement'; // 🆕 ייבוא הקומפוננטה החדשה
 import LoadingSpinner from './LoadingSpinner';
 
 function AdminView({ user, onLogout }) {
@@ -56,7 +57,7 @@ function AdminView({ user, onLogout }) {
     try {
       const [matchesData, betsResponse] = await Promise.all([
         api.getMatches(weekId),
-        fetch(`${API_URL}/bets/week/${weekId}`)  // תיקון: השתמש ב-API_URL
+        fetch(`${API_URL}/bets/week/${weekId}`)
       ]);
       
       const betsData = await betsResponse.json();
@@ -111,13 +112,14 @@ function AdminView({ user, onLogout }) {
       <AdminHeader user={user} onLogout={onLogout} />
 
       <div className="container">
-        {/* Navigation Tabs */}
+        {/* Navigation Tabs - 🆕 הוספת טאב ליגות */}
         <div style={{ 
           display: 'flex', 
           gap: '1rem', 
           marginBottom: '2rem',
           borderBottom: '1px solid #ddd',
-          paddingBottom: '1rem'
+          paddingBottom: '1rem',
+          flexWrap: 'wrap'
         }}>
           <button 
             onClick={() => setActiveTab('weeks')}
@@ -127,8 +129,20 @@ function AdminView({ user, onLogout }) {
               color: activeTab === 'weeks' ? 'white' : '#333' 
             }}
           >
-            ניהול שבועות
+            📅 ניהול שבועות
           </button>
+          
+          <button 
+            onClick={() => setActiveTab('leagues')}
+            className="btn"
+            style={{ 
+              backgroundColor: activeTab === 'leagues' ? '#007bff' : '#f8f9fa', 
+              color: activeTab === 'leagues' ? 'white' : '#333' 
+            }}
+          >
+            🏆 ניהול ליגות
+          </button>
+          
           <button 
             onClick={() => setActiveTab('users')}
             className="btn"
@@ -137,8 +151,9 @@ function AdminView({ user, onLogout }) {
               color: activeTab === 'users' ? 'white' : '#333' 
             }}
           >
-            ניהול משתמשים
+            👥 ניהול משתמשים
           </button>
+          
           <button 
             onClick={() => setActiveTab('bets')}
             className="btn"
@@ -147,12 +162,13 @@ function AdminView({ user, onLogout }) {
               color: activeTab === 'bets' ? 'white' : '#333' 
             }}
           >
-            עריכת הימורים
+            🎯 עריכת הימורים
           </button>
         </div>
 
-        {/* Tab Content */}
+        {/* Tab Content - 🆕 הוספת המקרה של leagues */}
         {activeTab === 'weeks' && <WeeksManagement {...sharedProps} />}
+        {activeTab === 'leagues' && <LeaguesManagement />}
         {activeTab === 'users' && <UsersManagement {...sharedProps} />}
         {activeTab === 'bets' && <BetsManagement {...sharedProps} />}
       </div>
