@@ -1,14 +1,14 @@
 const express = require('express');
 const Match = require('../models/Match');
 const Week = require('../models/Week');
-const League = require('../models/League'); // 🆕
+const League = require('../models/League');
 const router = express.Router();
 
 // Get all matches for a week
 router.get('/week/:weekId', async (req, res) => {
   try {
     const matches = await Match.find({ weekId: req.params.weekId })
-      .populate('leagueId'); // 🆕 טען גם את פרטי הליגה
+      .populate('leagueId');
     
     res.json(matches);
   } catch (error) {
@@ -21,14 +21,14 @@ router.post('/', async (req, res) => {
   try {
     const { weekId, leagueId, league, team1, team2, date, time } = req.body;
     
-    // 🆕 בדיקת שדות חובה
+    // בדיקת שדות חובה
     if (!weekId || !team1 || !team2 || !date || !time) {
       return res.status(400).json({ 
         message: 'חסרים שדות חובה: weekId, team1, team2, date, time' 
       });
     }
     
-    // 🆕 בדיקה שהליגה קיימת
+    // בדיקה שהליגה קיימת
     let validLeagueId = leagueId;
     
     // אם לא סופק leagueId אבל יש league (מפתח ישן), מצא את הליגה
@@ -59,7 +59,7 @@ router.post('/', async (req, res) => {
     const match = new Match({
       weekId,
       leagueId: validLeagueId,
-      league: leagueExists.key, // שמור גם את המפתח לתאימות לאחור
+      league: leagueExists.key,
       team1,
       team2,
       date,
@@ -80,6 +80,51 @@ router.post('/', async (req, res) => {
   }
 });
 
+// 🆕 Update match details (admin can edit match even in active week)
+router.patch('/:id', async (req, res) => {
+  try {
+    const { leagueId, team1, team2, date, time } = req.body;
+    
+    // בנה אובייקט עדכון רק עם השדות שנשלחו
+    const updateData = {};
+    
+    if (leagueId !== undefined) {
+      // וודא שהליגה קיימת
+      const leagueExists = await League.findById(leagueId);
+      if (!leagueExists) {
+        return res.status(400).json({ 
+          message: 'הליגה שנבחרה לא קיימת במערכת' 
+        });
+      }
+      updateData.leagueId = leagueId;
+      updateData.league = leagueExists.key;
+    }
+    
+    if (team1 !== undefined) updateData.team1 = team1;
+    if (team2 !== undefined) updateData.team2 = team2;
+    if (date !== undefined) updateData.date = date;
+    if (time !== undefined) updateData.time = time;
+    
+    // בצע עדכון
+    const match = await Match.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true }
+    ).populate('leagueId');
+    
+    if (!match) {
+      return res.status(404).json({ message: 'Match not found' });
+    }
+    
+    console.log('✏️ משחק עודכן:', match);
+    res.json(match);
+    
+  } catch (error) {
+    console.error('Error updating match:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Update match result
 router.patch('/:id/result', async (req, res) => {
   try {
@@ -94,7 +139,7 @@ router.patch('/:id/result', async (req, res) => {
         }
       },
       { new: true }
-    ).populate('leagueId'); // 🆕 טען את פרטי הליגה
+    ).populate('leagueId');
     
     if (!match) {
       return res.status(404).json({ message: 'Match not found' });
@@ -102,6 +147,29 @@ router.patch('/:id/result', async (req, res) => {
     
     res.json(match);
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// 🆕 Delete match result (clear the result)
+router.delete('/:id/result', async (req, res) => {
+  try {
+    const match = await Match.findByIdAndUpdate(
+      req.params.id,
+      { 
+        $unset: { result: 1 }
+      },
+      { new: true }
+    ).populate('leagueId');
+    
+    if (!match) {
+      return res.status(404).json({ message: 'Match not found' });
+    }
+    
+    console.log('🗑️ תוצאת משחק נמחקה:', match._id);
+    res.json({ message: 'Result deleted successfully', match });
+  } catch (error) {
+    console.error('Error deleting match result:', error);
     res.status(500).json({ message: error.message });
   }
 });
