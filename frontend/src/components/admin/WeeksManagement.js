@@ -545,7 +545,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
     { value: 12, label: 'דצמבר' }
   ];
 
-  const seasons = ['2024-25', '2025-26', '2026-27'];
+  const seasons = ['2025-26', '2026-27', '2027-28'];
 
   return (
     <div>
