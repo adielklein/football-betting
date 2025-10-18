@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
-function WeeksManagement() {
+function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
   const [weeks, setWeeks] = useState([]);
   const [selectedWeek, setSelectedWeek] = useState(null);
   const [matches, setMatches] = useState([]);
@@ -17,6 +17,14 @@ function WeeksManagement() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // סנכרון עם השבוע הנבחר מהאב
+  useEffect(() => {
+    if (parentSelectedWeek && parentSelectedWeek._id !== selectedWeek?._id) {
+      setSelectedWeek(parentSelectedWeek);
+      loadWeekData(parentSelectedWeek._id);
+    }
+  }, [parentSelectedWeek]);
 
   const loadData = async () => {
     await loadWeeks();
@@ -80,9 +88,20 @@ function WeeksManagement() {
     }
   };
 
-  const handleSelectWeek = async (week) => {
+  const handleSelectWeek = async (weekId) => {
+    const week = weeks.find(w => w._id === weekId);
     setSelectedWeek(week);
-    await loadWeekData(week._id);
+    
+    // עדכון גם את השבוע באב
+    if (onWeekSelect) {
+      onWeekSelect(week);
+    }
+    
+    if (weekId) {
+      await loadWeekData(weekId);
+    } else {
+      setMatches([]);
+    }
   };
 
   const handleEditWeek = async (weekId, name, month, season) => {
@@ -115,6 +134,9 @@ function WeeksManagement() {
       
       if (selectedWeek && selectedWeek._id === weekId) {
         setSelectedWeek(updatedWeek);
+        if (onWeekSelect) {
+          onWeekSelect(updatedWeek);
+        }
       }
       
       setEditingWeek(null);
@@ -201,6 +223,10 @@ function WeeksManagement() {
         setSelectedWeek(null);
         setMatches([]);
         await loadWeeks();
+        
+        if (onWeekSelect) {
+          onWeekSelect(null);
+        }
       } catch (error) {
         console.error('שגיאה במחיקת שבוע:', error);
         alert('שגיאה במחיקת השבוע');
@@ -280,6 +306,12 @@ function WeeksManagement() {
 
       alert('השבוע הופעל בהצלחה! הוא ינעל אוטומטית בזמן המשחק הראשון.');
       await loadData();
+      
+      // עדכן גם את השבוע באב
+      const updatedWeek = weeks.find(w => w._id === selectedWeek._id);
+      if (updatedWeek && onWeekSelect) {
+        onWeekSelect({ ...updatedWeek, active: true, lockTime });
+      }
     } catch (error) {
       console.error('Error activating week:', error);
       alert('שגיאה בהפעלת השבוע: ' + error.message);
@@ -385,7 +417,7 @@ function WeeksManagement() {
     }
   };
 
-  // 🆕 פונקציה לעריכת פרטי משחק
+  // פונקציה לעריכת פרטי משחק
   const handleEditMatch = async (matchId) => {
     if (!editingMatchDetails || !editingMatchDetails._id) return;
     
@@ -416,7 +448,7 @@ function WeeksManagement() {
     }
   };
 
-  // 🆕 פונקציה למחיקת משחק
+  // פונקציה למחיקת משחק
   const handleDeleteMatch = async (matchId, matchName) => {
     if (window.confirm(`האם אתה בטוח שברצונך למחוק את המשחק:\n${matchName}?`)) {
       try {
@@ -437,7 +469,7 @@ function WeeksManagement() {
     }
   };
 
-  // 🆕 פונקציה למחיקת תוצאת משחק
+  // פונקציה למחיקת תוצאת משחק
   const deleteMatchResult = async (matchId) => {
     if (!window.confirm('האם אתה בטוח שברצונך למחוק את תוצאת המשחק?')) {
       return;
@@ -472,8 +504,8 @@ function WeeksManagement() {
     }
   };
 
-  // 🆕 פונקציה לפורמט תאריך אוטומטי
-  const formatDateInput = (value, setFunction, field) => {
+  // פונקציה לפורמט תאריך אוטומטי
+  const formatDateInput = (value) => {
     // הסר כל תו שאינו מספר או נקודה
     let cleaned = value.replace(/[^\d.]/g, '');
     
@@ -495,11 +527,7 @@ function WeeksManagement() {
       cleaned = cleaned.substring(0, 5);
     }
     
-    // עדכן את הערך
-    setFunction(prev => ({
-      ...prev,
-      [field]: cleaned
-    }));
+    return cleaned;
   };
 
   const months = [
@@ -575,50 +603,40 @@ function WeeksManagement() {
         </div>
       </div>
 
-      {/* בחירת שבוע */}
+      {/* בחירת שבוע - חזרה לדרופדאון כמו שהיה */}
       <div className="card">
         <h3>בחר שבוע לניהול</h3>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          {weeks.map(week => (
-            <button
-              key={week._id}
-              onClick={() => handleSelectWeek(week)}
-              className={`btn ${selectedWeek?._id === week._id ? 'btn-success' : ''}`}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              {week.active && <span style={{ color: '#28a745' }}>🟢</span>}
-              {week.locked && <span style={{ color: '#dc3545' }}>🔒</span>}
-              {week.name}
-              {week.month && ` (${months.find(m => m.value === week.month)?.label || week.month})`}
-              {week.season && week.season !== '2025-26' && ` - ${week.season}`}
-            </button>
-          ))}
-        </div>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <select
+            value={selectedWeek?._id || ''}
+            onChange={(e) => handleSelectWeek(e.target.value)}
+            className="input"
+            style={{ width: '250px' }}
+          >
+            <option value="">בחר שבוע</option>
+            {weeks.map(week => (
+              <option key={week._id} value={week._id}>
+                {week.name} 
+                {week.month && ` - ${months.find(m => m.value === week.month)?.label || ''}`}
+                {week.season && week.season !== '2025-26' && ` (${week.season})`}
+              </option>
+            ))}
+          </select>
 
-        {selectedWeek && (
-          <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-            <h4>
-              {selectedWeek.name}
-              {selectedWeek.month && ` - ${months.find(m => m.value === selectedWeek.month)?.label}`}
-              {selectedWeek.season && ` (${selectedWeek.season})`}
-            </h4>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+          {selectedWeek && (
+            <>
               {!selectedWeek.active && !selectedWeek.locked && (
                 <button onClick={activateWeek} className="btn btn-success">
                   ▶️ הפעל שבוע
                 </button>
               )}
               {selectedWeek.active && !selectedWeek.locked && (
-                <span style={{ padding: '0.5rem', color: '#28a745' }}>
+                <span style={{ padding: '0.5rem', color: '#28a745', fontWeight: 'bold' }}>
                   🟢 השבוע פעיל
                 </span>
               )}
               {selectedWeek.locked && (
-                <span style={{ padding: '0.5rem', color: '#dc3545' }}>
+                <span style={{ padding: '0.5rem', color: '#dc3545', fontWeight: 'bold' }}>
                   🔒 השבוע נעול
                 </span>
               )}
@@ -628,7 +646,7 @@ function WeeksManagement() {
                 </button>
               )}
               <button 
-                onClick={() => setEditingWeek(selectedWeek)} 
+                onClick={() => setEditingWeek(editingWeek === selectedWeek._id ? null : selectedWeek._id)} 
                 className="btn"
                 style={{ backgroundColor: '#17a2b8', color: 'white' }}
               >
@@ -637,11 +655,11 @@ function WeeksManagement() {
               <button onClick={deleteWeek} className="btn btn-danger">
                 🗑️ מחק שבוע
               </button>
-            </div>
-          </div>
-        )}
+            </>
+          )}
+        </div>
 
-        {editingWeek && (
+        {editingWeek === selectedWeek?._id && (
           <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#e9ecef', borderRadius: '4px' }}>
             <h4>עריכת שבוע</h4>
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
@@ -650,7 +668,7 @@ function WeeksManagement() {
                 <input
                   type="text"
                   id="edit-week-name"
-                  defaultValue={editingWeek.name}
+                  defaultValue={selectedWeek.name}
                   className="input"
                 />
               </div>
@@ -658,7 +676,7 @@ function WeeksManagement() {
                 <label>חודש:</label>
                 <select
                   id="edit-week-month"
-                  defaultValue={editingWeek.month}
+                  defaultValue={selectedWeek.month}
                   className="input"
                 >
                   {months.map(month => (
@@ -672,7 +690,7 @@ function WeeksManagement() {
                 <label>עונה:</label>
                 <select
                   id="edit-week-season"
-                  defaultValue={editingWeek.season || '2025-26'}
+                  defaultValue={selectedWeek.season || '2025-26'}
                   className="input"
                 >
                   {seasons.map(season => (
@@ -779,24 +797,8 @@ function WeeksManagement() {
                 placeholder="DD.MM"
                 value={newMatch.date}
                 onChange={(e) => {
-                  let value = e.target.value.replace(/[^\d.]/g, '');
-                  const dotCount = (value.match(/\./g) || []).length;
-                  
-                  if (dotCount > 1) {
-                    const firstDotIndex = value.indexOf('.');
-                    value = value.substring(0, firstDotIndex + 1) + 
-                            value.substring(firstDotIndex + 1).replace(/\./g, '');
-                  }
-                  
-                  if (value.length === 2 && !value.includes('.')) {
-                    value = value + '.';
-                  }
-                  
-                  if (value.length > 5) {
-                    value = value.substring(0, 5);
-                  }
-                  
-                  setNewMatch({ ...newMatch, date: value });
+                  const formatted = formatDateInput(e.target.value);
+                  setNewMatch({ ...newMatch, date: formatted });
                 }}
                 className="input"
                 maxLength="5"
@@ -972,11 +974,13 @@ function WeeksManagement() {
                             <input
                               type="text"
                               value={editingMatchDetails.date}
-                              onChange={(e) => formatDateInput(
-                                e.target.value, 
-                                setEditingMatchDetails, 
-                                'date'
-                              )}
+                              onChange={(e) => {
+                                const formatted = formatDateInput(e.target.value);
+                                setEditingMatchDetails({
+                                  ...editingMatchDetails,
+                                  date: formatted
+                                });
+                              }}
                               placeholder="DD.MM"
                               className="input"
                               maxLength="5"
