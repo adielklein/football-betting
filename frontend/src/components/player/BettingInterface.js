@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
 function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [localBets, setLocalBets] = useState({});
-  const [hasChanges, setHasChanges] = useState(false);
+  const [savingMatch, setSavingMatch] = useState(null);
 
   const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000/api'
@@ -21,7 +20,6 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
       }
     });
     setLocalBets(existingBets);
-    setHasChanges(false);
   }, [bets]);
 
   const handleBetChange = (matchId, field, value) => {
@@ -32,10 +30,9 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
         [field]: value
       }
     }));
-    setHasChanges(true);
   };
 
-  const submitBets = async () => {
+  const saveSingleBet = async (matchId) => {
     // בדוק נעילת שבוע
     if (selectedWeek?.locked) {
       alert('ההימורים נעולים לשבוע זה');
@@ -51,79 +48,48 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
       }
     }
 
-    // ודא שיש הימורים לשלוח
-    const betsToSubmit = [];
-    for (const matchId in localBets) {
-      const bet = localBets[matchId];
-      if (bet && bet.team1Goals !== '' && bet.team2Goals !== '') {
-        // בדוק אם ההימור שונה מהקיים
-        const existingBet = bets[matchId];
-        if (!existingBet || 
-            existingBet.team1Goals?.toString() !== bet.team1Goals || 
-            existingBet.team2Goals?.toString() !== bet.team2Goals) {
-          betsToSubmit.push({
-            matchId,
-            team1Goals: parseInt(bet.team1Goals) || 0,
-            team2Goals: parseInt(bet.team2Goals) || 0
-          });
-        }
-      }
-    }
-
-    if (betsToSubmit.length === 0) {
-      alert('אין הימורים חדשים או מעודכנים לשליחה');
+    const bet = localBets[matchId];
+    if (!bet || bet.team1Goals === '' || bet.team2Goals === '') {
+      alert('יש למלא את שני הצדדים של ההימור');
       return;
     }
 
-    setIsSubmitting(true);
+    setSavingMatch(matchId);
     
     try {
-      // שלח כל הימור בנפרד
-      const results = await Promise.allSettled(
-        betsToSubmit.map(bet => 
-          fetch(`${API_URL}/bets`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: user.id,
-              matchId: bet.matchId,
-              weekId: selectedWeek._id,
-              team1Goals: bet.team1Goals,
-              team2Goals: bet.team2Goals
-            })
-          })
-        )
-      );
+      const response = await fetch(`${API_URL}/bets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          matchId: matchId,
+          weekId: selectedWeek._id,
+          team1Goals: parseInt(bet.team1Goals) || 0,
+          team2Goals: parseInt(bet.team2Goals) || 0
+        })
+      });
 
-      // בדוק כמה הצליחו
-      const successful = results.filter(r => r.status === 'fulfilled' && r.value.ok).length;
-      const failed = results.filter(r => r.status === 'rejected' || !r.value.ok).length;
-
-      if (successful > 0) {
+      if (response.ok) {
         await onBetUpdate();
         
         // הצג הודעת הצלחה
         const successMsg = document.createElement('div');
-        successMsg.textContent = `✅ ${successful} הימורים נשמרו בהצלחה!`;
+        successMsg.textContent = `✅ ההימור נשמר בהצלחה!`;
         successMsg.style.cssText = 'position:fixed;top:20px;right:20px;background:#d4edda;color:#155724;padding:15px 20px;border-radius:5px;z-index:1000;font-weight:bold;box-shadow:0 2px 10px rgba(0,0,0,0.2)';
         document.body.appendChild(successMsg);
         setTimeout(() => {
           if (document.body.contains(successMsg)) {
             document.body.removeChild(successMsg);
           }
-        }, 3000);
-
-        setHasChanges(false);
-      }
-
-      if (failed > 0) {
-        alert(`⚠️ ${failed} הימורים נכשלו. נסה שוב.`);
+        }, 2000);
+      } else {
+        alert('שגיאה בשמירת ההימור');
       }
     } catch (error) {
-      console.error('Error saving bets:', error);
-      alert('שגיאה בשמירת ההימורים');
+      console.error('Error saving bet:', error);
+      alert('שגיאה בשמירת ההימור');
     } finally {
-      setIsSubmitting(false);
+      setSavingMatch(null);
     }
   };
 
@@ -167,11 +133,20 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
     return false;
   };
 
-  const allBetsFilled = () => {
-    return matches.every(match => {
-      const bet = localBets[match._id];
-      return bet && bet.team1Goals !== '' && bet.team2Goals !== '';
-    });
+  const isBetChanged = (matchId) => {
+    const current = localBets[matchId];
+    const existing = bets[matchId];
+    
+    if (!current) return false;
+    if (!existing) return current.team1Goals !== '' || current.team2Goals !== '';
+    
+    return current.team1Goals !== existing.team1Goals?.toString() || 
+           current.team2Goals !== existing.team2Goals?.toString();
+  };
+
+  const isBetComplete = (matchId) => {
+    const bet = localBets[matchId];
+    return bet && bet.team1Goals !== '' && bet.team2Goals !== '';
   };
 
   if (!selectedWeek?.active) {
@@ -201,28 +176,20 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
         </div>
       </div>
 
-      {/* הודעת הסבר */}
-      <div style={{ 
-        padding: '1rem', 
-        backgroundColor: '#e3f2fd', 
-        borderRadius: '8px',
-        marginBottom: '1.5rem',
-        fontSize: '14px'
-      }}>
-        💡 <strong>הוראות:</strong> מלא את כל התחזיות ולחץ על "שלח הימורים" בתחתית העמוד
-      </div>
-
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {matches.map((match, index) => {
           const currentBet = localBets[match._id] || {};
           const existingBet = bets[match._id] || {};
           const hasResult = match.result?.team1Goals !== undefined;
+          const hasChanges = isBetChanged(match._id);
+          const isComplete = isBetComplete(match._id);
+          const isSaving = savingMatch === match._id;
 
           return (
             <div key={match._id} style={{ 
               padding: '1rem',
               border: '2px solid',
-              borderColor: currentBet.team1Goals !== '' && currentBet.team2Goals !== '' ? '#28a745' : '#ddd',
+              borderColor: existingBet.team1Goals !== undefined ? '#28a745' : '#ddd',
               borderRadius: '8px',
               backgroundColor: '#f9f9f9',
               transition: 'all 0.3s ease'
@@ -253,7 +220,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
 
               <div style={{ 
                 display: 'grid', 
-                gridTemplateColumns: '1fr auto 1fr', 
+                gridTemplateColumns: '1fr auto 1fr auto', 
                 gap: '1rem', 
                 alignItems: 'center',
                 marginBottom: '0.5rem'
@@ -281,6 +248,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                     }}
                     className="input"
                     placeholder="?"
+                    disabled={isSaving}
                   />
                   <span style={{ fontSize: '18px', fontWeight: 'bold' }}>-</span>
                   <input
@@ -301,23 +269,67 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                     }}
                     className="input"
                     placeholder="?"
+                    disabled={isSaving}
                   />
                 </div>
                 
                 <div style={{ textAlign: 'left', fontWeight: '500' }}>
                   {match.team2} (חוץ)
                 </div>
+
+                {/* כפתור שמירה לכל משחק */}
+                <button
+                  onClick={() => saveSingleBet(match._id)}
+                  disabled={isSaving || !isComplete || !hasChanges}
+                  className="btn"
+                  style={{
+                    padding: '6px 16px',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    backgroundColor: hasChanges && isComplete ? '#28a745' : '#6c757d',
+                    color: 'white',
+                    opacity: (!isComplete || !hasChanges) ? 0.5 : 1,
+                    cursor: (!isComplete || !hasChanges) ? 'not-allowed' : 'pointer',
+                    minWidth: '80px'
+                  }}
+                >
+                  {isSaving ? (
+                    <>⏳</>
+                  ) : existingBet.team1Goals !== undefined ? (
+                    hasChanges ? '💾 עדכן' : '✅ נשמר'
+                  ) : (
+                    '💾 שמור'
+                  )}
+                </button>
               </div>
 
-              {/* הימור קודם אם קיים */}
-              {existingBet.team1Goals !== undefined && (
+              {/* הימור קודם אם קיים ושונה */}
+              {existingBet.team1Goals !== undefined && hasChanges && (
                 <div style={{ 
                   textAlign: 'center',
                   fontSize: '12px',
                   color: '#666',
-                  marginTop: '0.5rem'
+                  marginTop: '0.5rem',
+                  backgroundColor: '#fff3cd',
+                  padding: '4px 8px',
+                  borderRadius: '4px'
                 }}>
-                  ההימור השמור: {existingBet.team1Goals}-{existingBet.team2Goals}
+                  ההימור הנוכחי: {existingBet.team1Goals}-{existingBet.team2Goals} ← ישונה ל: {currentBet.team1Goals || '?'}-{currentBet.team2Goals || '?'}
+                </div>
+              )}
+
+              {/* הימור נשמר */}
+              {existingBet.team1Goals !== undefined && !hasChanges && (
+                <div style={{ 
+                  textAlign: 'center',
+                  fontSize: '12px',
+                  color: '#155724',
+                  marginTop: '0.5rem',
+                  backgroundColor: '#d4edda',
+                  padding: '4px 8px',
+                  borderRadius: '4px'
+                }}>
+                  ✅ ההימור שלך: {existingBet.team1Goals}-{existingBet.team2Goals}
                 </div>
               )}
 
@@ -329,10 +341,34 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   textAlign: 'center',
                   fontSize: '14px'
                 }}>
-                  <span style={{ color: '#666' }}>תוצאה: </span>
-                  <span style={{ fontWeight: 'bold' }}>
+                  <span style={{ color: '#666' }}>תוצאה סופית: </span>
+                  <span style={{ fontWeight: 'bold', color: '#333' }}>
                     {match.result.team1Goals}-{match.result.team2Goals}
                   </span>
+                  {existingBet.team1Goals !== undefined && (
+                    <span style={{ 
+                      marginLeft: '1rem',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      backgroundColor: 
+                        existingBet.team1Goals == match.result.team1Goals && 
+                        existingBet.team2Goals == match.result.team2Goals 
+                          ? '#d4edda' 
+                          : '#f8d7da',
+                      color: 
+                        existingBet.team1Goals == match.result.team1Goals && 
+                        existingBet.team2Goals == match.result.team2Goals 
+                          ? '#155724' 
+                          : '#721c24',
+                      fontSize: '12px',
+                      fontWeight: 'bold'
+                    }}>
+                      {existingBet.team1Goals == match.result.team1Goals && 
+                       existingBet.team2Goals == match.result.team2Goals 
+                        ? '🎯 ניחוש מדויק!' 
+                        : '❌ לא דייקת'}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -340,45 +376,17 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
         })}
       </div>
 
-      {/* כפתור שליחה */}
+      {/* סיכום סטטוס */}
       <div style={{ 
         marginTop: '2rem',
         padding: '1rem',
         backgroundColor: '#f8f9fa',
         borderRadius: '8px',
-        textAlign: 'center'
+        textAlign: 'center',
+        fontSize: '14px'
       }}>
-        <div style={{ marginBottom: '1rem', fontSize: '14px', color: '#666' }}>
-          {allBetsFilled() 
-            ? `✅ כל ${matches.length} ההימורים מולאו` 
-            : `⚠️ מולאו ${Object.keys(localBets).filter(id => localBets[id]?.team1Goals && localBets[id]?.team2Goals).length} מתוך ${matches.length} הימורים`
-          }
-        </div>
-        
-        <button
-          onClick={submitBets}
-          disabled={isSubmitting || !hasChanges || Object.keys(localBets).length === 0}
-          className="btn btn-primary"
-          style={{
-            fontSize: '18px',
-            padding: '12px 40px',
-            fontWeight: 'bold',
-            opacity: (!hasChanges || Object.keys(localBets).length === 0) ? 0.5 : 1,
-            cursor: (!hasChanges || Object.keys(localBets).length === 0) ? 'not-allowed' : 'pointer'
-          }}
-        >
-          {isSubmitting ? (
-            <>⏳ שולח...</>
-          ) : (
-            <>🎯 שלח הימורים</>
-          )}
-        </button>
-
-        {!allBetsFilled() && hasChanges && (
-          <div style={{ marginTop: '0.5rem', fontSize: '12px', color: '#dc3545' }}>
-            שים לב: רק הימורים מלאים (עם שני ערכים) יישמרו
-          </div>
-        )}
+        <strong>סטטוס הימורים:</strong> {' '}
+        {Object.keys(bets).filter(id => bets[id].team1Goals !== undefined).length} מתוך {matches.length} משחקים נשמרו
       </div>
     </div>
   );
