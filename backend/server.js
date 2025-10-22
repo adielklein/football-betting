@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const notificationRoutes = require('./routes/notifications');
 require('dotenv').config();
 
 const app = express();
@@ -18,6 +19,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use('/api/notifications', notificationRoutes);
 
 // 🆕 Migration endpoint - להוספת שדה theme למשתמשים קיימים
 app.post('/api/migrate/add-theme-field', async (req, res) => {
@@ -161,6 +163,7 @@ app.get('/', (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
+require('./services/pushNotifications');
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
