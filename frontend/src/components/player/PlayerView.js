@@ -6,6 +6,7 @@ import BettingInterface from './BettingInterface';
 import Leaderboard from './Leaderboard';
 import HistoryViewer from './HistoryViewer';
 import AllBetsViewer from './AllBetsViewer';
+import NotificationSettings from '../NotificationSettings'; // 🔔 הוספנו את זה
 
 function PlayerView({ user, onLogout }) {
   const [weeks, setWeeks] = useState([]);
@@ -192,6 +193,9 @@ function PlayerView({ user, onLogout }) {
       />
 
       <div className="container">
+        {/* 🔔 הוספנו את קומפוננטת ההתראות כאן */}
+        <NotificationSettings user={user} />
+        
         <div style={{ 
           display: 'flex', 
           gap: '1rem', 
