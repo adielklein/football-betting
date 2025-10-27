@@ -1,128 +1,275 @@
+// services/pushNotifications.js
 const webpush = require('web-push');
-const cron = require('node-cron');
 const User = require('../models/User');
-const Week = require('../models/Week');
 
-// הגדר VAPID keys מה-env
+// VAPID Keys - להחליף עם המפתחות שלך
+// npx web-push generate-vapid-keys
 const vapidKeys = {
-  publicKey: process.env.VAPID_PUBLIC_KEY,
-  privateKey: process.env.VAPID_PRIVATE_KEY
+  publicKey: process.env.VAPID_PUBLIC_KEY || 'BHQoW5ZPuNkBvhJzXMG8PQdRlqV_7x8wKZpLkYXY6c3FXQmGzJrqZvJjO0Nh_6doQzHDaW7JYvEbJ1xL-KPZuXQ',
+  privateKey: process.env.VAPID_PRIVATE_KEY || 'uWbp3xqL9kCm2vN4zXdF6hJ8tY1rP5sO7wQ3eA4bM2n'
 };
 
-// בדוק שהמפתחות קיימים
-if (!vapidKeys.publicKey || !vapidKeys.privateKey) {
-  console.error('❌ חסרים VAPID keys ב-environment variables!');
-  console.error('הוסף את המפתחות ב-Render Dashboard > Environment');
-} else {
-  // הגדר את webpush
-  webpush.setVapidDetails(
-    `mailto:${process.env.VAPID_EMAIL || 'admin@football-betting.com'}`,
-    vapidKeys.publicKey,
-    vapidKeys.privateKey
-  );
-  console.log('✅ Push Notifications service initialized');
-}
+// הגדרת Web Push
+webpush.setVapidDetails(
+  'mailto:admin@footballbetting.com',
+  vapidKeys.publicKey,
+  vapidKeys.privateKey
+);
 
-// פונקציה לשליחת התראה
-const sendNotification = async (subscription, payload) => {
+/**
+ * שליחת התראה למשתמש אחד
+ */
+async function sendNotification(subscription, payload) {
   try {
     await webpush.sendNotification(subscription, JSON.stringify(payload));
-    console.log('✅ התראה נשלחה בהצלחה');
+    console.log('✅ Notification sent successfully');
     return true;
   } catch (error) {
-    console.error('❌ שגיאה בשליחת התראה:', error);
+    console.error('❌ Error sending notification:', error);
+    
+    // אם ה-subscription לא תקף יותר, מחק אותו
+    if (error.statusCode === 404 || error.statusCode === 410) {
+      console.log('🗑️ Subscription expired, should be removed');
+    }
+    
     return false;
   }
-};
+}
 
-// בדיקת שבועות שעומדים להינעל
-const checkUpcomingLocks = async () => {
+/**
+ * שליחת התראה לכל המשתמשים
+ */
+async function sendNotificationToAll(title, body, data = {}) {
   try {
-    console.log('🔍 בודק שבועות לנעילה...');
-    
-    const activeWeeks = await Week.find({ 
-      active: true, 
-      locked: false,
-      lockTime: { $exists: true }
+    const users = await User.find({
+      'pushSettings.enabled': true,
+      'pushSettings.subscription': { $exists: true, $ne: null }
     });
-    
-    console.log(`מצאתי ${activeWeeks.length} שבועות פעילים`);
-    
-    for (const week of activeWeeks) {
-      const lockTime = new Date(week.lockTime);
-      const now = new Date();
-      const timeUntilLock = lockTime - now;
-      const hoursUntilLock = timeUntilLock / (1000 * 60 * 60);
-      
-      console.log(`שבוע ${week.name} יינעל בעוד ${hoursUntilLock.toFixed(2)} שעות`);
-      
-      // אם נשאר פחות מ-24 שעות
-      if (hoursUntilLock <= 24 && hoursUntilLock > 0) {
-        // מצא משתמשים שרוצים התראות
-        const users = await User.find({ 
-          'pushSettings.enabled': true,
-          'pushSettings.subscription': { $exists: true }
-        });
-        
-        console.log(`נמצאו ${users.length} משתמשים עם התראות פעילות`);
-        
-        for (const user of users) {
-          const notificationTime = user.pushSettings.hoursBeforeLock || 2;
-          
-          // שלח התראה אם הזמן מתאים (בטווח של 30 דקות)
-          if (hoursUntilLock <= notificationTime && hoursUntilLock > notificationTime - 0.5) {
-            console.log(`📨 שולח התראה ל-${user.name}`);
-            
-            const payload = {
-              title: '⏰ תזכורת הימורים',
-              body: `${week.name} יינעל בעוד ${Math.round(hoursUntilLock)} שעות!`,
-              icon: '/logo192.png',
-              badge: '/logo192.png',
-              data: {
-                weekId: week._id,
-                url: '/'
-              }
-            };
-            
-            const sent = await sendNotification(user.pushSettings.subscription, payload);
-            
-            if (!sent) {
-              // אם ההתראה נכשלה, כנראה ה-subscription לא תקף
-              console.log(`🔄 מנקה subscription לא תקף עבור ${user.name}`);
-              await User.findByIdAndUpdate(user._id, {
-                'pushSettings.enabled': false,
-                'pushSettings.subscription': null
-              });
-            }
-          }
+
+    console.log(`📢 Sending notification to ${users.length} users`);
+
+    const payload = {
+      title,
+      body,
+      icon: '/logo192.png',
+      badge: '/logo192.png',
+      vibrate: [200, 100, 200],
+      tag: `broadcast-${Date.now()}`,
+      data: data || {}
+    };
+
+    let sent = 0;
+    let failed = 0;
+
+    for (const user of users) {
+      try {
+        const success = await sendNotification(user.pushSettings.subscription, payload);
+        if (success) {
+          sent++;
+        } else {
+          failed++;
         }
+      } catch (error) {
+        console.error(`Failed to send to ${user.name}:`, error);
+        failed++;
       }
     }
+
+    return {
+      success: true,
+      sent,
+      failed,
+      total: users.length
+    };
   } catch (error) {
-    console.error('Error in checkUpcomingLocks:', error);
+    console.error('Error in sendNotificationToAll:', error);
+    return {
+      success: false,
+      error: error.message
+    };
   }
-};
+}
 
-// הפעל בדיקה כל 30 דקות
-cron.schedule('*/30 * * * *', () => {
-  console.log('⏰ Running scheduled notification check...');
-  checkUpcomingLocks();
-});
+/**
+ * שליחת התראה למשתמשים ספציפיים
+ */
+async function sendNotificationToUsers(userIds, title, body, data = {}) {
+  try {
+    const users = await User.find({
+      _id: { $in: userIds },
+      'pushSettings.enabled': true,
+      'pushSettings.subscription': { $exists: true, $ne: null }
+    });
 
-// בדיקה ראשונית
-checkUpcomingLocks();
+    console.log(`📢 Sending notification to ${users.length} specific users`);
 
-// הוסף route לבדיקה ידנית (עבור Render)
-const checkRoute = async (req, res) => {
-  console.log('🔔 Manual check triggered');
-  await checkUpcomingLocks();
-  res.json({ message: 'Check completed', timestamp: new Date() });
-};
+    const payload = {
+      title,
+      body,
+      icon: '/logo192.png',
+      badge: '/logo192.png',
+      vibrate: [200, 100, 200],
+      tag: `group-${Date.now()}`,
+      data: data || {}
+    };
+
+    let sent = 0;
+    let failed = 0;
+
+    for (const user of users) {
+      try {
+        const success = await sendNotification(user.pushSettings.subscription, payload);
+        if (success) {
+          sent++;
+        } else {
+          failed++;
+        }
+      } catch (error) {
+        console.error(`Failed to send to ${user.name}:`, error);
+        failed++;
+      }
+    }
+
+    return {
+      success: true,
+      sent,
+      failed,
+      total: users.length
+    };
+  } catch (error) {
+    console.error('Error in sendNotificationToUsers:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * שליחת התראת הפעלת שבוע
+ */
+async function sendWeekActivationNotification(week) {
+  try {
+    const users = await User.find({
+      'pushSettings.enabled': true,
+      'pushSettings.subscription': { $exists: true, $ne: null }
+    });
+
+    if (users.length === 0) {
+      console.log('📭 No users subscribed to notifications');
+      return {
+        success: true,
+        sent: 0,
+        failed: 0,
+        total: 0,
+        message: 'No users subscribed'
+      };
+    }
+
+    console.log(`🏆 Sending week activation to ${users.length} users`);
+
+    // פורמט תאריך נעילה
+    const lockDate = new Date(week.lockTime);
+    const day = lockDate.getDate().toString().padStart(2, '0');
+    const month = (lockDate.getMonth() + 1).toString().padStart(2, '0');
+    const hours = lockDate.getHours().toString().padStart(2, '0');
+    const minutes = lockDate.getMinutes().toString().padStart(2, '0');
+    const formattedLockTime = `${day}/${month} ${hours}:${minutes}`;
+
+    const payload = {
+      title: '🏆 שבוע חדש הופעל!',
+      body: `${week.name} נפתח להימורים!\n⏰ נעילה: ${formattedLockTime}`,
+      icon: '/logo192.png',
+      badge: '/logo192.png',
+      vibrate: [200, 100, 200, 100, 200],
+      tag: `week-${week._id}`,
+      data: {
+        type: 'week_activated',
+        weekId: week._id,
+        weekName: week.name,
+        lockTime: week.lockTime,
+        url: '/betting'
+      },
+      actions: [
+        {
+          action: 'bet',
+          title: 'להימורים',
+          icon: '/logo192.png'
+        },
+        {
+          action: 'close',
+          title: 'סגור',
+          icon: '/logo192.png'
+        }
+      ]
+    };
+
+    let sent = 0;
+    let failed = 0;
+
+    for (const user of users) {
+      try {
+        const success = await sendNotification(user.pushSettings.subscription, payload);
+        if (success) {
+          sent++;
+        } else {
+          failed++;
+        }
+      } catch (error) {
+        console.error(`Failed to send to ${user.name}:`, error);
+        failed++;
+      }
+    }
+
+    console.log(`📊 Week activation: ${sent} sent, ${failed} failed`);
+
+    return {
+      success: true,
+      sent,
+      failed,
+      total: users.length,
+      message: `התראה נשלחה ל-${sent} משתמשים`
+    };
+  } catch (error) {
+    console.error('Error in sendWeekActivationNotification:', error);
+    return {
+      success: false,
+      error: error.message,
+      sent: 0,
+      failed: 0,
+      total: 0
+    };
+  }
+}
+
+/**
+ * route לבדיקה (עבור cron)
+ */
+async function checkRoute(req, res) {
+  try {
+    const users = await User.find({
+      'pushSettings.enabled': true,
+      'pushSettings.subscription': { $exists: true, $ne: null }
+    });
+
+    res.json({
+      success: true,
+      subscribedUsers: users.length,
+      message: 'Push notification service is running'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+}
 
 module.exports = {
-  webpush,
+  vapidKeys,
   sendNotification,
-  checkUpcomingLocks,
-  checkRoute,
-  vapidKeys
+  sendNotificationToAll,
+  sendNotificationToUsers,
+  sendWeekActivationNotification,
+  checkRoute
 };

@@ -1,6 +1,7 @@
 const express = require('express');
 const Week = require('../models/Week');
 const Match = require('../models/Match');
+const { sendWeekActivationNotification } = require('../services/pushNotifications');
 const router = express.Router();
 
 // Get all weeks
@@ -57,7 +58,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Update week - תיקון מחדש
+// Update week
 router.patch('/:id', async (req, res) => {
   try {
     const weekId = req.params.id;
@@ -84,28 +85,30 @@ router.patch('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Week not found' });
     }
     
-    console.log('Successfully updated week:', week);
+    console.log('Week updated successfully:', week);
     res.json(week);
   } catch (error) {
     console.error('Error updating week:', error);
-    
-    if (error.name === 'CastError') {
-      return res.status(400).json({ message: 'Invalid week ID format' });
-    }
-    
     res.status(500).json({ message: error.message });
   }
 });
 
-// Activate week
+// Activate week with optional notifications
 router.patch('/:id/activate', async (req, res) => {
   try {
-    const { lockTime } = req.body;
-    console.log(`Activating week ${req.params.id} with lockTime: ${lockTime}`);
+    const { lockTime, sendNotifications } = req.body;
+    
+    if (!lockTime) {
+      return res.status(400).json({ message: 'Lock time is required' });
+    }
     
     const week = await Week.findByIdAndUpdate(
       req.params.id,
-      { active: true, lockTime: new Date(lockTime) },
+      {
+        active: true,
+        locked: false,
+        lockTime: new Date(lockTime)
+      },
       { new: true }
     );
     
@@ -113,61 +116,37 @@ router.patch('/:id/activate', async (req, res) => {
       return res.status(404).json({ message: 'Week not found' });
     }
     
-    console.log('Week activated successfully:', week);
-    res.json(week);
+    console.log(`✅ Week ${week.name} activated with lock time: ${lockTime}`);
+    
+    // שלח התראות אם התבקש
+    let notificationResult = null;
+    if (sendNotifications) {
+      console.log('📢 Sending activation notifications...');
+      notificationResult = await sendWeekActivationNotification(week);
+      console.log('📢 Notification result:', notificationResult);
+    }
+    
+    res.json({ 
+      week, 
+      notificationResult,
+      message: 'Week activated successfully' 
+    });
   } catch (error) {
     console.error('Error activating week:', error);
     res.status(500).json({ message: error.message });
   }
 });
 
-// Deactivate week (החזרה מפעיל ללא פעיל) - חדש!
+// Deactivate week
 router.patch('/:id/deactivate', async (req, res) => {
   try {
-    const weekId = req.params.id;
-    console.log(`כיבוי שבוע ${weekId}`);
-    
-    // בדוק שהשבוע קיים ופעיל
-    const currentWeek = await Week.findById(weekId);
-    if (!currentWeek) {
-      return res.status(404).json({ message: 'Week not found' });
-    }
-    
-    if (!currentWeek.active) {
-      return res.status(400).json({ message: 'השבוע כבר לא פעיל' });
-    }
-    
-    if (currentWeek.locked) {
-      return res.status(400).json({ message: 'לא ניתן לכבות שבוע שכבר נעול' });
-    }
-    
-    // כבה את השבוע - הסר פעילות וזמן נעילה
-    const week = await Week.findByIdAndUpdate(
-      weekId,
-      { 
-        active: false,
-        locked: false,
-        lockTime: null  // נקה את זמן הנעילה
-      },
-      { new: true }
-    );
-    
-    console.log('השבוע כובה בהצלחה:', week);
-    res.json(week);
-  } catch (error) {
-    console.error('שגיאה בכיבוי שבוע:', error);
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Lock week
-router.patch('/:id/lock', async (req, res) => {
-  try {
-    console.log(`Locking week ${req.params.id}`);
-    
     const week = await Week.findByIdAndUpdate(
       req.params.id,
-      { locked: true },
+      {
+        active: false,
+        locked: false,
+        lockTime: null
+      },
       { new: true }
     );
     
@@ -175,10 +154,9 @@ router.patch('/:id/lock', async (req, res) => {
       return res.status(404).json({ message: 'Week not found' });
     }
     
-    console.log('Week locked successfully:', week);
+    console.log(`Week ${week.name} deactivated`);
     res.json(week);
   } catch (error) {
-    console.error('Error locking week:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -186,46 +164,21 @@ router.patch('/:id/lock', async (req, res) => {
 // Delete week
 router.delete('/:id', async (req, res) => {
   try {
-    const weekId = req.params.id;
-    console.log('Deleting week:', weekId);
+    const week = await Week.findById(req.params.id);
     
-    // בדיקה שהשבוע קיים
-    const week = await Week.findById(weekId);
     if (!week) {
       return res.status(404).json({ message: 'Week not found' });
     }
     
-    // Delete all matches of the week
-    const deletedMatches = await Match.deleteMany({ weekId });
-    console.log(`Deleted ${deletedMatches.deletedCount} matches`);
+    // Delete all matches for this week
+    await Match.deleteMany({ weekId: req.params.id });
     
-    // Delete all bets of the week
-    const deletedBets = await require('../models/Bet').deleteMany({ weekId });
-    console.log(`Deleted ${deletedBets.deletedCount} bets`);
+    // Delete the week
+    await Week.findByIdAndDelete(req.params.id);
     
-    // Delete all scores of the week
-    const deletedScores = await require('../models/Score').deleteMany({ weekId });
-    console.log(`Deleted ${deletedScores.deletedCount} scores`);
-    
-    // Delete the week itself
-    await Week.findByIdAndDelete(weekId);
-    console.log('Week deleted successfully');
-    
-    res.json({ 
-      message: 'Week deleted successfully',
-      deletedCount: {
-        matches: deletedMatches.deletedCount,
-        bets: deletedBets.deletedCount,
-        scores: deletedScores.deletedCount
-      }
-    });
+    console.log(`Week ${week.name} and its matches deleted`);
+    res.json({ message: 'Week deleted successfully' });
   } catch (error) {
-    console.error('Error deleting week:', error);
-    
-    if (error.name === 'CastError') {
-      return res.status(400).json({ message: 'Invalid week ID format' });
-    }
-    
     res.status(500).json({ message: error.message });
   }
 });

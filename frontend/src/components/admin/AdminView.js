@@ -4,7 +4,8 @@ import AdminHeader from './AdminHeader';
 import WeeksManagement from './WeeksManagement';
 import UsersManagement from './UsersManagement';
 import BetsManagement from './BetsManagement';
-import LeaguesManagement from './LeaguesManagement'; // 🆕 ייבוא הקומפוננטה החדשה
+import LeaguesManagement from './LeaguesManagement';
+import PushManagement from './PushManagement'; // 🆕 הוספה
 import LoadingSpinner from './LoadingSpinner';
 
 function AdminView({ user, onLogout }) {
@@ -112,7 +113,7 @@ function AdminView({ user, onLogout }) {
       <AdminHeader user={user} onLogout={onLogout} />
 
       <div className="container">
-        {/* Navigation Tabs - 🆕 הוספת טאב ליגות */}
+        {/* Navigation Tabs */}
         <div style={{ 
           display: 'flex', 
           gap: '1rem', 
@@ -164,13 +165,26 @@ function AdminView({ user, onLogout }) {
           >
             🎯 עריכת הימורים
           </button>
+
+          {/* 🆕 כפתור התראות חדש */}
+          <button 
+            onClick={() => setActiveTab('push')}
+            className="btn"
+            style={{ 
+              backgroundColor: activeTab === 'push' ? '#007bff' : '#f8f9fa', 
+              color: activeTab === 'push' ? 'white' : '#333' 
+            }}
+          >
+            📢 התראות
+          </button>
         </div>
 
-        {/* Tab Content - 🆕 הוספת המקרה של leagues */}
+        {/* Tab Content */}
         {activeTab === 'weeks' && <WeeksManagement {...sharedProps} />}
         {activeTab === 'leagues' && <LeaguesManagement />}
         {activeTab === 'users' && <UsersManagement {...sharedProps} />}
         {activeTab === 'bets' && <BetsManagement {...sharedProps} />}
+        {activeTab === 'push' && <PushManagement />} {/* 🆕 טאב התראות חדש */}
       </div>
     </div>
   );

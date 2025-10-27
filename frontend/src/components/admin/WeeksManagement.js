@@ -13,6 +13,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
   const [leagues, setLeagues] = useState([]);
   const [loadingLeagues, setLoadingLeagues] = useState(false);
   const [editingMatchDetails, setEditingMatchDetails] = useState(null);
+  const [showActivationDialog, setShowActivationDialog] = useState(false);
+const [sendPushNotifications, setSendPushNotifications] = useState(true);
 
   useEffect(() => {
     loadData();
@@ -263,60 +265,88 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
   };
 
   const activateWeek = async () => {
-    if (!selectedWeek || !selectedWeek._id || matches.length === 0) {
-      alert('יש להוסיף משחקים לפני הפעלת השבוע');
+  if (!selectedWeek || !selectedWeek._id || matches.length === 0) {
+    alert('יש להוסיף משחקים לפני הפעלת השבוע');
+    return;
+  }
+
+  // הצג דיאלוג אישור עם אופציה להתראות
+  setShowActivationDialog(true);
+};
+
+const confirmActivateWeek = async () => {
+  try {
+    const earliestMatch = findEarliestMatch(matches);
+    
+    if (!earliestMatch || !earliestMatch.date || !earliestMatch.time) {
+      alert('לא נמצא משחק תקין עם תאריך ושעה');
       return;
     }
 
-    try {
-      const earliestMatch = findEarliestMatch(matches);
-      
-      if (!earliestMatch || !earliestMatch.date || !earliestMatch.time) {
-        alert('לא נמצא משחק תקין עם תאריך ושעה');
-        return;
-      }
+    console.log('🏆 המשחק הכי מוקדם:', `${earliestMatch.team1} נגד ${earliestMatch.team2}`);
+    console.log('📅 תאריך המשחק המוקדם:', earliestMatch.date);
+    console.log('🕐 שעת המשחק המוקדם:', earliestMatch.time);
 
-      console.log('🏆 המשחק הכי מוקדם:', `${earliestMatch.team1} נגד ${earliestMatch.team2}`);
-      console.log('📅 תאריך המשחק המוקדם:', earliestMatch.date);
-      console.log('🕐 שעת המשחק המוקדם:', earliestMatch.time);
+    const [day, month] = earliestMatch.date.split('.');
+    const [hour, minute] = earliestMatch.time.split(':');
+    
+    const lockTime = new Date(
+      new Date().getFullYear(),
+      parseInt(month) - 1,
+      parseInt(day),
+      parseInt(hour),
+      parseInt(minute)
+    );
 
-      const [day, month] = earliestMatch.date.split('.');
-      const [hour, minute] = earliestMatch.time.split(':');
-      
-      const lockTime = new Date(
-        new Date().getFullYear(),
-        parseInt(month) - 1,
-        parseInt(day),
-        parseInt(hour),
-        parseInt(minute)
-      );
+    console.log('🔒 זמן נעילה מחושב:', lockTime.toLocaleString('he-IL'));
 
-      console.log('🔒 זמן נעילה מחושב:', lockTime.toLocaleString('he-IL'));
+    const response = await fetch(`${API_URL}/weeks/${selectedWeek._id}/activate`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        lockTime: lockTime.toISOString(),
+        sendNotifications: sendPushNotifications 
+      })
+    });
 
-      const response = await fetch(`${API_URL}/weeks/${selectedWeek._id}/activate`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lockTime: lockTime.toISOString() })
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to activate week');
-      }
-
-      alert('השבוע הופעל בהצלחה! הוא ינעל אוטומטית בזמן המשחק הראשון.');
-      await loadData();
-      
-      // עדכן גם את השבוע באב
-      const updatedWeek = weeks.find(w => w._id === selectedWeek._id);
-      if (updatedWeek && onWeekSelect) {
-        onWeekSelect({ ...updatedWeek, active: true, lockTime });
-      }
-    } catch (error) {
-      console.error('Error activating week:', error);
-      alert('שגיאה בהפעלת השבוע: ' + error.message);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to activate week');
     }
-  };
+
+    const result = await response.json();
+
+    // הצג הודעת הצלחה עם פרטי ההתראות
+    let successMessage = 'השבוע הופעל בהצלחה! הוא ינעל אוטומטית בזמן המשחק הראשון.';
+    
+    if (sendPushNotifications && result.notificationResult) {
+      successMessage += `\n\n📢 התראות נשלחו ל-${result.notificationResult.sent} משתמשים`;
+      if (result.notificationResult.failed > 0) {
+        successMessage += `\n⚠️ ${result.notificationResult.failed} התראות נכשלו`;
+      }
+    } else if (sendPushNotifications) {
+      successMessage += '\n\n⚠️ לא נשלחו התראות (אין משתמשים מנויים)';
+    }
+
+    alert(successMessage);
+    
+    await loadData();
+    
+    // עדכן גם את השבוע באב
+    const updatedWeek = weeks.find(w => w._id === selectedWeek._id);
+    if (updatedWeek && onWeekSelect) {
+      onWeekSelect({ ...updatedWeek, active: true, lockTime });
+    }
+    
+    // סגור את הדיאלוג
+    setShowActivationDialog(false);
+    setSendPushNotifications(true); // אפס לברירת מחדל
+  } catch (error) {
+    console.error('Error activating week:', error);
+    alert('שגיאה בהפעלת השבוע: ' + error.message);
+    setShowActivationDialog(false);
+  }
+};
 
   const addMatch = async () => {
     if (!selectedWeek || !selectedWeek._id) {
@@ -1144,6 +1174,95 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
           </div>
         </div>
       )}
+            {/* דיאלוג אישור הפעלת שבוע */}    // 👈 הדיאלוג מתחיל כאן
+      {showActivationDialog && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div className="card" style={{
+            maxWidth: '500px',
+            width: '90%',
+            margin: '1rem'
+          }}>
+            <h3 style={{ marginBottom: '1rem' }}>🏆 הפעלת שבוע</h3>
+            
+            <p style={{ marginBottom: '1.5rem', lineHeight: '1.6' }}>
+              האם להפעיל את השבוע <strong>{selectedWeek?.name}</strong>?
+              <br />
+              השבוע ינעל אוטומטית בזמן המשחק הראשון.
+            </p>
+
+            {/* אופציה להתראות Push */}
+            <div style={{
+              backgroundColor: '#f8f9fa',
+              padding: '1rem',
+              borderRadius: '8px',
+              marginBottom: '1.5rem'
+            }}>
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                cursor: 'pointer',
+                fontSize: '16px'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={sendPushNotifications}
+                  onChange={(e) => setSendPushNotifications(e.target.checked)}
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    cursor: 'pointer'
+                  }}
+                />
+                <span style={{ flex: 1 }}>
+                  <strong>📢 שלח התראות Push לכל המשתמשים</strong>
+                  <div style={{ fontSize: '12px', color: '#666', marginTop: '0.25rem' }}>
+                    ההתראה תכלול את שם השבוע ושעת הנעילה
+                  </div>
+                </span>
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowActivationDialog(false);
+                  setSendPushNotifications(true);
+                }}
+                className="btn"
+                style={{
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                  padding: '0.5rem 1rem'
+                }}
+              >
+                ❌ ביטול
+              </button>
+              <button
+                onClick={confirmActivateWeek}
+                className="btn btn-success"
+                style={{
+                  padding: '0.5rem 1.5rem',
+                  fontWeight: 'bold'
+                }}
+              >
+                ✅ הפעל שבוע
+              </button>
+            </div>
+          </div>
+        </div>
+      )} 
     </div>
   );
 }

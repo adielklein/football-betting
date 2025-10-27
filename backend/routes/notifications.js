@@ -1,12 +1,56 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const { sendNotification, vapidKeys } = require('../services/pushNotifications');
+const { 
+  sendNotification, 
+  sendNotificationToAll,
+  sendNotificationToUsers,
+  vapidKeys, 
+  checkRoute 
+} = require('../services/pushNotifications');
 
 // קבל את ה-public key
 router.get('/vapid-public-key', (req, res) => {
   console.log('📤 Sending VAPID public key');
   res.json({ publicKey: vapidKeys.publicKey });
+});
+
+// קבל סטטיסטיקות התראות
+router.get('/stats', async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const enabledUsers = await User.countDocuments({
+      'pushSettings.enabled': true,
+      'pushSettings.subscription': { $exists: true }
+    });
+    
+    const stats = {
+      totalUsers,
+      enabledUsers,
+      disabledUsers: totalUsers - enabledUsers,
+      percentage: totalUsers > 0 ? Math.round((enabledUsers / totalUsers) * 100) : 0
+    };
+    
+    res.json(stats);
+  } catch (error) {
+    console.error('Error getting stats:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// קבל רשימת משתמשים עם התראות
+router.get('/users', async (req, res) => {
+  try {
+    const users = await User.find(
+      { 'pushSettings.enabled': true },
+      'name username pushSettings.hoursBeforeLock'
+    );
+    
+    res.json(users);
+  } catch (error) {
+    console.error('Error getting users:', error);
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // שמור subscription
@@ -97,6 +141,48 @@ router.patch('/settings', async (req, res) => {
   }
 });
 
+// שלח התראה לכולם (רק אדמין)
+router.post('/send-to-all', async (req, res) => {
+  try {
+    const { title, body, data } = req.body;
+    
+    if (!title || !body) {
+      return res.status(400).json({ message: 'Title and body are required' });
+    }
+    
+    console.log('📢 Admin sending notification to all users');
+    const result = await sendNotificationToAll(title, body, data);
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error sending to all:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// שלח התראה למשתמשים נבחרים
+router.post('/send-to-users', async (req, res) => {
+  try {
+    const { userIds, title, body, data } = req.body;
+    
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ message: 'User IDs array is required' });
+    }
+    
+    if (!title || !body) {
+      return res.status(400).json({ message: 'Title and body are required' });
+    }
+    
+    console.log(`📢 Admin sending notification to ${userIds.length} users`);
+    const result = await sendNotificationToUsers(userIds, title, body, data);
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error sending to users:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // בדיקת התראה ידנית (לבדיקות)
 router.post('/test', async (req, res) => {
   try {
@@ -126,7 +212,8 @@ router.post('/test', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-// הוסף route לבדיקה ידנית (עבור Render)
-const { checkRoute } = require('../services/pushNotifications');
+
+// Route לבדיקה ידנית (עבור cron)
 router.get('/check', checkRoute);
+
 module.exports = router;
