@@ -62,22 +62,17 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        // מצא ב-cache - החזר אותו
         if (response) {
           return response;
         }
 
-        // לא נמצא - fetch מהרשת
         return fetch(event.request).then(response => {
-          // בדוק אם התשובה תקינה
           if (!response || response.status !== 200 || response.type !== 'basic') {
             return response;
           }
 
-          // שכפל את התשובה
           const responseToCache = response.clone();
 
-          // שמור ב-cache לעתיד
           caches.open(CACHE_NAME)
             .then(cache => {
               cache.put(event.request, responseToCache);
@@ -96,7 +91,6 @@ self.addEventListener('fetch', event => {
 self.addEventListener('push', event => {
   console.log('[ServiceWorker] Push Received:', event);
 
-  // Default data
   let data = {
     title: '🏆 הימורי כדורגל',
     body: 'יש לך התראה חדשה',
@@ -106,7 +100,6 @@ self.addEventListener('push', event => {
     requireInteraction: false
   };
 
-  // נסה לקרוא את הנתונים מההתראה
   if (event.data) {
     try {
       const pushData = event.data.json();
@@ -117,7 +110,6 @@ self.addEventListener('push', event => {
     }
   }
 
-  // הגדרות ההתראה
   const options = {
     body: data.body,
     icon: data.icon,
@@ -143,7 +135,6 @@ self.addEventListener('push', event => {
     ]
   };
 
-  // הצג את ההתראה
   event.waitUntil(
     self.registration.showNotification(data.title, options)
   );
@@ -157,30 +148,25 @@ self.addEventListener('notificationclick', event => {
   const action = event.action;
   const data = notification.data || {};
 
-  // סגור את ההתראה
   notification.close();
 
-  // אם לחץ על "סגור" - לא עושים כלום
   if (action === 'close') {
     return;
   }
 
-  // קבע לאן לנווט
   let url = '/';
   
   if (data.url) {
     url = data.url;
   } else if (data.type === 'week_activated' || data.type === 'reminder') {
-    url = '/'; // נווט לעמוד הבית שבו יש את ממשק ההימורים
+    url = '/';
   }
 
-  // פתח/התמקד בחלון האפליקציה
   event.waitUntil(
     clients.matchAll({ 
       type: 'window',
       includeUncontrolled: true 
     }).then(windowClients => {
-      // אם יש חלון פתוח - התמקד בו ונווט
       for (let client of windowClients) {
         if ('focus' in client) {
           return client.focus().then(client => {
@@ -191,7 +177,6 @@ self.addEventListener('notificationclick', event => {
         }
       }
       
-      // אין חלון פתוח - פתח חדש
       if (clients.openWindow) {
         return clients.openWindow(url);
       }
@@ -199,16 +184,24 @@ self.addEventListener('notificationclick', event => {
   );
 });
 
-// הודעות מהאפליקציה
+// הודעות מהאפליקציה - ⭐ החלק המתוקן
 self.addEventListener('message', event => {
   console.log('[ServiceWorker] Message received:', event.data);
 
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
+  if (!event.data) {
+    return;
   }
 
-  if (event.data && event.data.type === 'CLIENTS_CLAIM') {
-    self.clients.claim();
+  // טיפול ב-SKIP_WAITING
+  if (event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+    return;
+  }
+
+  // טיפול ב-CLIENTS_CLAIM
+  if (event.data.type === 'CLIENTS_CLAIM') {
+    event.waitUntil(self.clients.claim());
+    return;
   }
 });
 
