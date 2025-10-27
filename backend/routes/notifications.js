@@ -15,13 +15,15 @@ router.get('/vapid-public-key', (req, res) => {
   res.json({ publicKey: vapidKeys.publicKey });
 });
 
-// קבל סטטיסטיקות התראות
+// 🔧 FIX: קבל סטטיסטיקות התראות - תיקון הבדיקה!
 router.get('/stats', async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
+    
+    // 🔧 FIX: בדיקה נכונה - השדה קיים וגם לא null!
     const enabledUsers = await User.countDocuments({
       'pushSettings.enabled': true,
-      'pushSettings.subscription': { $exists: true }
+      'pushSettings.subscription': { $exists: true, $ne: null }  // ✅ גם קיים וגם לא null
     });
     
     const stats = {
@@ -42,7 +44,10 @@ router.get('/stats', async (req, res) => {
 router.get('/users', async (req, res) => {
   try {
     const users = await User.find(
-      { 'pushSettings.enabled': true },
+      { 
+        'pushSettings.enabled': true,
+        'pushSettings.subscription': { $exists: true, $ne: null }  // ✅ תיקון כאן גם
+      },
       'name username pushSettings.hoursBeforeLock'
     );
     
@@ -53,7 +58,7 @@ router.get('/users', async (req, res) => {
   }
 });
 
-// 🆕 קבל את כל המשתמשים עם סטטוס ההתראות שלהם (עבור PushManagement component)
+// קבל את כל המשתמשים עם סטטוס ההתראות שלהם
 router.get('/all-users', async (req, res) => {
   try {
     const users = await User.find(
@@ -66,7 +71,12 @@ router.get('/all-users', async (req, res) => {
       _id: user._id,
       name: user.name,
       username: user.username,
-      isSubscribed: !!(user.pushSettings?.enabled && user.pushSettings?.subscription),
+      // 🔧 FIX: בדיקה מדויקת - גם enabled וגם subscription לא null וגם לא ריק
+      isSubscribed: !!(
+        user.pushSettings?.enabled && 
+        user.pushSettings?.subscription && 
+        Object.keys(user.pushSettings.subscription || {}).length > 0
+      ),
       hoursBeforeLock: user.pushSettings?.hoursBeforeLock || 2
     }));
     

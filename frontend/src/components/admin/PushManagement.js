@@ -45,12 +45,22 @@ function PushManagement() {
     }
   };
 
+  // 🔧 FIX: בדיקה מדויקת של subscription - לא רק שהוא קיים אלא גם שהוא לא ריק!
+  const isUserSubscribed = (user) => {
+    return !!(
+      user.pushSettings?.enabled && 
+      user.pushSettings?.subscription &&
+      typeof user.pushSettings.subscription === 'object' &&
+      Object.keys(user.pushSettings.subscription).length > 0
+    );
+  };
+
   const handleSelectAll = () => {
-    // 🔧 FIX: בדיקה גם של enabled וגם של subscription
-    if (selectedUsers.length === users.filter(u => u.pushSettings?.enabled && u.pushSettings?.subscription).length) {
+    const subscribedUsers = users.filter(isUserSubscribed);
+    if (selectedUsers.length === subscribedUsers.length) {
       setSelectedUsers([]);
     } else {
-      setSelectedUsers(users.filter(u => u.pushSettings?.enabled && u.pushSettings?.subscription).map(u => u._id));
+      setSelectedUsers(subscribedUsers.map(u => u._id));
     }
   };
 
@@ -143,19 +153,9 @@ function PushManagement() {
     }
   };
 
-  // 🔧 FIX: בדיקה גם של enabled וגם של subscription!
-  // לפני: const getSubscribedUsers = () => users.filter(u => u.pushSettings?.enabled);
-  // אחרי: בודק גם enabled וגם subscription
-  const getSubscribedUsers = () => users.filter(u => 
-    u.pushSettings?.enabled && u.pushSettings?.subscription
-  );
-  
-  // 🔧 FIX: בדיקה גם של enabled וגם של subscription!
-  // לפני: const getUnsubscribedUsers = () => users.filter(u => !u.pushSettings?.enabled);
-  // אחרי: בודק שחסר enabled או subscription
-  const getUnsubscribedUsers = () => users.filter(u => 
-    !u.pushSettings?.enabled || !u.pushSettings?.subscription
-  );
+  // 🔧 FIX: שימוש בפונקציה המדויקת לבדיקת subscription
+  const getSubscribedUsers = () => users.filter(isUserSubscribed);
+  const getUnsubscribedUsers = () => users.filter(u => !isUserSubscribed(u));
 
   return (
     <div style={{ padding: '1rem' }}>

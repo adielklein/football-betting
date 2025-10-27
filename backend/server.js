@@ -54,6 +54,121 @@ app.post('/api/migrate/add-theme-field', async (req, res) => {
   }
 });
 
+// 🔧 בדיקת subscriptions לפני ניקוי
+app.get('/api/admin/check-subscriptions', async (req, res) => {
+  try {
+    const User = require('./models/User');
+    const allUsers = await User.find({}, 'name username pushSettings');
+    
+    const problematicUsers = allUsers.filter(user => {
+      const hasEnabled = user.pushSettings?.enabled;
+      const hasSubscription = user.pushSettings?.subscription;
+      const isSubscriptionEmpty = hasSubscription && 
+        (hasSubscription === null || 
+         typeof hasSubscription !== 'object' ||
+         Object.keys(hasSubscription).length === 0);
+      
+      return hasEnabled && isSubscriptionEmpty;
+    });
+
+    res.json({
+      success: true,
+      totalUsers: allUsers.length,
+      problematicCount: problematicUsers.length,
+      problematicUsers: problematicUsers.map(u => ({
+        name: u.name,
+        username: u.username,
+        enabled: u.pushSettings?.enabled,
+        subscription: u.pushSettings?.subscription
+      }))
+    });
+
+  } catch (error) {
+    console.error('❌ Error checking subscriptions:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// 🔧 ניקוי subscriptions ריקים - Route זמני!
+// ⚠️ הסר את זה אחרי שימוש!
+app.post('/api/admin/cleanup-subscriptions', async (req, res) => {
+  try {
+    console.log('🔧 Starting subscriptions cleanup...');
+
+    const User = require('./models/User');
+    
+    // מצא כל המשתמשים
+    const allUsers = await User.find({});
+    console.log(`📊 Found ${allUsers.length} users`);
+
+    let cleanedCount = 0;
+    const cleanedUsers = [];
+
+    for (const user of allUsers) {
+      const hasEnabled = user.pushSettings?.enabled;
+      const hasSubscription = user.pushSettings?.subscription;
+      const isSubscriptionEmpty = hasSubscription && 
+        (hasSubscription === null || 
+         typeof hasSubscription !== 'object' ||
+         Object.keys(hasSubscription).length === 0);
+
+      // אם enabled = true אבל subscription ריק - תקן את זה
+      if (hasEnabled && isSubscriptionEmpty) {
+        console.log(`🔧 Fixing: ${user.name} (@${user.username})`);
+        
+        await User.findByIdAndUpdate(user._id, {
+          'pushSettings.enabled': false,
+          'pushSettings.subscription': null
+        });
+        
+        cleanedUsers.push({
+          name: user.name,
+          username: user.username,
+          before: { enabled: hasEnabled, subscription: hasSubscription },
+          after: { enabled: false, subscription: null }
+        });
+        
+        cleanedCount++;
+      }
+    }
+
+    // הצג סטטיסטיקות מעודכנות
+    const totalUsers = await User.countDocuments();
+    const enabledUsers = await User.countDocuments({
+      'pushSettings.enabled': true,
+      'pushSettings.subscription': { $exists: true, $ne: null }
+    });
+
+    const stats = {
+      totalUsers,
+      enabledUsers,
+      disabledUsers: totalUsers - enabledUsers,
+      percentage: totalUsers > 0 ? Math.round((enabledUsers / totalUsers) * 100) : 0
+    };
+
+    console.log('✅ Cleanup completed successfully!');
+
+    res.json({
+      success: true,
+      message: `ניקוי הסתיים בהצלחה! תוקנו ${cleanedCount} משתמשים`,
+      cleanedCount,
+      cleanedUsers,
+      stats,
+      instructions: 'עכשיו רענן את דף ניהול ההתראות - המספרים צריכים להתאים!'
+    });
+
+  } catch (error) {
+    console.error('❌ Cleanup error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // חיבור למונגו
 const connectMongoDB = async () => {
   try {
@@ -85,14 +200,14 @@ const weeksRoutes = require('./routes/weeks');
 const matchesRoutes = require('./routes/matches');
 const betsRoutes = require('./routes/bets');
 const scoresRoutes = require('./routes/scores');
-const leaguesRoutes = require('./routes/leagues'); // 🆕 Leagues routes
+const leaguesRoutes = require('./routes/leagues');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/weeks', weeksRoutes);
 app.use('/api/matches', matchesRoutes);
 app.use('/api/bets', betsRoutes);
 app.use('/api/scores', scoresRoutes);
-app.use('/api/leagues', leaguesRoutes); // 🆕 הוסף leagues endpoint
+app.use('/api/leagues', leaguesRoutes);
 
 // Debug endpoint
 app.get('/api/debug', async (req, res) => {
@@ -103,7 +218,7 @@ app.get('/api/debug', async (req, res) => {
       matches: 0,
       bets: 0,
       scores: 0,
-      leagues: 0, // 🆕
+      leagues: 0,
       mongoConnection: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected',
       mongoHost: mongoose.connection.host || 'Unknown'
     };
@@ -114,14 +229,14 @@ app.get('/api/debug', async (req, res) => {
       const Match = require('./models/Match');
       const Bet = require('./models/Bet');
       const Score = require('./models/Score');
-      const League = require('./models/League'); // 🆕
+      const League = require('./models/League');
       
       stats.users = await User.countDocuments();
       stats.weeks = await Week.countDocuments();
       stats.matches = await Match.countDocuments();
       stats.bets = await Bet.countDocuments();
       stats.scores = await Score.countDocuments();
-      stats.leagues = await League.countDocuments(); // 🆕
+      stats.leagues = await League.countDocuments();
     } catch (error) {
       console.log('Some models not found, this is normal');
     }
@@ -152,12 +267,14 @@ app.get('/', (req, res) => {
     endpoints: {
       debug: '/api/debug',
       migrate: '/api/migrate/add-theme-field',
+      checkSubscriptions: '/api/admin/check-subscriptions',
+      cleanupSubscriptions: '/api/admin/cleanup-subscriptions',
       auth: '/api/auth/*',
       weeks: '/api/weeks/*',
       matches: '/api/matches/*',
       bets: '/api/bets/*',
       scores: '/api/scores/*',
-      leagues: '/api/leagues/*' // 🆕
+      leagues: '/api/leagues/*'
     }
   });
 });
@@ -167,8 +284,9 @@ require('./services/pushNotifications');
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔒 Auth System: Username/Password`);
+  console.log(`🔐 Auth System: Username/Password`);
   console.log(`🔍 Debug URL: http://localhost:${PORT}/api/debug`);
   console.log(`🔄 Migration URL: http://localhost:${PORT}/api/migrate/add-theme-field`);
-  console.log(`🏆 Leagues URL: http://localhost:${PORT}/api/leagues`); // 🆕
+  console.log(`🔧 Cleanup URL: http://localhost:${PORT}/api/admin/cleanup-subscriptions`);
+  console.log(`🏆 Leagues URL: http://localhost:${PORT}/api/leagues`);
 });
