@@ -1,95 +1,28 @@
-// Service Worker לטיפול בהתראות Push
+// Service Worker פשוט להתראות Push בלבד
 // מיקום: public/service-worker.js
 
-const CACHE_NAME = 'football-betting-v1';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/static/css/main.css',
-  '/static/js/main.js',
-  '/logo192.png',
-  '/logo512.png'
-];
+console.log('[ServiceWorker] 🚀 Loading...');
 
-// התקנה - Caching של קבצים בסיסיים
+// התקנה - פשוט ודא שה-SW מותקן
 self.addEventListener('install', event => {
-  console.log('[ServiceWorker] Installing...');
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('[ServiceWorker] Caching app shell');
-        return cache.addAll(urlsToCache);
-      })
-      .then(() => self.skipWaiting())
-      .catch(error => {
-        console.error('[ServiceWorker] Cache failed:', error);
-      })
-  );
+  console.log('[ServiceWorker] ✅ Installing...');
+  // דלג על המתנה והפעל מיד
+  self.skipWaiting();
 });
 
-// הפעלה - ניקוי cache ישן
+// הפעלה - תפוס שליטה על כל הדפים
 self.addEventListener('activate', event => {
-  console.log('[ServiceWorker] Activating...');
+  console.log('[ServiceWorker] ✅ Activating...');
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('[ServiceWorker] Removing old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => {
-      console.log('[ServiceWorker] Claiming clients');
-      return self.clients.claim();
+    self.clients.claim().then(() => {
+      console.log('[ServiceWorker] ✅ Claimed all clients');
     })
-  );
-});
-
-// Fetch - שרת מה-cache או מהרשת
-self.addEventListener('fetch', event => {
-  // דלג על בקשות שאינן GET
-  if (event.request.method !== 'GET') {
-    return;
-  }
-
-  // דלג על בקשות API
-  if (event.request.url.includes('/api/')) {
-    return;
-  }
-
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) {
-          return response;
-        }
-
-        return fetch(event.request).then(response => {
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-
-          const responseToCache = response.clone();
-
-          caches.open(CACHE_NAME)
-            .then(cache => {
-              cache.put(event.request, responseToCache);
-            });
-
-          return response;
-        });
-      })
-      .catch(error => {
-        console.error('[ServiceWorker] Fetch failed:', error);
-      })
   );
 });
 
 // קליטת Push Notifications
 self.addEventListener('push', event => {
-  console.log('[ServiceWorker] Push Received:', event);
+  console.log('[ServiceWorker] 🔔 Push Received:', event);
 
   let data = {
     title: '🏆 הימורי כדורגל',
@@ -100,16 +33,18 @@ self.addEventListener('push', event => {
     requireInteraction: false
   };
 
+  // נסה לקרוא נתונים מההתראה
   if (event.data) {
     try {
       const pushData = event.data.json();
       data = { ...data, ...pushData };
-      console.log('[ServiceWorker] Push data:', data);
+      console.log('[ServiceWorker] 📩 Push data:', data);
     } catch (error) {
-      console.error('[ServiceWorker] Error parsing push data:', error);
+      console.error('[ServiceWorker] ❌ Error parsing push data:', error);
     }
   }
 
+  // הגדרות ההתראה
   const options = {
     body: data.body,
     icon: data.icon,
@@ -135,25 +70,36 @@ self.addEventListener('push', event => {
     ]
   };
 
+  // הצג את ההתראה
   event.waitUntil(
     self.registration.showNotification(data.title, options)
+      .then(() => {
+        console.log('[ServiceWorker] ✅ Notification shown');
+      })
+      .catch(error => {
+        console.error('[ServiceWorker] ❌ Failed to show notification:', error);
+      })
   );
 });
 
 // טיפול בלחיצה על התראה
 self.addEventListener('notificationclick', event => {
-  console.log('[ServiceWorker] Notification clicked:', event);
+  console.log('[ServiceWorker] 👆 Notification clicked');
 
   const notification = event.notification;
   const action = event.action;
   const data = notification.data || {};
 
+  // סגור את ההתראה
   notification.close();
 
+  // אם לחץ על "סגור" - לא עושים כלום
   if (action === 'close') {
+    console.log('[ServiceWorker] 🚫 Close action - doing nothing');
     return;
   }
 
+  // קבע לאן לנווט
   let url = '/';
   
   if (data.url) {
@@ -162,47 +108,56 @@ self.addEventListener('notificationclick', event => {
     url = '/';
   }
 
+  console.log('[ServiceWorker] 🔗 Opening URL:', url);
+
+  // פתח/התמקד בחלון האפליקציה
   event.waitUntil(
     clients.matchAll({ 
       type: 'window',
       includeUncontrolled: true 
     }).then(windowClients => {
+      // אם יש חלון פתוח - התמקד בו
       for (let client of windowClients) {
         if ('focus' in client) {
-          return client.focus().then(client => {
-            if ('navigate' in client) {
-              return client.navigate(url);
+          console.log('[ServiceWorker] ✅ Focusing existing window');
+          return client.focus().then(focusedClient => {
+            if ('navigate' in focusedClient && url !== '/') {
+              return focusedClient.navigate(url);
             }
+            return focusedClient;
           });
         }
       }
       
+      // אין חלון פתוח - פתח חדש
       if (clients.openWindow) {
+        console.log('[ServiceWorker] ✅ Opening new window');
         return clients.openWindow(url);
       }
+    })
+    .catch(error => {
+      console.error('[ServiceWorker] ❌ Error handling click:', error);
     })
   );
 });
 
-// הודעות מהאפליקציה - ⭐ החלק המתוקן
+// הודעות מהאפליקציה
 self.addEventListener('message', event => {
-  console.log('[ServiceWorker] Message received:', event.data);
+  console.log('[ServiceWorker] 💬 Message received:', event.data);
 
   if (!event.data) {
     return;
   }
 
-  // טיפול ב-SKIP_WAITING
   if (event.data.type === 'SKIP_WAITING') {
+    console.log('[ServiceWorker] ⏩ Skip waiting');
     self.skipWaiting();
-    return;
   }
 
-  // טיפול ב-CLIENTS_CLAIM
   if (event.data.type === 'CLIENTS_CLAIM') {
+    console.log('[ServiceWorker] 👋 Claiming clients');
     event.waitUntil(self.clients.claim());
-    return;
   }
 });
 
-console.log('[ServiceWorker] Loaded successfully ✅');
+console.log('[ServiceWorker] ✅ Loaded successfully');
