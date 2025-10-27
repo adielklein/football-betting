@@ -21,6 +21,10 @@ webpush.setVapidDetails(
 // מבנה לאחסון subscriptions (במקרה אמיתי ישמרו ב-DB)
 let subscriptions = new Map();
 
+console.log('[PUSH] Push notifications service initialized');
+console.log('[PUSH] VAPID Public Key:', vapidKeys.publicKey.substring(0, 20) + '...');
+console.log('[PUSH] VAPID Private Key configured:', vapidKeys.privateKey !== 'YOUR_PRIVATE_KEY_HERE' ? 'YES' : 'NO - PLEASE SET IN RENDER!');
+
 // Middleware לאימות משתמש
 const authenticateUser = (req, res, next) => {
   try {
@@ -50,7 +54,10 @@ router.post('/subscribe', authenticateUser, async (req, res) => {
   try {
     const { subscription } = req.body;
     
+    console.log('[PUSH] Subscribe request from:', req.user.name);
+    
     if (!subscription || !subscription.endpoint) {
+      console.log('[PUSH] Missing subscription data');
       return res.status(400).json({ error: 'נתוני subscription חסרים' });
     }
 
@@ -63,14 +70,15 @@ router.post('/subscribe', authenticateUser, async (req, res) => {
       lastUsed: new Date()
     });
 
-    console.log(`✅ User ${req.user.name} subscribed to notifications`);
+    console.log(`[PUSH] ✅ User ${req.user.name} subscribed to notifications`);
+    console.log(`[PUSH] Total subscriptions now: ${subscriptions.size}`);
 
     res.json({ 
       success: true, 
       message: 'נרשמת בהצלחה להתראות'
     });
   } catch (error) {
-    console.error('Error subscribing:', error);
+    console.error('[PUSH] Error subscribing:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -78,16 +86,18 @@ router.post('/subscribe', authenticateUser, async (req, res) => {
 // ביטול רישום להתראות
 router.post('/unsubscribe', authenticateUser, async (req, res) => {
   try {
+    console.log('[PUSH] Unsubscribe request from:', req.user.name);
     subscriptions.delete(req.user.id);
     
-    console.log(`❌ User ${req.user.name} unsubscribed from notifications`);
+    console.log(`[PUSH] ❌ User ${req.user.name} unsubscribed from notifications`);
+    console.log(`[PUSH] Total subscriptions now: ${subscriptions.size}`);
 
     res.json({ 
       success: true, 
       message: 'הרישום להתראות בוטל' 
     });
   } catch (error) {
-    console.error('Error unsubscribing:', error);
+    console.error('[PUSH] Error unsubscribing:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -106,7 +116,7 @@ router.get('/status', authenticateUser, async (req, res) => {
       } : null
     });
   } catch (error) {
-    console.error('Error getting status:', error);
+    console.error('[PUSH] Error getting status:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -117,6 +127,9 @@ router.get('/status', authenticateUser, async (req, res) => {
 router.post('/broadcast', authenticateUser, requireAdmin, async (req, res) => {
   try {
     const { title, body, data } = req.body;
+
+    console.log('[PUSH] Broadcast request:', { title, body });
+    console.log('[PUSH] Total subscriptions:', subscriptions.size);
 
     if (!title || !body) {
       return res.status(400).json({ error: 'כותרת וגוף ההודעה נדרשים' });
@@ -137,19 +150,24 @@ router.post('/broadcast', authenticateUser, requireAdmin, async (req, res) => {
 
     for (const [userId, sub] of subscriptions.entries()) {
       try {
+        console.log(`[PUSH] Sending to: ${sub.userName}`);
         await webpush.sendNotification(sub.subscription, payload);
         sent++;
         sub.lastUsed = new Date();
+        console.log(`[PUSH] ✅ Sent to ${sub.userName}`);
       } catch (error) {
-        console.error(`Failed to send to ${userId}:`, error);
+        console.error(`[PUSH] ❌ Failed to send to ${sub.userName}:`, error.message);
         failed++;
         
         // אם ה-subscription לא תקף יותר, הסר אותו
         if (error.statusCode === 410) {
+          console.log(`[PUSH] Removing expired subscription for ${userId}`);
           subscriptions.delete(userId);
         }
       }
     }
+
+    console.log(`[PUSH] Broadcast completed: sent=${sent}, failed=${failed}`);
 
     res.json({
       success: true,
@@ -157,7 +175,7 @@ router.post('/broadcast', authenticateUser, requireAdmin, async (req, res) => {
       details: { sent, failed }
     });
   } catch (error) {
-    console.error('Error broadcasting:', error);
+    console.error('[PUSH] Error broadcasting:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -167,12 +185,15 @@ router.post('/send-to-user', authenticateUser, requireAdmin, async (req, res) =>
   try {
     const { userId, title, body, data } = req.body;
 
+    console.log('[PUSH] Send to user request:', { userId, title });
+
     if (!userId || !title || !body) {
       return res.status(400).json({ error: 'חסרים נתונים נדרשים' });
     }
 
     const userSub = subscriptions.get(userId);
     if (!userSub) {
+      console.log(`[PUSH] User ${userId} has no active subscription`);
       return res.json({
         success: false,
         message: 'למשתמש אין התראות פעילות'
@@ -190,21 +211,24 @@ router.post('/send-to-user', authenticateUser, requireAdmin, async (req, res) =>
     });
 
     try {
+      console.log(`[PUSH] Sending to ${userSub.userName}`);
       await webpush.sendNotification(userSub.subscription, payload);
       userSub.lastUsed = new Date();
+      console.log(`[PUSH] ✅ Sent to ${userSub.userName}`);
       
       res.json({
         success: true,
         message: 'ההתראה נשלחה בהצלחה'
       });
     } catch (error) {
+      console.error(`[PUSH] ❌ Failed to send:`, error.message);
       if (error.statusCode === 410) {
         subscriptions.delete(userId);
       }
       throw error;
     }
   } catch (error) {
-    console.error('Error sending to user:', error);
+    console.error('[PUSH] Error sending to user:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -213,6 +237,8 @@ router.post('/send-to-user', authenticateUser, requireAdmin, async (req, res) =>
 router.post('/send-to-group', authenticateUser, requireAdmin, async (req, res) => {
   try {
     const { userIds, title, body, data } = req.body;
+
+    console.log('[PUSH] Send to group request:', { userCount: userIds?.length, title });
 
     if (!userIds || !Array.isArray(userIds) || !title || !body) {
       return res.status(400).json({ error: 'חסרים נתונים נדרשים' });
@@ -235,10 +261,13 @@ router.post('/send-to-group', authenticateUser, requireAdmin, async (req, res) =
       const userSub = subscriptions.get(userId);
       if (userSub) {
         try {
+          console.log(`[PUSH] Sending to ${userSub.userName}`);
           await webpush.sendNotification(userSub.subscription, payload);
           userSub.lastUsed = new Date();
           sent++;
+          console.log(`[PUSH] ✅ Sent to ${userSub.userName}`);
         } catch (error) {
+          console.error(`[PUSH] ❌ Failed to send to ${userSub.userName}:`, error.message);
           failed++;
           if (error.statusCode === 410) {
             subscriptions.delete(userId);
@@ -247,13 +276,15 @@ router.post('/send-to-group', authenticateUser, requireAdmin, async (req, res) =
       }
     }
 
+    console.log(`[PUSH] Group send completed: sent=${sent}, failed=${failed}`);
+
     res.json({
       success: true,
       message: `ההתראה נשלחה ל-${sent} משתמשים`,
       details: { sent, failed }
     });
   } catch (error) {
-    console.error('Error sending to group:', error);
+    console.error('[PUSH] Error sending to group:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -262,17 +293,37 @@ router.post('/send-to-group', authenticateUser, requireAdmin, async (req, res) =
 router.post('/week-activated', authenticateUser, requireAdmin, async (req, res) => {
   try {
     const { weekData, sendNotifications } = req.body;
+    
+    console.log('[PUSH] ========================================');
+    console.log('[PUSH] week-activated called!');
+    console.log('[PUSH] Week name:', weekData?.name);
+    console.log('[PUSH] Send notifications:', sendNotifications);
+    console.log('[PUSH] Lock time:', weekData?.lockTime);
+    console.log('[PUSH] Total subscriptions:', subscriptions.size);
+    console.log('[PUSH] ========================================');
 
     if (!weekData) {
       return res.status(400).json({ error: 'נתוני שבוע חסרים' });
     }
 
     if (!sendNotifications) {
+      console.log('[PUSH] Notifications disabled for this activation');
       return res.json({
         success: true,
         message: 'השבוע הופעל ללא שליחת התראות'
       });
     }
+
+    if (subscriptions.size === 0) {
+      console.log('[PUSH] ⚠️ WARNING: No subscriptions found!');
+      return res.json({
+        success: true,
+        message: 'השבוע הופעל אבל אין משתמשים רשומים להתראות',
+        details: { sent: 0, failed: 0 }
+      });
+    }
+
+    console.log('[PUSH] Preparing notification payload...');
 
     const payload = JSON.stringify({
       title: '🏆 שבוע חדש הופעל!',
@@ -300,22 +351,37 @@ router.post('/week-activated', authenticateUser, requireAdmin, async (req, res) 
       ]
     });
 
+    console.log('[PUSH] Payload prepared, starting to send...');
+
     let sent = 0;
     let failed = 0;
 
     for (const [userId, sub] of subscriptions.entries()) {
       try {
+        console.log(`[PUSH] → Sending to: ${sub.userName} (${userId})`);
         await webpush.sendNotification(sub.subscription, payload);
         sent++;
         sub.lastUsed = new Date();
+        console.log(`[PUSH] ✅ Successfully sent to ${sub.userName}`);
       } catch (error) {
-        console.error(`Failed to send to ${userId}:`, error);
+        console.error(`[PUSH] ❌ Failed to send to ${sub.userName}:`, error.message);
+        console.error(`[PUSH] Error details:`, {
+          statusCode: error.statusCode,
+          body: error.body,
+          endpoint: sub.subscription.endpoint.substring(0, 50)
+        });
         failed++;
         if (error.statusCode === 410) {
+          console.log(`[PUSH] Removing expired subscription for ${userId}`);
           subscriptions.delete(userId);
         }
       }
     }
+
+    console.log('[PUSH] ========================================');
+    console.log('[PUSH] Finished sending notifications');
+    console.log('[PUSH] Results: sent=', sent, ', failed=', failed);
+    console.log('[PUSH] ========================================');
 
     res.json({
       success: true,
@@ -323,7 +389,7 @@ router.post('/week-activated', authenticateUser, requireAdmin, async (req, res) 
       details: { sent, failed }
     });
   } catch (error) {
-    console.error('Error sending week activation:', error);
+    console.error('[PUSH] ❌ CRITICAL ERROR in week-activated:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -351,7 +417,7 @@ router.get('/statistics', authenticateUser, requireAdmin, async (req, res) => {
       usageLastWeek
     });
   } catch (error) {
-    console.error('Error getting statistics:', error);
+    console.error('[PUSH] Error getting statistics:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -376,7 +442,7 @@ router.get('/subscribers', authenticateUser, requireAdmin, async (req, res) => {
       subscribers
     });
   } catch (error) {
-    console.error('Error getting subscribers:', error);
+    console.error('[PUSH] Error getting subscribers:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -386,7 +452,10 @@ router.post('/test', authenticateUser, async (req, res) => {
   try {
     const userSub = subscriptions.get(req.user.id);
     
+    console.log('[PUSH] Test notification request from:', req.user.name);
+    
     if (!userSub) {
+      console.log('[PUSH] User has no subscription');
       return res.json({
         success: false,
         message: 'אין התראות פעילות'
@@ -406,15 +475,17 @@ router.post('/test', authenticateUser, async (req, res) => {
       }
     });
 
+    console.log('[PUSH] Sending test notification...');
     await webpush.sendNotification(userSub.subscription, payload);
     userSub.lastUsed = new Date();
+    console.log('[PUSH] ✅ Test notification sent successfully');
 
     res.json({
       success: true,
       message: 'התראת בדיקה נשלחה!'
     });
   } catch (error) {
-    console.error('Error sending test:', error);
+    console.error('[PUSH] ❌ Error sending test:', error);
     res.status(500).json({ error: error.message });
   }
 });
