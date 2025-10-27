@@ -53,6 +53,30 @@ router.get('/users', async (req, res) => {
   }
 });
 
+// 🆕 קבל את כל המשתמשים עם סטטוס ההתראות שלהם (עבור PushManagement component)
+router.get('/all-users', async (req, res) => {
+  try {
+    const users = await User.find(
+      {},
+      'name username pushSettings'
+    );
+    
+    // פורמט הנתונים לקומפוננטה
+    const formattedUsers = users.map(user => ({
+      _id: user._id,
+      name: user.name,
+      username: user.username,
+      isSubscribed: !!(user.pushSettings?.enabled && user.pushSettings?.subscription),
+      hoursBeforeLock: user.pushSettings?.hoursBeforeLock || 2
+    }));
+    
+    res.json(formattedUsers);
+  } catch (error) {
+    console.error('Error getting all users:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // שמור subscription
 router.post('/subscribe', async (req, res) => {
   try {
@@ -98,7 +122,7 @@ router.post('/unsubscribe', async (req, res) => {
   try {
     const { userId } = req.body;
     
-    console.log(`🔕 Unsubscribing user ${userId}`);
+    console.log(`📕 Unsubscribing user ${userId}`);
     
     const user = await User.findByIdAndUpdate(userId, {
       'pushSettings.enabled': false,

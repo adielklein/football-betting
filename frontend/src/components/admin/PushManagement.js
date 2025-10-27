@@ -46,10 +46,11 @@ function PushManagement() {
   };
 
   const handleSelectAll = () => {
-    if (selectedUsers.length === users.filter(u => u.pushSettings?.enabled).length) {
+    // 🔧 FIX: בדיקה גם של enabled וגם של subscription
+    if (selectedUsers.length === users.filter(u => u.pushSettings?.enabled && u.pushSettings?.subscription).length) {
       setSelectedUsers([]);
     } else {
-      setSelectedUsers(users.filter(u => u.pushSettings?.enabled).map(u => u._id));
+      setSelectedUsers(users.filter(u => u.pushSettings?.enabled && u.pushSettings?.subscription).map(u => u._id));
     }
   };
 
@@ -142,8 +143,19 @@ function PushManagement() {
     }
   };
 
-  const getSubscribedUsers = () => users.filter(u => u.pushSettings?.enabled);
-  const getUnsubscribedUsers = () => users.filter(u => !u.pushSettings?.enabled);
+  // 🔧 FIX: בדיקה גם של enabled וגם של subscription!
+  // לפני: const getSubscribedUsers = () => users.filter(u => u.pushSettings?.enabled);
+  // אחרי: בודק גם enabled וגם subscription
+  const getSubscribedUsers = () => users.filter(u => 
+    u.pushSettings?.enabled && u.pushSettings?.subscription
+  );
+  
+  // 🔧 FIX: בדיקה גם של enabled וגם של subscription!
+  // לפני: const getUnsubscribedUsers = () => users.filter(u => !u.pushSettings?.enabled);
+  // אחרי: בודק שחסר enabled או subscription
+  const getUnsubscribedUsers = () => users.filter(u => 
+    !u.pushSettings?.enabled || !u.pushSettings?.subscription
+  );
 
   return (
     <div style={{ padding: '1rem' }}>
@@ -238,10 +250,7 @@ function PushManagement() {
       {activeTab === 'broadcast' && (
         <div className="card">
           <h3>📢 שלח התראה לכל המשתמשים</h3>
-          <p style={{ color: '#666', fontSize: '14px', marginBottom: '1rem' }}>
-            ההתראה תישלח לכל {stats?.enabledUsers || 0} המשתמשים המנויים
-          </p>
-
+          
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
               כותרת ההתראה:
@@ -250,7 +259,7 @@ function PushManagement() {
               type="text"
               value={notificationForm.title}
               onChange={(e) => setNotificationForm({ ...notificationForm, title: e.target.value })}
-              placeholder="לדוגמה: עדכון חשוב"
+              placeholder="לדוגמה: שבוע חדש נפתח!"
               className="input"
               style={{ width: '100%' }}
             />
@@ -263,7 +272,7 @@ function PushManagement() {
             <textarea
               value={notificationForm.body}
               onChange={(e) => setNotificationForm({ ...notificationForm, body: e.target.value })}
-              placeholder="לדוגמה: שבוע חדש הופעל! אל תשכחו להמר"
+              placeholder="לדוגמה: שבוע 10 נפתח! היכנסו להמר עד יום שישי בשעה 20:00"
               className="input"
               style={{ width: '100%', minHeight: '100px', resize: 'vertical' }}
             />
