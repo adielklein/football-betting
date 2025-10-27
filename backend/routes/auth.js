@@ -20,7 +20,7 @@ const createDefaultAdmin = async () => {
       username: 'adielklein',
       password: hashedPassword,
       role: 'admin',
-      theme: 'default' // ערכת נושא בסיסית לאדמין
+      theme: 'default'
     });
 
     await adminUser.save();
@@ -31,7 +31,7 @@ const createDefaultAdmin = async () => {
 };
 
 // הרץ יצירת אדמין כשהמודול נטען
-setTimeout(createDefaultAdmin, 2000); // חכה 2 שניות שהDB יתחבר
+setTimeout(createDefaultAdmin, 2000);
 
 // Login with username and password
 router.post('/login', async (req, res) => {
@@ -65,7 +65,7 @@ router.post('/login', async (req, res) => {
         name: user.name,
         username: user.username,
         role: user.role,
-        theme: user.theme || 'default' // 🆕 הוסף ערכת נושא לתגובה
+        theme: user.theme || 'default'
       }
     });
 
@@ -79,7 +79,8 @@ router.post('/login', async (req, res) => {
 router.get('/users', async (req, res) => {
   try {
     console.log('Getting all users...');
-    const users = await User.find().select('name username role theme'); // 🆕 הוסף theme לבחירה
+    // 🔧 FIX: הוסף pushSettings לתגובה!
+    const users = await User.find().select('name username role theme pushSettings');
     console.log('Found users:', users.length);
     res.json(users);
   } catch (error) {
@@ -92,7 +93,7 @@ router.get('/users', async (req, res) => {
 router.post('/users', async (req, res) => {
   try {
     console.log('Creating new user:', req.body);
-    const { name, username, password, role = 'player', theme = 'default' } = req.body; // 🆕 הוסף theme
+    const { name, username, password, role = 'player', theme = 'default' } = req.body;
     
     if (!name || !username || !password) {
       return res.status(400).json({ message: 'שם, שם משתמש וסיסמה נדרשים' });
@@ -111,7 +112,7 @@ router.post('/users', async (req, res) => {
       username, 
       password: hashedPassword,
       role,
-      theme // 🆕 שמירת ערכת הנושא
+      theme
     });
     await user.save();
     
@@ -122,7 +123,7 @@ router.post('/users', async (req, res) => {
         name: user.name,
         username: user.username,
         role: user.role,
-        theme: user.theme // 🆕 החזר ערכת נושא
+        theme: user.theme
       }
     });
   } catch (error) {
@@ -135,11 +136,10 @@ router.post('/users', async (req, res) => {
 router.patch('/users/:id', async (req, res) => {
   try {
     console.log(`Updating user ${req.params.id}:`, req.body);
-    const { name, username, role, password, theme } = req.body; // 🆕 הוסף theme
+    const { name, username, role, password, theme } = req.body;
     
     const updateData = { name, username, role };
     
-    // אם סופק theme, הוסף אותו
     if (theme !== undefined) {
       updateData.theme = theme;
       console.log(`🎨 Updating theme to: ${theme}`);
@@ -154,7 +154,7 @@ router.patch('/users/:id', async (req, res) => {
       req.params.id,
       updateData,
       { new: true }
-    ).select('name username role theme'); // 🆕 הוסף theme לבחירה
+    ).select('name username role theme pushSettings'); // 🔧 FIX: הוסף pushSettings
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -202,7 +202,7 @@ router.get('/check-admin', async (req, res) => {
         name: admin.name,
         username: admin.username,
         role: admin.role,
-        theme: admin.theme // 🆕 הוסף theme לבדיקה
+        theme: admin.theme
       } : null,
       totalUsers: await User.countDocuments()
     });
