@@ -11,9 +11,6 @@ root.render(
   </React.StrictMode>
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();
 
 // ========================================
@@ -31,22 +28,24 @@ if ('serviceWorker' in navigator) {
         setInterval(() => {
           registration.update().then(() => {
             console.log('🔄 Service Worker checked for updates');
+          }).catch(err => {
+            // אל תדפיס שגיאות של update - זה לא קריטי
+            console.debug('Update check:', err.message);
           });
-        }, 5 * 60 * 1000); // 5 דקות
+        }, 5 * 60 * 1000);
 
         // האזן לעדכונים
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
-          console.log('🆕 New Service Worker found!');
-          
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('✨ New Service Worker installed, refresh to update');
-              
-              // אפשר להוסיף כאן התראה למשתמש שיש גרסה חדשה
-              // למשל: if (confirm('יש גרסה חדשה! לרענן?')) { window.location.reload(); }
-            }
-          });
+          if (newWorker) {
+            console.log('🆕 New Service Worker found!');
+            
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('✨ New Service Worker installed, refresh to update');
+              }
+            });
+          }
         });
       })
       .catch(error => {
