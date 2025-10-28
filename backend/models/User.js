@@ -29,8 +29,11 @@ const userSchema = new mongoose.Schema({
       type: Boolean, 
       default: false 
     },
-    // 🔧 FIX: שונה מ-subscription (אובייקט בודד) ל-subscriptions (מערך)
-    subscriptions: [{ 
+    // 🔧 תמיכה בשני המבנים:
+    subscription: {  // ישן - למשתמשים שעדיין לא עברו migration
+      type: Object 
+    },
+    subscriptions: [{  // חדש - תמיכה במספר מכשירים
       type: Object 
     }],
     hoursBeforeLock: { 
