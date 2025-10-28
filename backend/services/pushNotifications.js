@@ -1,35 +1,63 @@
-// services/pushNotifications.js
 const webpush = require('web-push');
 const User = require('../models/User');
 
-// VAPID Keys - להחליף עם המפתחות שלך
-// npx web-push generate-vapid-keys
+console.log('🔔 [PUSH SERVICE] ========================================');
+console.log('🔔 [PUSH SERVICE] Initializing Push Notifications Service...');
+console.log('🔔 [PUSH SERVICE] ========================================');
+
+// 🔧 קריאת VAPID Keys מה-ENV (חובה!)
+const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+
+console.log('🔑 [PUSH SERVICE] Checking VAPID keys...');
+console.log('🔑 [PUSH SERVICE] VAPID_PUBLIC_KEY exists:', !!vapidPublicKey);
+console.log('🔑 [PUSH SERVICE] VAPID_PRIVATE_KEY exists:', !!vapidPrivateKey);
+
+// בדיקה שהמפתחות קיימים
+if (!vapidPublicKey || !vapidPrivateKey) {
+  console.error('❌ [PUSH SERVICE] ERROR: VAPID keys not found in environment variables!');
+  console.error('❌ [PUSH SERVICE] Please set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in Render environment settings');
+  throw new Error('VAPID keys not configured');
+}
+
+console.log('🔑 [PUSH SERVICE] Public Key (first 30 chars):', vapidPublicKey.substring(0, 30) + '...');
+console.log('🔑 [PUSH SERVICE] Private Key (first 10 chars):', vapidPrivateKey.substring(0, 10) + '...');
+
 const vapidKeys = {
-  publicKey: process.env.VAPID_PUBLIC_KEY || 'BHQoW5ZPuNkBvhJzXMG8PQdRlqV_7x8wKZpLkYXY6c3FXQmGzJrqZvJjO0Nh_6doQzHDaW7JYvEbJ1xL-KPZuXQ',
-  privateKey: process.env.VAPID_PRIVATE_KEY || 'uWbp3xqL9kCm2vN4zXdF6hJ8tY1rP5sO7wQ3eA4bM2n'
+  publicKey: vapidPublicKey,
+  privateKey: vapidPrivateKey
 };
 
-// הגדרת Web Push
+// הגדרת Web Push עם המפתחות הנכונים
 webpush.setVapidDetails(
   'mailto:admin@footballbetting.com',
   vapidKeys.publicKey,
   vapidKeys.privateKey
 );
 
+console.log('✅ [PUSH SERVICE] Web Push configured successfully');
+console.log('🔔 [PUSH SERVICE] ========================================');
+
 /**
  * שליחת התראה למשתמש אחד
  */
 async function sendNotification(subscription, payload) {
   try {
+    console.log('📤 [PUSH] Attempting to send notification...');
+    console.log('📤 [PUSH] Endpoint:', subscription.endpoint?.substring(0, 50) + '...');
+    
     await webpush.sendNotification(subscription, JSON.stringify(payload));
-    console.log('✅ Notification sent successfully');
+    
+    console.log('✅ [PUSH] Notification sent successfully');
     return true;
   } catch (error) {
-    console.error('❌ Error sending notification:', error);
+    console.error('❌ [PUSH] Error sending notification:', error.message);
+    console.error('❌ [PUSH] Status Code:', error.statusCode);
+    console.error('❌ [PUSH] Error Body:', error.body);
     
     // אם ה-subscription לא תקף יותר, מחק אותו
     if (error.statusCode === 404 || error.statusCode === 410) {
-      console.log('🗑️ Subscription expired, should be removed');
+      console.log('🗑️ [PUSH] Subscription expired/gone - should be removed from DB');
     }
     
     return false;
@@ -41,12 +69,29 @@ async function sendNotification(subscription, payload) {
  */
 async function sendNotificationToAll(title, body, data = {}) {
   try {
+    console.log('📢 [PUSH] ========================================');
+    console.log('📢 [PUSH] sendNotificationToAll called');
+    console.log('📢 [PUSH] Title:', title);
+    console.log('📢 [PUSH] Body:', body);
+    console.log('📢 [PUSH] ========================================');
+    
     const users = await User.find({
       'pushSettings.enabled': true,
       'pushSettings.subscription': { $exists: true, $ne: null }
     });
 
-    console.log(`📢 Sending notification to ${users.length} users`);
+    console.log(`📢 [PUSH] Found ${users.length} subscribed users in database`);
+
+    if (users.length === 0) {
+      console.log('📭 [PUSH] No users to send to');
+      return {
+        success: true,
+        sent: 0,
+        failed: 0,
+        total: 0,
+        message: 'No users subscribed'
+      };
+    }
 
     const payload = {
       title,
@@ -58,34 +103,47 @@ async function sendNotificationToAll(title, body, data = {}) {
       data: data || {}
     };
 
+    console.log('📢 [PUSH] Payload prepared:', JSON.stringify(payload, null, 2));
+
     let sent = 0;
     let failed = 0;
 
     for (const user of users) {
       try {
+        console.log(`→ [PUSH] Sending to: ${user.name} (${user.username})`);
         const success = await sendNotification(user.pushSettings.subscription, payload);
         if (success) {
           sent++;
+          console.log(`✅ [PUSH] Successfully sent to ${user.name}`);
         } else {
           failed++;
+          console.log(`❌ [PUSH] Failed to send to ${user.name}`);
         }
       } catch (error) {
-        console.error(`Failed to send to ${user.name}:`, error);
+        console.error(`❌ [PUSH] Exception sending to ${user.name}:`, error.message);
         failed++;
       }
     }
+
+    console.log('📢 [PUSH] ========================================');
+    console.log(`📢 [PUSH] Results: ${sent} sent, ${failed} failed out of ${users.length} total`);
+    console.log('📢 [PUSH] ========================================');
 
     return {
       success: true,
       sent,
       failed,
-      total: users.length
+      total: users.length,
+      message: `התראה נשלחה ל-${sent} משתמשים`
     };
   } catch (error) {
-    console.error('Error in sendNotificationToAll:', error);
+    console.error('❌ [PUSH] Critical error in sendNotificationToAll:', error);
     return {
       success: false,
-      error: error.message
+      error: error.message,
+      sent: 0,
+      failed: 0,
+      total: 0
     };
   }
 }
@@ -95,13 +153,19 @@ async function sendNotificationToAll(title, body, data = {}) {
  */
 async function sendNotificationToUsers(userIds, title, body, data = {}) {
   try {
+    console.log('📢 [PUSH] ========================================');
+    console.log('📢 [PUSH] sendNotificationToUsers called');
+    console.log('📢 [PUSH] Requested user IDs:', userIds);
+    console.log('📢 [PUSH] Title:', title);
+    console.log('📢 [PUSH] ========================================');
+    
     const users = await User.find({
       _id: { $in: userIds },
       'pushSettings.enabled': true,
       'pushSettings.subscription': { $exists: true, $ne: null }
     });
 
-    console.log(`📢 Sending notification to ${users.length} specific users`);
+    console.log(`📢 [PUSH] Found ${users.length} subscribed users from ${userIds.length} requested`);
 
     const payload = {
       title,
@@ -118,17 +182,24 @@ async function sendNotificationToUsers(userIds, title, body, data = {}) {
 
     for (const user of users) {
       try {
+        console.log(`→ [PUSH] Sending to: ${user.name}`);
         const success = await sendNotification(user.pushSettings.subscription, payload);
         if (success) {
           sent++;
+          console.log(`✅ [PUSH] Successfully sent to ${user.name}`);
         } else {
           failed++;
+          console.log(`❌ [PUSH] Failed to send to ${user.name}`);
         }
       } catch (error) {
-        console.error(`Failed to send to ${user.name}:`, error);
+        console.error(`❌ [PUSH] Exception sending to ${user.name}:`, error.message);
         failed++;
       }
     }
+
+    console.log('📢 [PUSH] ========================================');
+    console.log(`📢 [PUSH] Results: ${sent} sent, ${failed} failed`);
+    console.log('📢 [PUSH] ========================================');
 
     return {
       success: true,
@@ -137,7 +208,7 @@ async function sendNotificationToUsers(userIds, title, body, data = {}) {
       total: users.length
     };
   } catch (error) {
-    console.error('Error in sendNotificationToUsers:', error);
+    console.error('❌ [PUSH] Critical error in sendNotificationToUsers:', error);
     return {
       success: false,
       error: error.message
@@ -150,13 +221,22 @@ async function sendNotificationToUsers(userIds, title, body, data = {}) {
  */
 async function sendWeekActivationNotification(week) {
   try {
+    console.log('🏆 [PUSH] ========================================');
+    console.log('🏆 [PUSH] WEEK ACTIVATION NOTIFICATION');
+    console.log('🏆 [PUSH] Week name:', week.name);
+    console.log('🏆 [PUSH] Week ID:', week._id);
+    console.log('🏆 [PUSH] Lock time:', week.lockTime);
+    console.log('🏆 [PUSH] ========================================');
+    
     const users = await User.find({
       'pushSettings.enabled': true,
       'pushSettings.subscription': { $exists: true, $ne: null }
     });
 
+    console.log(`🏆 [PUSH] Found ${users.length} subscribed users`);
+
     if (users.length === 0) {
-      console.log('📭 No users subscribed to notifications');
+      console.log('📭 [PUSH] No users subscribed to notifications');
       return {
         success: true,
         sent: 0,
@@ -166,8 +246,6 @@ async function sendWeekActivationNotification(week) {
       };
     }
 
-    console.log(`🏆 Sending week activation to ${users.length} users`);
-
     // פורמט תאריך נעילה
     const lockDate = new Date(week.lockTime);
     const day = lockDate.getDate().toString().padStart(2, '0');
@@ -175,6 +253,8 @@ async function sendWeekActivationNotification(week) {
     const hours = lockDate.getHours().toString().padStart(2, '0');
     const minutes = lockDate.getMinutes().toString().padStart(2, '0');
     const formattedLockTime = `${day}/${month} ${hours}:${minutes}`;
+
+    console.log('🏆 [PUSH] Formatted lock time:', formattedLockTime);
 
     const payload = {
       title: '🏆 שבוע חדש הופעל!',
@@ -204,24 +284,32 @@ async function sendWeekActivationNotification(week) {
       ]
     };
 
+    console.log('🏆 [PUSH] Payload prepared');
+
     let sent = 0;
     let failed = 0;
 
     for (const user of users) {
       try {
+        console.log(`→ [PUSH] Sending week activation to: ${user.name} (${user.username})`);
         const success = await sendNotification(user.pushSettings.subscription, payload);
         if (success) {
           sent++;
+          console.log(`✅ [PUSH] Successfully sent to ${user.name}`);
         } else {
           failed++;
+          console.log(`❌ [PUSH] Failed to send to ${user.name}`);
         }
       } catch (error) {
-        console.error(`Failed to send to ${user.name}:`, error);
+        console.error(`❌ [PUSH] Exception sending to ${user.name}:`, error.message);
         failed++;
       }
     }
 
-    console.log(`📊 Week activation: ${sent} sent, ${failed} failed`);
+    console.log('🏆 [PUSH] ========================================');
+    console.log('🏆 [PUSH] Week activation completed');
+    console.log(`🏆 [PUSH] Results: sent=${sent}, failed=${failed}, total=${users.length}`);
+    console.log('🏆 [PUSH] ========================================');
 
     return {
       success: true,
@@ -231,7 +319,7 @@ async function sendWeekActivationNotification(week) {
       message: `התראה נשלחה ל-${sent} משתמשים`
     };
   } catch (error) {
-    console.error('Error in sendWeekActivationNotification:', error);
+    console.error('❌ [PUSH] Critical error in sendWeekActivationNotification:', error);
     return {
       success: false,
       error: error.message,
@@ -247,23 +335,39 @@ async function sendWeekActivationNotification(week) {
  */
 async function checkRoute(req, res) {
   try {
+    console.log('🔍 [PUSH] Check route called');
+    
     const users = await User.find({
       'pushSettings.enabled': true,
       'pushSettings.subscription': { $exists: true, $ne: null }
     });
 
+    console.log(`🔍 [PUSH] Found ${users.length} subscribed users`);
+
+    const userList = users.map(u => ({
+      name: u.name,
+      username: u.username,
+      hasSubscription: !!u.pushSettings?.subscription
+    }));
+
     res.json({
       success: true,
       subscribedUsers: users.length,
+      users: userList,
+      vapidConfigured: !!vapidKeys.publicKey && !!vapidKeys.privateKey,
       message: 'Push notification service is running'
     });
   } catch (error) {
+    console.error('❌ [PUSH] Error in check route:', error);
     res.status(500).json({
       success: false,
       error: error.message
     });
   }
 }
+
+console.log('✅ [PUSH SERVICE] Module loaded successfully');
+console.log('✅ [PUSH SERVICE] All functions exported');
 
 module.exports = {
   vapidKeys,
