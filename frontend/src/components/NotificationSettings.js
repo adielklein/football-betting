@@ -10,9 +10,25 @@ function NotificationSettings({ user }) {
   // כתובת ה-API של Render
   const API_URL = 'https://football-betting-backend.onrender.com/api';
 
+  // 🔧 FIX: פונקציה לקבלת user ID עם fallback
+  const getUserId = () => {
+    if (!user) {
+      console.error('❌ [NS] No user object provided!');
+      return null;
+    }
+    // נסה _id קודם (MongoDB), ואז id (fallback)
+    const userId = user._id || user.id;
+    if (!userId) {
+      console.error('❌ [NS] User object has no _id or id field!', user);
+      return null;
+    }
+    return userId;
+  };
+
   useEffect(() => {
-    console.log('🔔 [NS] Component mounted');
-    console.log('🔔 [NS] User:', user);
+    console.log('📢 [NS] Component mounted');
+    console.log('📢 [NS] User:', user);
+    console.log('📢 [NS] User ID:', getUserId());
     
     // בדוק אם הדפדפן תומך בהתראות
     if ('Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window) {
@@ -38,7 +54,8 @@ function NotificationSettings({ user }) {
         console.log('🔍 [NS] Loading settings from server...');
         const response = await fetch(`${API_URL}/auth/users`);
         const users = await response.json();
-        const currentUser = users.find(u => u._id === user._id);
+        const userId = getUserId();
+        const currentUser = users.find(u => u._id === userId || u.id === userId);
         
         console.log('🔍 [NS] Current user from server:', currentUser);
         
@@ -71,16 +88,25 @@ function NotificationSettings({ user }) {
     setLoading(true);
     
     try {
-      console.log('🔔 [NS] ========================================');
-      console.log('🔔 [NS] Starting subscription process...');
-      console.log('🔔 [NS] User ID:', user._id);
-      console.log('🔔 [NS] User name:', user.name);
-      console.log('🔔 [NS] ========================================');
+      console.log('📢 [NS] ========================================');
+      console.log('📢 [NS] Starting subscription process...');
+      
+      // 🔧 FIX: קבל user ID עם fallback
+      const userId = getUserId();
+      if (!userId) {
+        alert('שגיאה: לא ניתן לזהות את המשתמש. נסה להתחבר מחדש.');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('📢 [NS] User ID:', userId);
+      console.log('📢 [NS] User name:', user.name);
+      console.log('📢 [NS] ========================================');
       
       // בקש הרשאות
-      console.log('🔔 [NS] Requesting permission...');
+      console.log('📢 [NS] Requesting permission...');
       const permission = await Notification.requestPermission();
-      console.log('🔔 [NS] Permission result:', permission);
+      console.log('📢 [NS] Permission result:', permission);
       
       if (permission !== 'granted') {
         console.log('❌ [NS] Permission denied');
@@ -90,22 +116,22 @@ function NotificationSettings({ user }) {
       }
 
       // רשום service worker
-      console.log('🔔 [NS] Registering service worker...');
+      console.log('📢 [NS] Registering service worker...');
       const registration = await navigator.serviceWorker.register('/service-worker.js');
       console.log('✅ [NS] Service Worker registered:', registration);
       
-      // המתן שה-SW יהיה מוכן
-      console.log('🔔 [NS] Waiting for service worker to be ready...');
+      // המתן ש-SW יהיה מוכן
+      console.log('📢 [NS] Waiting for service worker to be ready...');
       await navigator.serviceWorker.ready;
       console.log('✅ [NS] Service Worker ready');
       
       // קבל public key מהשרת
-      console.log('🔔 [NS] Fetching VAPID public key from server...');
+      console.log('📢 [NS] Fetching VAPID public key from server...');
       const response = await fetch(`${API_URL}/notifications/vapid-public-key`);
-      console.log('🔔 [NS] VAPID response status:', response.status);
+      console.log('📢 [NS] VAPID response status:', response.status);
       
       const data = await response.json();
-      console.log('🔔 [NS] VAPID response data:', data);
+      console.log('📢 [NS] VAPID response data:', data);
       
       const publicKey = data.publicKey;
       
@@ -119,7 +145,7 @@ function NotificationSettings({ user }) {
       console.log('✅ [NS] Public key received:', publicKey.substring(0, 30) + '...');
       
       // צור subscription
-      console.log('🔔 [NS] Creating push subscription...');
+      console.log('📢 [NS] Creating push subscription...');
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey)
@@ -132,10 +158,10 @@ function NotificationSettings({ user }) {
       });
       
       // שלח לשרת
-      console.log('🔔 [NS] Saving subscription to server...');
-      console.log('🔔 [NS] Sending to:', `${API_URL}/notifications/subscribe`);
-      console.log('🔔 [NS] With data:', {
-        userId: user._id,
+      console.log('📢 [NS] Saving subscription to server...');
+      console.log('📢 [NS] Sending to:', `${API_URL}/notifications/subscribe`);
+      console.log('📢 [NS] With data:', {
+        userId: userId, // 🔧 FIX: משתמש ב-userId עם fallback
         hoursBeforeLock: hoursBeforeLock,
         subscriptionEndpoint: subscription.endpoint.substring(0, 50) + '...'
       });
@@ -144,13 +170,13 @@ function NotificationSettings({ user }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user._id,
+          userId: userId, // 🔧 FIX: משתמש ב-userId עם fallback
           subscription: subscription,
           hoursBeforeLock: hoursBeforeLock
         })
       });
       
-      console.log('🔔 [NS] Save response status:', saveResponse.status);
+      console.log('📢 [NS] Save response status:', saveResponse.status);
       
       if (saveResponse.ok) {
         const result = await saveResponse.json();
@@ -163,9 +189,9 @@ function NotificationSettings({ user }) {
         throw new Error('Failed to save subscription: ' + errorText);
       }
       
-      console.log('🔔 [NS] ========================================');
-      console.log('🔔 [NS] Subscription process completed successfully');
-      console.log('🔔 [NS] ========================================');
+      console.log('📢 [NS] ========================================');
+      console.log('📢 [NS] Subscription process completed successfully');
+      console.log('📢 [NS] ========================================');
       
     } catch (error) {
       console.error('❌ [NS] ========================================');
@@ -183,27 +209,36 @@ function NotificationSettings({ user }) {
     setLoading(true);
     
     try {
-      console.log('🔕 [NS] Starting unsubscribe process...');
-      console.log('🔕 [NS] User ID:', user._id);
+      console.log('📕 [NS] Starting unsubscribe process...');
+      
+      // 🔧 FIX: קבל user ID עם fallback
+      const userId = getUserId();
+      if (!userId) {
+        alert('שגיאה: לא ניתן לזהות את המשתמש');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('📕 [NS] User ID:', userId);
       
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
       
       if (subscription) {
-        console.log('🔕 [NS] Unsubscribing from push...');
+        console.log('📕 [NS] Unsubscribing from push...');
         await subscription.unsubscribe();
         console.log('✅ [NS] Unsubscribed from push');
       }
       
       // עדכן בשרת
-      console.log('🔕 [NS] Updating server...');
+      console.log('📕 [NS] Updating server...');
       const response = await fetch(`${API_URL}/notifications/unsubscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user._id })
+        body: JSON.stringify({ userId: userId }) // 🔧 FIX
       });
       
-      console.log('🔕 [NS] Server response status:', response.status);
+      console.log('📕 [NS] Server response status:', response.status);
       
       if (response.ok) {
         console.log('✅ [NS] Server updated successfully');
@@ -223,14 +258,22 @@ function NotificationSettings({ user }) {
   const updateSettings = async () => {
     try {
       console.log('⚙️ [NS] Updating settings...');
-      console.log('⚙️ [NS] User ID:', user._id);
+      
+      // 🔧 FIX: קבל user ID עם fallback
+      const userId = getUserId();
+      if (!userId) {
+        alert('שגיאה: לא ניתן לזהות את המשתמש');
+        return;
+      }
+      
+      console.log('⚙️ [NS] User ID:', userId);
       console.log('⚙️ [NS] Hours before lock:', hoursBeforeLock);
       
       const response = await fetch(`${API_URL}/notifications/settings`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user._id,
+          userId: userId, // 🔧 FIX
           hoursBeforeLock: hoursBeforeLock
         })
       });
@@ -253,14 +296,22 @@ function NotificationSettings({ user }) {
     try {
       console.log('🧪 [NS] ========================================');
       console.log('🧪 [NS] Sending test notification...');
-      console.log('🧪 [NS] User ID:', user._id);
+      
+      // 🔧 FIX: קבל user ID עם fallback
+      const userId = getUserId();
+      if (!userId) {
+        alert('שגיאה: לא ניתן לזהות את המשתמש');
+        return;
+      }
+      
+      console.log('🧪 [NS] User ID:', userId);
       console.log('🧪 [NS] User name:', user.name);
       console.log('🧪 [NS] ========================================');
       
       const response = await fetch(`${API_URL}/notifications/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user._id })
+        body: JSON.stringify({ userId: userId }) // 🔧 FIX
       });
       
       console.log('🧪 [NS] Test response status:', response.status);
@@ -298,7 +349,7 @@ function NotificationSettings({ user }) {
         marginBottom: showSettings ? '1rem' : 0
       }}>
         <h3 style={{ fontSize: '18px', margin: 0 }}>
-          🔔 התראות תזכורת
+          📢 התראות תזכורת
         </h3>
         <button
           onClick={() => setShowSettings(!showSettings)}
@@ -375,7 +426,7 @@ function NotificationSettings({ user }) {
                   }}
                   disabled={loading}
                 >
-                  🔔 שלח בדיקה
+                  📢 שלח בדיקה
                 </button>
               </div>
             )}
@@ -399,7 +450,7 @@ function NotificationSettings({ user }) {
                 }}
                 disabled={loading}
               >
-                {loading ? '⏳ מפעיל...' : '🔔 הפעל התראות'}
+                {loading ? '⏳ מפעיל...' : '📢 הפעל התראות'}
               </button>
             ) : (
               <>
@@ -424,7 +475,7 @@ function NotificationSettings({ user }) {
                   }}
                   disabled={loading}
                 >
-                  {loading ? '⏳ מבטל...' : '🔕 בטל'}
+                  {loading ? '⏳ מבטל...' : '📕 בטל'}
                 </button>
               </>
             )}
