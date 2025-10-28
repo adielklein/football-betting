@@ -10,8 +10,7 @@ function PushManagement() {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [notificationForm, setNotificationForm] = useState({
     title: '',
-    body: '',
-    sendToAll: true
+    body: ''
   });
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('broadcast'); // broadcast, selective, stats
@@ -45,13 +44,13 @@ function PushManagement() {
     }
   };
 
-  // 🔧 FIX: בדיקה מדויקת של subscription - לא רק שהוא קיים אלא גם שהוא לא ריק!
+  // 🔧 FIX: בדיקה מדויקת של subscriptions - מערך ולא אובייקט!
   const isUserSubscribed = (user) => {
     return !!(
       user.pushSettings?.enabled && 
-      user.pushSettings?.subscription &&
-      typeof user.pushSettings.subscription === 'object' &&
-      Object.keys(user.pushSettings.subscription).length > 0
+      user.pushSettings?.subscriptions &&  // ✅ subscriptions (מערך)
+      Array.isArray(user.pushSettings.subscriptions) &&
+      user.pushSettings.subscriptions.length > 0
     );
   };
 
@@ -72,58 +71,92 @@ function PushManagement() {
     );
   };
 
-  const sendNotification = async () => {
+  // 🔧 FIX: שליחה לכולם - קריאה ישירה ל-endpoint
+  const sendToAll = async () => {
     if (!notificationForm.title || !notificationForm.body) {
       alert('נא למלא כותרת ותוכן ההתראה');
       return;
     }
 
-    if (!notificationForm.sendToAll && selectedUsers.length === 0) {
-      alert('נא לבחור לפחות משתמש אחד');
-      return;
-    }
-
-    if (!window.confirm(`האם לשלוח התראה ל-${notificationForm.sendToAll ? 'כל המשתמשים' : `${selectedUsers.length} משתמשים`}?`)) {
+    if (!window.confirm('האם לשלוח התראה לכל המשתמשים?')) {
       return;
     }
 
     setLoading(true);
 
     try {
-      const endpoint = notificationForm.sendToAll 
-        ? `${API_URL}/notifications/send-to-all`
-        : `${API_URL}/notifications/send-to-users`;
-
-      const body = notificationForm.sendToAll
-        ? {
-            title: notificationForm.title,
-            body: notificationForm.body,
-            data: { type: 'admin_message' }
-          }
-        : {
-            userIds: selectedUsers,
-            title: notificationForm.title,
-            body: notificationForm.body,
-            data: { type: 'admin_message' }
-          };
-
-      const response = await fetch(endpoint, {
+      const response = await fetch(`${API_URL}/notifications/send-to-all`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        body: JSON.stringify({
+          title: notificationForm.title,
+          body: notificationForm.body,
+          data: { type: 'admin_message' }
+        })
       });
 
       if (!response.ok) throw new Error('Failed to send notification');
 
       const result = await response.json();
       
-      alert(`✅ התראה נשלחה בהצלחה!\nנשלח ל-${result.sent} משתמשים\n${result.failed > 0 ? `נכשל: ${result.failed}` : ''}`);
+      alert(`✅ התראה נשלחה בהצלחה!\nנשלח ל-${result.sent} מכשירים\n${result.users} משתמשים\n${result.failed > 0 ? `נכשל: ${result.failed}` : ''}`);
 
       // אפס את הטופס
       setNotificationForm({
         title: '',
-        body: '',
-        sendToAll: true
+        body: ''
+      });
+
+      await loadStats();
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      alert('שגיאה בשליחת ההתראה');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🔧 FIX: שליחה סלקטיבית - קריאה ישירה ל-endpoint
+  const sendToSelected = async () => {
+    if (!notificationForm.title || !notificationForm.body) {
+      alert('נא למלא כותרת ותוכן ההתראה');
+      return;
+    }
+
+    if (selectedUsers.length === 0) {
+      alert('נא לבחור לפחות משתמש אחד');
+      return;
+    }
+
+    // 🔧 FIX: בדיקה נכונה - שואל לפי מספר המשתמשים הנבחרים!
+    if (!window.confirm(`האם לשלוח התראה ל-${selectedUsers.length} משתמשים נבחרים?`)) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_URL}/notifications/send-to-users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userIds: selectedUsers,
+          title: notificationForm.title,
+          body: notificationForm.body,
+          data: { type: 'admin_message' }
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to send notification');
+
+      const result = await response.json();
+      
+      alert(`✅ התראה נשלחה בהצלחה!\nנשלח ל-${result.sent} מכשירים\n${result.users} משתמשים\n${result.failed > 0 ? `נכשל: ${result.failed}` : ''}`);
+
+      // אפס את הטופס
+      setNotificationForm({
+        title: '',
+        body: ''
       });
       setSelectedUsers([]);
 
@@ -146,7 +179,9 @@ function PushManagement() {
 
       if (!response.ok) throw new Error('Failed to send test');
 
-      alert('✅ התראת בדיקה נשלחה!');
+      const result = await response.json();
+      
+      alert(`✅ התראת בדיקה נשלחה!\nנשלח ל-${result.sent || 1} מכשירים`);
     } catch (error) {
       console.error('Error sending test:', error);
       alert('שגיאה בשליחת התראת בדיקה');
@@ -229,7 +264,7 @@ function PushManagement() {
             padding: '0.75rem 1.5rem'
           }}
         >
-          👥 שליחה בררנית
+          🎯 שליחה בררנית
         </button>
         <button
           onClick={() => setActiveTab('stats')}
@@ -259,7 +294,7 @@ function PushManagement() {
               type="text"
               value={notificationForm.title}
               onChange={(e) => setNotificationForm({ ...notificationForm, title: e.target.value })}
-              placeholder="לדוגמה: שבוע חדש נפתח!"
+              placeholder="לדוגמה: תזכורת חשובה"
               className="input"
               style={{ width: '100%' }}
             />
@@ -272,18 +307,15 @@ function PushManagement() {
             <textarea
               value={notificationForm.body}
               onChange={(e) => setNotificationForm({ ...notificationForm, body: e.target.value })}
-              placeholder="לדוגמה: שבוע 10 נפתח! היכנסו להמר עד יום שישי בשעה 20:00"
+              placeholder="לדוגמה: עוד שעה עד נעילת השבוע!"
               className="input"
-              style={{ width: '100%', minHeight: '100px', resize: 'vertical' }}
+              style={{ width: '100%', minHeight: '80px', resize: 'vertical' }}
             />
           </div>
 
           <button
-            onClick={() => {
-              setNotificationForm({ ...notificationForm, sendToAll: true });
-              sendNotification();
-            }}
-            className="btn btn-primary"
+            onClick={sendToAll}
+            className="btn btn-success"
             disabled={loading || !notificationForm.title || !notificationForm.body}
             style={{ width: '100%', padding: '0.75rem', fontSize: '16px', fontWeight: 'bold' }}
           >
@@ -387,10 +419,7 @@ function PushManagement() {
           </div>
 
           <button
-            onClick={() => {
-              setNotificationForm({ ...notificationForm, sendToAll: false });
-              sendNotification();
-            }}
+            onClick={sendToSelected}
             className="btn btn-success"
             disabled={loading || !notificationForm.title || !notificationForm.body || selectedUsers.length === 0}
             style={{ width: '100%', padding: '0.75rem', fontSize: '16px', fontWeight: 'bold' }}
@@ -426,7 +455,7 @@ function PushManagement() {
                     <div>
                       <div style={{ fontWeight: 'bold' }}>{user.name}</div>
                       <div style={{ fontSize: '12px', color: '#666' }}>
-                        @{user.username} • {user.pushSettings?.hoursBeforeLock || 2} שעות לפני נעילה
+                        @{user.username} • {user.pushSettings?.subscriptions?.length || 0} מכשירים • {user.pushSettings?.hoursBeforeLock || 2} שעות לפני נעילה
                       </div>
                     </div>
                     <button
@@ -496,6 +525,7 @@ function PushManagement() {
         <h4 style={{ marginBottom: '0.5rem' }}>💡 טיפים לשימוש</h4>
         <ul style={{ margin: 0, paddingRight: '20px', fontSize: '14px' }}>
           <li>התראות יישלחו רק למשתמשים שהפעילו התראות בהגדרות שלהם</li>
+          <li>תמיכה במספר מכשירים - כל המכשירים של המשתמש יקבלו את ההתראה</li>
           <li>אפשר לשלוח התראות בכל עת, ללא תלות בסטטוס השבוע</li>
           <li>השתמש בשליחה בררנית כדי להזכיר למשתמשים ספציפיים שלא הימרו</li>
           <li>התראות מופיעות גם כשהאפליקציה סגורה (אם המשתמש התקין את ה-PWA)</li>
