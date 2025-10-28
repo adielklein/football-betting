@@ -29,9 +29,10 @@ const userSchema = new mongoose.Schema({
       type: Boolean, 
       default: false 
     },
-    subscription: { 
+    // 🔧 FIX: שונה מ-subscription (אובייקט בודד) ל-subscriptions (מערך)
+    subscriptions: [{ 
       type: Object 
-    },
+    }],
     hoursBeforeLock: { 
       type: Number, 
       default: 2 

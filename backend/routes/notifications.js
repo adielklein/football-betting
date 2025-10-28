@@ -15,15 +15,15 @@ router.get('/vapid-public-key', (req, res) => {
   res.json({ publicKey: vapidKeys.publicKey });
 });
 
-// 🔧 FIX: קבל סטטיסטיקות התראות - תיקון הבדיקה!
+// 🔧 FIX: קבל סטטיסטיקות התראות - תיקון הבדיקה למערך!
 router.get('/stats', async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
     
-    // 🔧 FIX: בדיקה נכונה - השדה קיים וגם לא null!
+    // 🔧 FIX: בדיקה נכונה למערך subscriptions (לא ריק)
     const enabledUsers = await User.countDocuments({
       'pushSettings.enabled': true,
-      'pushSettings.subscription': { $exists: true, $ne: null }  // ✅ גם קיים וגם לא null
+      'pushSettings.subscriptions.0': { $exists: true }  // ✅ לפחות מכשיר אחד במערך
     });
     
     const stats = {
@@ -46,7 +46,7 @@ router.get('/users', async (req, res) => {
     const users = await User.find(
       { 
         'pushSettings.enabled': true,
-        'pushSettings.subscription': { $exists: true, $ne: null }  // ✅ תיקון כאן גם
+        'pushSettings.subscriptions.0': { $exists: true }  // ✅ תיקון למערך
       },
       'name username pushSettings.hoursBeforeLock'
     );
@@ -71,13 +71,15 @@ router.get('/all-users', async (req, res) => {
       _id: user._id,
       name: user.name,
       username: user.username,
-      // 🔧 FIX: בדיקה מדויקת - גם enabled וגם subscription לא null וגם לא ריק
+      // 🔧 FIX: בדיקה מדויקת למערך subscriptions
       isSubscribed: !!(
         user.pushSettings?.enabled && 
-        user.pushSettings?.subscription && 
-        Object.keys(user.pushSettings.subscription || {}).length > 0
+        user.pushSettings?.subscriptions && 
+        user.pushSettings.subscriptions.length > 0
       ),
-      hoursBeforeLock: user.pushSettings?.hoursBeforeLock || 2
+      hoursBeforeLock: user.pushSettings?.hoursBeforeLock || 2,
+      // 🆕 מספר מכשירים רשומים
+      devicesCount: user.pushSettings?.subscriptions?.length || 0
     }));
     
     res.json(formattedUsers);
@@ -87,22 +89,49 @@ router.get('/all-users', async (req, res) => {
   }
 });
 
-// שמור subscription
+// 🔧 FIX: שמור subscription - הוסף למערך במקום לדרוס!
 router.post('/subscribe', async (req, res) => {
   try {
     const { userId, subscription, hoursBeforeLock } = req.body;
     
     console.log(`📥 Saving subscription for user ${userId}`);
+    console.log(`📥 Endpoint: ${subscription.endpoint?.substring(0, 50)}...`);
     
-    const user = await User.findByIdAndUpdate(userId, {
-      'pushSettings.enabled': true,
-      'pushSettings.subscription': subscription,
-      'pushSettings.hoursBeforeLock': hoursBeforeLock || 2
-    }, { new: true });
+    // 🔧 FIX: מצא את המשתמש תחילה
+    const user = await User.findById(userId);
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+    
+    // 🔧 FIX: אתחל את המערך אם לא קיים
+    if (!user.pushSettings.subscriptions) {
+      user.pushSettings.subscriptions = [];
+    }
+    
+    // 🔧 FIX: בדוק אם ה-endpoint כבר קיים (למנוע כפילויות)
+    const existingIndex = user.pushSettings.subscriptions.findIndex(
+      sub => sub.endpoint === subscription.endpoint
+    );
+    
+    if (existingIndex !== -1) {
+      // עדכן subscription קיים
+      console.log(`🔄 Updating existing subscription at index ${existingIndex}`);
+      user.pushSettings.subscriptions[existingIndex] = subscription;
+    } else {
+      // הוסף subscription חדש
+      console.log(`➕ Adding new subscription (total will be ${user.pushSettings.subscriptions.length + 1})`);
+      user.pushSettings.subscriptions.push(subscription);
+    }
+    
+    // עדכן הגדרות
+    user.pushSettings.enabled = true;
+    user.pushSettings.hoursBeforeLock = hoursBeforeLock || 2;
+    
+    // שמור
+    await user.save();
+    
+    console.log(`✅ Subscription saved for ${user.name} (${user.pushSettings.subscriptions.length} devices)`);
     
     // שלח התראת בדיקה
     const payload = {
@@ -115,8 +144,11 @@ router.post('/subscribe', async (req, res) => {
     const sent = await sendNotification(subscription, payload);
     
     if (sent) {
-      console.log(`✅ Subscription saved for ${user.name}`);
-      res.json({ message: 'Subscription saved successfully' });
+      console.log(`✅ Test notification sent to ${user.name}`);
+      res.json({ 
+        message: 'Subscription saved successfully',
+        devicesCount: user.pushSettings.subscriptions.length
+      });
     } else {
       console.log(`❌ Failed to send test notification to ${user.name}`);
       res.status(500).json({ message: 'Failed to send test notification' });
@@ -127,24 +159,58 @@ router.post('/subscribe', async (req, res) => {
   }
 });
 
-// בטל subscription
+// 🔧 FIX: בטל subscription - הסר רק מכשיר זה!
 router.post('/unsubscribe', async (req, res) => {
   try {
-    const { userId } = req.body;
+    const { userId, endpoint } = req.body;
     
     console.log(`📕 Unsubscribing user ${userId}`);
+    console.log(`📕 Endpoint: ${endpoint?.substring(0, 50)}...`);
     
-    const user = await User.findByIdAndUpdate(userId, {
-      'pushSettings.enabled': false,
-      'pushSettings.subscription': null
-    }, { new: true });
+    if (!endpoint) {
+      // אם אין endpoint, הסר את כל המכשירים
+      console.log(`⚠️ No endpoint provided - removing all subscriptions`);
+      const user = await User.findByIdAndUpdate(userId, {
+        'pushSettings.enabled': false,
+        'pushSettings.subscriptions': []
+      }, { new: true });
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      console.log(`✅ All subscriptions removed for ${user.name}`);
+      return res.json({ message: 'Unsubscribed successfully' });
+    }
+    
+    // 🔧 FIX: הסר רק את המכשיר הספציפי מהמערך
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { 
+        $pull: { 
+          'pushSettings.subscriptions': { endpoint: endpoint }
+        }
+      },
+      { new: true }
+    );
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    console.log(`✅ Unsubscribed ${user.name}`);
-    res.json({ message: 'Unsubscribed successfully' });
+    // אם לא נשארו מכשירים, כבה את enabled
+    if (!user.pushSettings.subscriptions || user.pushSettings.subscriptions.length === 0) {
+      user.pushSettings.enabled = false;
+      await user.save();
+      console.log(`✅ Last device removed - disabled notifications for ${user.name}`);
+    } else {
+      console.log(`✅ Device removed - ${user.pushSettings.subscriptions.length} devices remaining for ${user.name}`);
+    }
+    
+    res.json({ 
+      message: 'Unsubscribed successfully',
+      devicesRemaining: user.pushSettings.subscriptions.length
+    });
   } catch (error) {
     console.error('Error unsubscribing:', error);
     res.status(500).json({ message: error.message });
@@ -223,7 +289,7 @@ router.post('/test', async (req, res) => {
     const { userId } = req.body;
     
     const user = await User.findById(userId);
-    if (!user || !user.pushSettings.enabled || !user.pushSettings.subscription) {
+    if (!user || !user.pushSettings.enabled || !user.pushSettings.subscriptions || user.pushSettings.subscriptions.length === 0) {
       return res.status(400).json({ message: 'User not subscribed to notifications' });
     }
     
@@ -234,12 +300,30 @@ router.post('/test', async (req, res) => {
       badge: '/logo192.png'
     };
     
-    const sent = await sendNotification(user.pushSettings.subscription, payload);
+    // 🔧 FIX: שלח לכל המכשירים של המשתמש
+    let sent = 0;
+    let failed = 0;
     
-    if (sent) {
-      res.json({ message: 'Test notification sent' });
+    for (const subscription of user.pushSettings.subscriptions) {
+      const success = await sendNotification(subscription, payload);
+      if (success) {
+        sent++;
+      } else {
+        failed++;
+      }
+    }
+    
+    console.log(`📊 Test sent to ${user.name}: ${sent} succeeded, ${failed} failed out of ${user.pushSettings.subscriptions.length} devices`);
+    
+    if (sent > 0) {
+      res.json({ 
+        message: `Test notification sent to ${sent} device(s)`,
+        sent,
+        failed,
+        total: user.pushSettings.subscriptions.length
+      });
     } else {
-      res.status(500).json({ message: 'Failed to send test notification' });
+      res.status(500).json({ message: 'Failed to send test notification to any device' });
     }
   } catch (error) {
     console.error('Error sending test:', error);

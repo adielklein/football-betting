@@ -39,7 +39,7 @@ console.log('✅ [PUSH SERVICE] Web Push configured successfully');
 console.log('🔔 [PUSH SERVICE] ========================================');
 
 /**
- * שליחת התראה למשתמש אחד
+ * שליחת התראה למשתמש אחד (מכשיר אחד)
  */
 async function sendNotification(subscription, payload) {
   try {
@@ -65,7 +65,7 @@ async function sendNotification(subscription, payload) {
 }
 
 /**
- * שליחת התראה לכל המשתמשים
+ * 🔧 FIX: שליחת התראה לכל המשתמשים - תמיכה במספר מכשירים!
  */
 async function sendNotificationToAll(title, body, data = {}) {
   try {
@@ -75,15 +75,16 @@ async function sendNotificationToAll(title, body, data = {}) {
     console.log('📢 [PUSH] Body:', body);
     console.log('📢 [PUSH] ========================================');
     
+    // 🔧 FIX: מצא משתמשים עם מערך subscriptions לא ריק
     const users = await User.find({
       'pushSettings.enabled': true,
-      'pushSettings.subscription': { $exists: true, $ne: null }
+      'pushSettings.subscriptions.0': { $exists: true }  // ✅ לפחות מכשיר אחד
     });
 
     console.log(`📢 [PUSH] Found ${users.length} subscribed users in database`);
 
     if (users.length === 0) {
-      console.log('📭 [PUSH] No users to send to');
+      console.log('🔭 [PUSH] No users to send to');
       return {
         success: true,
         sent: 0,
@@ -107,34 +108,46 @@ async function sendNotificationToAll(title, body, data = {}) {
 
     let sent = 0;
     let failed = 0;
+    let totalDevices = 0;
 
+    // 🔧 FIX: לולאה כפולה - עבור כל משתמש ועבור כל מכשיר שלו!
     for (const user of users) {
-      try {
-        console.log(`→ [PUSH] Sending to: ${user.name} (${user.username})`);
-        const success = await sendNotification(user.pushSettings.subscription, payload);
-        if (success) {
-          sent++;
-          console.log(`✅ [PUSH] Successfully sent to ${user.name}`);
-        } else {
+      const subscriptions = user.pushSettings.subscriptions || [];
+      totalDevices += subscriptions.length;
+      
+      console.log(`👤 [PUSH] User: ${user.name} (${user.username}) - ${subscriptions.length} device(s)`);
+      
+      for (let i = 0; i < subscriptions.length; i++) {
+        const subscription = subscriptions[i];
+        try {
+          console.log(`  → [PUSH] Sending to device ${i + 1}/${subscriptions.length}`);
+          const success = await sendNotification(subscription, payload);
+          if (success) {
+            sent++;
+            console.log(`  ✅ [PUSH] Successfully sent to device ${i + 1}`);
+          } else {
+            failed++;
+            console.log(`  ❌ [PUSH] Failed to send to device ${i + 1}`);
+          }
+        } catch (error) {
+          console.error(`  ❌ [PUSH] Exception sending to device ${i + 1}:`, error.message);
           failed++;
-          console.log(`❌ [PUSH] Failed to send to ${user.name}`);
         }
-      } catch (error) {
-        console.error(`❌ [PUSH] Exception sending to ${user.name}:`, error.message);
-        failed++;
       }
     }
 
     console.log('📢 [PUSH] ========================================');
-    console.log(`📢 [PUSH] Results: ${sent} sent, ${failed} failed out of ${users.length} total`);
+    console.log(`📢 [PUSH] Results: ${sent} sent, ${failed} failed out of ${totalDevices} total devices`);
+    console.log(`📢 [PUSH] Users: ${users.length}, Devices: ${totalDevices}`);
     console.log('📢 [PUSH] ========================================');
 
     return {
       success: true,
       sent,
       failed,
-      total: users.length,
-      message: `התראה נשלחה ל-${sent} משתמשים`
+      total: totalDevices,
+      users: users.length,
+      message: `התראה נשלחה ל-${sent} מכשירים (${users.length} משתמשים)`
     };
   } catch (error) {
     console.error('❌ [PUSH] Critical error in sendNotificationToAll:', error);
@@ -149,7 +162,7 @@ async function sendNotificationToAll(title, body, data = {}) {
 }
 
 /**
- * שליחת התראה למשתמשים ספציפיים
+ * 🔧 FIX: שליחת התראה למשתמשים ספציפיים - תמיכה במספר מכשירים!
  */
 async function sendNotificationToUsers(userIds, title, body, data = {}) {
   try {
@@ -159,10 +172,11 @@ async function sendNotificationToUsers(userIds, title, body, data = {}) {
     console.log('📢 [PUSH] Title:', title);
     console.log('📢 [PUSH] ========================================');
     
+    // 🔧 FIX: מצא משתמשים עם מערך subscriptions לא ריק
     const users = await User.find({
       _id: { $in: userIds },
       'pushSettings.enabled': true,
-      'pushSettings.subscription': { $exists: true, $ne: null }
+      'pushSettings.subscriptions.0': { $exists: true }
     });
 
     console.log(`📢 [PUSH] Found ${users.length} subscribed users from ${userIds.length} requested`);
@@ -179,33 +193,44 @@ async function sendNotificationToUsers(userIds, title, body, data = {}) {
 
     let sent = 0;
     let failed = 0;
+    let totalDevices = 0;
 
+    // 🔧 FIX: לולאה כפולה - עבור כל משתמש ועבור כל מכשיר שלו!
     for (const user of users) {
-      try {
-        console.log(`→ [PUSH] Sending to: ${user.name}`);
-        const success = await sendNotification(user.pushSettings.subscription, payload);
-        if (success) {
-          sent++;
-          console.log(`✅ [PUSH] Successfully sent to ${user.name}`);
-        } else {
+      const subscriptions = user.pushSettings.subscriptions || [];
+      totalDevices += subscriptions.length;
+      
+      console.log(`👤 [PUSH] User: ${user.name} - ${subscriptions.length} device(s)`);
+      
+      for (let i = 0; i < subscriptions.length; i++) {
+        const subscription = subscriptions[i];
+        try {
+          console.log(`  → [PUSH] Sending to device ${i + 1}/${subscriptions.length}`);
+          const success = await sendNotification(subscription, payload);
+          if (success) {
+            sent++;
+            console.log(`  ✅ [PUSH] Successfully sent to device ${i + 1}`);
+          } else {
+            failed++;
+            console.log(`  ❌ [PUSH] Failed to send to device ${i + 1}`);
+          }
+        } catch (error) {
+          console.error(`  ❌ [PUSH] Exception sending to device ${i + 1}:`, error.message);
           failed++;
-          console.log(`❌ [PUSH] Failed to send to ${user.name}`);
         }
-      } catch (error) {
-        console.error(`❌ [PUSH] Exception sending to ${user.name}:`, error.message);
-        failed++;
       }
     }
 
     console.log('📢 [PUSH] ========================================');
-    console.log(`📢 [PUSH] Results: ${sent} sent, ${failed} failed`);
+    console.log(`📢 [PUSH] Results: ${sent} sent, ${failed} failed out of ${totalDevices} devices`);
     console.log('📢 [PUSH] ========================================');
 
     return {
       success: true,
       sent,
       failed,
-      total: users.length
+      total: totalDevices,
+      users: users.length
     };
   } catch (error) {
     console.error('❌ [PUSH] Critical error in sendNotificationToUsers:', error);
@@ -217,7 +242,7 @@ async function sendNotificationToUsers(userIds, title, body, data = {}) {
 }
 
 /**
- * שליחת התראת הפעלת שבוע
+ * 🔧 FIX: שליחת התראות הפעלת שבוע - תמיכה במספר מכשירים!
  */
 async function sendWeekActivationNotification(week) {
   try {
@@ -228,15 +253,16 @@ async function sendWeekActivationNotification(week) {
     console.log('🏆 [PUSH] Lock time:', week.lockTime);
     console.log('🏆 [PUSH] ========================================');
     
+    // 🔧 FIX: מצא משתמשים עם מערך subscriptions לא ריק
     const users = await User.find({
       'pushSettings.enabled': true,
-      'pushSettings.subscription': { $exists: true, $ne: null }
+      'pushSettings.subscriptions.0': { $exists: true }
     });
 
     console.log(`🏆 [PUSH] Found ${users.length} subscribed users`);
 
     if (users.length === 0) {
-      console.log('📭 [PUSH] No users subscribed to notifications');
+      console.log('🔭 [PUSH] No users subscribed to notifications');
       return {
         success: true,
         sent: 0,
@@ -288,35 +314,47 @@ async function sendWeekActivationNotification(week) {
 
     let sent = 0;
     let failed = 0;
+    let totalDevices = 0;
 
+    // 🔧 FIX: לולאה כפולה - עבור כל משתמש ועבור כל מכשיר שלו!
     for (const user of users) {
-      try {
-        console.log(`→ [PUSH] Sending week activation to: ${user.name} (${user.username})`);
-        const success = await sendNotification(user.pushSettings.subscription, payload);
-        if (success) {
-          sent++;
-          console.log(`✅ [PUSH] Successfully sent to ${user.name}`);
-        } else {
+      const subscriptions = user.pushSettings.subscriptions || [];
+      totalDevices += subscriptions.length;
+      
+      console.log(`👤 [PUSH] User: ${user.name} (${user.username}) - ${subscriptions.length} device(s)`);
+      
+      for (let i = 0; i < subscriptions.length; i++) {
+        const subscription = subscriptions[i];
+        try {
+          console.log(`  → [PUSH] Sending week activation to device ${i + 1}/${subscriptions.length}`);
+          const success = await sendNotification(subscription, payload);
+          if (success) {
+            sent++;
+            console.log(`  ✅ [PUSH] Successfully sent to device ${i + 1}`);
+          } else {
+            failed++;
+            console.log(`  ❌ [PUSH] Failed to send to device ${i + 1}`);
+          }
+        } catch (error) {
+          console.error(`  ❌ [PUSH] Exception sending to device ${i + 1}:`, error.message);
           failed++;
-          console.log(`❌ [PUSH] Failed to send to ${user.name}`);
         }
-      } catch (error) {
-        console.error(`❌ [PUSH] Exception sending to ${user.name}:`, error.message);
-        failed++;
       }
     }
 
     console.log('🏆 [PUSH] ========================================');
     console.log('🏆 [PUSH] Week activation completed');
-    console.log(`🏆 [PUSH] Results: sent=${sent}, failed=${failed}, total=${users.length}`);
+    console.log(`🏆 [PUSH] Results: sent=${sent}, failed=${failed}, total=${totalDevices} devices`);
+    console.log(`🏆 [PUSH] Users: ${users.length}, Devices: ${totalDevices}`);
     console.log('🏆 [PUSH] ========================================');
 
     return {
       success: true,
       sent,
       failed,
-      total: users.length,
-      message: `התראה נשלחה ל-${sent} משתמשים`
+      total: totalDevices,
+      users: users.length,
+      message: `התראה נשלחה ל-${sent} מכשירים (${users.length} משתמשים)`
     };
   } catch (error) {
     console.error('❌ [PUSH] Critical error in sendWeekActivationNotification:', error);
@@ -337,25 +375,33 @@ async function checkRoute(req, res) {
   try {
     console.log('🔍 [PUSH] Check route called');
     
+    // 🔧 FIX: בדיקה עם subscriptions
     const users = await User.find({
       'pushSettings.enabled': true,
-      'pushSettings.subscription': { $exists: true, $ne: null }
+      'pushSettings.subscriptions.0': { $exists: true }
     });
 
     console.log(`🔍 [PUSH] Found ${users.length} subscribed users`);
 
-    const userList = users.map(u => ({
-      name: u.name,
-      username: u.username,
-      hasSubscription: !!u.pushSettings?.subscription
-    }));
+    // 🔧 FIX: ספור את המכשירים
+    let totalDevices = 0;
+    const userList = users.map(u => {
+      const devicesCount = u.pushSettings?.subscriptions?.length || 0;
+      totalDevices += devicesCount;
+      return {
+        name: u.name,
+        username: u.username,
+        devicesCount: devicesCount
+      };
+    });
 
     res.json({
       success: true,
       subscribedUsers: users.length,
+      totalDevices: totalDevices,
       users: userList,
       vapidConfigured: !!vapidKeys.publicKey && !!vapidKeys.privateKey,
-      message: 'Push notification service is running'
+      message: 'Push notification service is running with multi-device support'
     });
   } catch (error) {
     console.error('❌ [PUSH] Error in check route:', error);
@@ -367,7 +413,7 @@ async function checkRoute(req, res) {
 }
 
 console.log('✅ [PUSH SERVICE] Module loaded successfully');
-console.log('✅ [PUSH SERVICE] All functions exported');
+console.log('✅ [PUSH SERVICE] Multi-device support enabled');
 
 module.exports = {
   vapidKeys,
