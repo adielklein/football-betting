@@ -1,163 +1,137 @@
-// Service Worker פשוט להתראות Push בלבד
-// מיקום: public/service-worker.js
+// public/service-worker.js
 
-console.log('[ServiceWorker] 🚀 Loading...');
+console.log('🔧 Service Worker loading...');
 
-// התקנה - פשוט ודא שה-SW מותקן
-self.addEventListener('install', event => {
-  console.log('[ServiceWorker] ✅ Installing...');
-  // דלג על המתנה והפעל מיד
-  self.skipWaiting();
+// גרסה - שנה את זה כדי לאלץ עדכון
+const CACHE_VERSION = 'v1.0.0';
+const CACHE_NAME = `football-betting-${CACHE_VERSION}`;
+
+// התקנת Service Worker
+self.addEventListener('install', (event) => {
+  console.log('✅ Service Worker installed');
+  self.skipWaiting(); // מיד להפעיל את ה-SW החדש
 });
 
-// הפעלה - תפוס שליטה על כל הדפים
-self.addEventListener('activate', event => {
-  console.log('[ServiceWorker] ✅ Activating...');
+// הפעלת Service Worker
+self.addEventListener('activate', (event) => {
+  console.log('✅ Service Worker activated');
   event.waitUntil(
-    self.clients.claim().then(() => {
-      console.log('[ServiceWorker] ✅ Claimed all clients');
+    // נקה cache ישנים
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('🗑️ Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => {
+      // תפוס שליטה על כל הלקוחות
+      return self.clients.claim();
     })
   );
 });
 
-// קליטת Push Notifications
-self.addEventListener('push', event => {
-  console.log('[ServiceWorker] 🔔 Push Received:', event);
+// ========================================
+// 🔔 טיפול בהתראות Push - החלק החשוב!
+// ========================================
 
+self.addEventListener('push', (event) => {
+  console.log('🔔 [SW] ========================================');
+  console.log('🔔 [SW] Push event received!');
+  console.log('🔔 [SW] Event:', event);
+  
   let data = {
-    title: '🏆 הימורי כדורגל',
-    body: 'יש לך התראה חדשה',
+    title: 'התראה חדשה',
+    body: 'יש לך הודעה חדשה',
     icon: '/logo192.png',
     badge: '/logo192.png',
-    tag: 'default',
-    requireInteraction: false
+    data: {}
   };
 
-  // נסה לקרוא נתונים מההתראה
+  // נסה לקרוא את הנתונים
   if (event.data) {
     try {
-      const pushData = event.data.json();
-      data = { ...data, ...pushData };
-      console.log('[ServiceWorker] 📩 Push data:', data);
+      const parsedData = event.data.json();
+      console.log('🔔 [SW] Parsed data:', parsedData);
+      data = { ...data, ...parsedData };
     } catch (error) {
-      console.error('[ServiceWorker] ❌ Error parsing push data:', error);
+      console.error('🔔 [SW] Error parsing push data:', error);
+      console.log('🔔 [SW] Raw data:', event.data.text());
     }
+  } else {
+    console.log('🔔 [SW] No data in push event');
   }
 
-  // הגדרות ההתראה
-  const options = {
+  console.log('🔔 [SW] Notification data:', data);
+
+  // הצג התראה
+  const notificationOptions = {
     body: data.body,
-    icon: data.icon,
-    badge: data.badge,
+    icon: data.icon || '/logo192.png',
+    badge: data.badge || '/logo192.png',
     vibrate: data.vibrate || [200, 100, 200],
-    tag: data.tag,
-    requireInteraction: data.requireInteraction,
-    renotify: true,
-    dir: 'rtl',
-    lang: 'he',
+    tag: data.tag || 'default',
     data: data.data || {},
-    actions: [
-      {
-        action: 'open',
-        title: '📱 פתח',
-        icon: '/logo192.png'
-      },
-      {
-        action: 'close',
-        title: '❌ סגור',
-        icon: '/logo192.png'
-      }
-    ]
+    requireInteraction: false, // ההתראה תיסגר אוטומטית
+    actions: data.actions || [],
+    silent: false // עם צליל
   };
 
-  // הצג את ההתראה
+  console.log('🔔 [SW] Showing notification:', data.title);
+  console.log('🔔 [SW] Options:', notificationOptions);
+
   event.waitUntil(
-    self.registration.showNotification(data.title, options)
+    self.registration.showNotification(data.title, notificationOptions)
       .then(() => {
-        console.log('[ServiceWorker] ✅ Notification shown');
+        console.log('✅ [SW] Notification shown successfully');
       })
       .catch(error => {
-        console.error('[ServiceWorker] ❌ Failed to show notification:', error);
+        console.error('❌ [SW] Error showing notification:', error);
       })
   );
+  
+  console.log('🔔 [SW] ========================================');
 });
 
 // טיפול בלחיצה על התראה
-self.addEventListener('notificationclick', event => {
-  console.log('[ServiceWorker] 👆 Notification clicked');
-
-  const notification = event.notification;
-  const action = event.action;
-  const data = notification.data || {};
-
-  // סגור את ההתראה
-  notification.close();
-
-  // אם לחץ על "סגור" - לא עושים כלום
-  if (action === 'close') {
-    console.log('[ServiceWorker] 🚫 Close action - doing nothing');
-    return;
-  }
-
-  // קבע לאן לנווט
-  let url = '/';
+self.addEventListener('notificationclick', (event) => {
+  console.log('👆 [SW] Notification clicked:', event.notification);
   
-  if (data.url) {
-    url = data.url;
-  } else if (data.type === 'week_activated' || data.type === 'reminder') {
-    url = '/';
-  }
+  event.notification.close();
 
-  console.log('[ServiceWorker] 🔗 Opening URL:', url);
-
-  // פתח/התמקד בחלון האפליקציה
+  // פתח את האפליקציה או עבור לעמוד מסוים
+  const urlToOpen = event.notification.data?.url || '/';
+  
   event.waitUntil(
-    clients.matchAll({ 
-      type: 'window',
-      includeUncontrolled: true 
-    }).then(windowClients => {
-      // אם יש חלון פתוח - התמקד בו
-      for (let client of windowClients) {
-        if ('focus' in client) {
-          console.log('[ServiceWorker] ✅ Focusing existing window');
-          return client.focus().then(focusedClient => {
-            if ('navigate' in focusedClient && url !== '/') {
-              return focusedClient.navigate(url);
-            }
-            return focusedClient;
-          });
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then(windowClients => {
+        // בדוק אם יש כבר חלון פתוח
+        for (let client of windowClients) {
+          if (client.url.includes(self.registration.scope) && 'focus' in client) {
+            console.log('🔄 [SW] Focusing existing window');
+            return client.focus().then(client => {
+              if (urlToOpen !== '/') {
+                client.navigate(urlToOpen);
+              }
+              return client;
+            });
+          }
         }
-      }
-      
-      // אין חלון פתוח - פתח חדש
-      if (clients.openWindow) {
-        console.log('[ServiceWorker] ✅ Opening new window');
-        return clients.openWindow(url);
-      }
-    })
-    .catch(error => {
-      console.error('[ServiceWorker] ❌ Error handling click:', error);
-    })
+        
+        // פתח חלון חדש
+        if (clients.openWindow) {
+          console.log('🆕 [SW] Opening new window:', urlToOpen);
+          return clients.openWindow(urlToOpen);
+        }
+      })
   );
 });
 
-// הודעות מהאפליקציה
-self.addEventListener('message', event => {
-  console.log('[ServiceWorker] 💬 Message received:', event.data);
-
-  if (!event.data) {
-    return;
-  }
-
-  if (event.data.type === 'SKIP_WAITING') {
-    console.log('[ServiceWorker] ⏩ Skip waiting');
-    self.skipWaiting();
-  }
-
-  if (event.data.type === 'CLIENTS_CLAIM') {
-    console.log('[ServiceWorker] 👋 Claiming clients');
-    event.waitUntil(self.clients.claim());
-  }
+// טיפול בסגירת התראה
+self.addEventListener('notificationclose', (event) => {
+  console.log('❌ [SW] Notification closed:', event.notification.tag);
 });
 
-console.log('[ServiceWorker] ✅ Loaded successfully');
+console.log('✅ Service Worker loaded successfully');

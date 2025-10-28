@@ -11,30 +11,44 @@ function NotificationSettings({ user }) {
   const API_URL = 'https://football-betting-backend.onrender.com/api';
 
   useEffect(() => {
+    console.log('🔔 [NS] Component mounted');
+    console.log('🔔 [NS] User:', user);
+    
     // בדוק אם הדפדפן תומך בהתראות
     if ('Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window) {
+      console.log('✅ [NS] Browser supports notifications');
       setIsSupported(true);
       checkSubscription();
+    } else {
+      console.log('❌ [NS] Browser does not support notifications');
     }
   }, []);
 
   const checkSubscription = async () => {
     try {
+      console.log('🔍 [NS] Checking subscription status...');
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
+      
+      console.log('🔍 [NS] Current subscription:', subscription);
       setIsSubscribed(!!subscription);
       
       // טען הגדרות מהשרת אם יש
       if (subscription && user) {
+        console.log('🔍 [NS] Loading settings from server...');
         const response = await fetch(`${API_URL}/auth/users`);
         const users = await response.json();
-        const currentUser = users.find(u => u._id === user.id);
+        const currentUser = users.find(u => u._id === user._id);
+        
+        console.log('🔍 [NS] Current user from server:', currentUser);
+        
         if (currentUser?.pushSettings?.hoursBeforeLock) {
+          console.log('🔍 [NS] Setting hoursBeforeLock:', currentUser.pushSettings.hoursBeforeLock);
           setHoursBeforeLock(currentUser.pushSettings.hoursBeforeLock);
         }
       }
     } catch (error) {
-      console.error('Error checking subscription:', error);
+      console.error('❌ [NS] Error checking subscription:', error);
     }
   };
 
@@ -57,53 +71,108 @@ function NotificationSettings({ user }) {
     setLoading(true);
     
     try {
+      console.log('🔔 [NS] ========================================');
+      console.log('🔔 [NS] Starting subscription process...');
+      console.log('🔔 [NS] User ID:', user._id);
+      console.log('🔔 [NS] User name:', user.name);
+      console.log('🔔 [NS] ========================================');
+      
       // בקש הרשאות
+      console.log('🔔 [NS] Requesting permission...');
       const permission = await Notification.requestPermission();
+      console.log('🔔 [NS] Permission result:', permission);
+      
       if (permission !== 'granted') {
+        console.log('❌ [NS] Permission denied');
         alert('יש לאשר התראות בדפדפן כדי להפעיל את התכונה');
         setLoading(false);
         return;
       }
 
       // רשום service worker
+      console.log('🔔 [NS] Registering service worker...');
       const registration = await navigator.serviceWorker.register('/service-worker.js');
-      console.log('Service Worker registered');
+      console.log('✅ [NS] Service Worker registered:', registration);
+      
+      // המתן שה-SW יהיה מוכן
+      console.log('🔔 [NS] Waiting for service worker to be ready...');
+      await navigator.serviceWorker.ready;
+      console.log('✅ [NS] Service Worker ready');
       
       // קבל public key מהשרת
+      console.log('🔔 [NS] Fetching VAPID public key from server...');
       const response = await fetch(`${API_URL}/notifications/vapid-public-key`);
-      const { publicKey } = await response.json();
+      console.log('🔔 [NS] VAPID response status:', response.status);
+      
+      const data = await response.json();
+      console.log('🔔 [NS] VAPID response data:', data);
+      
+      const publicKey = data.publicKey;
       
       if (!publicKey) {
+        console.error('❌ [NS] No public key received');
         alert('שגיאה: חסר VAPID public key בשרת');
         setLoading(false);
         return;
       }
       
+      console.log('✅ [NS] Public key received:', publicKey.substring(0, 30) + '...');
+      
       // צור subscription
+      console.log('🔔 [NS] Creating push subscription...');
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey)
       });
       
+      console.log('✅ [NS] Push subscription created successfully');
+      console.log('📱 [NS] Subscription details:', {
+        endpoint: subscription.endpoint.substring(0, 50) + '...',
+        keys: Object.keys(subscription.toJSON().keys)
+      });
+      
       // שלח לשרת
+      console.log('🔔 [NS] Saving subscription to server...');
+      console.log('🔔 [NS] Sending to:', `${API_URL}/notifications/subscribe`);
+      console.log('🔔 [NS] With data:', {
+        userId: user._id,
+        hoursBeforeLock: hoursBeforeLock,
+        subscriptionEndpoint: subscription.endpoint.substring(0, 50) + '...'
+      });
+      
       const saveResponse = await fetch(`${API_URL}/notifications/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user.id,
+          userId: user._id,
           subscription: subscription,
           hoursBeforeLock: hoursBeforeLock
         })
       });
       
+      console.log('🔔 [NS] Save response status:', saveResponse.status);
+      
       if (saveResponse.ok) {
+        const result = await saveResponse.json();
+        console.log('✅ [NS] Subscription saved successfully:', result);
         setIsSubscribed(true);
-        alert('✅ התראות הופעלו בהצלחה!');
+        alert('✅ התראות הופעלו בהצלחה!\nכעת תקבל התראות לפני נעילת הימורים.');
       } else {
-        throw new Error('Failed to save subscription');
+        const errorText = await saveResponse.text();
+        console.error('❌ [NS] Save failed:', errorText);
+        throw new Error('Failed to save subscription: ' + errorText);
       }
+      
+      console.log('🔔 [NS] ========================================');
+      console.log('🔔 [NS] Subscription process completed successfully');
+      console.log('🔔 [NS] ========================================');
+      
     } catch (error) {
-      console.error('Error subscribing:', error);
+      console.error('❌ [NS] ========================================');
+      console.error('❌ [NS] Error in subscription process:', error);
+      console.error('❌ [NS] Error message:', error.message);
+      console.error('❌ [NS] Error stack:', error.stack);
+      console.error('❌ [NS] ========================================');
       alert('שגיאה בהפעלת התראות: ' + error.message);
     } finally {
       setLoading(false);
@@ -114,25 +183,38 @@ function NotificationSettings({ user }) {
     setLoading(true);
     
     try {
+      console.log('🔕 [NS] Starting unsubscribe process...');
+      console.log('🔕 [NS] User ID:', user._id);
+      
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
       
       if (subscription) {
+        console.log('🔕 [NS] Unsubscribing from push...');
         await subscription.unsubscribe();
+        console.log('✅ [NS] Unsubscribed from push');
       }
       
       // עדכן בשרת
-      await fetch(`${API_URL}/notifications/unsubscribe`, {
+      console.log('🔕 [NS] Updating server...');
+      const response = await fetch(`${API_URL}/notifications/unsubscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id })
+        body: JSON.stringify({ userId: user._id })
       });
       
-      setIsSubscribed(false);
-      alert('התראות בוטלו');
+      console.log('🔕 [NS] Server response status:', response.status);
+      
+      if (response.ok) {
+        console.log('✅ [NS] Server updated successfully');
+        setIsSubscribed(false);
+        alert('התראות בוטלו בהצלחה');
+      } else {
+        throw new Error('Failed to update server');
+      }
     } catch (error) {
-      console.error('Error unsubscribing:', error);
-      alert('שגיאה בביטול התראות');
+      console.error('❌ [NS] Error unsubscribing:', error);
+      alert('שגיאה בביטול התראות: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -140,42 +222,70 @@ function NotificationSettings({ user }) {
 
   const updateSettings = async () => {
     try {
-      await fetch(`${API_URL}/notifications/settings`, {
+      console.log('⚙️ [NS] Updating settings...');
+      console.log('⚙️ [NS] User ID:', user._id);
+      console.log('⚙️ [NS] Hours before lock:', hoursBeforeLock);
+      
+      const response = await fetch(`${API_URL}/notifications/settings`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user.id,
+          userId: user._id,
           hoursBeforeLock: hoursBeforeLock
         })
       });
       
-      alert('הגדרות עודכנו בהצלחה!');
+      console.log('⚙️ [NS] Update response status:', response.status);
+      
+      if (response.ok) {
+        console.log('✅ [NS] Settings updated successfully');
+        alert('הגדרות עודכנו בהצלחה!');
+      } else {
+        throw new Error('Failed to update settings');
+      }
     } catch (error) {
-      console.error('Error updating settings:', error);
-      alert('שגיאה בעדכון הגדרות');
+      console.error('❌ [NS] Error updating settings:', error);
+      alert('שגיאה בעדכון הגדרות: ' + error.message);
     }
   };
 
   const sendTestNotification = async () => {
     try {
+      console.log('🧪 [NS] ========================================');
+      console.log('🧪 [NS] Sending test notification...');
+      console.log('🧪 [NS] User ID:', user._id);
+      console.log('🧪 [NS] User name:', user.name);
+      console.log('🧪 [NS] ========================================');
+      
       const response = await fetch(`${API_URL}/notifications/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id })
+        body: JSON.stringify({ userId: user._id })
       });
       
+      console.log('🧪 [NS] Test response status:', response.status);
+      
       if (response.ok) {
-        alert('התראת בדיקה נשלחה!');
+        const result = await response.json();
+        console.log('✅ [NS] Test notification result:', result);
+        console.log('🧪 [NS] ========================================');
+        console.log('🧪 [NS] Test notification sent successfully');
+        console.log('🧪 [NS] Check your device for the notification!');
+        console.log('🧪 [NS] ========================================');
+        alert('✅ התראת בדיקה נשלחה!\nבדוק את המכשיר שלך.');
       } else {
-        alert('שגיאה בשליחת התראת בדיקה');
+        const errorText = await response.text();
+        console.error('❌ [NS] Test failed:', errorText);
+        alert('שגיאה בשליחת התראת בדיקה: ' + errorText);
       }
     } catch (error) {
-      console.error('Error sending test:', error);
-      alert('שגיאה בשליחת התראת בדיקה');
+      console.error('❌ [NS] Error sending test:', error);
+      alert('שגיאה בשליחת התראת בדיקה: ' + error.message);
     }
   };
 
   if (!isSupported) {
+    console.log('⚠️ [NS] Notifications not supported, hiding component');
     return null; // לא מציג כלום אם הדפדפן לא תומך
   }
 
@@ -242,7 +352,7 @@ function NotificationSettings({ user }) {
             </div>
 
             {isSubscribed && (
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <button
                   onClick={updateSettings}
                   className="btn"
@@ -274,7 +384,9 @@ function NotificationSettings({ user }) {
           <div style={{ 
             display: 'flex', 
             gap: '1rem',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            alignItems: 'center',
+            flexWrap: 'wrap'
           }}>
             {!isSubscribed ? (
               <button
@@ -312,7 +424,7 @@ function NotificationSettings({ user }) {
                   }}
                   disabled={loading}
                 >
-                  {loading ? '⏳' : '🔕 בטל'}
+                  {loading ? '⏳ מבטל...' : '🔕 בטל'}
                 </button>
               </>
             )}
@@ -333,6 +445,9 @@ function NotificationSettings({ user }) {
               <li>בחר "הוסף למסך הבית"</li>
               <li>אשר את ההתקנה</li>
             </ol>
+            <p style={{ marginTop: '0.5rem', fontSize: '11px', color: '#666' }}>
+              💻 על מחשב: התראות יופיעו ישירות בדפדפן
+            </p>
           </div>
         </div>
       )}
