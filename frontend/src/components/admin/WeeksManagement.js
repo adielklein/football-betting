@@ -39,18 +39,7 @@ const [sendPushNotifications, setSendPushNotifications] = useState(true);
       if (!response.ok) throw new Error('Failed to fetch weeks');
       
       const data = await response.json();
-      const reversedWeeks = data.reverse();
-      setWeeks(reversedWeeks);
-      
-      // בחר את השבוע האחרון (החדש ביותר) כברירת מחדל
-      if (reversedWeeks.length > 0 && !selectedWeek) {
-        const latestWeek = reversedWeeks[0];
-        setSelectedWeek(latestWeek);
-        if (onWeekSelect) {
-          onWeekSelect(latestWeek);
-        }
-        loadWeekData(latestWeek._id);
-      }
+      setWeeks(data);
     } catch (error) {
       console.error('Error loading weeks:', error);
       alert('שגיאה בטעינת השבועות');
@@ -301,21 +290,21 @@ const confirmActivateWeek = async () => {
     const [day, month] = earliestMatch.date.split('.');
     const [hour, minute] = earliestMatch.time.split(':');
     
-    const year = new Date().getFullYear();
-    const lockTime = new Date(year, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
-    
-    // תיקון timezone - מוסיפים את ה-offset בחזרה כדי לשמור את הזמן המקומי
-    const timezoneOffset = lockTime.getTimezoneOffset() * 60000; // המרה למילישניות
-    const localISOTime = new Date(lockTime - timezoneOffset).toISOString();
+    const lockTime = new Date(
+      new Date().getFullYear(),
+      parseInt(month) - 1,
+      parseInt(day),
+      parseInt(hour),
+      parseInt(minute)
+    );
 
     console.log('🔒 זמן נעילה מחושב:', lockTime.toLocaleString('he-IL'));
-    console.log('📤 נשלח לשרת:', localISOTime);
 
     const response = await fetch(`${API_URL}/weeks/${selectedWeek._id}/activate`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        lockTime: localISOTime,
+        lockTime: lockTime.toISOString(),
         sendNotifications: sendPushNotifications 
       })
     });
@@ -330,16 +319,12 @@ const confirmActivateWeek = async () => {
     // הצג הודעת הצלחה עם פרטי ההתראות
     let successMessage = 'השבוע הופעל בהצלחה! הוא ינעל אוטומטית בזמן המשחק הראשון.';
     
-    // בניית תוכן ההודעה (תמיד כשנבחרה האופציה לשלוח)
+    // תוכן ההודעה שתישלח למשתמשים
     if (sendPushNotifications) {
-      const notificationMessage = `⚽ ${selectedWeek.name} פתוח להימורים!\n🔒 נעילה: ${lockTime.toLocaleString('he-IL', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      })}`;
+      const lockTimeStr = `${earliestMatch.date} בשעה ${earliestMatch.time}`;
+      const pushMessage = `⚽ ${selectedWeek.name} פתוח להימורים!\n🔒 נעילה: ${lockTimeStr}`;
       
-      successMessage += `\n\n💬 תוכן ההודעה:\n"${notificationMessage}"`;
+      successMessage += `\n\n💬 תוכן ההודעה שנשלחה:\n"${pushMessage}"`;
       
       if (result.notificationResult) {
         successMessage += `\n\n📢 התראות נשלחו ל-${result.notificationResult.sent} משתמשים`;
@@ -580,23 +565,6 @@ const confirmActivateWeek = async () => {
       cleaned = cleaned.substring(0, 5);
     }
     
-    return cleaned;
-  };
-
-  const formatTimeInput = (value) => {
-    let cleaned = value.replace(/[^\d:]/g, "");
-    const colonCount = (cleaned.match(/:/g) || []).length;
-    if (colonCount > 1) {
-      const firstColonIndex = cleaned.indexOf(":");
-      cleaned = cleaned.substring(0, firstColonIndex + 1) + 
-                cleaned.substring(firstColonIndex + 1).replace(/:/g, "");
-    }
-    if (!cleaned.includes(":") && cleaned.length >= 2) {
-      cleaned = cleaned.substring(0, 2) + ":" + cleaned.substring(2);
-    }
-    if (cleaned.length > 5) {
-      cleaned = cleaned.substring(0, 5);
-    }
     return cleaned;
   };
 
@@ -881,11 +849,7 @@ const confirmActivateWeek = async () => {
                 type="text"
                 placeholder="20:00"
                 value={newMatch.time}
-                maxLength="5"
-                onChange={(e) => {
-                  const formatted = formatTimeInput(e.target.value);
-                  setNewMatch({ ...newMatch, time: formatted });
-                }}
+                onChange={(e) => setNewMatch({ ...newMatch, time: e.target.value })}
                 className="input"
               />
             </div>
@@ -1065,16 +1029,12 @@ const confirmActivateWeek = async () => {
                             <input
                               type="text"
                               value={editingMatchDetails.time}
-                              onChange={(e) => {
-                                const formatted = formatTimeInput(e.target.value);
-                                setEditingMatchDetails({
-                                  ...editingMatchDetails,
-                                  time: formatted
-                                });
-                              }}
+                              onChange={(e) => setEditingMatchDetails({
+                                ...editingMatchDetails,
+                                time: e.target.value
+                              })}
                               placeholder="HH:MM"
                               className="input"
-                              maxLength="5"
                             />
                           </div>
                         </div>
