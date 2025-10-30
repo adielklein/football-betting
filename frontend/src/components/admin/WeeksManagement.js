@@ -39,7 +39,7 @@ const [sendPushNotifications, setSendPushNotifications] = useState(true);
       if (!response.ok) throw new Error('Failed to fetch weeks');
       
       const data = await response.json();
-      setWeeks(data);
+      setWeeks(data.reverse());
     } catch (error) {
       console.error('Error loading weeks:', error);
       alert('שגיאה בטעינת השבועות');
