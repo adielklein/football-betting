@@ -330,21 +330,25 @@ const confirmActivateWeek = async () => {
     // הצג הודעת הצלחה עם פרטי ההתראות
     let successMessage = 'השבוע הופעל בהצלחה! הוא ינעל אוטומטית בזמן המשחק הראשון.';
     
-    if (sendPushNotifications && result.notificationResult) {
-      successMessage += `\n\n📢 התראות נשלחו ל-${result.notificationResult.sent} משתמשים`;
-      if (result.notificationResult.failed > 0) {
-        successMessage += `\n⚠️ ${result.notificationResult.failed} התראות נכשלו`;
-      }
-      // הוספת תוכן ההודעה שנשלחה (בניית ההודעה בצד הקליינט)
+    // בניית תוכן ההודעה (תמיד כשנבחרה האופציה לשלוח)
+    if (sendPushNotifications) {
       const notificationMessage = `⚽ ${selectedWeek.name} פתוח להימורים!\n🔒 נעילה: ${lockTime.toLocaleString('he-IL', { 
         day: '2-digit', 
         month: '2-digit', 
         hour: '2-digit', 
         minute: '2-digit' 
       })}`;
-      successMessage += `\n\n💬 תוכן ההודעה שנשלחה:\n"${notificationMessage}"`;
-    } else if (sendPushNotifications) {
-      successMessage += '\n\n⚠️ לא נשלחו התראות (אין משתמשים מנויים)';
+      
+      successMessage += `\n\n💬 תוכן ההודעה:\n"${notificationMessage}"`;
+      
+      if (result.notificationResult) {
+        successMessage += `\n\n📢 התראות נשלחו ל-${result.notificationResult.sent} משתמשים`;
+        if (result.notificationResult.failed > 0) {
+          successMessage += `\n⚠️ ${result.notificationResult.failed} התראות נכשלו`;
+        }
+      } else {
+        successMessage += '\n\n⚠️ לא נשלחו התראות (אין משתמשים מנויים)';
+      }
     }
 
     alert(successMessage);
