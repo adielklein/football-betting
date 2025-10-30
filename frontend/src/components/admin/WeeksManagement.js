@@ -335,6 +335,10 @@ const confirmActivateWeek = async () => {
       if (result.notificationResult.failed > 0) {
         successMessage += `\n⚠️ ${result.notificationResult.failed} התראות נכשלו`;
       }
+      // הוספת תוכן ההודעה שנשלחה
+      if (result.notificationResult.message) {
+        successMessage += `\n\n💬 תוכן ההודעה:\n"${result.notificationResult.message}"`;
+      }
     } else if (sendPushNotifications) {
       successMessage += '\n\n⚠️ לא נשלחו התראות (אין משתמשים מנויים)';
     }
