@@ -39,7 +39,18 @@ const [sendPushNotifications, setSendPushNotifications] = useState(true);
       if (!response.ok) throw new Error('Failed to fetch weeks');
       
       const data = await response.json();
-      setWeeks(data.reverse());
+      const reversedWeeks = data.reverse();
+      setWeeks(reversedWeeks);
+      
+      // בחר את השבוע האחרון (החדש ביותר) כברירת מחדל
+      if (reversedWeeks.length > 0 && !selectedWeek) {
+        const latestWeek = reversedWeeks[0];
+        setSelectedWeek(latestWeek);
+        if (onWeekSelect) {
+          onWeekSelect(latestWeek);
+        }
+        loadWeekData(latestWeek._id);
+      }
     } catch (error) {
       console.error('Error loading weeks:', error);
       alert('שגיאה בטעינת השבועות');
