@@ -335,10 +335,14 @@ const confirmActivateWeek = async () => {
       if (result.notificationResult.failed > 0) {
         successMessage += `\n⚠️ ${result.notificationResult.failed} התראות נכשלו`;
       }
-      // הוספת תוכן ההודעה שנשלחה
-      if (result.notificationResult.message) {
-        successMessage += `\n\n💬 תוכן ההודעה:\n"${result.notificationResult.message}"`;
-      }
+      // הוספת תוכן ההודעה שנשלחה (בניית ההודעה בצד הקליינט)
+      const notificationMessage = `⚽ ${selectedWeek.name} פתוח להימורים!\n🔒 נעילה: ${lockTime.toLocaleString('he-IL', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      })}`;
+      successMessage += `\n\n💬 תוכן ההודעה שנשלחה:\n"${notificationMessage}"`;
     } else if (sendPushNotifications) {
       successMessage += '\n\n⚠️ לא נשלחו התראות (אין משתמשים מנויים)';
     }
