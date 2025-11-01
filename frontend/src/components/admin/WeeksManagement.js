@@ -303,13 +303,14 @@ const confirmActivateWeek = async () => {
     
     const year = new Date().getFullYear();
     const lockTime = new Date(year, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
-    
-    // תיקון timezone - מוסיפים את ה-offset בחזרה כדי לשמור את הזמן המקומי
-    const timezoneOffset = lockTime.getTimezoneOffset() * 60000; // המרה למילישניות
-    const localISOTime = new Date(lockTime - timezoneOffset).toISOString();
 
-    console.log('🔒 זמן נעילה מחושב:', lockTime.toLocaleString('he-IL'));
-    console.log('📤 נשלח לשרת:', localISOTime);
+    // 🌍 תיקון איזור זמן - קובע את הזמן הנכון ב-UTC
+    const timezoneOffset = lockTime.getTimezoneOffset(); // בדקות (בישראל: -120 או -180)
+    lockTime.setMinutes(lockTime.getMinutes() - timezoneOffset); // מבטל את המרת timezone
+    const localISOTime = lockTime.toISOString(); // כעת הזמן נכון
+
+    console.log('🔒 זמן נעילה מקומי:', new Date(lockTime.getTime() + (timezoneOffset * 60000)).toLocaleString('he-IL'));
+    console.log('📤 נשלח לשרת (UTC):', localISOTime);
 
     const response = await fetch(`${API_URL}/weeks/${selectedWeek._id}/activate`, {
       method: 'PATCH',
