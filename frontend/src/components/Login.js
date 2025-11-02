@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { applyTheme } from '../themes'; // 🎨 יבוא פונקציית ערכות הנושא
+import { applyTheme } from '../themes';
 
 function Login({ onLogin }) {
   const [username, setUsername] = useState('');
@@ -11,10 +11,9 @@ function Login({ onLogin }) {
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
 
-  // 🎨 החל ערכת נושא בסיסית בטעינת דף ההתחברות
   useEffect(() => {
     console.log('🎨 Login.js - מחיל ערכת נושא בסיסית בדף התחברות');
-    applyTheme(null); // ערכת נושא בסיסית
+    applyTheme(null);
   }, []);
 
   const handleSubmit = async (e) => {
@@ -40,12 +39,10 @@ function Login({ onLogin }) {
         console.log('✅ התחברות מוצלחת ב-Login.js:', data.user.name);
         console.log('🎨 ערכת הנושא של המשתמש:', data.user.theme || 'default');
         
-        // 🎨 החל ערכת נושא מיד כאן בLogin לפני המעבר
         if (data.user.theme) {
           console.log('🎨 מחיל ערכת נושא בLogin.js לפני מעבר:', data.user.theme);
           applyTheme(data.user);
           
-          // 🎨 המתן רגע קטן כדי שהעיצוב יתחיל להתחיל
           setTimeout(() => {
             onLogin(data.user);
           }, 200);
@@ -66,18 +63,28 @@ function Login({ onLogin }) {
   return (
     <div style={{ 
       minHeight: '100vh', 
-      background: 'var(--theme-header-bg, linear-gradient(135deg, #1e3a8a 0%, #059669 100%))', // 🎨 ישתמש בערכת נושא אם יש
+      background: 'var(--theme-header-bg, linear-gradient(135deg, #1e3a8a 0%, #059669 100%))',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '20px'
     }}>
       <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
+        {/* 🏆 לוגו GAMBALL */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-            🏆 קבוצת הימורים
-          </h1>
-          <p style={{ color: '#666' }}>פרמיירליג • לה ליגה • ליגת העל</p>
+          <img 
+            src="/gamball-logo.jpeg" 
+            alt="GAMBALL Logo" 
+            style={{ 
+              width: '180px', 
+              height: 'auto',
+              marginBottom: '1rem',
+              filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'
+            }}
+          />
+          <p style={{ color: '#666', fontSize: '0.95rem' }}>
+            פרמיירליג • לה ליגה • ליגת העל
+          </p>
         </div>
 
         <form onSubmit={handleSubmit}>
