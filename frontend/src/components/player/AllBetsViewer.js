@@ -64,7 +64,7 @@ function AllBetsViewer({ weeks, user }) {
     const weeksInSeason = lockedWeeks.filter(w => (w.season || '2025-26') === selectedSeason);
     
     // מצא חודשים ייחודיים
-    const months = [...new Set(weeksInSeason.map(w => w.month))].sort((a, b) => a - b);
+    const months = [...new Set(weeksInSeason.map(w => w.month))].sort((a, b) => b - a);
     setAvailableMonths(months);
     
     // קבע חודש ראשון אם אין

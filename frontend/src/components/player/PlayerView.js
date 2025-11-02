@@ -201,14 +201,19 @@ function PlayerView({ user, onLogout }) {
           gap: '1rem', 
           marginBottom: '2rem',
           borderBottom: '1px solid #ddd',
-          paddingBottom: '1rem'
+          paddingBottom: '1rem',
+          overflowX: 'auto',
+          flexWrap: 'nowrap',
+          WebkitOverflowScrolling: 'touch'
         }}>
           <button 
             onClick={() => setActiveTab('betting')}
             className="btn"
             style={{ 
               backgroundColor: activeTab === 'betting' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'betting' ? 'white' : '#333' 
+              color: activeTab === 'betting' ? 'white' : '#333',
+              flexShrink: 0,
+              whiteSpace: 'nowrap'
             }}
           >
             הימורים נוכחי
@@ -218,7 +223,9 @@ function PlayerView({ user, onLogout }) {
             className="btn"
             style={{ 
               backgroundColor: activeTab === 'allbets' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'allbets' ? 'white' : '#333' 
+              color: activeTab === 'allbets' ? 'white' : '#333',
+              flexShrink: 0,
+              whiteSpace: 'nowrap'
             }}
           >
             הימורי כולם
@@ -228,7 +235,9 @@ function PlayerView({ user, onLogout }) {
             className="btn"
             style={{ 
               backgroundColor: activeTab === 'leaderboard' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'leaderboard' ? 'white' : '#333' 
+              color: activeTab === 'leaderboard' ? 'white' : '#333',
+              flexShrink: 0,
+              whiteSpace: 'nowrap'
             }}
           >
             לוח תוצאות
@@ -238,7 +247,9 @@ function PlayerView({ user, onLogout }) {
             className="btn"
             style={{ 
               backgroundColor: activeTab === 'history' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'history' ? 'white' : '#333' 
+              color: activeTab === 'history' ? 'white' : '#333',
+              flexShrink: 0,
+              whiteSpace: 'nowrap'
             }}
           >
             היסטוריה
