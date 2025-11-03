@@ -120,14 +120,18 @@ function AdminView({ user, onLogout }) {
           marginBottom: '2rem',
           borderBottom: '1px solid #ddd',
           paddingBottom: '1rem',
-          flexWrap: 'wrap'
+          overflowX: 'auto',
+          flexWrap: 'nowrap',
+          WebkitOverflowScrolling: 'touch'
         }}>
           <button 
             onClick={() => setActiveTab('weeks')}
             className="btn"
             style={{ 
               backgroundColor: activeTab === 'weeks' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'weeks' ? 'white' : '#333' 
+              color: activeTab === 'weeks' ? 'white' : '#333',
+              flexShrink: 0,
+              whiteSpace: 'nowrap'
             }}
           >
             📅 ניהול שבועות
@@ -138,7 +142,9 @@ function AdminView({ user, onLogout }) {
             className="btn"
             style={{ 
               backgroundColor: activeTab === 'leagues' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'leagues' ? 'white' : '#333' 
+              color: activeTab === 'leagues' ? 'white' : '#333',
+              flexShrink: 0,
+              whiteSpace: 'nowrap'
             }}
           >
             🏆 ניהול ליגות
@@ -149,7 +155,9 @@ function AdminView({ user, onLogout }) {
             className="btn"
             style={{ 
               backgroundColor: activeTab === 'users' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'users' ? 'white' : '#333' 
+              color: activeTab === 'users' ? 'white' : '#333',
+              flexShrink: 0,
+              whiteSpace: 'nowrap'
             }}
           >
             👥 ניהול משתמשים
@@ -160,7 +168,9 @@ function AdminView({ user, onLogout }) {
             className="btn"
             style={{ 
               backgroundColor: activeTab === 'bets' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'bets' ? 'white' : '#333' 
+              color: activeTab === 'bets' ? 'white' : '#333',
+              flexShrink: 0,
+              whiteSpace: 'nowrap'
             }}
           >
             🎯 עריכת הימורים
@@ -172,7 +182,9 @@ function AdminView({ user, onLogout }) {
             className="btn"
             style={{ 
               backgroundColor: activeTab === 'push' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'push' ? 'white' : '#333' 
+              color: activeTab === 'push' ? 'white' : '#333',
+              flexShrink: 0,
+              whiteSpace: 'nowrap'
             }}
           >
             📢 התראות
