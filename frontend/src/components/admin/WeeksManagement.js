@@ -303,20 +303,16 @@ const confirmActivateWeek = async () => {
     
     const year = new Date().getFullYear();
     const lockTime = new Date(year, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
+    const lockTimeISO = lockTime.toISOString();
 
-    // 🌍 תיקון איזור זמן - קובע את הזמן הנכון ב-UTC
-    const timezoneOffset = lockTime.getTimezoneOffset(); // בדקות (בישראל: -120 או -180)
-    lockTime.setMinutes(lockTime.getMinutes() - timezoneOffset); // מבטל את המרת timezone
-    const localISOTime = lockTime.toISOString(); // כעת הזמן נכון
-
-    console.log('🔒 זמן נעילה מקומי:', new Date(lockTime.getTime() + (timezoneOffset * 60000)).toLocaleString('he-IL'));
-    console.log('📤 נשלח לשרת (UTC):', localISOTime);
+    console.log('🔒 זמן נעילה (ישראל):', lockTime.toLocaleString('he-IL'));
+    console.log('📤 נשלח לשרת (UTC):', lockTimeISO);
 
     const response = await fetch(`${API_URL}/weeks/${selectedWeek._id}/activate`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        lockTime: localISOTime,
+        lockTime: lockTimeISO,
         sendNotifications: sendPushNotifications 
       })
     });
@@ -1223,7 +1219,7 @@ const confirmActivateWeek = async () => {
           </div>
         </div>
       )}
-            {/* דיאלוג אישור הפעלת שבוע */}    // 👈 הדיאלוג מתחיל כאן
+            {/* דיאלוג אישור הפעלת שבוע */} 
       {showActivationDialog && (
         <div style={{
           position: 'fixed',
