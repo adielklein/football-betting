@@ -303,7 +303,7 @@ const confirmActivateWeek = async () => {
     
     const year = new Date().getFullYear();
     const lockTime = new Date(year, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
-    const lockTimeISO = lockTime.toISOString();
+    const lockTimeISO = new Date(lockTime.getTime() - 2 * 60 * 60 * 1000).toISOString();
 
     console.log('🔒 זמן נעילה (ישראל):', lockTime.toLocaleString('he-IL'));
     console.log('📤 נשלח לשרת (UTC):', lockTimeISO);
