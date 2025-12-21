@@ -712,7 +712,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
       <div className="card">
         <h3>בחר שבוע לניהול</h3>
         
-        <div ref={dropdownRef} style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
+        <div ref={dropdownRef} style={{ position: 'relative', width: '100%', maxWidth: '400px', zIndex: 9999 }}>
           {/* תיבת הבחירה הראשית */}
           <div
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
