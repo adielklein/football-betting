@@ -826,10 +826,10 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                                 <div 
                                   style={{
                                     position: 'absolute',
-                                    left: '100%',
+                                    right: '100%',
                                     top: 0,
                                     width: '250px',
-                                    marginLeft: '-2px',
+                                    marginRight: '-2px',
                                     backgroundColor: 'white',
                                     border: '1px solid #dee2e6',
                                     borderRadius: '4px',
