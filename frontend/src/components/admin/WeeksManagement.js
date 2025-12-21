@@ -16,7 +16,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
   const [showActivationDialog, setShowActivationDialog] = useState(false);
   const [sendPushNotifications, setSendPushNotifications] = useState(true);
 
-  // State עבור ה-dropdown המקונן - ללא setTimeout!
+  // State עבור ה-dropdown המקונן
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [hoveredSeason, setHoveredSeason] = useState(null);
   const [hoveredMonth, setHoveredMonth] = useState(null);
@@ -126,7 +126,6 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
     setHoveredSeason(null);
     setHoveredMonth(null);
     
-    // עדכון גם את השבוע באב
     if (onWeekSelect) {
       onWeekSelect(week);
     }
@@ -708,11 +707,11 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
         </div>
       </div>
 
-      {/* בחירת שבוע - Dropdown מקונן עם Hover - תוקן! */}
-      <div className="card">
+      {/* בחירת שבוע - Dropdown מקונן עם Hover - RTL */}
+      <div className="card" style={{ position: 'relative', zIndex: 100 }}>
         <h3>בחר שבוע לניהול</h3>
         
-        <div ref={dropdownRef} style={{ position: 'relative', width: '100%', maxWidth: '400px', zIndex: 999999 }}>
+        <div ref={dropdownRef} style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
           {/* תיבת הבחירה הראשית */}
           <div
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -750,7 +749,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
               border: '1px solid #dee2e6',
               borderRadius: '4px',
               boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              zIndex: 1000,
+              zIndex: 10000,
               maxHeight: 'none',
               overflow: 'visible'
             }}>
@@ -788,7 +787,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                         border: '1px solid #dee2e6',
                         borderRadius: '4px',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                        zIndex: 1001,
+                        zIndex: 10001,
                         maxHeight: 'none',
                         overflow: 'visible'
                       }}
@@ -834,7 +833,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                                     border: '1px solid #dee2e6',
                                     borderRadius: '4px',
                                     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                                    zIndex: 1002,
+                                    zIndex: 10002,
                                     maxHeight: 'none',
                                     overflow: 'visible'
                                   }}
@@ -1080,68 +1079,239 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
         </div>
       )}
 
-      {/* רשימת משחקים */}
+      {/* רשימת משחקים - עיצוב מקורי עם תג ליגה */}
       {selectedWeek && matches.length > 0 && (
         <div className="card">
-          <h3>משחקי {selectedWeek.name}</h3>
+          <h2>משחקי {selectedWeek.name}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {matches.map(match => {
-              const league = leagues.find(l => l._id === match.leagueId);
-              const leagueColors = {
-                'English': '#e74c3c',
-                'Spanish': '#3498db',
-                'World': '#9b59b6'
-              };
-              const leagueColor = leagueColors[league?.type] || '#95a5a6';
-              
-              const hasResult = match.result && 
-                                match.result.team1Goals !== undefined && 
-                                match.result.team2Goals !== undefined;
-              
+              const isEditingThis = editingMatchDetails?._id === match._id;
               const currentResult = editingMatch[match._id] || { team1Goals: '', team2Goals: '' };
-              const isEditing = editingMatchDetails?._id === match._id;
-
+              const isEditing = currentResult.team1Goals !== '' || currentResult.team2Goals !== '';
+              const hasResult = match.result?.team1Goals !== undefined && match.result?.team2Goals !== undefined;
+              
               return (
-                <div 
-                  key={match._id} 
+                <div
+                  key={match._id}
                   style={{
                     padding: '1rem',
-                    border: `2px solid ${leagueColor}`,
+                    border: '1px solid #ddd',
                     borderRadius: '8px',
-                    backgroundColor: '#fff'
+                    backgroundColor: isEditingThis ? '#f0f8ff' : '#f8f9fa'
                   }}
                 >
-                  {!isEditing ? (
-                    <>
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '0.5rem'
-                      }}>
-                        <span style={{
-                          backgroundColor: leagueColor,
+                  {/* כותרת המשחק */}
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    marginBottom: '0.5rem'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span
+                        style={{
+                          padding: '2px 8px',
+                          backgroundColor: match.leagueId?.color || match.color || '#6c757d',
                           color: 'white',
-                          padding: '4px 12px',
                           borderRadius: '4px',
                           fontSize: '12px',
                           fontWeight: 'bold'
-                        }}>
-                          {league?.name || 'ליגה'}
-                        </span>
-                        <span style={{ fontSize: '14px', color: '#666' }}>
-                          {match.date} • {match.time}
-                        </span>
-                      </div>
+                        }}
+                      >
+                        {match.leagueId?.name || match.league || 'לא מוגדר'}
+                      </span>
+                      <span style={{ fontSize: '14px', color: '#666' }}>
+                        📅 {match.date} ⏰ {match.time}
+                      </span>
+                    </div>
+                    
+                    {/* כפתורי פעולה */}
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      {!isEditingThis && (
+                        <>
+                          <button
+                            onClick={() => setEditingMatchDetails({
+                              _id: match._id,
+                              leagueId: match.leagueId?._id || '',
+                              team1: match.team1,
+                              team2: match.team2,
+                              date: match.date,
+                              time: match.time
+                            })}
+                            className="btn"
+                            style={{ 
+                              fontSize: '12px', 
+                              padding: '4px 8px',
+                              backgroundColor: '#17a2b8',
+                              color: 'white'
+                            }}
+                            title="ערוך פרטי משחק"
+                          >
+                            ✏️ ערוך
+                          </button>
+                          
+                          {/* כפתור מחיקת תוצאה - מופיע רק אם יש תוצאה */}
+                          {hasResult && (
+                            <button
+                              onClick={() => deleteMatchResult(match._id)}
+                              className="btn"
+                              style={{ 
+                                fontSize: '12px', 
+                                padding: '4px 8px',
+                                backgroundColor: '#ffc107',
+                                color: '#000'
+                              }}
+                              title="מחק תוצאה"
+                            >
+                              🔄 מחק תוצאה
+                            </button>
+                          )}
+                          
+                          <button
+                            onClick={() => handleDeleteMatch(match._id, `${match.team1} נגד ${match.team2}`)}
+                            className="btn btn-danger"
+                            style={{ fontSize: '12px', padding: '4px 8px' }}
+                            title="מחק משחק"
+                          >
+                            🗑️
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
 
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
+                  {/* מצב עריכת פרטים */}
+                  {isEditingThis ? (
+                    <div style={{ 
+                      padding: '1rem', 
+                      backgroundColor: 'white', 
+                      borderRadius: '4px',
+                      border: '2px solid #17a2b8'
+                    }}>
+                      <h4 style={{ marginBottom: '1rem', color: '#17a2b8' }}>
+                        ✏️ עריכת פרטי משחק
+                      </h4>
+                      
+                      <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: '1fr 1fr',
                         gap: '1rem',
-                        justifyContent: 'space-between',
-                        marginBottom: '0.5rem'
+                        marginBottom: '1rem'
                       }}>
-                        <div style={{ textAlign: 'center', fontWeight: '500', flex: 1 }}>
+                        {/* ליגה */}
+                        <div>
+                          <label style={{ fontSize: '12px', color: '#666' }}>ליגה:</label>
+                          <select
+                            value={editingMatchDetails.leagueId}
+                            onChange={(e) => setEditingMatchDetails({
+                              ...editingMatchDetails,
+                              leagueId: e.target.value
+                            })}
+                            className="input"
+                          >
+                            <option value="">בחר ליגה</option>
+                            {leagues.map(league => (
+                              <option key={league._id} value={league._id}>
+                                {league.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        
+                        {/* תאריך ושעה עם פורמט אוטומטי */}
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <div style={{ flex: 1 }}>
+                            <label style={{ fontSize: '12px', color: '#666' }}>תאריך:</label>
+                            <input
+                              type="text"
+                              value={editingMatchDetails.date}
+                              onChange={(e) => {
+                                const formatted = formatDateInput(e.target.value);
+                                setEditingMatchDetails({
+                                  ...editingMatchDetails,
+                                  date: formatted
+                                });
+                              }}
+                              placeholder="DD.MM"
+                              className="input"
+                              maxLength="5"
+                            />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <label style={{ fontSize: '12px', color: '#666' }}>שעה:</label>
+                            <input
+                              type="text"
+                              value={editingMatchDetails.time}
+                              onChange={(e) => {
+                                const formatted = formatTimeInput(e.target.value);
+                                setEditingMatchDetails({
+                                  ...editingMatchDetails,
+                                  time: formatted
+                                });
+                              }}
+                              placeholder="HH:MM"
+                              className="input"
+                              maxLength="5"
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* קבוצות */}
+                        <div>
+                          <label style={{ fontSize: '12px', color: '#666' }}>קבוצה ביתית:</label>
+                          <input
+                            type="text"
+                            value={editingMatchDetails.team1}
+                            onChange={(e) => setEditingMatchDetails({
+                              ...editingMatchDetails,
+                              team1: e.target.value
+                            })}
+                            className="input"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label style={{ fontSize: '12px', color: '#666' }}>קבוצה אורחת:</label>
+                          <input
+                            type="text"
+                            value={editingMatchDetails.team2}
+                            onChange={(e) => setEditingMatchDetails({
+                              ...editingMatchDetails,
+                              team2: e.target.value
+                            })}
+                            className="input"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          onClick={() => handleEditMatch(match._id)}
+                          className="btn btn-success"
+                          style={{ fontSize: '14px' }}
+                        >
+                          💾 שמור שינויים
+                        </button>
+                        <button
+                          onClick={() => setEditingMatchDetails(null)}
+                          className="btn"
+                          style={{ backgroundColor: '#6c757d', color: 'white' }}
+                        >
+                          ביטול
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* הצגת הקבוצות והתוצאות */}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '2fr 80px 30px 80px 2fr',
+                        gap: '0.5rem',
+                        alignItems: 'center',
+                        marginBottom: '0.75rem'
+                      }}>
+                        <div style={{ textAlign: 'center', fontWeight: '500' }}>
                           {match.team1} (בית)
                         </div>
                         
@@ -1159,13 +1329,18 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                               }
                             }));
                           }}
-                          style={{ width: '50px', textAlign: 'center' }}
+                          style={{ 
+                            width: '100%', 
+                            textAlign: 'center',
+                            fontSize: '16px',
+                            fontWeight: 'bold'
+                          }}
                           className="input"
                           placeholder="0"
-                          disabled={hasResult && !isEditing}
+                          disabled={hasResult}
                         />
                         
-                        <span style={{ fontSize: '18px', fontWeight: 'bold' }}>-</span>
+                        <div style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold' }}>-</div>
                         
                         <input
                           type="number"
@@ -1181,142 +1356,46 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                               }
                             }));
                           }}
-                          style={{ width: '50px', textAlign: 'center' }}
+                          style={{ 
+                            width: '100%', 
+                            textAlign: 'center',
+                            fontSize: '16px',
+                            fontWeight: 'bold'
+                          }}
                           className="input"
                           placeholder="0"
-                          disabled={hasResult && !isEditing}
+                          disabled={hasResult}
                         />
                         
-                        <div style={{ textAlign: 'center', fontWeight: '500', flex: 1 }}>
+                        <div style={{ textAlign: 'center', fontWeight: '500' }}>
                           {match.team2} (חוץ)
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', justifyContent: 'center' }}>
-                        {!hasResult && (
+                      {/* כפתור שמירה וסטטוס תוצאה */}
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', alignItems: 'center' }}>
+                        {!hasResult ? (
                           <button
                             onClick={() => updateMatchResult(match._id, currentResult.team1Goals, currentResult.team2Goals)}
                             className="btn btn-success"
-                            style={{ fontSize: '12px', padding: '4px 12px' }}
+                            style={{ fontSize: '14px' }}
+                            disabled={!currentResult.team1Goals && !currentResult.team2Goals}
                           >
                             💾 שמור תוצאה
                           </button>
+                        ) : (
+                          <div style={{
+                            padding: '0.5rem 1rem',
+                            backgroundColor: '#d4edda',
+                            color: '#155724',
+                            borderRadius: '4px',
+                            fontWeight: 'bold'
+                          }}>
+                            ✓ תוצאה סופית: {match.result.team1Goals}-{match.result.team2Goals}
+                          </div>
                         )}
-                        
-                        {hasResult && (
-                          <>
-                            <span style={{
-                              padding: '4px 12px',
-                              backgroundColor: '#d4edda',
-                              color: '#155724',
-                              borderRadius: '4px',
-                              fontSize: '12px',
-                              fontWeight: 'bold'
-                            }}>
-                              ✓ תוצאה: {match.result.team1Goals}-{match.result.team2Goals}
-                            </span>
-                            <button
-                              onClick={() => deleteMatchResult(match._id)}
-                              className="btn btn-danger"
-                              style={{ fontSize: '12px', padding: '4px 12px' }}
-                            >
-                              🗑️ מחק תוצאה
-                            </button>
-                          </>
-                        )}
-                        
-                        <button
-                          onClick={() => setEditingMatchDetails(match)}
-                          className="btn"
-                          style={{ backgroundColor: '#17a2b8', color: 'white', fontSize: '12px', padding: '4px 12px' }}
-                        >
-                          ✏️ ערוך פרטים
-                        </button>
-                        
-                        <button
-                          onClick={() => handleDeleteMatch(match._id, `${match.team1} נגד ${match.team2}`)}
-                          className="btn btn-danger"
-                          style={{ fontSize: '12px', padding: '4px 12px' }}
-                        >
-                          🗑️ מחק משחק
-                        </button>
                       </div>
                     </>
-                  ) : (
-                    <div style={{ padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '6px' }}>
-                      <h4 style={{ marginBottom: '1rem' }}>עריכת משחק</h4>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        <div>
-                          <label>ליגה:</label>
-                          <select
-                            value={editingMatchDetails.leagueId}
-                            onChange={(e) => setEditingMatchDetails({...editingMatchDetails, leagueId: e.target.value})}
-                            className="input"
-                          >
-                            {leagues.map(league => (
-                              <option key={league._id} value={league._id}>
-                                {league.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label>קבוצת בית:</label>
-                          <input
-                            type="text"
-                            value={editingMatchDetails.team1}
-                            onChange={(e) => setEditingMatchDetails({...editingMatchDetails, team1: e.target.value})}
-                            className="input"
-                          />
-                        </div>
-                        <div>
-                          <label>קבוצת חוץ:</label>
-                          <input
-                            type="text"
-                            value={editingMatchDetails.team2}
-                            onChange={(e) => setEditingMatchDetails({...editingMatchDetails, team2: e.target.value})}
-                            className="input"
-                          />
-                        </div>
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                          <div style={{ flex: 1 }}>
-                            <label>תאריך:</label>
-                            <input
-                              type="text"
-                              value={editingMatchDetails.date}
-                              onChange={(e) => setEditingMatchDetails({...editingMatchDetails, date: formatDateInput(e.target.value)})}
-                              className="input"
-                              placeholder="DD.MM"
-                            />
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <label>שעה:</label>
-                            <input
-                              type="text"
-                              value={editingMatchDetails.time}
-                              onChange={(e) => setEditingMatchDetails({...editingMatchDetails, time: formatTimeInput(e.target.value)})}
-                              className="input"
-                              placeholder="HH:MM"
-                            />
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                          <button
-                            onClick={() => handleEditMatch(match._id)}
-                            className="btn btn-success"
-                          >
-                            💾 שמור שינויים
-                          </button>
-                          <button
-                            onClick={() => setEditingMatchDetails(null)}
-                            className="btn"
-                            style={{ backgroundColor: '#6c757d', color: 'white' }}
-                          >
-                            ביטול
-                          </button>
-                        </div>
-                      </div>
-                    </div>
                   )}
                 </div>
               );
@@ -1325,7 +1404,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
         </div>
       )}
 
-      {/* דיאלוג אישור הפעלת שבוע */} 
+      {/* דיאלוג אישור הפעלת שבוע */}
       {showActivationDialog && (
         <div style={{
           position: 'fixed',
@@ -1337,7 +1416,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000
+          zIndex: 100000
         }}>
           <div className="card" style={{
             maxWidth: '500px',
@@ -1459,7 +1538,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
             </div>
           </div>
         </div>
-      )} 
+      )}
     </div>
   );
 }
