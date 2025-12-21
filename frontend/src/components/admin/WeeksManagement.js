@@ -16,7 +16,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
   const [showActivationDialog, setShowActivationDialog] = useState(false);
   const [sendPushNotifications, setSendPushNotifications] = useState(true);
 
-  // State עבור ה-dropdown המקונן
+  // State עבור ה-dropdown המקונן - ללא setTimeout!
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [hoveredSeason, setHoveredSeason] = useState(null);
   const [hoveredMonth, setHoveredMonth] = useState(null);
@@ -31,6 +31,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
+        setHoveredSeason(null);
+        setHoveredMonth(null);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -121,6 +123,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
   const handleSelectWeek = async (week) => {
     setSelectedWeek(week);
     setIsDropdownOpen(false);
+    setHoveredSeason(null);
+    setHoveredMonth(null);
     
     // עדכון גם את השבוע באב
     if (onWeekSelect) {
@@ -704,7 +708,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
         </div>
       </div>
 
-      {/* בחירת שבוע - Dropdown מקונן עם Hover */}
+      {/* בחירת שבוע - Dropdown מקונן עם Hover - תוקן! */}
       <div className="card">
         <h3>בחר שבוע לניהול</h3>
         
@@ -755,11 +759,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                   key={season}
                   style={{ position: 'relative' }}
                   onMouseEnter={() => setHoveredSeason(season)}
-                  onMouseLeave={() => {
-                    setTimeout(() => {
-                      if (hoveredSeason === season) setHoveredSeason(null);
-                    }, 100);
-                  }}
+                  onMouseLeave={() => setHoveredSeason(null)}
                 >
                   <div style={{
                     padding: '0.75rem',
@@ -777,20 +777,23 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
 
                   {/* רשימת החודשים */}
                   {hoveredSeason === season && (
-                    <div style={{
-                      position: 'absolute',
-                      left: '100%',
-                      top: 0,
-                      width: '200px',
-                      marginRight: '4px',
-                      backgroundColor: 'white',
-                      border: '1px solid #dee2e6',
-                      borderRadius: '4px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                      zIndex: 1001,
-                      maxHeight: '400px',
-                      overflowY: 'auto'
-                    }}>
+                    <div 
+                      style={{
+                        position: 'absolute',
+                        left: '100%',
+                        top: 0,
+                        width: '200px',
+                        marginLeft: '-2px',
+                        backgroundColor: 'white',
+                        border: '1px solid #dee2e6',
+                        borderRadius: '4px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        zIndex: 1001,
+                        maxHeight: '400px',
+                        overflowY: 'auto'
+                      }}
+                      onMouseEnter={() => setHoveredSeason(season)}
+                    >
                       {Object.keys(organizedWeeks[season])
                         .sort((a, b) => parseInt(b) - parseInt(a))
                         .map(monthNum => {
@@ -802,11 +805,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                               key={monthKey}
                               style={{ position: 'relative' }}
                               onMouseEnter={() => setHoveredMonth(monthKey)}
-                              onMouseLeave={() => {
-                                setTimeout(() => {
-                                  if (hoveredMonth === monthKey) setHoveredMonth(null);
-                                }, 100);
-                              }}
+                              onMouseLeave={() => setHoveredMonth(null)}
                             >
                               <div style={{
                                 padding: '0.65rem 0.75rem',
@@ -824,20 +823,23 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
 
                               {/* רשימת השבועות */}
                               {hoveredMonth === monthKey && (
-                                <div style={{
-                                  position: 'absolute',
-                                  left: '100%',
-                                  top: 0,
-                                  width: '250px',
-                                  marginRight: '4px',
-                                  backgroundColor: 'white',
-                                  border: '1px solid #dee2e6',
-                                  borderRadius: '4px',
-                                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                                  zIndex: 1002,
-                                  maxHeight: '400px',
-                                  overflowY: 'auto'
-                                }}>
+                                <div 
+                                  style={{
+                                    position: 'absolute',
+                                    left: '100%',
+                                    top: 0,
+                                    width: '250px',
+                                    marginLeft: '-2px',
+                                    backgroundColor: 'white',
+                                    border: '1px solid #dee2e6',
+                                    borderRadius: '4px',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                    zIndex: 1002,
+                                    maxHeight: '400px',
+                                    overflowY: 'auto'
+                                  }}
+                                  onMouseEnter={() => setHoveredMonth(monthKey)}
+                                >
                                   {organizedWeeks[season][monthNum].map(week => (
                                     <div
                                       key={week._id}
