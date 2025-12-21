@@ -17,8 +17,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
 const [sendPushNotifications, setSendPushNotifications] = useState(true);
 
   // State עבור האקורדיון המקונן
-  const [openSeason, setOpenSeason] = useState(null);
-  const [openMonth, setOpenMonth] = useState(null);
+  const [openSeasons, setOpenSeasons] = useState(new Set());
+  const [openMonths, setOpenMonths] = useState(new Set());
 
   useEffect(() => {
     loadData();
@@ -56,8 +56,10 @@ const [sendPushNotifications, setSendPushNotifications] = useState(true);
         loadWeekData(latestWeek._id);
         
         // פתח אוטומטית את העונה והחודש של השבוע האחרון
-        setOpenSeason(latestWeek.season || '2025-26');
-        setOpenMonth(latestWeek.month);
+        const season = latestWeek.season || '2025-26';
+        const monthKey = `${season}-${latestWeek.month}`;
+        setOpenSeasons(new Set([season]));
+        setOpenMonths(new Set([monthKey]));
       }
     } catch (error) {
       console.error('Error loading weeks:', error);
@@ -123,6 +125,33 @@ const [sendPushNotifications, setSendPushNotifications] = useState(true);
     } else {
       setMatches([]);
     }
+  };
+
+  const toggleSeason = (season) => {
+    const newSet = new Set(openSeasons);
+    if (newSet.has(season)) {
+      newSet.delete(season);
+      // סגור גם את כל החודשים של העונה הזאת
+      const newMonths = new Set(openMonths);
+      Object.keys(organizeWeeksBySeasonAndMonth()[season] || {}).forEach(month => {
+        newMonths.delete(`${season}-${month}`);
+      });
+      setOpenMonths(newMonths);
+    } else {
+      newSet.add(season);
+    }
+    setOpenSeasons(newSet);
+  };
+
+  const toggleMonth = (season, month) => {
+    const monthKey = `${season}-${month}`;
+    const newSet = new Set(openMonths);
+    if (newSet.has(monthKey)) {
+      newSet.delete(monthKey);
+    } else {
+      newSet.add(monthKey);
+    }
+    setOpenMonths(newSet);
   };
 
   const handleEditWeek = async (weekId, name, month, season) => {
@@ -702,101 +731,144 @@ const confirmActivateWeek = async () => {
         </div>
       </div>
 
-      {/* בחירת שבוע - אקורדיון מקונן */}
+      {/* בחירת שבוע - Tree View */}
       <div className="card">
         <h3>בחר שבוע לניהול</h3>
         
-        <div style={{ marginBottom: '1rem' }}>
-          {Object.keys(organizedWeeks).sort().reverse().map(season => (
-            <div key={season} style={{ marginBottom: '0.5rem' }}>
-              {/* רמה 1: עונה */}
-              <div
-                onClick={() => setOpenSeason(openSeason === season ? null : season)}
-                style={{
-                  padding: '0.75rem',
-                  backgroundColor: openSeason === season ? 'var(--primary-color)' : '#f8f9fa',
-                  color: openSeason === season ? 'white' : '#212529',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <span>🏆 עונה {season}</span>
-                <span>{openSeason === season ? '▼' : '◀'}</span>
-              </div>
-
-              {/* רמה 2: חודשים */}
-              {openSeason === season && (
-                <div style={{ marginTop: '0.5rem', marginRight: '1.5rem' }}>
-                  {Object.keys(organizedWeeks[season])
-                    .sort((a, b) => parseInt(b) - parseInt(a))
-                    .map(monthNum => {
-                      const monthLabel = months.find(m => m.value === parseInt(monthNum))?.label || monthNum;
-                      const monthKey = `${season}-${monthNum}`;
-                      
-                      return (
-                        <div key={monthKey} style={{ marginBottom: '0.5rem' }}>
-                          {/* כותרת חודש */}
-                          <div
-                            onClick={() => setOpenMonth(openMonth === monthKey ? null : monthKey)}
-                            style={{
-                              padding: '0.6rem',
-                              backgroundColor: openMonth === monthKey ? 'var(--secondary-color)' : '#e9ecef',
-                              color: openMonth === monthKey ? 'white' : '#495057',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontWeight: '500',
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              transition: 'all 0.2s ease'
-                            }}
-                          >
-                            <span>📅 {monthLabel}</span>
-                            <span>{openMonth === monthKey ? '▼' : '◀'}</span>
-                          </div>
-
-                          {/* רמה 3: שבועות */}
-                          {openMonth === monthKey && (
-                            <div style={{ marginTop: '0.5rem', marginRight: '1.5rem' }}>
-                              {organizedWeeks[season][monthNum].map(week => (
-                                <div
-                                  key={week._id}
-                                  onClick={() => handleSelectWeek(week._id)}
-                                  style={{
-                                    padding: '0.5rem 0.75rem',
-                                    backgroundColor: selectedWeek?._id === week._id ? 'var(--accent-color)' : 'white',
-                                    color: selectedWeek?._id === week._id ? 'white' : '#212529',
-                                    border: '1px solid #dee2e6',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    marginBottom: '0.25rem',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    transition: 'all 0.2s ease'
-                                  }}
-                                >
-                                  <span>{week.name}</span>
-                                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                    {week.locked && <span style={{ fontSize: '12px' }}>🔒</span>}
-                                    {week.active && !week.locked && <span style={{ fontSize: '12px' }}>🟢</span>}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+        <div style={{ 
+          border: '1px solid #dee2e6',
+          borderRadius: '6px',
+          overflow: 'hidden'
+        }}>
+          {Object.keys(organizedWeeks).sort().reverse().map((season, seasonIndex) => {
+            const isSeasonOpen = openSeasons.has(season);
+            
+            return (
+              <div key={season}>
+                {/* רמה 1: עונה */}
+                <div
+                  onClick={() => toggleSeason(season)}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    backgroundColor: '#f8f9fa',
+                    borderBottom: '1px solid #dee2e6',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontWeight: '600',
+                    transition: 'background-color 0.2s',
+                    userSelect: 'none'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e9ecef'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                >
+                  <span style={{ 
+                    fontSize: '10px',
+                    display: 'inline-block',
+                    width: '12px',
+                    transition: 'transform 0.2s',
+                    transform: isSeasonOpen ? 'rotate(90deg)' : 'rotate(0deg)'
+                  }}>
+                    ▶
+                  </span>
+                  <span>📁</span>
+                  <span>עונה {season}</span>
                 </div>
-              )}
-            </div>
-          ))}
+
+                {/* רמה 2: חודשים */}
+                {isSeasonOpen && (
+                  <div>
+                    {Object.keys(organizedWeeks[season])
+                      .sort((a, b) => parseInt(b) - parseInt(a))
+                      .map(monthNum => {
+                        const monthLabel = months.find(m => m.value === parseInt(monthNum))?.label || monthNum;
+                        const monthKey = `${season}-${monthNum}`;
+                        const isMonthOpen = openMonths.has(monthKey);
+                        
+                        return (
+                          <div key={monthKey}>
+                            {/* כותרת חודש */}
+                            <div
+                              onClick={() => toggleMonth(season, monthNum)}
+                              style={{
+                                padding: '0.65rem 1rem',
+                                paddingRight: '2.5rem',
+                                backgroundColor: 'white',
+                                borderBottom: '1px solid #f0f0f0',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                fontWeight: '500',
+                                fontSize: '14px',
+                                transition: 'background-color 0.2s',
+                                userSelect: 'none'
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                            >
+                              <span style={{ 
+                                fontSize: '9px',
+                                display: 'inline-block',
+                                width: '10px',
+                                transition: 'transform 0.2s',
+                                transform: isMonthOpen ? 'rotate(90deg)' : 'rotate(0deg)'
+                              }}>
+                                ▶
+                              </span>
+                              <span>📂</span>
+                              <span>{monthLabel}</span>
+                            </div>
+
+                            {/* רמה 3: שבועות */}
+                            {isMonthOpen && (
+                              <div>
+                                {organizedWeeks[season][monthNum].map(week => (
+                                  <div
+                                    key={week._id}
+                                    onClick={() => handleSelectWeek(week._id)}
+                                    style={{
+                                      padding: '0.5rem 1rem',
+                                      paddingRight: '4rem',
+                                      backgroundColor: selectedWeek?._id === week._id ? 'var(--accent-color)' : 'white',
+                                      color: selectedWeek?._id === week._id ? 'white' : '#495057',
+                                      borderBottom: '1px solid #f0f0f0',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '0.5rem',
+                                      fontSize: '14px',
+                                      transition: 'all 0.2s',
+                                      userSelect: 'none'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      if (selectedWeek?._id !== week._id) {
+                                        e.currentTarget.style.backgroundColor = '#f8f9fa';
+                                      }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      if (selectedWeek?._id !== week._id) {
+                                        e.currentTarget.style.backgroundColor = 'white';
+                                      }
+                                    }}
+                                  >
+                                    <span>📄</span>
+                                    <span>{week.name}</span>
+                                    {week.locked && <span style={{ fontSize: '11px', marginRight: 'auto' }}>🔒</span>}
+                                    {week.active && !week.locked && <span style={{ fontSize: '11px', marginRight: 'auto' }}>🟢</span>}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {selectedWeek && (
