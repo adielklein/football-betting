@@ -751,8 +751,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
               borderRadius: '4px',
               boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
               zIndex: 1000,
-              maxHeight: 'none', // אם אין המון עונות, עדיף בלי overflow בכלל
-                overflow: 'visible'
+              maxHeight: 'none',
+              overflow: 'visible'
             }}>
               {Object.keys(organizedWeeks).sort().reverse().map(season => (
                 <div
@@ -789,8 +789,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                         borderRadius: '4px',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                         zIndex: 1001,
-                        maxHeight: '400px',
-                        overflowY: 'auto'
+                        maxHeight: 'none',
+                        overflow: 'visible'
                       }}
                       onMouseEnter={() => setHoveredSeason(season)}
                     >
@@ -835,8 +835,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                                     borderRadius: '4px',
                                     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                                     zIndex: 1002,
-                                    maxHeight: '400px',
-                                    overflowY: 'auto'
+                                    maxHeight: 'none',
+                                    overflow: 'visible'
                                   }}
                                   onMouseEnter={() => setHoveredMonth(monthKey)}
                                 >
