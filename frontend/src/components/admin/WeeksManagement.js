@@ -14,17 +14,17 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
   const [loadingLeagues, setLoadingLeagues] = useState(false);
   const [editingMatchDetails, setEditingMatchDetails] = useState(null);
   const [showActivationDialog, setShowActivationDialog] = useState(false);
-const [sendPushNotifications, setSendPushNotifications] = useState(true);
-
-  useEffect(() => {
-    loadData();
-  }, []);
+  const [sendPushNotifications, setSendPushNotifications] = useState(true);
 
   // State עבור ה-dropdown המקונן
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [hoveredSeason, setHoveredSeason] = useState(null);
   const [hoveredMonth, setHoveredMonth] = useState(null);
   const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   // סגירת dropdown בלחיצה מחוץ לרכיב
   useEffect(() => {
@@ -33,11 +33,11 @@ const [sendPushNotifications, setSendPushNotifications] = useState(true);
         setIsDropdownOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // ×¡× ×›×¨×•×Ÿ ×¢× ×”×©×‘×•×¢ ×”× ×‘×—×¨ ×ž×”××‘
+  // סנכרון עם השבוע הנבחר מהאב
   useEffect(() => {
     if (parentSelectedWeek && parentSelectedWeek._id !== selectedWeek?._id) {
       setSelectedWeek(parentSelectedWeek);
@@ -59,7 +59,7 @@ const [sendPushNotifications, setSendPushNotifications] = useState(true);
       const reversedWeeks = data.reverse();
       setWeeks(reversedWeeks);
       
-      // ×‘×—×¨ ××ª ×”×©×‘×•×¢ ×”××—×¨×•×Ÿ (×”×—×“×© ×‘×™×•×ª×¨) ×›×‘×¨×™×¨×ª ×ž×—×“×œ
+      // בחר את השבוע האחרון (החדש ביותר) כבררת מחדל
       if (reversedWeeks.length > 0 && !selectedWeek) {
         const latestWeek = reversedWeeks[0];
         setSelectedWeek(latestWeek);
@@ -70,7 +70,7 @@ const [sendPushNotifications, setSendPushNotifications] = useState(true);
       }
     } catch (error) {
       console.error('Error loading weeks:', error);
-      alert('×©×’×™××” ×‘×˜×¢×™× ×ª ×”×©×‘×•×¢×•×ª');
+      alert('שגיאה בטעינת השבועות');
     }
   };
 
@@ -136,7 +136,7 @@ const [sendPushNotifications, setSendPushNotifications] = useState(true);
 
   const handleEditWeek = async (weekId, name, month, season) => {
     if (!name || !name.trim()) {
-      alert('×©× ×”×©×‘×•×¢ ×—×•×‘×”');
+      alert('שם השבוע חובה');
       return;
     }
 
@@ -170,20 +170,20 @@ const [sendPushNotifications, setSendPushNotifications] = useState(true);
       }
       
       setEditingWeek(null);
-      alert('×”×©×‘×•×¢ ×¢×•×“×›×Ÿ ×‘×”×¦×œ×—×”!');
+      alert('השבוע עודכן בהצלחה!');
     } catch (error) {
       console.error('Error updating week:', error);
-      alert('×©×’×™××” ×‘×¢×“×›×•×Ÿ ×”×©×‘×•×¢: ' + error.message);
+      alert('שגיאה בעדכון השבוע: ' + error.message);
     }
   };
 
   const createWeek = async () => {
     if (!newWeek.name) {
-      alert('×™×© ×œ×”×–×™×Ÿ ×©× ×œ×©×‘×•×¢');
+      alert('יש להזין שם לשבוע');
       return;
     }
     if (!newWeek.month) {
-      alert('×™×© ×œ×‘×—×•×¨ ×—×•×“×©');
+      alert('יש לבחור חודש');
       return;
     }
 
@@ -201,20 +201,20 @@ const [sendPushNotifications, setSendPushNotifications] = useState(true);
 
       setNewWeek({ name: '', month: '', season: '2025-26' });
       await loadWeeks();
-      alert('×©×‘×•×¢ ×—×“×© × ×•×¦×¨ ×‘×”×¦×œ×—×”!');
+      alert('שבוע חדש נוצר בהצלחה!');
     } catch (error) {
       console.error('Error creating week:', error);
-      alert('×©×’×™××” ×‘×™×¦×™×¨×ª ×”×©×‘×•×¢: ' + error.message);
+      alert('שגיאה ביצירת השבוע: ' + error.message);
     }
   };
 
   const deactivateWeek = async () => {
     if (!selectedWeek || !selectedWeek._id) {
-      alert('×™×© ×œ×‘×—×•×¨ ×©×‘×•×¢ ×§×•×“×');
+      alert('יש לבחור שבוע קודם');
       return;
     }
 
-    if (window.confirm(`×”×× ××ª×” ×‘×˜×•×— ×©×‘×¨×¦×•× ×š ×œ×›×‘×•×ª ××ª "${selectedWeek.name}"?`)) {
+    if (window.confirm(`האם אתה בטוח שברצונך לכבות את "${selectedWeek.name}"?`)) {
       try {
         const response = await fetch(`${API_URL}/weeks/${selectedWeek._id}/deactivate`, {
           method: 'PATCH',
@@ -226,22 +226,22 @@ const [sendPushNotifications, setSendPushNotifications] = useState(true);
           throw new Error(error.message || 'Failed to deactivate week');
         }
 
-        alert('×”×©×‘×•×¢ ×›×•×‘×” ×‘×”×¦×œ×—×”. ×¢×›×©×™×• ××ª×” ×™×›×•×œ ×œ×¢×¨×•×š ××•×ª×•.');
+        alert('השבוע כובה בהצלחה. עכשיו אתה יכול לערוך אותו.');
         await loadData();
       } catch (error) {
-        console.error('×©×’×™××” ×‘×›×™×‘×•×™ ×©×‘×•×¢:', error);
-        alert('×©×’×™××” ×‘×›×™×‘×•×™ ×”×©×‘×•×¢: ' + error.message);
+        console.error('שגיאה בכיבוי שבוע:', error);
+        alert('שגיאה בכיבוי השבוע: ' + error.message);
       }
     }
   };
 
   const deleteWeek = async () => {
     if (!selectedWeek || !selectedWeek._id) {
-      alert('×™×© ×œ×‘×—×•×¨ ×©×‘×•×¢ ×§×•×“×');
+      alert('יש לבחור שבוע קודם');
       return;
     }
 
-    if (window.confirm(`×”×× ××ª×” ×‘×˜×•×— ×©×‘×¨×¦×•× ×š ×œ×ž×—×•×§ ××ª "${selectedWeek.name}"? ×¤×¢×•×œ×” ×–×• ×ª×ž×—×§ ×’× ××ª ×›×œ ×”×ž×©×—×§×™× ×•×”×”×™×ž×•×¨×™× ×©×œ ×”×©×‘×•×¢!`)) {
+    if (window.confirm(`האם אתה בטוח שברצונך למחוק את "${selectedWeek.name}"? פעולה זו תמחק גם את כל המשחקים וההימורים של השבוע!`)) {
       try {
         const response = await fetch(`${API_URL}/weeks/${selectedWeek._id}`, {
           method: 'DELETE'
@@ -249,7 +249,7 @@ const [sendPushNotifications, setSendPushNotifications] = useState(true);
 
         if (!response.ok) throw new Error('Failed to delete week');
 
-        alert('×”×©×‘×•×¢ × ×ž×—×§ ×‘×”×¦×œ×—×”');
+        alert('השבוע נמחק בהצלחה');
         setSelectedWeek(null);
         setMatches([]);
         await loadWeeks();
@@ -258,8 +258,8 @@ const [sendPushNotifications, setSendPushNotifications] = useState(true);
           onWeekSelect(null);
         }
       } catch (error) {
-        console.error('×©×’×™××” ×‘×ž×—×™×§×ª ×©×‘×•×¢:', error);
-        alert('×©×’×™××” ×‘×ž×—×™×§×ª ×”×©×‘×•×¢');
+        console.error('שגיאה במחיקת שבוע:', error);
+        alert('שגיאה במחיקת השבוע');
       }
     }
   };
@@ -293,116 +293,111 @@ const [sendPushNotifications, setSendPushNotifications] = useState(true);
   };
 
   const activateWeek = async () => {
-  if (!selectedWeek || !selectedWeek._id || matches.length === 0) {
-    alert('×™×© ×œ×”×•×¡×™×£ ×ž×©×—×§×™× ×œ×¤× ×™ ×”×¤×¢×œ×ª ×”×©×‘×•×¢');
-    return;
-  }
-
-  // ×”×¦×’ ×“×™××œ×•×’ ××™×©×•×¨ ×¢× ××•×¤×¦×™×” ×œ×”×ª×¨××•×ª
-  setShowActivationDialog(true);
-};
-
-const confirmActivateWeek = async () => {
-  try {
-    const earliestMatch = findEarliestMatch(matches);
-    
-    if (!earliestMatch || !earliestMatch.date || !earliestMatch.time) {
-      alert('×œ× × ×ž×¦× ×ž×©×—×§ ×ª×§×™×Ÿ ×¢× ×ª××¨×™×š ×•×©×¢×”');
+    if (!selectedWeek || !selectedWeek._id || matches.length === 0) {
+      alert('יש להוסיף משחקים לפני הפעלת השבוע');
       return;
     }
 
-    console.log('ðŸ† ×”×ž×©×—×§ ×”×›×™ ×ž×•×§×“×:', `${earliestMatch.team1} × ×’×“ ${earliestMatch.team2}`);
-    console.log('ðŸ“… ×ª××¨×™×š ×”×ž×©×—×§ ×”×ž×•×§×“×:', earliestMatch.date);
-    console.log('ðŸ• ×©×¢×ª ×”×ž×©×—×§ ×”×ž×•×§×“×:', earliestMatch.time);
+    setShowActivationDialog(true);
+  };
 
-    const [day, month] = earliestMatch.date.split('.');
-    const [hour, minute] = earliestMatch.time.split(':');
-    
-    const year = new Date().getFullYear();
-    const lockTime = new Date(year, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
-    const lockTimeISO = new Date(lockTime.getTime() ).toISOString();
-
-    console.log('ðŸ”’ ×–×ž×Ÿ × ×¢×™×œ×” (×™×©×¨××œ):', lockTime.toLocaleString('he-IL'));
-    console.log('ðŸ“¤ × ×©×œ×— ×œ×©×¨×ª (UTC):', lockTimeISO);
-
-    const response = await fetch(`${API_URL}/weeks/${selectedWeek._id}/activate`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        lockTime: lockTimeISO,
-        sendNotifications: sendPushNotifications 
-      })
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to activate week');
-    }
-
-    const result = await response.json();
-
-    // ×”×¦×’ ×”×•×“×¢×ª ×”×¦×œ×—×” ×¢× ×¤×¨×˜×™ ×”×”×ª×¨××•×ª
-    let successMessage = '×”×©×‘×•×¢ ×”×•×¤×¢×œ ×‘×”×¦×œ×—×”! ×”×•× ×™× ×¢×œ ××•×˜×•×ž×˜×™×ª ×‘×–×ž×Ÿ ×”×ž×©×—×§ ×”×¨××©×•×Ÿ.';
-    
-    // ×‘× ×™×™×ª ×ª×•×›×Ÿ ×”×”×•×“×¢×” (×ª×ž×™×“ ×›×©× ×‘×—×¨×” ×”××•×¤×¦×™×” ×œ×©×œ×•×—)
-    if (sendPushNotifications) {
-      const notificationMessage = `âš½ ${selectedWeek.name} ×¤×ª×•×— ×œ×”×™×ž×•×¨×™×!\nðŸ”’ × ×¢×™×œ×”: ${lockTime.toLocaleString('he-IL', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      })}`;
+  const confirmActivateWeek = async () => {
+    try {
+      const earliestMatch = findEarliestMatch(matches);
       
-      successMessage += `\n\nðŸ’¬ ×ª×•×›×Ÿ ×”×”×•×“×¢×”:\n"${notificationMessage}"`;
-      
-      if (result.notificationResult) {
-        successMessage += `\n\nðŸ“¢ ×”×ª×¨××•×ª × ×©×œ×—×• ×œ-${result.notificationResult.sent} ×ž×©×ª×ž×©×™×`;
-        if (result.notificationResult.failed > 0) {
-          successMessage += `\nâš ï¸ ${result.notificationResult.failed} ×”×ª×¨××•×ª × ×›×©×œ×•`;
-        }
-      } else {
-        successMessage += '\n\nâš ï¸ ×œ× × ×©×œ×—×• ×”×ª×¨××•×ª (××™×Ÿ ×ž×©×ª×ž×©×™× ×ž× ×•×™×™×)';
+      if (!earliestMatch || !earliestMatch.date || !earliestMatch.time) {
+        alert('לא נמצא משחק תקין עם תאריך ושעה');
+        return;
       }
-    }
 
-    alert(successMessage);
-    
-    await loadData();
-    
-    // ×¢×“×›×Ÿ ×’× ××ª ×”×©×‘×•×¢ ×‘××‘
-    const updatedWeek = weeks.find(w => w._id === selectedWeek._id);
-    if (updatedWeek && onWeekSelect) {
-      onWeekSelect({ ...updatedWeek, active: true, lockTime });
+      console.log('🏆 המשחק הכי מוקדם:', `${earliestMatch.team1} נגד ${earliestMatch.team2}`);
+      console.log('📅 תאריך המשחק המוקדם:', earliestMatch.date);
+      console.log('🕐 שעת המשחק המוקדם:', earliestMatch.time);
+
+      const [day, month] = earliestMatch.date.split('.');
+      const [hour, minute] = earliestMatch.time.split(':');
+      
+      const year = new Date().getFullYear();
+      const lockTime = new Date(year, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
+      const lockTimeISO = new Date(lockTime.getTime()).toISOString();
+
+      console.log('🔒 זמן נעילה (ישראל):', lockTime.toLocaleString('he-IL'));
+      console.log('📤 נשלח לשרת (UTC):', lockTimeISO);
+
+      const response = await fetch(`${API_URL}/weeks/${selectedWeek._id}/activate`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          lockTime: lockTimeISO,
+          sendNotifications: sendPushNotifications 
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to activate week');
+      }
+
+      const result = await response.json();
+
+      let successMessage = 'השבוע הופעל בהצלחה! הוא ינעל אוטומטית בזמן המשחק הראשון.';
+      
+      if (sendPushNotifications) {
+        const notificationMessage = `⚽ ${selectedWeek.name} פתוח להימורים!\n🔒 נעילה: ${lockTime.toLocaleString('he-IL', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        })}`;
+        
+        successMessage += `\n\n💬 תוכן ההודעה:\n"${notificationMessage}"`;
+        
+        if (result.notificationResult) {
+          successMessage += `\n\n📢 התראות נשלחו ל-${result.notificationResult.sent} משתמשים`;
+          if (result.notificationResult.failed > 0) {
+            successMessage += `\n⚠️ ${result.notificationResult.failed} התראות נכשלו`;
+          }
+        } else {
+          successMessage += '\n\n⚠️ לא נשלחו התראות (אין משתמשים מנויים)';
+        }
+      }
+
+      alert(successMessage);
+      
+      await loadData();
+      
+      const updatedWeek = weeks.find(w => w._id === selectedWeek._id);
+      if (updatedWeek && onWeekSelect) {
+        onWeekSelect({ ...updatedWeek, active: true, lockTime });
+      }
+      
+      setShowActivationDialog(false);
+      setSendPushNotifications(true);
+    } catch (error) {
+      console.error('Error activating week:', error);
+      alert('שגיאה בהפעלת השבוע: ' + error.message);
+      setShowActivationDialog(false);
     }
-    
-    // ×¡×’×•×¨ ××ª ×”×“×™××œ×•×’
-    setShowActivationDialog(false);
-    setSendPushNotifications(true); // ××¤×¡ ×œ×‘×¨×™×¨×ª ×ž×—×“×œ
-  } catch (error) {
-    console.error('Error activating week:', error);
-    alert('×©×’×™××” ×‘×”×¤×¢×œ×ª ×”×©×‘×•×¢: ' + error.message);
-    setShowActivationDialog(false);
-  }
-};
+  };
 
   const addMatch = async () => {
     if (!selectedWeek || !selectedWeek._id) {
-      alert('×™×© ×œ×‘×—×•×¨ ×©×‘×•×¢ ×§×•×“×');
+      alert('יש לבחור שבוע קודם');
       return;
     }
 
     if (!newMatch.leagueId || !newMatch.team1 || !newMatch.team2 || !newMatch.date || !newMatch.time) {
-      alert('×™×© ×œ×ž×œ× ××ª ×›×œ ×”×©×“×•×ª');
+      alert('יש למלא את כל השדות');
       return;
     }
 
     if (!newMatch.date.match(/^\d{1,2}\.\d{1,2}$/)) {
-      alert('×¤×•×¨×ž×˜ ×ª××¨×™×š ×œ× × ×›×•×Ÿ. ×”×©×ª×ž×© ×‘×¤×•×¨×ž×˜ DD.MM (×œ×“×•×’×ž×”: 10.08)');
+      alert('פורמט תאריך לא נכון. השתמש בפורמט DD.MM (לדוגמה: 10.08)');
       return;
     }
 
     if (!newMatch.time.match(/^\d{1,2}:\d{2}$/)) {
-      alert('×¤×•×¨×ž×˜ ×©×¢×” ×œ× × ×›×•×Ÿ. ×”×©×ª×ž×© ×‘×¤×•×¨×ž×˜ HH:MM (×œ×“×•×’×ž×”: 20:00)');
+      alert('פורמט שעה לא נכון. השתמש בפורמט HH:MM (לדוגמה: 20:00)');
       return;
     }
 
@@ -422,7 +417,7 @@ const confirmActivateWeek = async () => {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || `×©×’×™××” ×‘×”×•×¡×¤×ª ×ž×©×—×§: ${response.status}`);
+        throw new Error(error.message || `שגיאה בהוספת משחק: ${response.status}`);
       }
 
       setNewMatch({ 
@@ -433,10 +428,10 @@ const confirmActivateWeek = async () => {
         time: '' 
       });
       await loadWeekData(selectedWeek._id);
-      alert('×ž×©×—×§ × ×•×¡×£ ×‘×”×¦×œ×—×”!');
+      alert('משחק נוסף בהצלחה!');
     } catch (error) {
-      console.error('×©×’×™××” ×‘×”×•×¡×¤×ª ×ž×©×—×§:', error);
-      alert('×©×’×™××” ×‘×”×•×¡×¤×ª ×”×ž×©×—×§: ' + error.message);
+      console.error('שגיאה בהוספת משחק:', error);
+      alert('שגיאה בהוספת המשחק: ' + error.message);
     }
   };
 
@@ -444,7 +439,7 @@ const confirmActivateWeek = async () => {
     if (!matchId) return;
     
     try {
-      console.log('ðŸŽ¯ ×ž×¢×“×›×Ÿ ×ª×•×¦××ª ×ž×©×—×§:', { matchId, team1Goals, team2Goals });
+      console.log('🎯 מעדכן תוצאת משחק:', { matchId, team1Goals, team2Goals });
       
       const matchResponse = await fetch(`${API_URL}/matches/${matchId}/result`, {
         method: 'PATCH',
@@ -456,35 +451,34 @@ const confirmActivateWeek = async () => {
       });
 
       if (!matchResponse.ok) {
-        throw new Error(`×©×’×™××” ×‘×¢×“×›×•×Ÿ ×ž×©×—×§: ${matchResponse.status}`);
+        throw new Error(`שגיאה בעדכון משחק: ${matchResponse.status}`);
       }
 
       const updatedMatch = await matchResponse.json();
-      console.log('âœ… ×ª×•×¦××ª ×ž×©×—×§ ×¢×•×“×›× ×”:', updatedMatch);
+      console.log('✅ תוצאת משחק עודכנה:', updatedMatch);
 
-      console.log('ðŸ§® ×ž×—×©×‘ × ×™×§×•×“ ×ž×—×“×© ×œ×›×œ ×”×©×—×§× ×™×...');
+      console.log('🧮 מחשב ניקוד מחדש לכל השחקנים...');
       
       const scoresResponse = await fetch(`${API_URL}/scores/calculate/${selectedWeek._id}`, {
         method: 'POST'
       });
 
       if (scoresResponse.ok) {
-        console.log('âœ… × ×™×§×•×“ ×—×•×©×‘ ×ž×—×“×© ×‘×”×¦×œ×—×”');
-        alert('×ª×•×¦××” × ×©×ž×¨×” ×•×”× ×™×§×•×“ ×—×•×©×‘ ×ž×—×“×©!');
+        console.log('✅ ניקוד חושב מחדש בהצלחה');
+        alert('תוצאה נשמרה והניקוד חושב מחדש!');
       } else {
-        console.log('âš ï¸ ×”×ª×•×¦××” × ×©×ž×¨×” ××‘×œ ×”×™×ª×” ×‘×¢×™×” ×‘×—×™×©×•×‘ ×”× ×™×§×•×“');
-        alert('×”×ª×•×¦××” × ×©×ž×¨×” ××‘×œ ×”×™×ª×” ×‘×¢×™×” ×‘×—×™×©×•×‘ ×”× ×™×§×•×“');
+        console.log('⚠️ התוצאה נשמרה אבל הייתה בעיה בחישוב הניקוד');
+        alert('התוצאה נשמרה אבל הייתה בעיה בחישוב הניקוד');
       }
 
       await loadWeekData(selectedWeek._id);
       
     } catch (error) {
       console.error('Error updating result:', error);
-      alert('×©×’×™××” ×‘×¢×“×›×•×Ÿ ×”×ª×•×¦××”');
+      alert('שגיאה בעדכון התוצאה');
     }
   };
 
-  // ×¤×•× ×§×¦×™×” ×œ×¢×¨×™×›×ª ×¤×¨×˜×™ ×ž×©×—×§
   const handleEditMatch = async (matchId) => {
     if (!editingMatchDetails || !editingMatchDetails._id) return;
     
@@ -503,80 +497,73 @@ const confirmActivateWeek = async () => {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || '×©×’×™××” ×‘×¢×“×›×•×Ÿ ×”×ž×©×—×§');
+        throw new Error(error.message || 'שגיאה בעדכון המשחק');
       }
 
-      alert('âœ… ×”×ž×©×—×§ ×¢×•×“×›×Ÿ ×‘×”×¦×œ×—×”!');
+      alert('✅ המשחק עודכן בהצלחה!');
       setEditingMatchDetails(null);
       await loadWeekData(selectedWeek._id);
     } catch (error) {
-      console.error('×©×’×™××” ×‘×¢×“×›×•×Ÿ ×ž×©×—×§:', error);
-      alert('×©×’×™××” ×‘×¢×“×›×•×Ÿ ×”×ž×©×—×§: ' + error.message);
+      console.error('שגיאה בעדכון משחק:', error);
+      alert('שגיאה בעדכון המשחק: ' + error.message);
     }
   };
 
-  // ×¤×•× ×§×¦×™×” ×œ×ž×—×™×§×ª ×ž×©×—×§
   const handleDeleteMatch = async (matchId, matchName) => {
-    if (window.confirm(`×”×× ××ª×” ×‘×˜×•×— ×©×‘×¨×¦×•× ×š ×œ×ž×—×•×§ ××ª ×”×ž×©×—×§:\n${matchName}?`)) {
+    if (window.confirm(`האם אתה בטוח שברצונך למחוק את המשחק:\n${matchName}?`)) {
       try {
         const response = await fetch(`${API_URL}/matches/${matchId}`, {
           method: 'DELETE'
         });
 
         if (!response.ok) {
-          throw new Error('×©×’×™××” ×‘×ž×—×™×§×ª ×”×ž×©×—×§');
+          throw new Error('שגיאה במחיקת המשחק');
         }
 
-        alert('âœ… ×”×ž×©×—×§ × ×ž×—×§ ×‘×”×¦×œ×—×”!');
+        alert('✅ המשחק נמחק בהצלחה!');
         await loadWeekData(selectedWeek._id);
       } catch (error) {
-        console.error('×©×’×™××” ×‘×ž×—×™×§×ª ×ž×©×—×§:', error);
-        alert('×©×’×™××” ×‘×ž×—×™×§×ª ×”×ž×©×—×§');
+        console.error('שגיאה במחיקת משחק:', error);
+        alert('שגיאה במחיקת המשחק');
       }
     }
   };
 
-  // ×¤×•× ×§×¦×™×” ×œ×ž×—×™×§×ª ×ª×•×¦××ª ×ž×©×—×§
   const deleteMatchResult = async (matchId) => {
-    if (!window.confirm('×”×× ××ª×” ×‘×˜×•×— ×©×‘×¨×¦×•× ×š ×œ×ž×—×•×§ ××ª ×ª×•×¦××ª ×”×ž×©×—×§?')) {
+    if (!window.confirm('האם אתה בטוח שברצונך למחוק את תוצאת המשחק?')) {
       return;
     }
     
     try {
-      console.log('ðŸ—‘ï¸ ×ž×•×—×§ ×ª×•×¦××ª ×ž×©×—×§:', matchId);
+      console.log('🗑️ מוחק תוצאת משחק:', matchId);
       
       const response = await fetch(`${API_URL}/matches/${matchId}/result`, {
         method: 'DELETE'
       });
 
       if (!response.ok) {
-        throw new Error(`×©×’×™××” ×‘×ž×—×™×§×ª ×ª×•×¦××”: ${response.status}`);
+        throw new Error(`שגיאה במחיקת תוצאה: ${response.status}`);
       }
 
-      alert('âœ… ×”×ª×•×¦××” × ×ž×—×§×” ×‘×”×¦×œ×—×”!');
+      alert('✅ התוצאה נמחקה בהצלחה!');
       
-      // × ×§×” ×’× ××ª ×”×˜×•×¤×¡ ×”×ž×§×•×ž×™
       setEditingMatch(prev => {
         const newState = { ...prev };
         delete newState[matchId];
         return newState;
       });
       
-      // ×¨×¢× ×Ÿ ××ª ×”× ×ª×•× ×™×
       await loadWeekData(selectedWeek._id);
       
     } catch (error) {
-      console.error('×©×’×™××” ×‘×ž×—×™×§×ª ×ª×•×¦××”:', error);
-      alert('×©×’×™××” ×‘×ž×—×™×§×ª ×”×ª×•×¦××”');
+      console.error('שגיאה במחיקת תוצאה:', error);
+      alert('שגיאה במחיקת התוצאה');
     }
   };
 
-  // ×¤×•× ×§×¦×™×” ×œ×¤×•×¨×ž×˜ ×ª××¨×™×š ××•×˜×•×ž×˜×™
   const formatDateInput = (value) => {
-    // ×”×¡×¨ ×›×œ ×ª×• ×©××™× ×• ×ž×¡×¤×¨ ××• × ×§×•×“×”
     let cleaned = value.replace(/[^\d.]/g, '');
     
-    // ×× ×™×© ×™×•×ª×¨ ×ž× ×§×•×“×” ××—×ª, ×”×©××¨ ×¨×§ ××ª ×”×¨××©×•× ×”
     const dotCount = (cleaned.match(/\./g) || []).length;
     if (dotCount > 1) {
       const firstDotIndex = cleaned.indexOf('.');
@@ -584,12 +571,10 @@ const confirmActivateWeek = async () => {
                 cleaned.substring(firstDotIndex + 1).replace(/\./g, '');
     }
     
-    // ×”×•×¡×£ × ×§×•×“×” ××•×˜×•×ž×˜×™×ª ××—×¨×™ 2 ×¡×¤×¨×•×ª (×× ××™×Ÿ × ×§×•×“×” ×›×‘×¨)
     if (cleaned.length === 2 && !cleaned.includes('.')) {
       cleaned = cleaned + '.';
     }
     
-    // ×”×’×‘×œ ××•×¨×š - ×ž×§×¡×™×ž×•× 5 ×ª×•×•×™× (DD.MM)
     if (cleaned.length > 5) {
       cleaned = cleaned.substring(0, 5);
     }
@@ -615,29 +600,27 @@ const confirmActivateWeek = async () => {
   };
 
   const months = [
-    { value: 1, label: '×™× ×•××¨' },
-    { value: 2, label: '×¤×‘×¨×•××¨' },
-    { value: 3, label: '×ž×¨×¥' },
-    { value: 4, label: '××¤×¨×™×œ' },
-    { value: 5, label: '×ž××™' },
-    { value: 6, label: '×™×•× ×™' },
-    { value: 7, label: '×™×•×œ×™' },
-    { value: 8, label: '××•×’×•×¡×˜' },
-    { value: 9, label: '×¡×¤×˜×ž×‘×¨' },
-    { value: 10, label: '××•×§×˜×•×‘×¨' },
-    { value: 11, label: '× ×•×‘×ž×‘×¨' },
-    { value: 12, label: '×“×¦×ž×‘×¨' }
+    { value: 1, label: 'ינואר' },
+    { value: 2, label: 'פברואר' },
+    { value: 3, label: 'מרץ' },
+    { value: 4, label: 'אפריל' },
+    { value: 5, label: 'מאי' },
+    { value: 6, label: 'יוני' },
+    { value: 7, label: 'יולי' },
+    { value: 8, label: 'אוגוסט' },
+    { value: 9, label: 'ספטמבר' },
+    { value: 10, label: 'אוקטובר' },
+    { value: 11, label: 'נובמבר' },
+    { value: 12, label: 'דצמבר' }
   ];
 
   const seasons = ['2025-26', '2026-27', '2027-28'];
 
-
-  // פונקציה לארגון השבועות לפי עונה וחודש
   const organizeWeeksBySeasonAndMonth = () => {
     const organized = {};
     
     weeks.forEach(week => {
-      const season = week.season || "2025-26";
+      const season = week.season || '2025-26';
       const month = week.month;
       
       if (!organized[season]) {
@@ -656,28 +639,28 @@ const confirmActivateWeek = async () => {
 
   const organizedWeeks = organizeWeeksBySeasonAndMonth();
 
-  // פונקציה להצגת שם השבוע הנבחר
   const getSelectedWeekDisplay = () => {
-    if (!selectedWeek) return "בחר שבוע";
+    if (!selectedWeek) return 'בחר שבוע';
     
-    const monthLabel = months.find(m => m.value === selectedWeek.month)?.label || "";
-    const seasonText = selectedWeek.season && selectedWeek.season !== "2025-26" ? ` (${selectedWeek.season})` : "";
+    const monthLabel = months.find(m => m.value === selectedWeek.month)?.label || '';
+    const seasonText = selectedWeek.season && selectedWeek.season !== '2025-26' ? ` (${selectedWeek.season})` : '';
     
     return `${selectedWeek.name} - ${monthLabel}${seasonText}`;
   };
+
   return (
     <div>
-      <h2>× ×™×”×•×œ ×©×‘×•×¢×•×ª</h2>
+      <h2>ניהול שבועות</h2>
 
-      {/* ×™×¦×™×¨×ª ×©×‘×•×¢ ×—×“×© */}
+      {/* יצירת שבוע חדש */}
       <div className="card">
-        <h3>×¦×•×¨ ×©×‘×•×¢ ×—×“×©</h3>
+        <h3>צור שבוע חדש</h3>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <label>×©× ×”×©×‘×•×¢:</label>
+            <label>שם השבוע:</label>
             <input
               type="text"
-              placeholder="×œ×“×•×’×ž×”: ×©×‘×•×¢ 1"
+              placeholder="לדוגמה: שבוע 1"
               value={newWeek.name}
               onChange={(e) => setNewWeek({ ...newWeek, name: e.target.value })}
               className="input"
@@ -685,13 +668,13 @@ const confirmActivateWeek = async () => {
           </div>
           
           <div style={{ flex: '1 1 150px' }}>
-            <label>×—×•×“×©:</label>
+            <label>חודש:</label>
             <select
               value={newWeek.month}
               onChange={(e) => setNewWeek({ ...newWeek, month: e.target.value })}
               className="input"
             >
-              <option value="">×‘×—×¨ ×—×•×“×©</option>
+              <option value="">בחר חודש</option>
               {months.map(month => (
                 <option key={month.value} value={month.value}>
                   {month.label}
@@ -701,7 +684,7 @@ const confirmActivateWeek = async () => {
           </div>
           
           <div style={{ flex: '1 1 150px' }}>
-            <label>×¢×•× ×”:</label>
+            <label>עונה:</label>
             <select
               value={newWeek.season}
               onChange={(e) => setNewWeek({ ...newWeek, season: e.target.value })}
@@ -716,11 +699,10 @@ const confirmActivateWeek = async () => {
           </div>
           
           <button onClick={createWeek} className="btn btn-primary">
-            âž• ×¦×•×¨ ×©×‘×•×¢
+            ➕ צור שבוע
           </button>
         </div>
       </div>
-
 
       {/* בחירת שבוע - Dropdown מקונן עם Hover */}
       <div className="card">
@@ -1025,34 +1007,21 @@ const confirmActivateWeek = async () => {
         )}
       </div>
 
-      {/* ×”×•×¡×£ ×ž×©×—×§ */}
-      {selectedWeek && selectedWeek._id && (
+      {/* הוסף משחק */}
+      {selectedWeek && (
         <div className="card">
-          <h2>×”×•×¡×£ ×ž×©×—×§ ×œ{selectedWeek.name || '×”×©×‘×•×¢'}</h2>
-          
-          {loadingLeagues && (
-            <div style={{ padding: '0.5rem', backgroundColor: '#fff3cd', borderRadius: '4px', marginBottom: '1rem' }}>
-              â³ ×˜×•×¢×Ÿ ×œ×™×’×•×ª...
-            </div>
-          )}
-          
-          {!loadingLeagues && leagues.length === 0 && (
-            <div style={{ padding: '0.5rem', backgroundColor: '#f8d7da', borderRadius: '4px', marginBottom: '1rem' }}>
-              âš ï¸ ×œ× × ×ž×¦××• ×œ×™×’×•×ª ×¤×¢×™×œ×•×ª! ×¢×‘×•×¨ ×œ×˜××‘ "× ×™×”×•×œ ×œ×™×’×•×ª" ×œ×™×¦×™×¨×ª ×œ×™×’×•×ª ×—×“×©×•×ª.
-            </div>
-          )}
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-            <div>
-              <label>×œ×™×’×”:</label>
+          <h3>הוסף משחק ל-{selectedWeek.name}</h3>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div style={{ flex: '1 1 150px' }}>
+              <label>ליגה:</label>
               <select
                 value={newMatch.leagueId}
                 onChange={(e) => setNewMatch({ ...newMatch, leagueId: e.target.value })}
                 className="input"
-                disabled={leagues.length === 0}
+                disabled={loadingLeagues}
               >
-                {leagues.length === 0 ? (
-                  <option value="">××™×Ÿ ×œ×™×’×•×ª ×–×ž×™× ×•×ª</option>
+                {loadingLeagues ? (
+                  <option>טוען ליגות...</option>
                 ) : (
                   leagues.map(league => (
                     <option key={league._id} value={league._id}>
@@ -1062,305 +1031,116 @@ const confirmActivateWeek = async () => {
                 )}
               </select>
             </div>
-
-            <div>
-              <label>×§×‘×•×¦×ª ×‘×™×ª:</label>
+            <div style={{ flex: '1 1 150px' }}>
+              <label>קבוצת בית:</label>
               <input
                 type="text"
-                placeholder="×œ×“×•×’×ž×”: ×ž×›×‘×™ ×ª×œ ××‘×™×‘"
+                placeholder="לדוגמה: מכבי חיפה"
                 value={newMatch.team1}
                 onChange={(e) => setNewMatch({ ...newMatch, team1: e.target.value })}
                 className="input"
               />
             </div>
-
-            <div>
-              <label>×§×‘×•×¦×ª ×—×•×¥:</label>
+            <div style={{ flex: '1 1 150px' }}>
+              <label>קבוצת חוץ:</label>
               <input
                 type="text"
-                placeholder="×œ×“×•×’×ž×”: ×”×¤×•×¢×œ ×ª×œ ××‘×™×‘"
+                placeholder="לדוגמה: הפועל ת״א"
                 value={newMatch.team2}
                 onChange={(e) => setNewMatch({ ...newMatch, team2: e.target.value })}
                 className="input"
               />
             </div>
-
-            <div>
-              <label>×ª××¨×™×š (DD.MM):</label>
+            <div style={{ flex: '1 1 100px' }}>
+              <label>תאריך (DD.MM):</label>
               <input
                 type="text"
-                placeholder="DD.MM"
+                placeholder="10.08"
                 value={newMatch.date}
-                onChange={(e) => {
-                  const formatted = formatDateInput(e.target.value);
-                  setNewMatch({ ...newMatch, date: formatted });
-                }}
+                onChange={(e) => setNewMatch({ ...newMatch, date: formatDateInput(e.target.value) })}
                 className="input"
-                maxLength="5"
               />
             </div>
-
-            <div>
-              <label>×©×¢×” (HH:MM):</label>
+            <div style={{ flex: '1 1 100px' }}>
+              <label>שעה (HH:MM):</label>
               <input
                 type="text"
                 placeholder="20:00"
                 value={newMatch.time}
-                maxLength="5"
-                onChange={(e) => {
-                  const formatted = formatTimeInput(e.target.value);
-                  setNewMatch({ ...newMatch, time: formatted });
-                }}
+                onChange={(e) => setNewMatch({ ...newMatch, time: formatTimeInput(e.target.value) })}
                 className="input"
               />
             </div>
+            <button onClick={addMatch} className="btn btn-primary">
+              ➕ הוסף משחק
+            </button>
           </div>
-
-          <button
-            onClick={addMatch}
-            className="btn btn-primary"
-            style={{ marginTop: '1rem' }}
-            disabled={leagues.length === 0}
-          >
-            âž• ×”×•×¡×£ ×ž×©×—×§
-          </button>
         </div>
       )}
 
-      {/* ×¨×©×™×ž×ª ×ž×©×—×§×™× */}
-      {matches.length > 0 && (
+      {/* רשימת משחקים */}
+      {selectedWeek && matches.length > 0 && (
         <div className="card">
-          <h2>×ž×©×—×§×™ {selectedWeek.name}</h2>
+          <h3>משחקי {selectedWeek.name}</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {matches.map(match => {
-              const isEditingThis = editingMatchDetails?._id === match._id;
-              const currentResult = editingMatch[match._id] || { team1Goals: '', team2Goals: '' };
-              const isEditing = currentResult.team1Goals !== '' || currentResult.team2Goals !== '';
-              const hasResult = match.result?.team1Goals !== undefined && match.result?.team2Goals !== undefined;
+              const league = leagues.find(l => l._id === match.leagueId);
+              const leagueColors = {
+                'English': '#e74c3c',
+                'Spanish': '#3498db',
+                'World': '#9b59b6'
+              };
+              const leagueColor = leagueColors[league?.type] || '#95a5a6';
               
+              const hasResult = match.result && 
+                                match.result.team1Goals !== undefined && 
+                                match.result.team2Goals !== undefined;
+              
+              const currentResult = editingMatch[match._id] || { team1Goals: '', team2Goals: '' };
+              const isEditing = editingMatchDetails?._id === match._id;
+
               return (
-                <div
-                  key={match._id}
+                <div 
+                  key={match._id} 
                   style={{
                     padding: '1rem',
-                    border: '1px solid #ddd',
+                    border: `2px solid ${leagueColor}`,
                     borderRadius: '8px',
-                    backgroundColor: isEditingThis ? '#f0f8ff' : '#f8f9fa'
+                    backgroundColor: '#fff'
                   }}
                 >
-                  {/* ×›×•×ª×¨×ª ×”×ž×©×—×§ */}
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between',
-                    marginBottom: '0.5rem'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span
-                        style={{
-                          padding: '2px 8px',
-                          backgroundColor: match.leagueId?.color || match.color || '#6c757d',
+                  {!isEditing ? (
+                    <>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '0.5rem'
+                      }}>
+                        <span style={{
+                          backgroundColor: leagueColor,
                           color: 'white',
+                          padding: '4px 12px',
                           borderRadius: '4px',
                           fontSize: '12px',
                           fontWeight: 'bold'
-                        }}
-                      >
-                        {match.leagueId?.name || match.league || '×œ× ×ž×•×’×“×¨'}
-                      </span>
-                      <span style={{ fontSize: '14px', color: '#666' }}>
-                        ðŸ“… {match.date} â° {match.time}
-                      </span>
-                    </div>
-                    
-                    {/* ×›×¤×ª×•×¨×™ ×¤×¢×•×œ×” */}
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      {!isEditingThis && (
-                        <>
-                          <button
-                            onClick={() => setEditingMatchDetails({
-                              _id: match._id,
-                              leagueId: match.leagueId?._id || '',
-                              team1: match.team1,
-                              team2: match.team2,
-                              date: match.date,
-                              time: match.time
-                            })}
-                            className="btn"
-                            style={{ 
-                              fontSize: '12px', 
-                              padding: '4px 8px',
-                              backgroundColor: '#17a2b8',
-                              color: 'white'
-                            }}
-                            title="×¢×¨×•×š ×¤×¨×˜×™ ×ž×©×—×§"
-                          >
-                            âœï¸ ×¢×¨×•×š
-                          </button>
-                          
-                          {/* ×›×¤×ª×•×¨ ×ž×—×™×§×ª ×ª×•×¦××” - ×ž×•×¤×™×¢ ×¨×§ ×× ×™×© ×ª×•×¦××” */}
-                          {hasResult && (
-                            <button
-                              onClick={() => deleteMatchResult(match._id)}
-                              className="btn"
-                              style={{ 
-                                fontSize: '12px', 
-                                padding: '4px 8px',
-                                backgroundColor: '#ffc107',
-                                color: '#000'
-                              }}
-                              title="×ž×—×§ ×ª×•×¦××”"
-                            >
-                              ðŸ”„ ×ž×—×§ ×ª×•×¦××”
-                            </button>
-                          )}
-                          
-                          <button
-                            onClick={() => handleDeleteMatch(match._id, `${match.team1} × ×’×“ ${match.team2}`)}
-                            className="btn btn-danger"
-                            style={{ fontSize: '12px', padding: '4px 8px' }}
-                            title="×ž×—×§ ×ž×©×—×§"
-                          >
-                            ðŸ—‘ï¸
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                        }}>
+                          {league?.name || 'ליגה'}
+                        </span>
+                        <span style={{ fontSize: '14px', color: '#666' }}>
+                          {match.date} • {match.time}
+                        </span>
+                      </div>
 
-                  {/* ×ž×¦×‘ ×¢×¨×™×›×ª ×¤×¨×˜×™× */}
-                  {isEditingThis ? (
-                    <div style={{ 
-                      padding: '1rem', 
-                      backgroundColor: 'white', 
-                      borderRadius: '4px',
-                      border: '2px solid #17a2b8'
-                    }}>
-                      <h4 style={{ marginBottom: '1rem', color: '#17a2b8' }}>
-                        âœï¸ ×¢×¨×™×›×ª ×¤×¨×˜×™ ×ž×©×—×§
-                      </h4>
-                      
-                      <div style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: '1fr 1fr',
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
                         gap: '1rem',
-                        marginBottom: '1rem'
+                        justifyContent: 'space-between',
+                        marginBottom: '0.5rem'
                       }}>
-                        {/* ×œ×™×’×” */}
-                        <div>
-                          <label style={{ fontSize: '12px', color: '#666' }}>×œ×™×’×”:</label>
-                          <select
-                            value={editingMatchDetails.leagueId}
-                            onChange={(e) => setEditingMatchDetails({
-                              ...editingMatchDetails,
-                              leagueId: e.target.value
-                            })}
-                            className="input"
-                          >
-                            <option value="">×‘×—×¨ ×œ×™×’×”</option>
-                            {leagues.map(league => (
-                              <option key={league._id} value={league._id}>
-                                {league.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        
-                        {/* ×ª××¨×™×š ×•×©×¢×” ×¢× ×¤×•×¨×ž×˜ ××•×˜×•×ž×˜×™ */}
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <div style={{ flex: 1 }}>
-                            <label style={{ fontSize: '12px', color: '#666' }}>×ª××¨×™×š:</label>
-                            <input
-                              type="text"
-                              value={editingMatchDetails.date}
-                              onChange={(e) => {
-                                const formatted = formatDateInput(e.target.value);
-                                setEditingMatchDetails({
-                                  ...editingMatchDetails,
-                                  date: formatted
-                                });
-                              }}
-                              placeholder="DD.MM"
-                              className="input"
-                              maxLength="5"
-                            />
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <label style={{ fontSize: '12px', color: '#666' }}>×©×¢×”:</label>
-                            <input
-                              type="text"
-                              value={editingMatchDetails.time}
-                              onChange={(e) => {
-                                const formatted = formatTimeInput(e.target.value);
-                                setEditingMatchDetails({
-                                  ...editingMatchDetails,
-                                  time: formatted
-                                });
-                              }}
-                              placeholder="HH:MM"
-                              className="input"
-                              maxLength="5"
-                            />
-                          </div>
-                        </div>
-                        
-                        {/* ×§×‘×•×¦×•×ª */}
-                        <div>
-                          <label style={{ fontSize: '12px', color: '#666' }}>×§×‘×•×¦×” ×‘×™×ª×™×ª:</label>
-                          <input
-                            type="text"
-                            value={editingMatchDetails.team1}
-                            onChange={(e) => setEditingMatchDetails({
-                              ...editingMatchDetails,
-                              team1: e.target.value
-                            })}
-                            className="input"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label style={{ fontSize: '12px', color: '#666' }}>×§×‘×•×¦×” ××•×¨×—×ª:</label>
-                          <input
-                            type="text"
-                            value={editingMatchDetails.team2}
-                            onChange={(e) => setEditingMatchDetails({
-                              ...editingMatchDetails,
-                              team2: e.target.value
-                            })}
-                            className="input"
-                          />
-                        </div>
-                      </div>
-                      
-                      {/* ×›×¤×ª×•×¨×™ ×©×ž×™×¨×”/×‘×™×˜×•×œ */}
-                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                        <button
-                          onClick={() => handleEditMatch(match._id)}
-                          className="btn btn-success"
-                          style={{ fontSize: '14px', padding: '6px 12px' }}
-                        >
-                          ðŸ’¾ ×©×ž×•×¨ ×©×™× ×•×™×™×
-                        </button>
-                        <button
-                          onClick={() => setEditingMatchDetails(null)}
-                          className="btn"
-                          style={{ 
-                            fontSize: '14px', 
-                            padding: '6px 12px',
-                            backgroundColor: '#6c757d',
-                            color: 'white'
-                          }}
-                        >
-                          âŒ ×‘×™×˜×•×œ
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    /* ×ª×¦×•×’×ª ×”×ž×©×—×§ ×”×¨×’×™×œ×” + ×ª×•×¦××•×ª */
-                    <>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <div style={{ textAlign: 'center', fontWeight: '500' }}>
-                          {match.team1} (×‘×™×ª)
+                        <div style={{ textAlign: 'center', fontWeight: '500', flex: 1 }}>
+                          {match.team1} (בית)
                         </div>
                         
                         <input
@@ -1405,41 +1185,136 @@ const confirmActivateWeek = async () => {
                           disabled={hasResult && !isEditing}
                         />
                         
-                        <div style={{ textAlign: 'center', fontWeight: '500' }}>
-                          {match.team2} (×—×•×¥)
+                        <div style={{ textAlign: 'center', fontWeight: '500', flex: 1 }}>
+                          {match.team2} (חוץ)
                         </div>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', justifyContent: 'center' }}>
+                        {!hasResult && (
+                          <button
+                            onClick={() => updateMatchResult(match._id, currentResult.team1Goals, currentResult.team2Goals)}
+                            className="btn btn-success"
+                            style={{ fontSize: '12px', padding: '4px 12px' }}
+                          >
+                            💾 שמור תוצאה
+                          </button>
+                        )}
                         
-                        <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
-                          {isEditing && (
-                            <button
-                              onClick={() => updateMatchResult(match._id, currentResult.team1Goals, currentResult.team2Goals)}
-                              className="btn btn-success"
-                              style={{ fontSize: '12px', padding: '4px 8px' }}
-                            >
-                              ×©×ž×•×¨ ×ª×•×¦××”
-                            </button>
-                          )}
-                          
-                          {hasResult && !isEditing && (
+                        {hasResult && (
+                          <>
                             <span style={{
-                              padding: '4px 8px',
+                              padding: '4px 12px',
                               backgroundColor: '#d4edda',
                               color: '#155724',
                               borderRadius: '4px',
-                              fontSize: '12px'
+                              fontSize: '12px',
+                              fontWeight: 'bold'
                             }}>
-                              âœ“ ×ª×•×¦××”: {match.result.team2Goals}-{match.result.team1Goals}
+                              ✓ תוצאה: {match.result.team1Goals}-{match.result.team2Goals}
                             </span>
-                          )}
+                            <button
+                              onClick={() => deleteMatchResult(match._id)}
+                              className="btn btn-danger"
+                              style={{ fontSize: '12px', padding: '4px 12px' }}
+                            >
+                              🗑️ מחק תוצאה
+                            </button>
+                          </>
+                        )}
+                        
+                        <button
+                          onClick={() => setEditingMatchDetails(match)}
+                          className="btn"
+                          style={{ backgroundColor: '#17a2b8', color: 'white', fontSize: '12px', padding: '4px 12px' }}
+                        >
+                          ✏️ ערוך פרטים
+                        </button>
+                        
+                        <button
+                          onClick={() => handleDeleteMatch(match._id, `${match.team1} נגד ${match.team2}`)}
+                          className="btn btn-danger"
+                          style={{ fontSize: '12px', padding: '4px 12px' }}
+                        >
+                          🗑️ מחק משחק
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '6px' }}>
+                      <h4 style={{ marginBottom: '1rem' }}>עריכת משחק</h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <div>
+                          <label>ליגה:</label>
+                          <select
+                            value={editingMatchDetails.leagueId}
+                            onChange={(e) => setEditingMatchDetails({...editingMatchDetails, leagueId: e.target.value})}
+                            className="input"
+                          >
+                            {leagues.map(league => (
+                              <option key={league._id} value={league._id}>
+                                {league.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label>קבוצת בית:</label>
+                          <input
+                            type="text"
+                            value={editingMatchDetails.team1}
+                            onChange={(e) => setEditingMatchDetails({...editingMatchDetails, team1: e.target.value})}
+                            className="input"
+                          />
+                        </div>
+                        <div>
+                          <label>קבוצת חוץ:</label>
+                          <input
+                            type="text"
+                            value={editingMatchDetails.team2}
+                            onChange={(e) => setEditingMatchDetails({...editingMatchDetails, team2: e.target.value})}
+                            className="input"
+                          />
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                          <div style={{ flex: 1 }}>
+                            <label>תאריך:</label>
+                            <input
+                              type="text"
+                              value={editingMatchDetails.date}
+                              onChange={(e) => setEditingMatchDetails({...editingMatchDetails, date: formatDateInput(e.target.value)})}
+                              className="input"
+                              placeholder="DD.MM"
+                            />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <label>שעה:</label>
+                            <input
+                              type="text"
+                              value={editingMatchDetails.time}
+                              onChange={(e) => setEditingMatchDetails({...editingMatchDetails, time: formatTimeInput(e.target.value)})}
+                              className="input"
+                              placeholder="HH:MM"
+                            />
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                          <button
+                            onClick={() => handleEditMatch(match._id)}
+                            className="btn btn-success"
+                          >
+                            💾 שמור שינויים
+                          </button>
+                          <button
+                            onClick={() => setEditingMatchDetails(null)}
+                            className="btn"
+                            style={{ backgroundColor: '#6c757d', color: 'white' }}
+                          >
+                            ביטול
+                          </button>
                         </div>
                       </div>
-                      
-                      {isEditing && (
-                        <div style={{ marginTop: '0.5rem', fontSize: '11px', color: '#666', textAlign: 'center' }}>
-                          ×ª×¦×•×’×” ×ž×§×“×™×ž×”: {match.team1} {currentResult.team1Goals || 0} - {currentResult.team2Goals || 0} {match.team2}
-                        </div>
-                      )}
-                    </>
+                    </div>
                   )}
                 </div>
               );
@@ -1447,7 +1322,8 @@ const confirmActivateWeek = async () => {
           </div>
         </div>
       )}
-            {/* ×“×™××œ×•×’ ××™×©×•×¨ ×”×¤×¢×œ×ª ×©×‘×•×¢ */} 
+
+      {/* דיאלוג אישור הפעלת שבוע */} 
       {showActivationDialog && (
         <div style={{
           position: 'fixed',
@@ -1466,15 +1342,15 @@ const confirmActivateWeek = async () => {
             width: '90%',
             margin: '1rem'
           }}>
-            <h3 style={{ marginBottom: '1rem' }}>ðŸ† ×”×¤×¢×œ×ª ×©×‘×•×¢</h3>
+            <h3 style={{ marginBottom: '1rem' }}>🏆 הפעלת שבוע</h3>
             
             <p style={{ marginBottom: '1.5rem', lineHeight: '1.6' }}>
-              ×”×× ×œ×”×¤×¢×™×œ ××ª ×”×©×‘×•×¢ <strong>{selectedWeek?.name}</strong>?
+              האם להפעיל את השבוע <strong>{selectedWeek?.name}</strong>?
               <br />
-              ×”×©×‘×•×¢ ×™× ×¢×œ ××•×˜×•×ž×˜×™×ª ×‘×–×ž×Ÿ ×”×ž×©×—×§ ×”×¨××©×•×Ÿ.
+              השבוע ינעל אוטומטית בזמן המשחק הראשון.
             </p>
 
-            {/* ××•×¤×¦×™×” ×œ×”×ª×¨××•×ª Push */}
+            {/* אופציה להתראות Push */}
             <div style={{
               backgroundColor: '#f8f9fa',
               padding: '1rem',
@@ -1499,13 +1375,13 @@ const confirmActivateWeek = async () => {
                   }}
                 />
                 <span style={{ flex: 1 }}>
-                  <strong>ðŸ“¢ ×©×œ×— ×”×ª×¨××•×ª Push ×œ×›×œ ×”×ž×©×ª×ž×©×™×</strong>
+                  <strong>📢 שלח התראות Push לכל המשתמשים</strong>
                   <div style={{ fontSize: '12px', color: '#666', marginTop: '0.25rem' }}>
-                    ×”×”×ª×¨××” ×ª×›×œ×•×œ ××ª ×©× ×”×©×‘×•×¢ ×•×©×¢×ª ×”× ×¢×™×œ×”
+                    ההתראה תכלול את שם השבוע ושעת הנעילה
                   </div>
                 </span>
               </label>
-              {/* ×ª×¦×•×’×” ×ž×§×“×™×ž×” ×©×œ ×ª×•×›×Ÿ ×”×”×•×“×¢×” */}
+              {/* תצוגה מקדימה של תוכן ההודעה */}
               {sendPushNotifications && selectedWeek && matches.length > 0 && (() => {
                 const earliestMatch = findEarliestMatch(matches);
                 if (!earliestMatch) return null;
@@ -1538,7 +1414,7 @@ const confirmActivateWeek = async () => {
                     borderRadius: '6px'
                   }}>
                     <div style={{ fontSize: '12px', color: '#666', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                      ðŸ’¬ ×ª×•×›×Ÿ ×”×”×•×“×¢×” ×©×ª×™×©×œ×—:
+                      💬 תוכן ההודעה שתישלח:
                     </div>
                     <div style={{
                       fontSize: '14px',
@@ -1546,7 +1422,7 @@ const confirmActivateWeek = async () => {
                       whiteSpace: 'pre-line',
                       color: '#212529'
                     }}>
-                      âš½ {selectedWeek.name} ×¤×ª×•×— ×œ×”×™×ž×•×¨×™×!{'\n'}ðŸ”’ × ×¢×™×œ×”: {lockTimeStr}
+                      ⚽ {selectedWeek.name} פתוח להימורים!{'\n'}🔒 נעילה: {lockTimeStr}
                     </div>
                   </div>
                 );
@@ -1566,7 +1442,7 @@ const confirmActivateWeek = async () => {
                   padding: '0.5rem 1rem'
                 }}
               >
-                âŒ ×‘×™×˜×•×œ
+                ❌ ביטול
               </button>
               <button
                 onClick={confirmActivateWeek}
@@ -1576,7 +1452,7 @@ const confirmActivateWeek = async () => {
                   fontWeight: 'bold'
                 }}
               >
-                âœ… ×”×¤×¢×œ ×©×‘×•×¢
+                ✅ הפעל שבוע
               </button>
             </div>
           </div>
