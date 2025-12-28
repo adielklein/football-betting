@@ -32,12 +32,17 @@ const matchSchema = new mongoose.Schema({
   date: { 
     type: String, 
     required: true 
-  }, // "01.09"
+  }, // "01.09" - פורמט DD.MM לתצוגה
   
   time: { 
     type: String, 
     required: true 
-  }, // "17:00"
+  }, // "17:00" - פורמט HH:MM
+  
+  // 🆕 תאריך מלא עם שנה נכונה (למשחקים חדשים בלבד)
+  fullDate: { 
+    type: Date 
+  },
   
   result: {
     team1Goals: { type: Number },

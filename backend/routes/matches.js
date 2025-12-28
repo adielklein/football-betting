@@ -4,6 +4,18 @@ const Week = require('../models/Week');
 const League = require('../models/League');
 const router = express.Router();
 
+// 🆕 פונקציית עזר לחישוב השנה הנכונה
+const calculateYear = (month) => {
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
+  
+  // אם אנחנו בדצמבר והמשחק בינואר - הוסף שנה
+  if (currentMonth === 12 && parseInt(month) === 1) {
+    return currentYear + 1;
+  }
+  return currentYear;
+};
+
 // Get all matches for a week
 router.get('/week/:weekId', async (req, res) => {
   try {
@@ -56,6 +68,18 @@ router.post('/', async (req, res) => {
       });
     }
     
+    // 🆕 חישוב fullDate עם השנה הנכונה
+    const [day, month] = date.split('.');
+    const [hour, minute] = time.split(':');
+    const year = calculateYear(month);
+    const fullDate = new Date(
+      year, 
+      parseInt(month) - 1, 
+      parseInt(day), 
+      parseInt(hour), 
+      parseInt(minute)
+    );
+    
     const match = new Match({
       weekId,
       leagueId: validLeagueId,
@@ -63,7 +87,8 @@ router.post('/', async (req, res) => {
       team1,
       team2,
       date,
-      time
+      time,
+      fullDate  // 🆕 שמירת תאריך מלא
     });
     
     await match.save();
@@ -104,6 +129,27 @@ router.patch('/:id', async (req, res) => {
     if (team2 !== undefined) updateData.team2 = team2;
     if (date !== undefined) updateData.date = date;
     if (time !== undefined) updateData.time = time;
+    
+    // 🆕 אם עדכנו תאריך או שעה - חשב מחדש את fullDate
+    if (date !== undefined || time !== undefined) {
+      // קבל את המשחק הנוכחי כדי לקבל את הערכים שלא השתנו
+      const currentMatch = await Match.findById(req.params.id);
+      
+      const finalDate = date || currentMatch.date;
+      const finalTime = time || currentMatch.time;
+      
+      const [day, month] = finalDate.split('.');
+      const [hour, minute] = finalTime.split(':');
+      const year = calculateYear(month);
+      
+      updateData.fullDate = new Date(
+        year, 
+        parseInt(month) - 1, 
+        parseInt(day), 
+        parseInt(hour), 
+        parseInt(minute)
+      );
+    }
     
     // בצע עדכון
     const match = await Match.findByIdAndUpdate(
