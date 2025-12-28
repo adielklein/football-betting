@@ -72,7 +72,7 @@ router.post('/', async (req, res) => {
     const [day, month] = date.split('.');
     const [hour, minute] = time.split(':');
     const year = calculateYear(month);
-    const fullDate = new Date(
+    const matchFullDate = new Date(
       year, 
       parseInt(month) - 1, 
       parseInt(day), 
@@ -88,7 +88,7 @@ router.post('/', async (req, res) => {
       team2,
       date,
       time,
-      fullDate  // 🆕 שמירת תאריך מלא
+      fullDate: matchFullDate
     });
     
     await match.save();
@@ -105,10 +105,16 @@ router.post('/', async (req, res) => {
   }
 });
 
-// 🆕 Update match details (admin can edit match even in active week)
+// Update match details
 router.patch('/:id', async (req, res) => {
   try {
     const { leagueId, team1, team2, date, time } = req.body;
+    
+    // קבל את המשחק הנוכחי
+    const currentMatch = await Match.findById(req.params.id);
+    if (!currentMatch) {
+      return res.status(404).json({ message: 'Match not found' });
+    }
     
     // בנה אובייקט עדכון רק עם השדות שנשלחו
     const updateData = {};
@@ -132,9 +138,6 @@ router.patch('/:id', async (req, res) => {
     
     // 🆕 אם עדכנו תאריך או שעה - חשב מחדש את fullDate
     if (date !== undefined || time !== undefined) {
-      // קבל את המשחק הנוכחי כדי לקבל את הערכים שלא השתנו
-      const currentMatch = await Match.findById(req.params.id);
-      
       const finalDate = date || currentMatch.date;
       const finalTime = time || currentMatch.time;
       
@@ -157,10 +160,6 @@ router.patch('/:id', async (req, res) => {
       updateData,
       { new: true, runValidators: true }
     ).populate('leagueId');
-    
-    if (!match) {
-      return res.status(404).json({ message: 'Match not found' });
-    }
     
     console.log('✏️ משחק עודכן:', match);
     res.json(match);
@@ -197,7 +196,7 @@ router.patch('/:id/result', async (req, res) => {
   }
 });
 
-// 🆕 Delete match result (clear the result)
+// Delete match result
 router.delete('/:id/result', async (req, res) => {
   try {
     const match = await Match.findByIdAndUpdate(
