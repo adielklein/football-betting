@@ -1,5 +1,3 @@
-// WeeksManagement.js
-
 import React, { useState, useEffect, useRef } from 'react';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
@@ -269,29 +267,62 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
     }
   };
 
+  // 🆕 פונקציה מעודכנת - משתמשת ב-fullDate אם קיים
   const findEarliestMatch = (matches) => {
     if (!matches || matches.length === 0) return null;
     
     return matches.reduce((earliest, match) => {
-      const [currentDay, currentMonth] = match.date.split('.');
-      const [currentHour, currentMinute] = match.time.split(':');
-      const currentDate = new Date(
-        new Date().getFullYear(),
-        parseInt(currentMonth) - 1,
-        parseInt(currentDay),
-        parseInt(currentHour),
-        parseInt(currentMinute)
-      );
-
-      const [earliestDay, earliestMonth] = earliest.date.split('.');
-      const [earliestHour, earliestMinute] = earliest.time.split(':');
-      const earliestDate = new Date(
-        new Date().getFullYear(),
-        parseInt(earliestMonth) - 1,
-        parseInt(earliestDay),
-        parseInt(earliestHour),
-        parseInt(earliestMinute)
-      );
+      let currentDate, earliestDate;
+      
+      // 🆕 השתמש ב-fullDate אם קיים
+      if (match.fullDate) {
+        currentDate = new Date(match.fullDate);
+      } else {
+        // חשב בעצמך אם אין fullDate (משחק ישן)
+        const [currentDay, currentMonth] = match.date.split('.');
+        const [currentHour, currentMinute] = match.time.split(':');
+        
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const nowMonth = now.getMonth() + 1;
+        
+        let year = currentYear;
+        if (nowMonth === 12 && parseInt(currentMonth) === 1) {
+          year = currentYear + 1;
+        }
+        
+        currentDate = new Date(
+          year,
+          parseInt(currentMonth) - 1,
+          parseInt(currentDay),
+          parseInt(currentHour),
+          parseInt(currentMinute)
+        );
+      }
+      
+      if (earliest.fullDate) {
+        earliestDate = new Date(earliest.fullDate);
+      } else {
+        const [earliestDay, earliestMonth] = earliest.date.split('.');
+        const [earliestHour, earliestMinute] = earliest.time.split(':');
+        
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const nowMonth = now.getMonth() + 1;
+        
+        let year = currentYear;
+        if (nowMonth === 12 && parseInt(earliestMonth) === 1) {
+          year = currentYear + 1;
+        }
+        
+        earliestDate = new Date(
+          year,
+          parseInt(earliestMonth) - 1,
+          parseInt(earliestDay),
+          parseInt(earliestHour),
+          parseInt(earliestMinute)
+        );
+      }
 
       return currentDate < earliestDate ? match : earliest;
     });
@@ -306,6 +337,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
     setShowActivationDialog(true);
   };
 
+  // 🆕 פונקציה מעודכנת - משתמשת ב-fullDate אם קיים
   const confirmActivateWeek = async () => {
     try {
       const earliestMatch = findEarliestMatch(matches);
@@ -318,23 +350,33 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
       console.log('🏆 המשחק הכי מוקדם:', `${earliestMatch.team1} נגד ${earliestMatch.team2}`);
       console.log('📅 תאריך המשחק המוקדם:', earliestMatch.date);
       console.log('🕐 שעת המשחק המוקדם:', earliestMatch.time);
-
-      const [day, month] = earliestMatch.date.split('.');
-      const [hour, minute] = earliestMatch.time.split(':');
       
-      // 🔧 תיקון לבעיית מעבר השנה
-      const currentDate = new Date();
-      const currentYear = currentDate.getFullYear();
-      const currentMonth = currentDate.getMonth() + 1; // 0-based to 1-based
+      // 🆕 השתמש ב-fullDate אם קיים, אחרת חשב בעצמך
+      let lockTime;
       
-      let year = currentYear;
-      // אם אנחנו בדצמבר והמשחק בינואר - הוסף שנה
-      if (currentMonth === 12 && parseInt(month) === 1) {
-        year = currentYear + 1;
+      if (earliestMatch.fullDate) {
+        // יש fullDate מהשרת - השתמש בו!
+        lockTime = new Date(earliestMatch.fullDate);
+        console.log('✅ משתמש ב-fullDate מהשרת:', lockTime);
+      } else {
+        // אין fullDate (משחק ישן) - חשב בעצמך
+        console.log('⚠️ אין fullDate, מחשב בעצמי');
+        const [day, month] = earliestMatch.date.split('.');
+        const [hour, minute] = earliestMatch.time.split(':');
+        
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth() + 1;
+        
+        let year = currentYear;
+        if (currentMonth === 12 && parseInt(month) === 1) {
+          year = currentYear + 1;
+        }
+        
+        lockTime = new Date(year, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
       }
-      
-      const lockTime = new Date(year, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
-      const lockTimeISO = new Date(lockTime.getTime()).toISOString();
+
+      const lockTimeISO = lockTime.toISOString();
 
       console.log('🔒 זמן נעילה (ישראל):', lockTime.toLocaleString('he-IL'));
       console.log('📤 נשלח לשרת (UTC):', lockTimeISO);
@@ -719,12 +761,11 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
         </div>
       </div>
 
-      {/* בחירת שבוע - Dropdown מקונן עם Hover - RTL */}
+      {/* בחירת שבוע - Dropdown מקונן */}
       <div className="card" style={{ position: 'relative', zIndex: 100 }}>
         <h3>בחר שבוע לניהול</h3>
         
         <div ref={dropdownRef} style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
-          {/* תיבת הבחירה הראשית */}
           <div
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             style={{
@@ -749,7 +790,6 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
             </span>
           </div>
 
-          {/* רשימת העונות */}
           {isDropdownOpen && (
             <div style={{
               position: 'absolute',
@@ -786,7 +826,6 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                     <span style={{ fontSize: '12px' }}>◀</span>
                   </div>
 
-                  {/* רשימת החודשים */}
                   {hoveredSeason === season && (
                     <div 
                       style={{
@@ -832,7 +871,6 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                                 <span style={{ fontSize: '11px' }}>◀</span>
                               </div>
 
-                              {/* רשימת השבועות */}
                               {hoveredMonth === monthKey && (
                                 <div 
                                   style={{
@@ -1091,7 +1129,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
         </div>
       )}
 
-      {/* רשימת משחקים - עיצוב מקורי עם תג ליגה */}
+      {/* רשימת משחקים */}
       {selectedWeek && matches.length > 0 && (
         <div className="card">
           <h2>משחקי {selectedWeek.name}</h2>
@@ -1112,7 +1150,6 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                     backgroundColor: isEditingThis ? '#f0f8ff' : '#f8f9fa'
                   }}
                 >
-                  {/* כותרת המשחק */}
                   <div style={{ 
                     display: 'flex', 
                     alignItems: 'center', 
@@ -1137,7 +1174,6 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                       </span>
                     </div>
                     
-                    {/* כפתורי פעולה */}
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       {!isEditingThis && (
                         <>
@@ -1162,7 +1198,6 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                             ✏️ ערוך
                           </button>
                           
-                          {/* כפתור מחיקת תוצאה - מופיע רק אם יש תוצאה */}
                           {hasResult && (
                             <button
                               onClick={() => deleteMatchResult(match._id)}
@@ -1192,7 +1227,6 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                     </div>
                   </div>
 
-                  {/* מצב עריכת פרטים */}
                   {isEditingThis ? (
                     <div style={{ 
                       padding: '1rem', 
@@ -1210,7 +1244,6 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                         gap: '1rem',
                         marginBottom: '1rem'
                       }}>
-                        {/* ליגה */}
                         <div>
                           <label style={{ fontSize: '12px', color: '#666' }}>ליגה:</label>
                           <select
@@ -1230,7 +1263,6 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                           </select>
                         </div>
                         
-                        {/* תאריך ושעה עם פורמט אוטומטי */}
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           <div style={{ flex: 1 }}>
                             <label style={{ fontSize: '12px', color: '#666' }}>תאריך:</label>
@@ -1268,7 +1300,6 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                           </div>
                         </div>
                         
-                        {/* קבוצות */}
                         <div>
                           <label style={{ fontSize: '12px', color: '#666' }}>קבוצה ביתית:</label>
                           <input
@@ -1315,7 +1346,6 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                     </div>
                   ) : (
                     <>
-                      {/* הצגת הקבוצות והתוצאות */}
                       <div style={{
                         display: 'grid',
                         gridTemplateColumns: '2fr 80px 30px 80px 2fr',
@@ -1384,7 +1414,6 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                         </div>
                       </div>
 
-                      {/* כפתור שמירה וסטטוס תוצאה */}
                       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', alignItems: 'center' }}>
                         {!hasResult ? (
                           <button
@@ -1443,7 +1472,6 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
               השבוע ינעל אוטומטית בזמן המשחק הראשון.
             </p>
 
-            {/* אופציה להתראות Push */}
             <div style={{
               backgroundColor: '#f8f9fa',
               padding: '1rem',
@@ -1474,23 +1502,29 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                   </div>
                 </span>
               </label>
-              {/* תצוגה מקדימה של תוכן ההודעה */}
               {sendPushNotifications && selectedWeek && matches.length > 0 && (() => {
                 const earliestMatch = findEarliestMatch(matches);
                 if (!earliestMatch) return null;
                 
-                const [day, month] = earliestMatch.date.split('.');
-                const [hour, minute] = earliestMatch.time.split(':');
-                
-                const currentDate = new Date();
-                const currentYear = currentDate.getFullYear();
-                const currentMonth = currentDate.getMonth() + 1;
-                let year = currentYear;
-                if (currentMonth === 12 && parseInt(month) === 1) {
-                  year = currentYear + 1;
+                // 🆕 השתמש ב-fullDate אם קיים
+                let lockTime;
+                if (earliestMatch.fullDate) {
+                  lockTime = new Date(earliestMatch.fullDate);
+                } else {
+                  const [day, month] = earliestMatch.date.split('.');
+                  const [hour, minute] = earliestMatch.time.split(':');
+                  
+                  const currentDate = new Date();
+                  const currentYear = currentDate.getFullYear();
+                  const currentMonth = currentDate.getMonth() + 1;
+                  let year = currentYear;
+                  if (currentMonth === 12 && parseInt(month) === 1) {
+                    year = currentYear + 1;
+                  }
+                  
+                  lockTime = new Date(year, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
                 }
                 
-                const lockTime = new Date(year, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
                 const lockTimeStr = lockTime.toLocaleString('he-IL', { 
                   day: '2-digit', 
                   month: '2-digit', 
