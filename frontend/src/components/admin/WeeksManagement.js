@@ -1,3 +1,5 @@
+// WeeksManagement.js
+
 import React, { useState, useEffect, useRef } from 'react';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
@@ -320,7 +322,17 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
       const [day, month] = earliestMatch.date.split('.');
       const [hour, minute] = earliestMatch.time.split(':');
       
-      const year = new Date().getFullYear();
+      // 🔧 תיקון לבעיית מעבר השנה
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth() + 1; // 0-based to 1-based
+      
+      let year = currentYear;
+      // אם אנחנו בדצמבר והמשחק בינואר - הוסף שנה
+      if (currentMonth === 12 && parseInt(month) === 1) {
+        year = currentYear + 1;
+      }
+      
       const lockTime = new Date(year, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
       const lockTimeISO = new Date(lockTime.getTime()).toISOString();
 
