@@ -325,7 +325,21 @@ const THEMES = {
     logo: 'https://www.htafc.co.il/wp-content/uploads/2024/07/team-logo-hapoel-01.png',
     logoType: 'image',
     category: 'ליגת העל הישראלית'
-  }
+  },
+
+  beitar_jerusalem: {
+  name: 'בית"ר ירושלים',
+  colors: {
+    primary: '#FFD700',
+    secondary: '#000000',
+    accent: '#FFC300',
+    background: '#ffffff',
+    headerBg: 'linear-gradient(135deg, #FFD700 0%, #000000 100%)'
+  },
+  logo: 'https://upload.wikimedia.org/wikipedia/he/thumb/3/3c/Beitar_Jerusalem_FC_Logo.svg/250px-Beitar_Jerusalem_FC_Logo.svg.png',
+  logoType: 'image',
+  category: 'ליגת העל הישראלית'
+}
 };
 
 // פונקציה לקבלת ערכת נושא
