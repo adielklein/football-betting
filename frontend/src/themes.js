@@ -336,7 +336,7 @@ export const THEMES = {
     background: '#ffffff',
     headerBg: 'linear-gradient(135deg, #FFD700 0%, #000000 100%)'
   },
-  logo: 'https://upload.wikimedia.org/wikipedia/he/thumb/3/3c/Beitar_Jerusalem_FC_Logo.svg/250px-Beitar_Jerusalem_FC_Logo.svg.png',
+  logo: 'https://upload.wikimedia.org/wikipedia/he/thumb/3/31/BeitarJerusalemCrestStar2020.png/250px-BeitarJerusalemCrestStar2020.png',
   logoType: 'image',
   category: 'ליגת העל הישראלית'
 }
