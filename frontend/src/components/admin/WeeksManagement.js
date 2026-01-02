@@ -399,8 +399,14 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
 
       let successMessage = 'השבוע הופעל בהצלחה! הוא ינעל אוטומטית בזמן המשחק הראשון.';
       
-       if (sendPushNotifications) {
-  const notificationMessage = `⚽ ${selectedWeek.name} פתוח להימורים!\n🔒 נעילה: ${earliestMatch.date} ${earliestMatch.time}`;
+        if (sendPushNotifications) {
+        const notificationMessage = `⚽ ${selectedWeek.name} פתוח להימורים!\n🔒 נעילה: ${lockTime.toLocaleString('he-IL', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          hour: '2-digit', 
+          minute: '2-digit' ,
+          timeZone: 'Asia/Jerusalem'
+        })}`;
         
         successMessage += `\n\n💬 תוכן ההודעה:\n"${notificationMessage}"`;
         
@@ -1524,7 +1530,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                   day: '2-digit', 
                   month: '2-digit', 
                   hour: '2-digit', 
-                  minute: '2-digit' 
+                  minute: '2-digit',
+                  timeZone: 'Asia/Jerusalem' 
                 });
                 
                 return (
