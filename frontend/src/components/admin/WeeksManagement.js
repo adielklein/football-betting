@@ -1526,13 +1526,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                   lockTime = new Date(year, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
                 }
                 
-                const lockTimeStr = lockTime.toLocaleString('he-IL', { 
-                  day: '2-digit', 
-                  month: '2-digit', 
-                  hour: '2-digit', 
-                  minute: '2-digit',
-                  timeZone: 'Asia/Jerusalem' 
-                });
+                // שורה 1117 - תחליף:
+                const lockTimeStr = `${earliestMatch.date} ${earliestMatch.time}`;
                 
                 return (
                   <div style={{
