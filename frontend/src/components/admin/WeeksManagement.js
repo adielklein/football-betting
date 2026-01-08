@@ -267,18 +267,15 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
     }
   };
 
-  // 🆕 פונקציה מעודכנת - משתמשת ב-fullDate אם קיים
   const findEarliestMatch = (matches) => {
     if (!matches || matches.length === 0) return null;
     
     return matches.reduce((earliest, match) => {
       let currentDate, earliestDate;
       
-      // 🆕 השתמש ב-fullDate אם קיים
       if (match.fullDate) {
         currentDate = new Date(match.fullDate);
       } else {
-        // חשב בעצמך אם אין fullDate (משחק ישן)
         const [currentDay, currentMonth] = match.date.split('.');
         const [currentHour, currentMinute] = match.time.split(':');
         
@@ -337,7 +334,6 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
     setShowActivationDialog(true);
   };
 
-  // 🆕 פונקציה מעודכנת - משתמשת ב-fullDate אם קיים
   const confirmActivateWeek = async () => {
     try {
       const earliestMatch = findEarliestMatch(matches);
@@ -351,15 +347,12 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
       console.log('📅 תאריך המשחק המוקדם:', earliestMatch.date);
       console.log('🕐 שעת המשחק המוקדם:', earliestMatch.time);
       
-      // 🆕 השתמש ב-fullDate אם קיים, אחרת חשב בעצמך
       let lockTime;
       
       if (earliestMatch.fullDate) {
-        // יש fullDate מהשרת - השתמש בו!
         lockTime = new Date(earliestMatch.fullDate);
         console.log('✅ משתמש ב-fullDate מהשרת:', lockTime);
       } else {
-        // אין fullDate (משחק ישן) - חשב בעצמך
         console.log('⚠️ אין fullDate, מחשב בעצמי');
         const [day, month] = earliestMatch.date.split('.');
         const [hour, minute] = earliestMatch.time.split(':');
@@ -376,7 +369,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
         lockTime = new Date(year, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
       }
 
-      const lockTimeISO = lockTime.toISOString();
+      // 🔥 תיקון: הורד 2 שעות לפני שליחה לשרת
+      const lockTimeISO = new Date(lockTime.getTime() - 2 * 60 * 60 * 1000).toISOString();
 
       console.log('🔒 זמן נעילה (ישראל):', lockTime.toLocaleString('he-IL'));
       console.log('📤 נשלח לשרת (UTC):', lockTimeISO);
@@ -399,9 +393,13 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
 
       let successMessage = 'השבוע הופעל בהצלחה! הוא ינעל אוטומטית בזמן המשחק הראשון.';
       
-        // שורה 399 - תחליף את כל הבלוק הזה:
-if (sendPushNotifications) {
-  const notificationMessage = `⚽ ${selectedWeek.name} פתוח להימורים!\n🔒 נעילה: ${earliestMatch.date} ${earliestMatch.time}`;
+      if (sendPushNotifications) {
+        // 🔥 תיקון: פורמט יפה של ההודעה
+        const [day, month] = earliestMatch.date.split('.');
+        const [hour, minute] = earliestMatch.time.split(':');
+        const formattedTime = `${day.padStart(2, '0')}/${month.padStart(2, '0')} ${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
+        
+        const notificationMessage = `⚽ ${selectedWeek.name} פתוח להימורים!\n🔒 נעילה: ${formattedTime}`;
         
         successMessage += `\n\n💬 תוכן ההודעה:\n"${notificationMessage}"`;
         
@@ -1502,27 +1500,10 @@ if (sendPushNotifications) {
                 const earliestMatch = findEarliestMatch(matches);
                 if (!earliestMatch) return null;
                 
-                // 🆕 השתמש ב-fullDate אם קיים
-                let lockTime;
-                if (earliestMatch.fullDate) {
-                  lockTime = new Date(earliestMatch.fullDate);
-                } else {
-                  const [day, month] = earliestMatch.date.split('.');
-                  const [hour, minute] = earliestMatch.time.split(':');
-                  
-                  const currentDate = new Date();
-                  const currentYear = currentDate.getFullYear();
-                  const currentMonth = currentDate.getMonth() + 1;
-                  let year = currentYear;
-                  if (currentMonth === 12 && parseInt(month) === 1) {
-                    year = currentYear + 1;
-                  }
-                  
-                  lockTime = new Date(year, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
-                }
-                
-                // שורה 1117 - תחליף:
-                const lockTimeStr = `${earliestMatch.date} ${earliestMatch.time}`;
+                // 🔥 תיקון: פורמט יפה של התצוגה המקדימה
+                const [day, month] = earliestMatch.date.split('.');
+                const [hour, minute] = earliestMatch.time.split(':');
+                const lockTimeStr = `${day.padStart(2, '0')}/${month.padStart(2, '0')} ${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
                 
                 return (
                   <div style={{
