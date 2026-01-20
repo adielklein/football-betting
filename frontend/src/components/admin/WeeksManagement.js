@@ -369,8 +369,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
         lockTime = new Date(year, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
       }
 
-      // 🔥 תיקון: הורד 2 שעות לפני שליחה לשרת
-      const lockTimeISO = new Date(lockTime.getTime() - 2 * 60 * 60 * 1000).toISOString();
+      // המרה ל-UTC - toISOString() ממיר אוטומטית לזמן UTC
+      const lockTimeISO = lockTime.toISOString();
 
       console.log('🔒 זמן נעילה (ישראל):', lockTime.toLocaleString('he-IL'));
       console.log('📤 נשלח לשרת (UTC):', lockTimeISO);
@@ -394,7 +394,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
       let successMessage = 'השבוע הופעל בהצלחה! הוא ינעל אוטומטית בזמן המשחק הראשון.';
       
       if (sendPushNotifications) {
-        // 🔥 תיקון: פורמט יפה של ההודעה
+        // פורמט יפה של ההודעה
         const [day, month] = earliestMatch.date.split('.');
         const [hour, minute] = earliestMatch.time.split(':');
         const formattedTime = `${day.padStart(2, '0')}/${month.padStart(2, '0')} ${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
@@ -1500,7 +1500,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                 const earliestMatch = findEarliestMatch(matches);
                 if (!earliestMatch) return null;
                 
-                // 🔥 תיקון: פורמט יפה של התצוגה המקדימה
+                // פורמט יפה של התצוגה המקדימה
                 const [day, month] = earliestMatch.date.split('.');
                 const [hour, minute] = earliestMatch.time.split(':');
                 const lockTimeStr = `${day.padStart(2, '0')}/${month.padStart(2, '0')} ${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
