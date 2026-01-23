@@ -72,13 +72,16 @@ async function sendNotification(subscription, payload) {
 }
 
 /**
- * 🔧 שליחת התראה לכל המשתמשים - תומך בשני המבנים
+ * 🔧 שליחת התראה לכל המשתמשים - תומך בשני המבנים + תמונות ✅
  */
-async function sendNotificationToAll(title, body, data = {}) {
+async function sendNotificationToAll(title, body, data = {}, imageUrl = null) {
   try {
     console.log('📢 [PUSH] ========================================');
     console.log('📢 [PUSH] sendNotificationToAll');
     console.log('📢 [PUSH] Title:', title);
+    if (imageUrl) {
+      console.log('🖼️ [PUSH] With image');
+    }
     console.log('📢 [PUSH] ========================================');
     
     // 🔧 תמיכה בשני המבנים
@@ -111,6 +114,12 @@ async function sendNotificationToAll(title, body, data = {}) {
       tag: `broadcast-${Date.now()}`,
       data: data || {}
     };
+
+    // ✅ הוסף תמונה אם קיימת
+    if (imageUrl && imageUrl.trim()) {
+      payload.image = imageUrl;
+      console.log('🖼️ [PUSH] Image added to payload');
+    }
 
     let totalSent = 0;
     let totalFailed = 0;
@@ -163,13 +172,16 @@ async function sendNotificationToAll(title, body, data = {}) {
 }
 
 /**
- * 🔧 שליחת התראה למשתמשים ספציפיים - תומך בשני המבנים
+ * 🔧 שליחת התראה למשתמשים ספציפיים - תומך בשני המבנים + תמונות ✅
  */
-async function sendNotificationToUsers(userIds, title, body, data = {}) {
+async function sendNotificationToUsers(userIds, title, body, data = {}, imageUrl = null) {
   try {
     console.log('📢 [PUSH] ========================================');
     console.log('📢 [PUSH] sendNotificationToUsers');
     console.log('📢 [PUSH] Users:', userIds);
+    if (imageUrl) {
+      console.log('🖼️ [PUSH] With image');
+    }
     console.log('📢 [PUSH] ========================================');
     
     const users = await User.find({
@@ -192,6 +204,12 @@ async function sendNotificationToUsers(userIds, title, body, data = {}) {
       tag: `group-${Date.now()}`,
       data: data || {}
     };
+
+    // ✅ הוסף תמונה אם קיימת
+    if (imageUrl && imageUrl.trim()) {
+      payload.image = imageUrl;
+      console.log('🖼️ [PUSH] Image added to payload');
+    }
 
     let totalSent = 0;
     let totalFailed = 0;
@@ -345,6 +363,7 @@ async function checkRoute(req, res) {
 
 console.log('✅ [PUSH SERVICE] Module loaded');
 console.log('✅ [PUSH SERVICE] Backward compatible mode');
+console.log('🖼️ [PUSH SERVICE] Image support enabled'); // ✅ הוספה
 
 module.exports = {
   vapidKeys,

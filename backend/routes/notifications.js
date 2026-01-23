@@ -239,17 +239,21 @@ router.patch('/settings', async (req, res) => {
   }
 });
 
-// שלח התראה לכולם
+// ✅ שלח התראה לכולם - עם תמונה
 router.post('/send-to-all', async (req, res) => {
   try {
-    const { title, body, data } = req.body;
+    const { title, body, imageUrl, data } = req.body; // ✅ הוספת imageUrl
     
     if (!title || !body) {
       return res.status(400).json({ message: 'Title and body are required' });
     }
     
     console.log('📢 Admin sending notification to all users');
-    const result = await sendNotificationToAll(title, body, data);
+    if (imageUrl) {
+      console.log('🖼️ With image');
+    }
+    
+    const result = await sendNotificationToAll(title, body, data, imageUrl); // ✅ העברת imageUrl
     
     res.json(result);
   } catch (error) {
@@ -258,10 +262,10 @@ router.post('/send-to-all', async (req, res) => {
   }
 });
 
-// שלח התראה למשתמשים נבחרים
+// ✅ שלח התראה למשתמשים נבחרים - עם תמונה
 router.post('/send-to-users', async (req, res) => {
   try {
-    const { userIds, title, body, data } = req.body;
+    const { userIds, title, body, imageUrl, data } = req.body; // ✅ הוספת imageUrl
     
     if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
       return res.status(400).json({ message: 'User IDs array is required' });
@@ -272,7 +276,11 @@ router.post('/send-to-users', async (req, res) => {
     }
     
     console.log(`📢 Admin sending notification to ${userIds.length} users`);
-    const result = await sendNotificationToUsers(userIds, title, body, data);
+    if (imageUrl) {
+      console.log('🖼️ With image');
+    }
+    
+    const result = await sendNotificationToUsers(userIds, title, body, data, imageUrl); // ✅ העברת imageUrl
     
     res.json(result);
   } catch (error) {

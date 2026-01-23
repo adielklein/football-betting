@@ -12,6 +12,7 @@ function PushManagement() {
     title: '',
     body: ''
   });
+  const [notificationImage, setNotificationImage] = useState(null); // ✅ הוספה: תמונה
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('broadcast'); // broadcast, selective, stats
 
@@ -44,6 +45,24 @@ function PushManagement() {
     }
   };
 
+  // ✅ הוספה: פונקציה לטיפול בהעלאת תמונה
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // בדיקת גודל (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('התמונה גדולה מדי! מקסימום 5MB');
+        e.target.value = '';
+        return;
+      }
+      
+      // המרה ל-Base64
+      const reader = new FileReader();
+      reader.onloadend = () => setNotificationImage(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
   // 🔧 FIX: בדיקה מדויקת של subscriptions - מערך ולא אובייקט!
   const isUserSubscribed = (user) => {
     return !!(
@@ -71,7 +90,7 @@ function PushManagement() {
     );
   };
 
-  // 🔧 FIX: שליחה לכולם - קריאה ישירה ל-endpoint
+  // 🔧 FIX: שליחה לכולם - עם תמונה
   const sendToAll = async () => {
     if (!notificationForm.title || !notificationForm.body) {
       alert('נא למלא כותרת ותוכן ההתראה');
@@ -91,6 +110,7 @@ function PushManagement() {
         body: JSON.stringify({
           title: notificationForm.title,
           body: notificationForm.body,
+          imageUrl: notificationImage || undefined, // ✅ הוספה: תמונה
           data: { type: 'admin_message' }
         })
       });
@@ -106,6 +126,7 @@ function PushManagement() {
         title: '',
         body: ''
       });
+      setNotificationImage(null); // ✅ הוספה: איפוס תמונה
 
       await loadStats();
     } catch (error) {
@@ -116,7 +137,7 @@ function PushManagement() {
     }
   };
 
-  // 🔧 FIX: שליחה סלקטיבית - קריאה ישירה ל-endpoint
+  // 🔧 FIX: שליחה סלקטיבית - עם תמונה
   const sendToSelected = async () => {
     if (!notificationForm.title || !notificationForm.body) {
       alert('נא למלא כותרת ותוכן ההתראה');
@@ -143,6 +164,7 @@ function PushManagement() {
           userIds: selectedUsers,
           title: notificationForm.title,
           body: notificationForm.body,
+          imageUrl: notificationImage || undefined, // ✅ הוספה: תמונה
           data: { type: 'admin_message' }
         })
       });
@@ -159,6 +181,7 @@ function PushManagement() {
         body: ''
       });
       setSelectedUsers([]);
+      setNotificationImage(null); // ✅ הוספה: איפוס תמונה
 
       await loadStats();
     } catch (error) {
@@ -313,6 +336,54 @@ function PushManagement() {
             />
           </div>
 
+          {/* ✅ הוספה: העלאת תמונה */}
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+              🖼️ תמונה (אופציונלי):
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              className="input"
+              style={{ width: '100%', padding: '0.5rem' }}
+            />
+            <div style={{ fontSize: '11px', color: '#666', marginTop: '0.25rem' }}>
+              מקסימום 5MB • JPG, PNG, GIF
+            </div>
+
+            {notificationImage && (
+              <div style={{ marginTop: '1rem' }}>
+                <img
+                  src={notificationImage}
+                  alt="תצוגה מקדימה"
+                  style={{
+                    width: '100%',
+                    maxHeight: '200px',
+                    objectFit: 'cover',
+                    borderRadius: '8px',
+                    border: '2px solid #28a745'
+                  }}
+                />
+                <button
+                  onClick={() => setNotificationImage(null)}
+                  style={{
+                    marginTop: '0.5rem',
+                    padding: '0.25rem 0.75rem',
+                    backgroundColor: '#dc3545',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px'
+                  }}
+                >
+                  🗑️ הסר תמונה
+                </button>
+              </div>
+            )}
+          </div>
+
           <button
             onClick={sendToAll}
             className="btn btn-success"
@@ -354,6 +425,54 @@ function PushManagement() {
               className="input"
               style={{ width: '100%', minHeight: '80px', resize: 'vertical' }}
             />
+          </div>
+
+          {/* ✅ הוספה: העלאת תמונה */}
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+              🖼️ תמונה (אופציונלי):
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              className="input"
+              style={{ width: '100%', padding: '0.5rem' }}
+            />
+            <div style={{ fontSize: '11px', color: '#666', marginTop: '0.25rem' }}>
+              מקסימום 5MB • JPG, PNG, GIF
+            </div>
+
+            {notificationImage && (
+              <div style={{ marginTop: '1rem' }}>
+                <img
+                  src={notificationImage}
+                  alt="תצוגה מקדימה"
+                  style={{
+                    width: '100%',
+                    maxHeight: '200px',
+                    objectFit: 'cover',
+                    borderRadius: '8px',
+                    border: '2px solid #28a745'
+                  }}
+                />
+                <button
+                  onClick={() => setNotificationImage(null)}
+                  style={{
+                    marginTop: '0.5rem',
+                    padding: '0.25rem 0.75rem',
+                    backgroundColor: '#dc3545',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px'
+                  }}
+                >
+                  🗑️ הסר תמונה
+                </button>
+              </div>
+            )}
           </div>
 
           <div style={{ marginBottom: '1rem' }}>
@@ -529,6 +648,7 @@ function PushManagement() {
           <li>אפשר לשלוח התראות בכל עת, ללא תלות בסטטוס השבוע</li>
           <li>השתמש בשליחה בררנית כדי להזכיר למשתמשים ספציפיים שלא הימרו</li>
           <li>התראות מופיעות גם כשהאפליקציה סגורה (אם המשתמש התקין את ה-PWA)</li>
+          <li><strong>🖼️ ניתן להוסיף תמונה להתראה - תופיע בהתראה במכשיר!</strong></li>
         </ul>
       </div>
     </div>
