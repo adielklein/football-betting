@@ -15,6 +15,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
   const [editingMatchDetails, setEditingMatchDetails] = useState(null);
   const [showActivationDialog, setShowActivationDialog] = useState(false);
   const [sendPushNotifications, setSendPushNotifications] = useState(true);
+  const [notificationImage, setNotificationImage] = useState(null);
 
   // State עבור ה-dropdown המקונן
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -372,15 +373,27 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
       // המרה ל-UTC - toISOString() ממיר אוטומטית לזמן UTC
       const lockTimeISO = lockTime.toISOString();
 
+      // יצירת תוכן ההודעה לפני השליחה לשרת
+      const [day, month] = earliestMatch.date.split('.');
+      const [hour, minute] = earliestMatch.time.split(':');
+      const formattedTime = `${day.padStart(2, '0')}/${month.padStart(2, '0')} ${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
+      const notificationMessage = `⚽ ${selectedWeek.name} פתוח להימורים!\n🔒 נעילה: ${formattedTime}`;
+
       console.log('🔒 זמן נעילה (ישראל):', lockTime.toLocaleString('he-IL'));
       console.log('📤 נשלח לשרת (UTC):', lockTimeISO);
+      console.log('💬 תוכן ההודעה:', notificationMessage);
+      if (notificationImage) {
+        console.log('🖼️ תמונה: Base64 (' + notificationImage.length + ' chars)');
+      }
 
       const response = await fetch(`${API_URL}/weeks/${selectedWeek._id}/activate`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           lockTime: lockTimeISO,
-          sendNotifications: sendPushNotifications 
+          sendNotifications: sendPushNotifications,
+          notificationMessage: notificationMessage,
+          imageUrl: notificationImage || undefined
         })
       });
 
@@ -394,14 +407,11 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
       let successMessage = 'השבוע הופעל בהצלחה! הוא ינעל אוטומטית בזמן המשחק הראשון.';
       
       if (sendPushNotifications) {
-        // פורמט יפה של ההודעה
-        const [day, month] = earliestMatch.date.split('.');
-        const [hour, minute] = earliestMatch.time.split(':');
-        const formattedTime = `${day.padStart(2, '0')}/${month.padStart(2, '0')} ${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
-        
-        const notificationMessage = `⚽ ${selectedWeek.name} פתוח להימורים!\n🔒 נעילה: ${formattedTime}`;
-        
         successMessage += `\n\n💬 תוכן ההודעה:\n"${notificationMessage}"`;
+        
+        if (notificationImage) {
+          successMessage += `\n🖼️ עם תמונה מצורפת`;
+        }
         
         if (result.notificationResult) {
           successMessage += `\n\n📢 התראות נשלחו ל-${result.notificationResult.sent} משתמשים`;
@@ -424,6 +434,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
       
       setShowActivationDialog(false);
       setSendPushNotifications(true);
+      setNotificationImage(null);
     } catch (error) {
       console.error('Error activating week:', error);
       alert('שגיאה בהפעלת השבוע: ' + error.message);
@@ -1496,6 +1507,70 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                   </div>
                 </span>
               </label>
+              
+              {/* העלאת תמונה */}
+              {sendPushNotifications && (
+                <div style={{ marginTop: '1rem' }}>
+                  <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
+                    🖼️ תמונה להודעה (אופציונלי)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        // בדיקת גודל (5MB)
+                        if (file.size > 5 * 1024 * 1024) {
+                          alert('התמונה גדולה מדי! מקסימום 5MB');
+                          e.target.value = '';
+                          return;
+                        }
+                        // המרה ל-Base64
+                        const reader = new FileReader();
+                        reader.onloadend = () => setNotificationImage(reader.result);
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="input"
+                    style={{ width: '100%', padding: '0.5rem' }}
+                  />
+                  <div style={{ fontSize: '11px', color: '#666', marginTop: '0.25rem' }}>
+                    מקסימום 5MB • JPG, PNG, GIF
+                  </div>
+                  {notificationImage && (
+                    <div style={{ marginTop: '0.5rem' }}>
+                      <img 
+                        src={notificationImage} 
+                        alt="תצוגה מקדימה" 
+                        style={{ 
+                          width: '100%', 
+                          maxHeight: '120px', 
+                          objectFit: 'cover', 
+                          borderRadius: '4px',
+                          border: '2px solid #28a745'
+                        }}
+                      />
+                      <button
+                        onClick={() => setNotificationImage(null)}
+                        style={{
+                          marginTop: '0.5rem',
+                          padding: '0.25rem 0.75rem',
+                          backgroundColor: '#dc3545',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        🗑️ הסר תמונה
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+              
               {sendPushNotifications && selectedWeek && matches.length > 0 && (() => {
                 const earliestMatch = findEarliestMatch(matches);
                 if (!earliestMatch) return null;
@@ -1534,6 +1609,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                 onClick={() => {
                   setShowActivationDialog(false);
                   setSendPushNotifications(true);
+                  setNotificationImage(null);
                 }}
                 className="btn"
                 style={{
