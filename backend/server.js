@@ -201,7 +201,9 @@ const matchesRoutes = require('./routes/matches');
 const betsRoutes = require('./routes/bets');
 const scoresRoutes = require('./routes/scores');
 const leaguesRoutes = require('./routes/leagues');
+const uploadRouter = require('./routes/upload');
 
+app.use('/api/upload', uploadRouter);
 app.use('/api/auth', authRoutes);
 app.use('/api/weeks', weeksRoutes);
 app.use('/api/matches', matchesRoutes);

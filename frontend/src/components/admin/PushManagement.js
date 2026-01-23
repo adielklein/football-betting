@@ -45,21 +45,55 @@ function PushManagement() {
     }
   };
 
-  // ✅ הוספה: פונקציה לטיפול בהעלאת תמונה
-  const handleImageSelect = (e) => {
+  // ✅ פונקציה להעלאת תמונה דרך ImgBB
+  const handleImageSelect = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      // בדיקת גודל (5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('התמונה גדולה מדי! מקסימום 5MB');
-        e.target.value = '';
-        return;
-      }
-      
+    if (!file) return;
+
+    // בדיקת גודל (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('התמונה גדולה מדי! מקסימום 5MB');
+      e.target.value = '';
+      return;
+    }
+
+    try {
+      setLoading(true);
+
       // המרה ל-Base64
-      const reader = new FileReader();
-      reader.onloadend = () => setNotificationImage(reader.result);
-      reader.readAsDataURL(file);
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // שליחה לשרת (שמעלה ל-ImgBB)
+      const response = await fetch(`${API_URL}/upload/notification-image`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64 })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        setNotificationImage(data.url); // ✅ שמור את ה-URL מ-ImgBB
+        console.log('✅ Image uploaded to ImgBB:', data.url);
+      } else {
+        throw new Error(data.message || 'Upload failed');
+      }
+
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('שגיאה בהעלאת התמונה: ' + error.message);
+      e.target.value = '';
+    } finally {
+      setLoading(false);
     }
   };
 

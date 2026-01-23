@@ -1,0 +1,95 @@
+const express = require('express');
+const router = express.Router();
+const FormData = require('form-data');
+const fetch = require('node-fetch');
+
+// ImgBB API Key - מ-.env
+const IMGBB_API_KEY = process.env.IMGBB_API_KEY;
+
+if (!IMGBB_API_KEY) {
+  console.warn('⚠️ [UPLOAD] IMGBB_API_KEY not configured');
+}
+
+/**
+ * POST /api/upload/notification-image
+ * מעלה תמונה ל-ImgBB
+ */
+router.post('/notification-image', async (req, res) => {
+  try {
+    if (!IMGBB_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        message: 'ImgBB API key not configured'
+      });
+    }
+
+    const { image } = req.body;
+
+    if (!image) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image provided'
+      });
+    }
+
+    console.log('📤 [UPLOAD] Uploading image to ImgBB...');
+
+    // הסר את ה-prefix של Base64 אם קיים
+    const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+
+    // יצירת FormData
+    const formData = new FormData();
+    formData.append('key', IMGBB_API_KEY);
+    formData.append('image', base64Data);
+
+    // העלאה ל-ImgBB
+    const response = await fetch('https://api.imgbb.com/1/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error(`ImgBB upload failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error?.message || 'Upload failed');
+    }
+
+    // ImgBB מחזיר מספר URLs - נשתמש ב-display_url
+    const imageUrl = data.data.display_url;
+
+    console.log('✅ [UPLOAD] Image uploaded successfully:', imageUrl);
+
+    res.json({
+      success: true,
+      url: imageUrl,
+      delete_url: data.data.delete_url, // לינק למחיקה אם צריך
+      message: 'התמונה הועלתה בהצלחה'
+    });
+
+  } catch (error) {
+    console.error('❌ [UPLOAD] Error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/upload/status
+ * בדיקת סטטוס API
+ */
+router.get('/status', (req, res) => {
+  res.json({
+    success: true,
+    configured: !!IMGBB_API_KEY,
+    service: 'ImgBB',
+    message: IMGBB_API_KEY ? 'ImgBB configured' : 'ImgBB API key missing'
+  });
+});
+
+module.exports = router;
