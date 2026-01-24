@@ -50,6 +50,8 @@ function PushManagement() {
     const file = e.target.files[0];
     if (!file) return;
 
+    console.log('📁 File selected:', file.name, file.size);
+
     // בדיקת גודל (5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('התמונה גדולה מדי! מקסימום 5MB');
@@ -59,14 +61,20 @@ function PushManagement() {
 
     try {
       setLoading(true);
+      console.log('🔄 Starting upload...');
 
       // המרה ל-Base64
       const base64 = await new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
+        reader.onloadend = () => {
+          console.log('✅ Base64 conversion complete');
+          resolve(reader.result);
+        };
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
+
+      console.log('📤 Uploading to server...');
 
       // שליחה לשרת (שמעלה ל-ImgBB)
       const response = await fetch(`${API_URL}/upload/notification-image`, {
@@ -75,25 +83,32 @@ function PushManagement() {
         body: JSON.stringify({ image: base64 })
       });
 
+      console.log('📥 Response status:', response.status);
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Server error:', errorText);
         throw new Error('Failed to upload image');
       }
 
       const data = await response.json();
+      console.log('✅ Upload response:', data);
 
       if (data.success) {
+        console.log('🖼️ Setting image URL:', data.url);
         setNotificationImage(data.url); // ✅ שמור את ה-URL מ-ImgBB
-        console.log('✅ Image uploaded to ImgBB:', data.url);
+        alert('✅ התמונה הועלתה בהצלחה!');
       } else {
         throw new Error(data.message || 'Upload failed');
       }
 
     } catch (error) {
-      console.error('Error uploading image:', error);
+      console.error('❌ Error uploading image:', error);
       alert('שגיאה בהעלאת התמונה: ' + error.message);
       e.target.value = '';
     } finally {
       setLoading(false);
+      console.log('✔️ Upload process complete');
     }
   };
 
