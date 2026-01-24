@@ -1,7 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const FormData = require('form-data');
-const fetch = require('node-fetch');
 
 // ImgBB API Key - מ-.env
 const IMGBB_API_KEY = process.env.IMGBB_API_KEY;
@@ -12,7 +10,7 @@ if (!IMGBB_API_KEY) {
 
 /**
  * POST /api/upload/notification-image
- * מעלה תמונה ל-ImgBB
+ * מעלה תמונה ל-ImgBB (משתמש ב-fetch המובנה של Node.js 18+)
  */
 router.post('/notification-image', async (req, res) => {
   try {
@@ -37,18 +35,25 @@ router.post('/notification-image', async (req, res) => {
     // הסר את ה-prefix של Base64 אם קיים
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
 
-    // יצירת FormData
-    const formData = new FormData();
-    formData.append('key', IMGBB_API_KEY);
+    // בניית URL עם query params
+    const uploadUrl = `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`;
+
+    // יצירת form data
+    const formData = new URLSearchParams();
     formData.append('image', base64Data);
 
     // העלאה ל-ImgBB
-    const response = await fetch('https://api.imgbb.com/1/upload', {
+    const response = await fetch(uploadUrl, {
       method: 'POST',
-      body: formData
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: formData.toString()
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ [UPLOAD] ImgBB error:', errorText);
       throw new Error(`ImgBB upload failed: ${response.status}`);
     }
 
