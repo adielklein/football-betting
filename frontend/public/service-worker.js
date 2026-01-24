@@ -3,18 +3,18 @@
 console.log('🔧 Service Worker loading...');
 
 // גרסה - שנה את זה כדי לאלץ עדכון
-const CACHE_VERSION = 'v1.0.0';
+const CACHE_VERSION = 'v1.1.0'; // ✅ עדכנתי את הגרסה!
 const CACHE_NAME = `football-betting-${CACHE_VERSION}`;
 
 // התקנת Service Worker
 self.addEventListener('install', (event) => {
-  console.log('✅ Service Worker installed');
+  console.log('✅ Service Worker installed - v1.1.0 with image support');
   self.skipWaiting(); // מיד להפעיל את ה-SW החדש
 });
 
 // הפעלת Service Worker
 self.addEventListener('activate', (event) => {
-  console.log('✅ Service Worker activated');
+  console.log('✅ Service Worker activated - v1.1.0');
   event.waitUntil(
     // נקה cache ישנים
     caches.keys().then(cacheNames => {
@@ -79,6 +79,18 @@ self.addEventListener('push', (event) => {
     silent: false // עם צליל
   };
 
+  // ✅ ✅ ✅ הוספת תמיכה בתמונות! ✅ ✅ ✅
+  if (data.data && data.data.imageUrl) {
+    notificationOptions.image = data.data.imageUrl;
+    console.log('🖼️ [SW] Adding image to notification:', data.data.imageUrl);
+  } else if (data.image) {
+    // Fallback למקרה שהתמונה מגיעה ישירות
+    notificationOptions.image = data.image;
+    console.log('🖼️ [SW] Adding image to notification (fallback):', data.image);
+  } else {
+    console.log('ℹ️ [SW] No image provided');
+  }
+
   console.log('🔔 [SW] Showing notification:', data.title);
   console.log('🔔 [SW] Options:', notificationOptions);
 
@@ -134,4 +146,4 @@ self.addEventListener('notificationclose', (event) => {
   console.log('❌ [SW] Notification closed:', event.notification.tag);
 });
 
-console.log('✅ Service Worker loaded successfully');
+console.log('✅ Service Worker v1.1.0 loaded successfully with image support!');

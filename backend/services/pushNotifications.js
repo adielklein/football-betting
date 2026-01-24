@@ -112,13 +112,15 @@ async function sendNotificationToAll(title, body, data = {}, imageUrl = null) {
       badge: '/logo192.png',
       vibrate: [200, 100, 200],
       tag: `broadcast-${Date.now()}`,
-      data: data || {}
+      data: {
+        ...(data || {}),
+        imageUrl: imageUrl || undefined // ✅ שלח את ה-URL ב-data
+      }
     };
 
-    // ✅ הוסף תמונה אם קיימת
+    // ✅ לוג אם יש תמונה
     if (imageUrl && imageUrl.trim()) {
-      payload.image = imageUrl;
-      console.log('🖼️ [PUSH] Image added to payload');
+      console.log('🖼️ [PUSH] Image URL added to data:', imageUrl);
     }
 
     let totalSent = 0;
@@ -202,13 +204,15 @@ async function sendNotificationToUsers(userIds, title, body, data = {}, imageUrl
       badge: '/logo192.png',
       vibrate: [200, 100, 200],
       tag: `group-${Date.now()}`,
-      data: data || {}
+      data: {
+        ...(data || {}),
+        imageUrl: imageUrl || undefined // ✅ שלח את ה-URL ב-data
+      }
     };
 
-    // ✅ הוסף תמונה אם קיימת
+    // ✅ לוג אם יש תמונה
     if (imageUrl && imageUrl.trim()) {
-      payload.image = imageUrl;
-      console.log('🖼️ [PUSH] Image added to payload');
+      console.log('🖼️ [PUSH] Image URL added to data:', imageUrl);
     }
 
     let totalSent = 0;
