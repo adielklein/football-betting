@@ -168,7 +168,14 @@ function PushManagement() {
 
       const result = await response.json();
       
-      alert(`✅ התראה נשלחה בהצלחה!\nנשלח ל-${result.sent} מכשירים\n${result.users} משתמשים\n${result.failed > 0 ? `נכשל: ${result.failed}` : ''}`);
+      // ✅ הודעה מעודכנת - רק משתמשים שנכשלו לגמרי
+      let message = `✅ התראה נשלחה ל-${result.users} משתמשים`;
+      
+      if (result.usersFailed && result.usersFailed > 0) {
+        message += `\n❌ נכשלה ל-${result.usersFailed} משתמשים (כל המכשירים שלהם)`;
+      }
+      
+      alert(message);
 
       // אפס את הטופס
       setNotificationForm({
@@ -222,7 +229,14 @@ function PushManagement() {
 
       const result = await response.json();
       
-      alert(`✅ התראה נשלחה בהצלחה!\nנשלח ל-${result.sent} מכשירים\n${result.users} משתמשים\n${result.failed > 0 ? `נכשל: ${result.failed}` : ''}`);
+      // ✅ הודעה מעודכנת - רק משתמשים שנכשלו לגמרי
+      let message = `✅ התראה נשלחה ל-${result.users} משתמשים`;
+      
+      if (result.usersFailed && result.usersFailed > 0) {
+        message += `\n❌ נכשלה ל-${result.usersFailed} משתמשים (כל המכשירים שלהם)`;
+      }
+      
+      alert(message);
 
       // אפס את הטופס
       setNotificationForm({

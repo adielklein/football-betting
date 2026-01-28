@@ -126,12 +126,14 @@ async function sendNotificationToAll(title, body, data = {}, imageUrl = null) {
     let totalSent = 0;
     let totalFailed = 0;
     let usersReached = 0;
+    let usersFailed = 0; // ✅ חדש: משתמשים שנכשלו לגמרי
 
     for (const user of users) {
       const subscriptions = getUserSubscriptions(user);
       console.log(`→ [PUSH] ${user.name}: ${subscriptions.length} device(s)`);
       
       let userSent = 0;
+      let userFailedCount = 0;
       
       for (const subscription of subscriptions) {
         const success = await sendNotification(subscription, payload);
@@ -139,19 +141,25 @@ async function sendNotificationToAll(title, body, data = {}, imageUrl = null) {
           userSent++;
           totalSent++;
         } else {
+          userFailedCount++;
           totalFailed++;
         }
       }
       
+      // ✅ אם לפחות מכשיר אחד קיבל - המשתמש הגיע
       if (userSent > 0) {
         usersReached++;
-        console.log(`  ✅ ${user.name}: ${userSent} devices`);
+        console.log(`  ✅ ${user.name}: ${userSent} device(s)`);
+      } else if (userFailedCount > 0) {
+        // ✅ אם כל המכשירים נכשלו - המשתמש נכשל לגמרי
+        usersFailed++;
+        console.log(`  ❌ ${user.name}: all ${userFailedCount} device(s) failed`);
       }
     }
 
     console.log('📢 [PUSH] ========================================');
-    console.log(`📢 [PUSH] Results: ${totalSent} sent, ${totalFailed} failed`);
-    console.log(`📢 [PUSH] Users reached: ${usersReached}/${users.length}`);
+    console.log(`📢 [PUSH] Results: ${totalSent} devices sent, ${totalFailed} devices failed`);
+    console.log(`📢 [PUSH] Users: ${usersReached} reached, ${usersFailed} completely failed`);
     console.log('📢 [PUSH] ========================================');
 
     return {
@@ -159,8 +167,9 @@ async function sendNotificationToAll(title, body, data = {}, imageUrl = null) {
       sent: totalSent,
       failed: totalFailed,
       users: usersReached,
+      usersFailed: usersFailed, // ✅ חדש!
       total: users.length,
-      message: `התראה נשלחה ל-${totalSent} מכשירים של ${usersReached} משתמשים`
+      message: `התראה נשלחה ל-${usersReached} משתמשים${usersFailed > 0 ? `, נכשלה ל-${usersFailed} משתמשים` : ''}`
     };
   } catch (error) {
     console.error('❌ [PUSH] Error:', error);
@@ -218,10 +227,12 @@ async function sendNotificationToUsers(userIds, title, body, data = {}, imageUrl
     let totalSent = 0;
     let totalFailed = 0;
     let usersReached = 0;
+    let usersFailed = 0; // ✅ חדש: משתמשים שנכשלו לגמרי
 
     for (const user of users) {
       const subscriptions = getUserSubscriptions(user);
       let userSent = 0;
+      let userFailedCount = 0;
       
       for (const subscription of subscriptions) {
         const success = await sendNotification(subscription, payload);
@@ -229,18 +240,25 @@ async function sendNotificationToUsers(userIds, title, body, data = {}, imageUrl
           userSent++;
           totalSent++;
         } else {
+          userFailedCount++;
           totalFailed++;
         }
       }
       
+      // ✅ אם לפחות מכשיר אחד קיבל - המשתמש הגיע
       if (userSent > 0) {
         usersReached++;
-        console.log(`  ✅ ${user.name}: ${userSent} devices`);
+        console.log(`  ✅ ${user.name}: ${userSent} device(s)`);
+      } else if (userFailedCount > 0) {
+        // ✅ אם כל המכשירים נכשלו - המשתמש נכשל לגמרי
+        usersFailed++;
+        console.log(`  ❌ ${user.name}: all ${userFailedCount} device(s) failed`);
       }
     }
 
     console.log('📢 [PUSH] ========================================');
-    console.log(`📢 [PUSH] Results: ${totalSent} sent`);
+    console.log(`📢 [PUSH] Results: ${totalSent} devices sent, ${totalFailed} devices failed`);
+    console.log(`📢 [PUSH] Users: ${usersReached} reached, ${usersFailed} completely failed`);
     console.log('📢 [PUSH] ========================================');
 
     return {
@@ -248,6 +266,7 @@ async function sendNotificationToUsers(userIds, title, body, data = {}, imageUrl
       sent: totalSent,
       failed: totalFailed,
       users: usersReached,
+      usersFailed: usersFailed, // ✅ חדש!
       total: users.length
     };
   } catch (error) {
