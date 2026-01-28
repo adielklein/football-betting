@@ -18,7 +18,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); 
 app.use('/api/notifications', notificationRoutes);
 
 // 🆕 Migration endpoint - להוספת שדה theme למשתמשים קיימים
