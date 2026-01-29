@@ -53,7 +53,7 @@ function PushManagement() {
     console.log('📁 File selected:', file.name, file.size);
 
     // בדיקת גודל (5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > 10 * 1024 * 1024) {
       alert('התמונה גדולה מדי! מקסימום 5MB');
       e.target.value = '';
       return;
