@@ -80,7 +80,7 @@ async function sendNotificationToAll(title, body, data = {}, imageUrl = null) {
     console.log('📢 [PUSH] sendNotificationToAll');
     console.log('📢 [PUSH] Title:', title);
     if (imageUrl) {
-      console.log('🖼️ [PUSH] With image');
+      console.log('🖼️ [PUSH] With image:', imageUrl.substring(0, 50) + '...');
     }
     console.log('📢 [PUSH] ========================================');
     
@@ -114,19 +114,20 @@ async function sendNotificationToAll(title, body, data = {}, imageUrl = null) {
       tag: `broadcast-${Date.now()}`,
       data: {
         ...(data || {}),
-        imageUrl: imageUrl || undefined // ✅ שלח את ה-URL ב-data
+        imageUrl: imageUrl || undefined
       }
     };
 
-    // ✅ לוג אם יש תמונה
+    // ✅ הוסף תמונה ל-payload (זה התיקון!)
     if (imageUrl && imageUrl.trim()) {
-      console.log('🖼️ [PUSH] Image URL added to data:', imageUrl);
+      payload.image = imageUrl;
+      console.log('🖼️ [PUSH] Image added to payload');
     }
 
     let totalSent = 0;
     let totalFailed = 0;
     let usersReached = 0;
-    let usersFailed = 0; // ✅ חדש: משתמשים שנכשלו לגמרי
+    let usersFailed = 0;
 
     for (const user of users) {
       const subscriptions = getUserSubscriptions(user);
@@ -146,12 +147,10 @@ async function sendNotificationToAll(title, body, data = {}, imageUrl = null) {
         }
       }
       
-      // ✅ אם לפחות מכשיר אחד קיבל - המשתמש הגיע
       if (userSent > 0) {
         usersReached++;
         console.log(`  ✅ ${user.name}: ${userSent} device(s)`);
       } else if (userFailedCount > 0) {
-        // ✅ אם כל המכשירים נכשלו - המשתמש נכשל לגמרי
         usersFailed++;
         console.log(`  ❌ ${user.name}: all ${userFailedCount} device(s) failed`);
       }
@@ -167,7 +166,7 @@ async function sendNotificationToAll(title, body, data = {}, imageUrl = null) {
       sent: totalSent,
       failed: totalFailed,
       users: usersReached,
-      usersFailed: usersFailed, // ✅ חדש!
+      usersFailed: usersFailed,
       total: users.length,
       message: `התראה נשלחה ל-${usersReached} משתמשים${usersFailed > 0 ? `, נכשלה ל-${usersFailed} משתמשים` : ''}`
     };
@@ -191,7 +190,7 @@ async function sendNotificationToUsers(userIds, title, body, data = {}, imageUrl
     console.log('📢 [PUSH] sendNotificationToUsers');
     console.log('📢 [PUSH] Users:', userIds);
     if (imageUrl) {
-      console.log('🖼️ [PUSH] With image');
+      console.log('🖼️ [PUSH] With image:', imageUrl.substring(0, 50) + '...');
     }
     console.log('📢 [PUSH] ========================================');
     
@@ -215,19 +214,20 @@ async function sendNotificationToUsers(userIds, title, body, data = {}, imageUrl
       tag: `group-${Date.now()}`,
       data: {
         ...(data || {}),
-        imageUrl: imageUrl || undefined // ✅ שלח את ה-URL ב-data
+        imageUrl: imageUrl || undefined
       }
     };
 
-    // ✅ לוג אם יש תמונה
+    // ✅ הוסף תמונה ל-payload (זה התיקון!)
     if (imageUrl && imageUrl.trim()) {
-      console.log('🖼️ [PUSH] Image URL added to data:', imageUrl);
+      payload.image = imageUrl;
+      console.log('🖼️ [PUSH] Image added to payload');
     }
 
     let totalSent = 0;
     let totalFailed = 0;
     let usersReached = 0;
-    let usersFailed = 0; // ✅ חדש: משתמשים שנכשלו לגמרי
+    let usersFailed = 0;
 
     for (const user of users) {
       const subscriptions = getUserSubscriptions(user);
@@ -245,12 +245,10 @@ async function sendNotificationToUsers(userIds, title, body, data = {}, imageUrl
         }
       }
       
-      // ✅ אם לפחות מכשיר אחד קיבל - המשתמש הגיע
       if (userSent > 0) {
         usersReached++;
         console.log(`  ✅ ${user.name}: ${userSent} device(s)`);
       } else if (userFailedCount > 0) {
-        // ✅ אם כל המכשירים נכשלו - המשתמש נכשל לגמרי
         usersFailed++;
         console.log(`  ❌ ${user.name}: all ${userFailedCount} device(s) failed`);
       }
@@ -266,7 +264,7 @@ async function sendNotificationToUsers(userIds, title, body, data = {}, imageUrl
       sent: totalSent,
       failed: totalFailed,
       users: usersReached,
-      usersFailed: usersFailed, // ✅ חדש!
+      usersFailed: usersFailed,
       total: users.length
     };
   } catch (error) {
@@ -386,7 +384,7 @@ async function checkRoute(req, res) {
 
 console.log('✅ [PUSH SERVICE] Module loaded');
 console.log('✅ [PUSH SERVICE] Backward compatible mode');
-console.log('🖼️ [PUSH SERVICE] Image support enabled'); // ✅ הוספה
+console.log('🖼️ [PUSH SERVICE] Image support enabled');
 
 module.exports = {
   vapidKeys,
