@@ -1522,7 +1522,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                       if (file) {
                         // בדיקת גודל (5MB)
                         if (file.size > 10 * 1024 * 1024) {
-                          alert('התמונה גדולה מדי! מקסימום 5MB');
+                          alert('התמונה גדולה מדי! מקסימום 10MB');
                           e.target.value = '';
                           return;
                         }
