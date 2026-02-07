@@ -96,7 +96,7 @@ router.patch('/:id', async (req, res) => {
 // Activate week with optional notifications
 router.patch('/:id/activate', async (req, res) => {
   try {
-    const { lockTime, sendNotifications } = req.body;
+    const { lockTime, sendNotifications, notificationTitle, notificationBody, imageUrl } = req.body;
     
     if (!lockTime) {
       return res.status(400).json({ message: 'Lock time is required' });
@@ -122,7 +122,11 @@ router.patch('/:id/activate', async (req, res) => {
     let notificationResult = null;
     if (sendNotifications) {
       console.log('📢 Sending activation notifications...');
-      notificationResult = await sendWeekActivationNotification(week);
+      notificationResult = await sendWeekActivationNotification(week, {
+        customTitle: notificationTitle,
+        customBody: notificationBody,
+        imageUrl: imageUrl
+      });
       console.log('📢 Notification result:', notificationResult);
     }
     

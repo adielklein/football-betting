@@ -279,7 +279,7 @@ async function sendNotificationToUsers(userIds, title, body, data = {}, imageUrl
 /**
  * 🔧 שליחת התראת הפעלת שבוע - תומך בשני המבנים
  */
-async function sendWeekActivationNotification(week) {
+async function sendWeekActivationNotification(week, options = {}) {
   try {
     console.log('🏆 [PUSH] Week activation notification');
     
@@ -295,12 +295,22 @@ async function sendWeekActivationNotification(week) {
       return { success: true, sent: 0, users: 0 };
     }
 
-    const lockDate = new Date(week.lockTime);
-    const formattedLockTime = lockDate.toLocaleString('he-IL');
+    const { customTitle, customBody, imageUrl } = options;
+    
+    // שימוש בהודעה מותאמת אם קיימת, אחרת ברירת מחדל
+    const title = customTitle || '🏆 שבוע חדש הופעל!';
+    let body;
+    if (customBody) {
+      body = customBody;
+    } else {
+      const lockDate = new Date(week.lockTime);
+      const formattedLockTime = lockDate.toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' });
+      body = `${week.name} נפתח להימורים!\n⏰ נעילה: ${formattedLockTime}`;
+    }
 
     const payload = {
-      title: '🏆 שבוע חדש הופעל!',
-      body: `${week.name} נפתח להימורים!\n⏰ נעילה: ${formattedLockTime}`,
+      title,
+      body,
       icon: '/logo192.png',
       badge: '/logo192.png',
       vibrate: [200, 100, 200, 100, 200],
@@ -311,6 +321,13 @@ async function sendWeekActivationNotification(week) {
         url: '/betting'
       }
     };
+
+    // הוספת תמונה אם קיימת
+    if (imageUrl && imageUrl.trim()) {
+      payload.image = imageUrl;
+      payload.data.imageUrl = imageUrl;
+      console.log('🖼️ [PUSH] Image added to week activation notification');
+    }
 
     let totalSent = 0;
     let usersReached = 0;

@@ -16,6 +16,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
   const [showActivationDialog, setShowActivationDialog] = useState(false);
   const [sendPushNotifications, setSendPushNotifications] = useState(true);
   const [notificationImage, setNotificationImage] = useState(null);
+  const [customNotificationTitle, setCustomNotificationTitle] = useState("");
+  const [customNotificationBody, setCustomNotificationBody] = useState("");
 
   // State עבור ה-dropdown המקונן
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -332,6 +334,15 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
       return;
     }
 
+    // חשב הודעה ברירת מחדל
+    const earliest = findEarliestMatch(matches);
+    if (earliest) {
+      const [d, m] = earliest.date.split('.');
+      const [h, min] = earliest.time.split(':');
+      const ft = `${d.padStart(2, '0')}/${m.padStart(2, '0')} ${h.padStart(2, '0')}:${min.padStart(2, '0')}`;
+      setCustomNotificationTitle(`⚽ ${selectedWeek.name} פתוח להימורים!`);
+      setCustomNotificationBody(`🔒 נעילה: ${ft}`);
+    }
     setShowActivationDialog(true);
   };
 
@@ -371,13 +382,10 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
       }
 
       // המרה ל-UTC - toISOString() ממיר אוטומטית לזמן UTC
-      const lockTimeISO = lockTime.toISOString();
+      const lockTimeISO = new Date(lockTime.getTime() - 2 * 60 * 60 * 1000).toISOString();
 
-      // יצירת תוכן ההודעה לפני השליחה לשרת
-      const [day, month] = earliestMatch.date.split('.');
-      const [hour, minute] = earliestMatch.time.split(':');
-      const formattedTime = `${day.padStart(2, '0')}/${month.padStart(2, '0')} ${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
-      const notificationMessage = `⚽ ${selectedWeek.name} פתוח להימורים!\n🔒 נעילה: ${formattedTime}`;
+      // שימוש בהודעה המותאמת מהדיאלוג
+      const notificationMessage = `${customNotificationTitle}\n${customNotificationBody}`;
 
       console.log('🔒 זמן נעילה (ישראל):', lockTime.toLocaleString('he-IL'));
       console.log('📤 נשלח לשרת (UTC):', lockTimeISO);
@@ -392,7 +400,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
         body: JSON.stringify({ 
           lockTime: lockTimeISO,
           sendNotifications: sendPushNotifications,
-          notificationMessage: notificationMessage,
+          notificationTitle: customNotificationTitle,
+          notificationBody: customNotificationBody,
           imageUrl: notificationImage || undefined
         })
       });
@@ -435,6 +444,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
       setShowActivationDialog(false);
       setSendPushNotifications(true);
       setNotificationImage(null);
+      setCustomNotificationTitle("");
+      setCustomNotificationBody("");
     } catch (error) {
       console.error('Error activating week:', error);
       alert('שגיאה בהפעלת השבוע: ' + error.message);
@@ -1571,37 +1582,53 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                 </div>
               )}
               
-              {sendPushNotifications && selectedWeek && matches.length > 0 && (() => {
-                const earliestMatch = findEarliestMatch(matches);
-                if (!earliestMatch) return null;
-                
-                // פורמט יפה של התצוגה המקדימה
-                const [day, month] = earliestMatch.date.split('.');
-                const [hour, minute] = earliestMatch.time.split(':');
-                const lockTimeStr = `${day.padStart(2, '0')}/${month.padStart(2, '0')} ${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
-                
-                return (
+              {sendPushNotifications && (
+                <div style={{
+                  marginTop: '1rem',
+                  padding: '0.75rem',
+                  backgroundColor: '#fff',
+                  border: '1px solid #dee2e6',
+                  borderRadius: '6px'
+                }}>
+                  <div style={{ fontSize: '12px', color: '#666', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                    ✏️ עריכת הודעה:
+                  </div>
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    <label style={{ fontSize: '12px', color: '#666' }}>כותרת:</label>
+                    <input
+                      type="text"
+                      value={customNotificationTitle}
+                      onChange={(e) => setCustomNotificationTitle(e.target.value)}
+                      className="input"
+                      style={{ width: '100%', fontSize: '14px' }}
+                      placeholder="כותרת ההודעה"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#666' }}>תוכן:</label>
+                    <textarea
+                      value={customNotificationBody}
+                      onChange={(e) => setCustomNotificationBody(e.target.value)}
+                      className="input"
+                      style={{ width: '100%', fontSize: '14px', minHeight: '60px', resize: 'vertical' }}
+                      placeholder="תוכן ההודעה"
+                    />
+                  </div>
                   <div style={{
-                    marginTop: '1rem',
-                    padding: '0.75rem',
-                    backgroundColor: '#fff',
-                    border: '1px solid #dee2e6',
-                    borderRadius: '6px'
+                    marginTop: '0.5rem',
+                    padding: '0.5rem',
+                    backgroundColor: '#f8f9fa',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    color: '#666'
                   }}>
-                    <div style={{ fontSize: '12px', color: '#666', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                      💬 תוכן ההודעה שתישלח:
-                    </div>
-                    <div style={{
-                      fontSize: '14px',
-                      lineHeight: '1.5',
-                      whiteSpace: 'pre-line',
-                      color: '#212529'
-                    }}>
-                      ⚽ {selectedWeek.name} פתוח להימורים!{'\n'}🔒 נעילה: {lockTimeStr}
+                    💡 תצוגה מקדימה:{' '}
+                    <div style={{ whiteSpace: 'pre-line', color: '#212529', marginTop: '0.25rem', fontWeight: '500' }}>
+                      {customNotificationTitle}{'\n'}{customNotificationBody}
                     </div>
                   </div>
-                );
-              })()}
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
@@ -1610,6 +1637,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                   setShowActivationDialog(false);
                   setSendPushNotifications(true);
                   setNotificationImage(null);
+                  setCustomNotificationTitle("");
+                  setCustomNotificationBody("");
                 }}
                 className="btn"
                 style={{
