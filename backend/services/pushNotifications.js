@@ -1,4 +1,5 @@
 const webpush = require('web-push');
+const fetch = require('node-fetch');
 const User = require('../models/User');
 
 console.log('🔔 [PUSH SERVICE] ========================================');
@@ -35,18 +36,54 @@ console.log('🔔 [PUSH SERVICE] ========================================');
 
 // 🔧 פונקציית עזר - מחזירה את כל ה-subscriptions (תומך בשני המבנים)
 function getUserSubscriptions(user) {
-  // אם יש subscriptions (חדש) - החזר אותו
   if (user.pushSettings?.subscriptions && Array.isArray(user.pushSettings.subscriptions)) {
     return user.pushSettings.subscriptions;
   }
   
-  // אם יש subscription (ישן) - החזר אותו כמערך
   if (user.pushSettings?.subscription) {
     return [user.pushSettings.subscription];
   }
   
-  // אין כלום
   return [];
+}
+
+/**
+ * ✅ NEW: העלאת תמונה ל-ImgBB
+ */
+async function uploadImageToImgBB(base64Image) {
+  try {
+    console.log('📤 [UPLOAD] Uploading image to ImgBB...');
+    
+    // הסר data:image prefix אם קיים
+    const base64Data = base64Image.includes(',') 
+      ? base64Image.split(',')[1] 
+      : base64Image;
+    
+    const formData = new URLSearchParams();
+    formData.append('image', base64Data);
+    
+    const response = await fetch('https://api.imgbb.com/1/upload?key=f706bcf744e5ee62e389284b874c696a', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData.toString()
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ [UPLOAD] ImgBB error:', errorText);
+      throw new Error('Failed to upload image to ImgBB');
+    }
+    
+    const data = await response.json();
+    console.log('✅ [UPLOAD] Image uploaded successfully:', data.data.url);
+    
+    return data.data.url;
+  } catch (error) {
+    console.error('❌ [UPLOAD] Upload failed:', error);
+    throw error;
+  }
 }
 
 /**
@@ -80,11 +117,21 @@ async function sendNotificationToAll(title, body, data = {}, imageUrl = null) {
     console.log('📢 [PUSH] sendNotificationToAll');
     console.log('📢 [PUSH] Title:', title);
     if (imageUrl) {
-      console.log('🖼️ [PUSH] With image:', imageUrl.substring(0, 50) + '...');
+      console.log('🖼️ [PUSH] With image');
     }
     console.log('📢 [PUSH] ========================================');
     
-    // 🔧 תמיכה בשני המבנים
+    // ✅ אם התמונה היא Base64 - העלה ל-ImgBB!
+    let finalImageUrl = imageUrl;
+    if (imageUrl && imageUrl.startsWith('data:image')) {
+      try {
+        finalImageUrl = await uploadImageToImgBB(imageUrl);
+      } catch (error) {
+        console.error('❌ Failed to upload image, continuing without it');
+        finalImageUrl = null;
+      }
+    }
+    
     const users = await User.find({
       'pushSettings.enabled': true,
       $or: [
@@ -114,13 +161,13 @@ async function sendNotificationToAll(title, body, data = {}, imageUrl = null) {
       tag: `broadcast-${Date.now()}`,
       data: {
         ...(data || {}),
-        imageUrl: imageUrl || undefined
+        imageUrl: finalImageUrl || undefined
       }
     };
 
-    // ✅ הוסף תמונה ל-payload (זה התיקון!)
-    if (imageUrl && imageUrl.trim()) {
-      payload.image = imageUrl;
+    // ✅ הוסף תמונה ל-payload
+    if (finalImageUrl && finalImageUrl.trim()) {
+      payload.image = finalImageUrl;
       console.log('🖼️ [PUSH] Image added to payload');
     }
 
@@ -190,9 +237,20 @@ async function sendNotificationToUsers(userIds, title, body, data = {}, imageUrl
     console.log('📢 [PUSH] sendNotificationToUsers');
     console.log('📢 [PUSH] Users:', userIds);
     if (imageUrl) {
-      console.log('🖼️ [PUSH] With image:', imageUrl.substring(0, 50) + '...');
+      console.log('🖼️ [PUSH] With image');
     }
     console.log('📢 [PUSH] ========================================');
+    
+    // ✅ אם התמונה היא Base64 - העלה ל-ImgBB!
+    let finalImageUrl = imageUrl;
+    if (imageUrl && imageUrl.startsWith('data:image')) {
+      try {
+        finalImageUrl = await uploadImageToImgBB(imageUrl);
+      } catch (error) {
+        console.error('❌ Failed to upload image, continuing without it');
+        finalImageUrl = null;
+      }
+    }
     
     const users = await User.find({
       _id: { $in: userIds },
@@ -214,13 +272,13 @@ async function sendNotificationToUsers(userIds, title, body, data = {}, imageUrl
       tag: `group-${Date.now()}`,
       data: {
         ...(data || {}),
-        imageUrl: imageUrl || undefined
+        imageUrl: finalImageUrl || undefined
       }
     };
 
-    // ✅ הוסף תמונה ל-payload (זה התיקון!)
-    if (imageUrl && imageUrl.trim()) {
-      payload.image = imageUrl;
+    // ✅ הוסף תמונה ל-payload
+    if (finalImageUrl && finalImageUrl.trim()) {
+      payload.image = finalImageUrl;
       console.log('🖼️ [PUSH] Image added to payload');
     }
 
@@ -277,7 +335,7 @@ async function sendNotificationToUsers(userIds, title, body, data = {}, imageUrl
 }
 
 /**
- * 🔧 שליחת התראת הפעלת שבוע - תומך בשני המבנים
+ * 🔧 שליחת התראת הפעלת שבוע - תומך בשני המבנים + תמונות ✅
  */
 async function sendWeekActivationNotification(week, options = {}) {
   try {
@@ -296,6 +354,17 @@ async function sendWeekActivationNotification(week, options = {}) {
     }
 
     const { customTitle, customBody, imageUrl } = options;
+    
+    // ✅ אם התמונה היא Base64 - העלה ל-ImgBB!
+    let finalImageUrl = imageUrl;
+    if (imageUrl && imageUrl.startsWith('data:image')) {
+      try {
+        finalImageUrl = await uploadImageToImgBB(imageUrl);
+      } catch (error) {
+        console.error('❌ Failed to upload image, continuing without it');
+        finalImageUrl = null;
+      }
+    }
     
     // שימוש בהודעה מותאמת אם קיימת, אחרת ברירת מחדל
     const title = customTitle || '🏆 שבוע חדש הופעל!';
@@ -323,9 +392,9 @@ async function sendWeekActivationNotification(week, options = {}) {
     };
 
     // הוספת תמונה אם קיימת
-    if (imageUrl && imageUrl.trim()) {
-      payload.image = imageUrl;
-      payload.data.imageUrl = imageUrl;
+    if (finalImageUrl && finalImageUrl.trim()) {
+      payload.image = finalImageUrl;
+      payload.data.imageUrl = finalImageUrl;
       console.log('🖼️ [PUSH] Image added to week activation notification');
     }
 
@@ -401,7 +470,7 @@ async function checkRoute(req, res) {
 
 console.log('✅ [PUSH SERVICE] Module loaded');
 console.log('✅ [PUSH SERVICE] Backward compatible mode');
-console.log('🖼️ [PUSH SERVICE] Image support enabled');
+console.log('🖼️ [PUSH SERVICE] Image support enabled with ImgBB upload');
 
 module.exports = {
   vapidKeys,
@@ -409,5 +478,6 @@ module.exports = {
   sendNotificationToAll,
   sendNotificationToUsers,
   sendWeekActivationNotification,
+  uploadImageToImgBB,
   checkRoute
 };
