@@ -98,6 +98,14 @@ router.patch('/:id/activate', async (req, res) => {
   try {
     const { lockTime, sendNotifications, notificationTitle, notificationBody, imageUrl } = req.body;
     
+    console.log('📥 Received activation request with:', {
+      lockTime,
+      sendNotifications,
+      notificationTitle: notificationTitle ? `"${notificationTitle}"` : 'undefined',
+      notificationBody: notificationBody ? `"${notificationBody}"` : 'undefined',
+      imageUrl: imageUrl ? `Base64 (${imageUrl.length} chars)` : 'undefined'
+    });
+    
     if (!lockTime) {
       return res.status(400).json({ message: 'Lock time is required' });
     }
@@ -122,12 +130,21 @@ router.patch('/:id/activate', async (req, res) => {
     let notificationResult = null;
     if (sendNotifications) {
       console.log('📢 Sending activation notifications...');
+      console.log('📢 Parameters:', {
+        customTitle: notificationTitle,
+        customBody: notificationBody,
+        imageUrl: imageUrl ? 'present' : 'none'
+      });
+      
       notificationResult = await sendWeekActivationNotification(week, {
         customTitle: notificationTitle,
         customBody: notificationBody,
         imageUrl: imageUrl
       });
+      
       console.log('📢 Notification result:', notificationResult);
+    } else {
+      console.log('⏭️ Skipping notifications (sendNotifications = false)');
     }
     
     res.json({ 
