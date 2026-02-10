@@ -18,6 +18,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
   const [notificationImage, setNotificationImage] = useState(null);
   const [customNotificationTitle, setCustomNotificationTitle] = useState("");
   const [customNotificationBody, setCustomNotificationBody] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false); // ✅ NEW!
 
   // State עבור ה-dropdown המקונן
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -346,6 +347,39 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
     setShowActivationDialog(true);
   };
 
+  // ✅ NEW FUNCTION: העלאת תמונה ל-ImgBB
+  const uploadToImgBB = async (base64Image) => {
+    try {
+      console.log('📤 [ImgBB] Uploading image...');
+      setUploadingImage(true);
+      
+      // הסר את הפרפיקס data:image/...;base64,
+      const base64Data = base64Image.split(',')[1];
+      
+      const formData = new FormData();
+      formData.append('image', base64Data);
+      
+      const response = await fetch('https://api.imgbb.com/1/upload?key=f706bcf744e5ee62e389284b874c696a', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload image to ImgBB');
+      }
+      
+      const data = await response.json();
+      console.log('✅ [ImgBB] Image uploaded successfully:', data.data.url);
+      
+      return data.data.url;
+    } catch (error) {
+      console.error('❌ [ImgBB] Upload failed:', error);
+      throw error;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const confirmActivateWeek = async () => {
     try {
       const earliestMatch = findEarliestMatch(matches);
@@ -381,27 +415,38 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
         lockTime = new Date(year, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
       }
 
-      // ✅ תיקון 1: המרה נכונה ל-UTC (ללא הפחתת שעתיים)
       const lockTimeISO = lockTime.toISOString();
+
+      // ✅ העלאת תמונה ל-ImgBB אם קיימת
+      let imageUrl = null;
+      if (notificationImage) {
+        try {
+          console.log('🖼️ Uploading notification image to ImgBB...');
+          imageUrl = await uploadToImgBB(notificationImage);
+          console.log('✅ Image URL ready:', imageUrl);
+        } catch (error) {
+          console.error('❌ Failed to upload image:', error);
+          if (!window.confirm('שגיאה בהעלאת התמונה. להמשיך ללא תמונה?')) {
+            return;
+          }
+        }
+      }
 
       console.log('🔒 זמן נעילה (ישראל):', lockTime.toLocaleString('he-IL'));
       console.log('📤 נשלח לשרת (UTC):', lockTimeISO);
       console.log('💬 כותרת:', customNotificationTitle);
       console.log('💬 תוכן:', customNotificationBody);
-      if (notificationImage) {
-        console.log('🖼️ תמונה: Base64 (' + notificationImage.length + ' chars)');
-      }
+      console.log('🖼️ תמונה:', imageUrl || 'ללא תמונה');
 
-      // ✅ תיקון 2: שליחת הפרמטרים הנכונים
       const response = await fetch(`${API_URL}/weeks/${selectedWeek._id}/activate`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           lockTime: lockTimeISO,
           sendNotifications: sendPushNotifications,
-          notificationTitle: customNotificationTitle,   // ✅ שם נכון!
-          notificationBody: customNotificationBody,     // ✅ שם נכון!
-          imageUrl: notificationImage || undefined
+          notificationTitle: customNotificationTitle,
+          notificationBody: customNotificationBody,
+          imageUrl: imageUrl || undefined  // ✅ שולח URL במקום Base64!
         })
       });
 
@@ -418,13 +463,15 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
         const notificationMessage = `${customNotificationTitle}\n${customNotificationBody}`;
         successMessage += `\n\n💬 תוכן ההודעה:\n"${notificationMessage}"`;
         
-        if (notificationImage) {
+        if (imageUrl) {
           successMessage += `\n🖼️ עם תמונה מצורפת`;
         }
         
         if (result.notificationResult) {
           successMessage += `\n\n📢 התראות נשלחו ל-${result.notificationResult.sent} מכשירים`;
-          successMessage += ` (${result.notificationResult.users} משתמשים)`;
+          if (result.notificationResult.users) {
+            successMessage += ` (${result.notificationResult.users} משתמשים)`;
+          }
           if (result.notificationResult.failed > 0) {
             successMessage += `\n⚠️ ${result.notificationResult.failed} מכשירים נכשלו`;
           }
@@ -1489,6 +1536,21 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
               השבוע ינעל אוטומטית בזמן המשחק הראשון.
             </p>
 
+            {/* ✅ אינדיקטור העלאה */}
+            {uploadingImage && (
+              <div style={{
+                padding: '1rem',
+                backgroundColor: '#fff3cd',
+                borderRadius: '6px',
+                marginBottom: '1rem',
+                textAlign: 'center',
+                fontWeight: 'bold',
+                color: '#856404'
+              }}>
+                ⏳ מעלה תמונה ל-ImgBB...
+              </div>
+            )}
+
             <div style={{
               backgroundColor: '#f8f9fa',
               padding: '1rem',
@@ -1511,6 +1573,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                     height: '20px',
                     cursor: 'pointer'
                   }}
+                  disabled={uploadingImage}
                 />
                 <span style={{ flex: 1 }}>
                   <strong>📢 שלח התראות Push לכל המשתמשים</strong>
@@ -1544,9 +1607,10 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                     }}
                     className="input"
                     style={{ width: '100%', padding: '0.5rem' }}
+                    disabled={uploadingImage}
                   />
                   <div style={{ fontSize: '11px', color: '#666', marginTop: '0.25rem' }}>
-                    מקסימום 10MB • JPG, PNG, GIF
+                    מקסימום 10MB • JPG, PNG, GIF • יועלה אוטומטית ל-ImgBB
                   </div>
                   {notificationImage && (
                     <div style={{ marginTop: '0.5rem' }}>
@@ -1573,6 +1637,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                           cursor: 'pointer',
                           fontSize: '12px'
                         }}
+                        disabled={uploadingImage}
                       >
                         🗑️ הסר תמונה
                       </button>
@@ -1601,6 +1666,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                       className="input"
                       style={{ width: '100%', fontSize: '14px' }}
                       placeholder="כותרת ההודעה"
+                      disabled={uploadingImage}
                     />
                   </div>
                   <div>
@@ -1611,6 +1677,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                       className="input"
                       style={{ width: '100%', fontSize: '14px', minHeight: '60px', resize: 'vertical' }}
                       placeholder="תוכן ההודעה"
+                      disabled={uploadingImage}
                     />
                   </div>
                   <div style={{
@@ -1645,6 +1712,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                   color: 'white',
                   padding: '0.5rem 1rem'
                 }}
+                disabled={uploadingImage}
               >
                 ❌ ביטול
               </button>
@@ -1655,8 +1723,9 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                   padding: '0.5rem 1.5rem',
                   fontWeight: 'bold'
                 }}
+                disabled={uploadingImage}
               >
-                ✅ הפעל שבוע
+                {uploadingImage ? '⏳ מעלה תמונה...' : '✅ הפעל שבוע'}
               </button>
             </div>
           </div>
