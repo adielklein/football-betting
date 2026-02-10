@@ -381,27 +381,26 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
         lockTime = new Date(year, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
       }
 
-      // המרה ל-UTC - toISOString() ממיר אוטומטית לזמן UTC
-      const lockTimeISO = new Date(lockTime.getTime() - 2 * 60 * 60 * 1000).toISOString();
-
-      // שימוש בהודעה המותאמת מהדיאלוג
-      const notificationMessage = `${customNotificationTitle}\n${customNotificationBody}`;
+      // ✅ תיקון 1: המרה נכונה ל-UTC (ללא הפחתת שעתיים)
+      const lockTimeISO = lockTime.toISOString();
 
       console.log('🔒 זמן נעילה (ישראל):', lockTime.toLocaleString('he-IL'));
       console.log('📤 נשלח לשרת (UTC):', lockTimeISO);
-      console.log('💬 תוכן ההודעה:', notificationMessage);
+      console.log('💬 כותרת:', customNotificationTitle);
+      console.log('💬 תוכן:', customNotificationBody);
       if (notificationImage) {
         console.log('🖼️ תמונה: Base64 (' + notificationImage.length + ' chars)');
       }
 
+      // ✅ תיקון 2: שליחת הפרמטרים הנכונים
       const response = await fetch(`${API_URL}/weeks/${selectedWeek._id}/activate`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           lockTime: lockTimeISO,
           sendNotifications: sendPushNotifications,
-          notificationTitle: customNotificationTitle,
-          notificationBody: customNotificationBody,
+          notificationTitle: customNotificationTitle,   // ✅ שם נכון!
+          notificationBody: customNotificationBody,     // ✅ שם נכון!
           imageUrl: notificationImage || undefined
         })
       });
@@ -416,6 +415,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
       let successMessage = 'השבוע הופעל בהצלחה! הוא ינעל אוטומטית בזמן המשחק הראשון.';
       
       if (sendPushNotifications) {
+        const notificationMessage = `${customNotificationTitle}\n${customNotificationBody}`;
         successMessage += `\n\n💬 תוכן ההודעה:\n"${notificationMessage}"`;
         
         if (notificationImage) {
@@ -423,9 +423,10 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
         }
         
         if (result.notificationResult) {
-          successMessage += `\n\n📢 התראות נשלחו ל-${result.notificationResult.sent} משתמשים`;
+          successMessage += `\n\n📢 התראות נשלחו ל-${result.notificationResult.sent} מכשירים`;
+          successMessage += ` (${result.notificationResult.users} משתמשים)`;
           if (result.notificationResult.failed > 0) {
-            successMessage += `\n⚠️ ${result.notificationResult.failed} התראות נכשלו`;
+            successMessage += `\n⚠️ ${result.notificationResult.failed} מכשירים נכשלו`;
           }
         } else {
           successMessage += '\n\n⚠️ לא נשלחו התראות (אין משתמשים מנויים)';
@@ -1531,13 +1532,11 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                     onChange={async (e) => {
                       const file = e.target.files[0];
                       if (file) {
-                        // בדיקת גודל (5MB)
                         if (file.size > 10 * 1024 * 1024) {
                           alert('התמונה גדולה מדי! מקסימום 10MB');
                           e.target.value = '';
                           return;
                         }
-                        // המרה ל-Base64
                         const reader = new FileReader();
                         reader.onloadend = () => setNotificationImage(reader.result);
                         reader.readAsDataURL(file);
@@ -1547,7 +1546,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                     style={{ width: '100%', padding: '0.5rem' }}
                   />
                   <div style={{ fontSize: '11px', color: '#666', marginTop: '0.25rem' }}>
-                    מקסימום 5MB • JPG, PNG, GIF
+                    מקסימום 10MB • JPG, PNG, GIF
                   </div>
                   {notificationImage && (
                     <div style={{ marginTop: '0.5rem' }}>
