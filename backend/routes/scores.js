@@ -31,7 +31,7 @@ router.post('/calculate/:weekId', async (req, res) => {
         const bet = await Bet.findOne({ userId: user._id, matchId: match._id });
         
         if (bet) {
-          const points = calculateMatchPoints(bet.prediction, match.result);
+          const points = calculateMatchPoints(bet.prediction, match.result, match.odds);
           
           // Update bet points
           await Bet.findByIdAndUpdate(bet._id, { points });
@@ -123,27 +123,58 @@ router.get('/detailed', async (req, res) => {
   }
 });
 
-// Helper function to calculate points
-function calculateMatchPoints(prediction, result) {
+// 🆕 Helper function to calculate points - עם תמיכה ביחסים
+function calculateMatchPoints(prediction, result, odds) {
   const predTeam1 = prediction.team1Goals;
   const predTeam2 = prediction.team2Goals;
   const resultTeam1 = result.team1Goals;
   const resultTeam2 = result.team2Goals;
   
-  // Exact result = 3 points
-  if (predTeam1 === resultTeam1 && predTeam2 === resultTeam2) {
-    return 3;
-  }
-  
-  // Correct outcome (winner/draw) = 1 point
+  // חשב את הכיוון (outcome) של הניחוש והתוצאה
   const predOutcome = predTeam1 > predTeam2 ? 'home' : predTeam1 < predTeam2 ? 'away' : 'draw';
   const resultOutcome = resultTeam1 > resultTeam2 ? 'home' : resultTeam1 < resultTeam2 ? 'away' : 'draw';
   
-  if (predOutcome === resultOutcome) {
-    return 1;
-  }
+  // בדוק אם יש יחסים מוגדרים למשחק
+  const hasOdds = odds && (odds.homeWin || odds.draw || odds.awayWin);
   
-  return 0;
+  if (hasOdds) {
+    // === מצב יחסים ===
+    
+    // מצא את היחס הרלוונטי לתוצאה האמיתית
+    let relevantOdd = 1;
+    if (resultOutcome === 'home' && odds.homeWin) relevantOdd = odds.homeWin;
+    else if (resultOutcome === 'draw' && odds.draw) relevantOdd = odds.draw;
+    else if (resultOutcome === 'away' && odds.awayWin) relevantOdd = odds.awayWin;
+    
+    // צלף בדיוק = כפול היחס
+    if (predTeam1 === resultTeam1 && predTeam2 === resultTeam2) {
+      return Math.round(relevantOdd * 2 * 10) / 10; // עיגול לעשירית
+    }
+    
+    // צדק בכיוון = היחס
+    if (predOutcome === resultOutcome) {
+      return Math.round(relevantOdd * 10) / 10; // עיגול לעשירית
+    }
+    
+    // טעה = 0
+    return 0;
+    
+  } else {
+    // === מצב קלאסי (ללא יחסים) ===
+    
+    // תוצאה מדויקת = 3 נקודות
+    if (predTeam1 === resultTeam1 && predTeam2 === resultTeam2) {
+      return 3;
+    }
+    
+    // כיוון נכון = 1 נקודה
+    if (predOutcome === resultOutcome) {
+      return 1;
+    }
+    
+    // טעות = 0
+    return 0;
+  }
 }
 
 module.exports = router;

@@ -31,7 +31,7 @@ router.get('/week/:weekId', async (req, res) => {
 // Create new match
 router.post('/', async (req, res) => {
   try {
-    const { weekId, leagueId, league, team1, team2, date, time } = req.body;
+    const { weekId, leagueId, league, team1, team2, date, time, odds } = req.body;
     
     // בדיקת שדות חובה
     if (!weekId || !team1 || !team2 || !date || !time) {
@@ -80,7 +80,7 @@ router.post('/', async (req, res) => {
       parseInt(minute)
     );
     
-    const match = new Match({
+    const matchData = {
       weekId,
       leagueId: validLeagueId,
       league: leagueExists.key,
@@ -89,7 +89,22 @@ router.post('/', async (req, res) => {
       date,
       time,
       fullDate: matchFullDate
-    });
+    };
+
+    // 🆕 הוסף יחסים אם סופקו
+    if (odds) {
+      const oddsData = {};
+      if (odds.homeWin && parseFloat(odds.homeWin) >= 1) oddsData.homeWin = parseFloat(odds.homeWin);
+      if (odds.draw && parseFloat(odds.draw) >= 1) oddsData.draw = parseFloat(odds.draw);
+      if (odds.awayWin && parseFloat(odds.awayWin) >= 1) oddsData.awayWin = parseFloat(odds.awayWin);
+      
+      // שמור יחסים רק אם יש לפחות ערך אחד
+      if (Object.keys(oddsData).length > 0) {
+        matchData.odds = oddsData;
+      }
+    }
+    
+    const match = new Match(matchData);
     
     await match.save();
     
@@ -108,7 +123,7 @@ router.post('/', async (req, res) => {
 // Update match details
 router.patch('/:id', async (req, res) => {
   try {
-    const { leagueId, team1, team2, date, time } = req.body;
+    const { leagueId, team1, team2, date, time, odds } = req.body;
     
     // קבל את המשחק הנוכחי
     const currentMatch = await Match.findById(req.params.id);
@@ -136,6 +151,24 @@ router.patch('/:id', async (req, res) => {
     if (date !== undefined) updateData.date = date;
     if (time !== undefined) updateData.time = time;
     
+    // 🆕 עדכון יחסים
+    let unsetOdds = false;
+    if (odds !== undefined) {
+      if (odds === null || ((!odds.homeWin || odds.homeWin === '') && (!odds.draw || odds.draw === '') && (!odds.awayWin || odds.awayWin === ''))) {
+        // סמן למחיקה
+        unsetOdds = true;
+      } else {
+        const oddsData = {};
+        if (odds.homeWin && parseFloat(odds.homeWin) >= 1) oddsData.homeWin = parseFloat(odds.homeWin);
+        if (odds.draw && parseFloat(odds.draw) >= 1) oddsData.draw = parseFloat(odds.draw);
+        if (odds.awayWin && parseFloat(odds.awayWin) >= 1) oddsData.awayWin = parseFloat(odds.awayWin);
+        
+        if (Object.keys(oddsData).length > 0) {
+          updateData.odds = oddsData;
+        }
+      }
+    }
+    
     // 🆕 אם עדכנו תאריך או שעה - חשב מחדש את fullDate
     if (date !== undefined || time !== undefined) {
       const finalDate = date || currentMatch.date;
@@ -154,10 +187,16 @@ router.patch('/:id', async (req, res) => {
       );
     }
     
+    // בצע עדכון - הפרד בין $set ו-$unset
+    const updateQuery = { $set: updateData };
+    if (unsetOdds) {
+      updateQuery.$unset = { odds: 1 };
+    }
+    
     // בצע עדכון
     const match = await Match.findByIdAndUpdate(
       req.params.id,
-      updateData,
+      updateQuery,
       { new: true, runValidators: true }
     ).populate('leagueId');
     

@@ -48,6 +48,13 @@ const matchSchema = new mongoose.Schema({
     team1Goals: { type: Number },
     team2Goals: { type: Number }
   },
+
+  // 🆕 יחסים (Odds) - אופציונלי
+  odds: {
+    homeWin: { type: Number, min: 1 },   // יחס לניצחון בית
+    draw: { type: Number, min: 1 },       // יחס לתיקו
+    awayWin: { type: Number, min: 1 }     // יחס לניצחון חוץ
+  },
   
   createdAt: { 
     type: Date, 

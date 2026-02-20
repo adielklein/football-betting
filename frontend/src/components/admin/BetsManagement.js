@@ -405,8 +405,16 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                                   borderRadius: '3px',
                                   fontSize: '10px',
                                   fontWeight: 'bold',
-                                  backgroundColor: bet.points === 3 ? '#d4edda' : bet.points === 1 ? '#cce5ff' : '#f8d7da',
-                                  color: bet.points === 3 ? '#155724' : bet.points === 1 ? '#0066cc' : '#721c24',
+                                  backgroundColor: (() => {
+                                    if (bet.points === 0) return '#f8d7da';
+                                    const isExact = bet.prediction.team1Goals === match.result.team1Goals && bet.prediction.team2Goals === match.result.team2Goals;
+                                    return isExact ? '#d4edda' : '#cce5ff';
+                                  })(),
+                                  color: (() => {
+                                    if (bet.points === 0) return '#721c24';
+                                    const isExact = bet.prediction.team1Goals === match.result.team1Goals && bet.prediction.team2Goals === match.result.team2Goals;
+                                    return isExact ? '#155724' : '#0066cc';
+                                  })(),
                                   cursor: 'pointer'
                                 }}
                                 onClick={() => {
@@ -422,7 +430,11 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                                 }}
                                 title="לחץ לפרטים בקונסול"
                               >
-                                {bet.points === 3 ? 'מדויק 3 נק' : bet.points === 1 ? 'תוצאה 1 נק' : 'שגוי 0 נק'}
+                                {(() => {
+                                  if (bet.points === 0) return 'שגוי 0 נק';
+                                  const isExact = bet.prediction.team1Goals === match.result.team1Goals && bet.prediction.team2Goals === match.result.team2Goals;
+                                  return isExact ? `מדויק ${bet.points} נק` : `כיוון ${bet.points} נק`;
+                                })()}
                               </span>
                             </div>
                           )}

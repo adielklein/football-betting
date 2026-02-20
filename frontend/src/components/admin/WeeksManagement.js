@@ -7,7 +7,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
   const [selectedWeek, setSelectedWeek] = useState(null);
   const [matches, setMatches] = useState([]);
   const [newWeek, setNewWeek] = useState({ name: '', month: '', season: '2025-26' });
-  const [newMatch, setNewMatch] = useState({ leagueId: '', team1: '', team2: '', date: '', time: '' });
+  const [newMatch, setNewMatch] = useState({ leagueId: '', team1: '', team2: '', date: '', time: '', oddsHome: '', oddsDraw: '', oddsAway: '' });
   const [editingMatch, setEditingMatch] = useState({});
   const [editingWeek, setEditingWeek] = useState(null);
   const [leagues, setLeagues] = useState([]);
@@ -532,7 +532,12 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
           team1: newMatch.team1,
           team2: newMatch.team2,
           date: newMatch.date,
-          time: newMatch.time
+          time: newMatch.time,
+          odds: (newMatch.oddsHome || newMatch.oddsDraw || newMatch.oddsAway) ? {
+            homeWin: newMatch.oddsHome || undefined,
+            draw: newMatch.oddsDraw || undefined,
+            awayWin: newMatch.oddsAway || undefined
+          } : undefined
         })
       });
 
@@ -546,7 +551,10 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
         team1: '', 
         team2: '', 
         date: '', 
-        time: '' 
+        time: '',
+        oddsHome: '',
+        oddsDraw: '',
+        oddsAway: ''
       });
       await loadWeekData(selectedWeek._id);
       alert('משחק נוסף בהצלחה!');
@@ -612,7 +620,12 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
           team1: editingMatchDetails.team1,
           team2: editingMatchDetails.team2,
           date: editingMatchDetails.date,
-          time: editingMatchDetails.time
+          time: editingMatchDetails.time,
+          odds: (editingMatchDetails.oddsHome || editingMatchDetails.oddsDraw || editingMatchDetails.oddsAway) ? {
+            homeWin: editingMatchDetails.oddsHome || undefined,
+            draw: editingMatchDetails.oddsDraw || undefined,
+            awayWin: editingMatchDetails.oddsAway || undefined
+          } : null
         })
       });
 
@@ -1190,6 +1203,45 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
               ➕ הוסף משחק
             </button>
           </div>
+          {/* 🆕 יחסים (אופציונלי) */}
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '13px', color: '#666', fontWeight: 'bold' }}>📊 יחסים (אופציונלי):</span>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <label style={{ fontSize: '12px', color: '#888' }}>1:</label>
+              <input
+                type="number"
+                step="0.1"
+                min="1"
+                placeholder="בית"
+                value={newMatch.oddsHome}
+                onChange={(e) => setNewMatch({ ...newMatch, oddsHome: e.target.value })}
+                className="input"
+                style={{ width: '70px', textAlign: 'center' }}
+              />
+              <label style={{ fontSize: '12px', color: '#888' }}>X:</label>
+              <input
+                type="number"
+                step="0.1"
+                min="1"
+                placeholder="תיקו"
+                value={newMatch.oddsDraw}
+                onChange={(e) => setNewMatch({ ...newMatch, oddsDraw: e.target.value })}
+                className="input"
+                style={{ width: '70px', textAlign: 'center' }}
+              />
+              <label style={{ fontSize: '12px', color: '#888' }}>2:</label>
+              <input
+                type="number"
+                step="0.1"
+                min="1"
+                placeholder="חוץ"
+                value={newMatch.oddsAway}
+                onChange={(e) => setNewMatch({ ...newMatch, oddsAway: e.target.value })}
+                className="input"
+                style={{ width: '70px', textAlign: 'center' }}
+              />
+            </div>
+          </div>
         </div>
       )}
 
@@ -1236,6 +1288,18 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                       <span style={{ fontSize: '14px', color: '#666' }}>
                         📅 {match.date} ⏰ {match.time}
                       </span>
+                      {match.odds && (match.odds.homeWin || match.odds.draw || match.odds.awayWin) && (
+                        <span style={{ 
+                          fontSize: '12px', 
+                          color: '#fff',
+                          backgroundColor: '#ff9800',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          fontWeight: 'bold'
+                        }}>
+                          📊 {match.odds.homeWin || '-'} / {match.odds.draw || '-'} / {match.odds.awayWin || '-'}
+                        </span>
+                      )}
                     </div>
                     
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -1248,7 +1312,10 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                               team1: match.team1,
                               team2: match.team2,
                               date: match.date,
-                              time: match.time
+                              time: match.time,
+                              oddsHome: match.odds?.homeWin || '',
+                              oddsDraw: match.odds?.draw || '',
+                              oddsAway: match.odds?.awayWin || ''
                             })}
                             className="btn"
                             style={{ 
@@ -1391,6 +1458,61 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                         </div>
                       </div>
                       
+                      {/* 🆕 יחסים בעריכה */}
+                      <div style={{ 
+                        display: 'flex', 
+                        gap: '0.5rem', 
+                        alignItems: 'center', 
+                        marginBottom: '1rem',
+                        padding: '0.5rem',
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '4px'
+                      }}>
+                        <span style={{ fontSize: '13px', color: '#666', fontWeight: 'bold', whiteSpace: 'nowrap' }}>📊 יחסים:</span>
+                        <label style={{ fontSize: '12px', color: '#888' }}>1:</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="1"
+                          placeholder="בית"
+                          value={editingMatchDetails.oddsHome}
+                          onChange={(e) => setEditingMatchDetails({
+                            ...editingMatchDetails,
+                            oddsHome: e.target.value
+                          })}
+                          className="input"
+                          style={{ width: '70px', textAlign: 'center' }}
+                        />
+                        <label style={{ fontSize: '12px', color: '#888' }}>X:</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="1"
+                          placeholder="תיקו"
+                          value={editingMatchDetails.oddsDraw}
+                          onChange={(e) => setEditingMatchDetails({
+                            ...editingMatchDetails,
+                            oddsDraw: e.target.value
+                          })}
+                          className="input"
+                          style={{ width: '70px', textAlign: 'center' }}
+                        />
+                        <label style={{ fontSize: '12px', color: '#888' }}>2:</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="1"
+                          placeholder="חוץ"
+                          value={editingMatchDetails.oddsAway}
+                          onChange={(e) => setEditingMatchDetails({
+                            ...editingMatchDetails,
+                            oddsAway: e.target.value
+                          })}
+                          className="input"
+                          style={{ width: '70px', textAlign: 'center' }}
+                        />
+                      </div>
+
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
                         <button
                           onClick={() => handleEditMatch(match._id)}
