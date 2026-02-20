@@ -218,6 +218,47 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                 </span>
               </div>
 
+              {/* 🆕 הצגת יחסים */}
+              {match.odds && (match.odds.homeWin || match.odds.draw || match.odds.awayWin) && (
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  gap: '0.5rem', 
+                  marginBottom: '0.75rem' 
+                }}>
+                  <span style={{
+                    padding: '3px 10px',
+                    backgroundColor: '#e3f2fd',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    color: '#1565c0',
+                    fontWeight: 'bold'
+                  }}>
+                    1: {match.odds.homeWin || '-'}
+                  </span>
+                  <span style={{
+                    padding: '3px 10px',
+                    backgroundColor: '#fff3e0',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    color: '#e65100',
+                    fontWeight: 'bold'
+                  }}>
+                    X: {match.odds.draw || '-'}
+                  </span>
+                  <span style={{
+                    padding: '3px 10px',
+                    backgroundColor: '#e8f5e9',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    color: '#2e7d32',
+                    fontWeight: 'bold'
+                  }}>
+                    2: {match.odds.awayWin || '-'}
+                  </span>
+                </div>
+              )}
+
               <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: '1fr auto 1fr auto', 

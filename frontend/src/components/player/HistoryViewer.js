@@ -385,13 +385,37 @@ function HistoryViewer({ weeks, user }) {
                   
                   let points = 0;
                   if (bet && hasResult) {
-                    if (bet.team1Goals === match.result.team1Goals && bet.team2Goals === match.result.team2Goals) {
-                      points = 3;
+                    // 🆕 נסה למצוא את הנקודות מהשרת דרך allBets
+                    const fullBet = historyData.allBets.find(b => 
+                      b.userId && b.userId._id === user.id && 
+                      b.matchId && (b.matchId._id === match._id || b.matchId === match._id)
+                    );
+                    
+                    if (fullBet && fullBet.points !== undefined && fullBet.points !== null) {
+                      points = fullBet.points;
                     } else {
-                      const betOutcome = bet.team1Goals > bet.team2Goals ? 'home' : bet.team1Goals < bet.team2Goals ? 'away' : 'draw';
+                      // fallback - חישוב מקומי עם תמיכה ביחסים
+                      const predOutcome = bet.team1Goals > bet.team2Goals ? 'home' : bet.team1Goals < bet.team2Goals ? 'away' : 'draw';
                       const resultOutcome = match.result.team1Goals > match.result.team2Goals ? 'home' : match.result.team1Goals < match.result.team2Goals ? 'away' : 'draw';
-                      if (betOutcome === resultOutcome) {
-                        points = 1;
+                      const hasOdds = match.odds && (match.odds.homeWin || match.odds.draw || match.odds.awayWin);
+                      
+                      if (hasOdds) {
+                        let relevantOdd = 1;
+                        if (resultOutcome === 'home' && match.odds.homeWin) relevantOdd = match.odds.homeWin;
+                        else if (resultOutcome === 'draw' && match.odds.draw) relevantOdd = match.odds.draw;
+                        else if (resultOutcome === 'away' && match.odds.awayWin) relevantOdd = match.odds.awayWin;
+                        
+                        if (bet.team1Goals === match.result.team1Goals && bet.team2Goals === match.result.team2Goals) {
+                          points = Math.round(relevantOdd * 2 * 10) / 10;
+                        } else if (predOutcome === resultOutcome) {
+                          points = Math.round(relevantOdd * 10) / 10;
+                        }
+                      } else {
+                        if (bet.team1Goals === match.result.team1Goals && bet.team2Goals === match.result.team2Goals) {
+                          points = 3;
+                        } else if (predOutcome === resultOutcome) {
+                          points = 1;
+                        }
                       }
                     }
                   }
@@ -421,6 +445,26 @@ function HistoryViewer({ weeks, user }) {
                           {match.date} • {match.time}
                         </span>
                       </div>
+
+                      {/* 🆕 הצגת יחסים */}
+                      {match.odds && (match.odds.homeWin || match.odds.draw || match.odds.awayWin) && (
+                        <div style={{ 
+                          display: 'flex', 
+                          gap: '0.5rem', 
+                          marginBottom: '0.5rem',
+                          justifyContent: 'center'
+                        }}>
+                          <span style={{ padding: '2px 8px', backgroundColor: '#e3f2fd', borderRadius: '10px', fontSize: '11px', color: '#1565c0', fontWeight: 'bold' }}>
+                            1: {match.odds.homeWin || '-'}
+                          </span>
+                          <span style={{ padding: '2px 8px', backgroundColor: '#fff3e0', borderRadius: '10px', fontSize: '11px', color: '#e65100', fontWeight: 'bold' }}>
+                            X: {match.odds.draw || '-'}
+                          </span>
+                          <span style={{ padding: '2px 8px', backgroundColor: '#e8f5e9', borderRadius: '10px', fontSize: '11px', color: '#2e7d32', fontWeight: 'bold' }}>
+                            2: {match.odds.awayWin || '-'}
+                          </span>
+                        </div>
+                      )}
 
                       <div style={{ 
                         textAlign: 'center',
@@ -466,10 +510,22 @@ function HistoryViewer({ weeks, user }) {
                             borderRadius: '8px',
                             fontSize: '16px',
                             fontWeight: 'bold',
-                            backgroundColor: points === 3 ? '#d4edda' : points === 1 ? '#cce5ff' : '#f8d7da',
-                            color: points === 3 ? '#155724' : points === 1 ? '#0066cc' : '#721c24'
+                            backgroundColor: (() => {
+                              if (points === 0) return '#f8d7da';
+                              const isExact = bet.team1Goals === match.result.team1Goals && bet.team2Goals === match.result.team2Goals;
+                              return isExact ? '#d4edda' : '#cce5ff';
+                            })(),
+                            color: (() => {
+                              if (points === 0) return '#721c24';
+                              const isExact = bet.team1Goals === match.result.team1Goals && bet.team2Goals === match.result.team2Goals;
+                              return isExact ? '#155724' : '#0066cc';
+                            })()
                           }}>
-                            {points === 3 ? '🎯 מדויק +3' : points === 1 ? '✅ כיוון +1' : '❌ שגוי +0'}
+                            {(() => {
+                              if (points === 0) return '❌ שגוי +0';
+                              const isExact = bet.team1Goals === match.result.team1Goals && bet.team2Goals === match.result.team2Goals;
+                              return isExact ? `🎯 מדויק +${points}` : `✅ כיוון +${points}`;
+                            })()}
                           </span>
                         )}
                         {!hasResult && (

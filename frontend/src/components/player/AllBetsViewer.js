@@ -183,7 +183,7 @@ function AllBetsViewer({ weeks, user }) {
     );
   };
 
-  const calculateMatchPoints = (prediction, result) => {
+  const calculateMatchPoints = (prediction, result, odds) => {
     if (!prediction || !result || result.team1Goals === undefined) return 0;
     
     const predTeam1 = prediction.team1Goals;
@@ -191,18 +191,29 @@ function AllBetsViewer({ weeks, user }) {
     const resultTeam1 = result.team1Goals;
     const resultTeam2 = result.team2Goals;
     
-    if (predTeam1 === resultTeam1 && predTeam2 === resultTeam2) {
-      return 3;
-    }
-    
     const predOutcome = predTeam1 > predTeam2 ? 'home' : predTeam1 < predTeam2 ? 'away' : 'draw';
     const resultOutcome = resultTeam1 > resultTeam2 ? 'home' : resultTeam1 < resultTeam2 ? 'away' : 'draw';
     
-    if (predOutcome === resultOutcome) {
-      return 1;
-    }
+    const hasOdds = odds && (odds.homeWin || odds.draw || odds.awayWin);
     
-    return 0;
+    if (hasOdds) {
+      let relevantOdd = 1;
+      if (resultOutcome === 'home' && odds.homeWin) relevantOdd = odds.homeWin;
+      else if (resultOutcome === 'draw' && odds.draw) relevantOdd = odds.draw;
+      else if (resultOutcome === 'away' && odds.awayWin) relevantOdd = odds.awayWin;
+      
+      if (predTeam1 === resultTeam1 && predTeam2 === resultTeam2) {
+        return Math.round(relevantOdd * 2 * 10) / 10;
+      }
+      if (predOutcome === resultOutcome) {
+        return Math.round(relevantOdd * 10) / 10;
+      }
+      return 0;
+    } else {
+      if (predTeam1 === resultTeam1 && predTeam2 === resultTeam2) return 3;
+      if (predOutcome === resultOutcome) return 1;
+      return 0;
+    }
   };
 
   const months = [
@@ -450,6 +461,16 @@ function AllBetsViewer({ weeks, user }) {
                         <div style={{ fontSize: '10px', color: '#666' }}>
                           {match.date} {match.time}
                         </div>
+                        {match.odds && (match.odds.homeWin || match.odds.draw || match.odds.awayWin) && (
+                          <div style={{ 
+                            marginTop: '3px',
+                            fontSize: '10px',
+                            color: '#ff9800',
+                            fontWeight: 'bold'
+                          }}>
+                            📊 {match.odds.homeWin || '-'} / {match.odds.draw || '-'} / {match.odds.awayWin || '-'}
+                          </div>
+                        )}
                         {match.result && match.result.team1Goals !== undefined && (
                           <div style={{ 
                             marginTop: '4px', 
@@ -496,7 +517,9 @@ function AllBetsViewer({ weeks, user }) {
                           let points = 0;
                           
                           if (bet && match.result && match.result.team1Goals !== undefined) {
-                            points = calculateMatchPoints(bet.prediction, match.result);
+                            points = bet.points !== undefined && bet.points !== null 
+                              ? bet.points 
+                              : calculateMatchPoints(bet.prediction, match.result, match.odds);
                             totalWeekPoints += points;
                           }
                           
@@ -529,10 +552,22 @@ function AllBetsViewer({ weeks, user }) {
                                     borderRadius: '3px',
                                     fontSize: '10px',
                                     fontWeight: 'bold',
-                                    backgroundColor: points === 3 ? '#d4edda' : points === 1 ? '#cce5ff' : '#f8d7da',
-                                    color: points === 3 ? '#155724' : points === 1 ? '#0066cc' : '#721c24'
+                                    backgroundColor: (() => {
+                                      if (points === 0) return '#f8d7da';
+                                      const isExact = bet.prediction.team1Goals === match.result.team1Goals && bet.prediction.team2Goals === match.result.team2Goals;
+                                      return isExact ? '#d4edda' : '#cce5ff';
+                                    })(),
+                                    color: (() => {
+                                      if (points === 0) return '#721c24';
+                                      const isExact = bet.prediction.team1Goals === match.result.team1Goals && bet.prediction.team2Goals === match.result.team2Goals;
+                                      return isExact ? '#155724' : '#0066cc';
+                                    })()
                                   }}>
-                                    {points === 3 ? '🎯 +3' : points === 1 ? '✅ +1' : '❌ +0'}
+                                    {(() => {
+                                      if (points === 0) return '❌ +0';
+                                      const isExact = bet.prediction.team1Goals === match.result.team1Goals && bet.prediction.team2Goals === match.result.team2Goals;
+                                      return isExact ? `🎯 +${points}` : `✅ +${points}`;
+                                    })()}
                                   </span>
                                 </div>
                               )}
@@ -558,7 +593,7 @@ function AllBetsViewer({ weeks, user }) {
           )}
           
           <div style={{ marginTop: '1rem', fontSize: '12px', color: '#666', textAlign: 'center' }}>
-            🎯 מדויק = 3 נקודות | ✅ כיוון נכון = 1 נקודה | ❌ שגוי = 0 נקודות
+            🎯 מדויק = כפול היחס (ללא יחסים: 3 נק׳) | ✅ כיוון נכון = היחס (ללא יחסים: 1 נק׳) | ❌ שגוי = 0
           </div>
         </div>
       )}
