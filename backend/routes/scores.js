@@ -146,14 +146,14 @@ function calculateMatchPoints(prediction, result, odds) {
     else if (resultOutcome === 'draw' && odds.draw) relevantOdd = odds.draw;
     else if (resultOutcome === 'away' && odds.awayWin) relevantOdd = odds.awayWin;
     
-    // צלף בדיוק = כפול היחס
+    // צלף בדיוק = כפול היחס חלקי 3
     if (predTeam1 === resultTeam1 && predTeam2 === resultTeam2) {
-      return Math.round(relevantOdd * 2 * 10) / 10; // עיגול לעשירית
+      return Math.round(relevantOdd * 2 / 3 * 10) / 10; // עיגול לעשירית
     }
     
-    // צדק בכיוון = היחס
+    // צדק בכיוון = היחס חלקי 3
     if (predOutcome === resultOutcome) {
-      return Math.round(relevantOdd * 10) / 10; // עיגול לעשירית
+      return Math.round(relevantOdd / 3 * 10) / 10; // עיגול לעשירית
     }
     
     // טעה = 0
