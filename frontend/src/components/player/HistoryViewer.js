@@ -406,9 +406,9 @@ function HistoryViewer({ weeks, user }) {
                         else if (resultOutcome === 'away' && match.odds.awayWin) relevantOdd = match.odds.awayWin;
                         
                         if (bet.team1Goals === match.result.team1Goals && bet.team2Goals === match.result.team2Goals) {
-                          points = Math.round(relevantOdd * 2 * 10) / 10;
+                          points = Math.round(relevantOdd * 2 / 3 * 10) / 10;
                         } else if (predOutcome === resultOutcome) {
-                          points = Math.round(relevantOdd * 10) / 10;
+                          points = Math.round(relevantOdd / 3 * 10) / 10;
                         }
                       } else {
                         if (bet.team1Goals === match.result.team1Goals && bet.team2Goals === match.result.team2Goals) {

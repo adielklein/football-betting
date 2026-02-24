@@ -203,10 +203,10 @@ function AllBetsViewer({ weeks, user }) {
       else if (resultOutcome === 'away' && odds.awayWin) relevantOdd = odds.awayWin;
       
       if (predTeam1 === resultTeam1 && predTeam2 === resultTeam2) {
-        return Math.round(relevantOdd * 2 * 10) / 10;
+        return Math.round(relevantOdd * 2 / 3 * 10) / 10;
       }
       if (predOutcome === resultOutcome) {
-        return Math.round(relevantOdd * 10) / 10;
+        return Math.round(relevantOdd / 3 * 10) / 10;
       }
       return 0;
     } else {
