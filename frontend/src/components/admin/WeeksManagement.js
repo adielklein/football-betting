@@ -368,7 +368,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
       const params = new URLSearchParams();
       params.append('image', base64Data);
       
-      const response = await fetch('https://api.imgbb.com/1/upload?key=f706bcf744e5ee62e389284b874c696a', {
+      const response = await fetch('https://api.imgbb.com/1/upload?key=1a014d8671ac8ec11d4a39ceed362557', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
