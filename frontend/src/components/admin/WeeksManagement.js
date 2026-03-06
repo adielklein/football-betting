@@ -347,7 +347,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
     setShowActivationDialog(true);
   };
 
-  // ✅ NEW FUNCTION: העלאת תמונה ל-ImgBB
+  // ✅ FIXED: העלאת תמונה ל-ImgBB - שימוש ב-URLSearchParams במקום FormData
   const uploadToImgBB = async (base64Image) => {
     try {
       console.log('📤 [ImgBB] Uploading image...');
@@ -356,21 +356,36 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
       // הסר את הפרפיקס data:image/...;base64,
       const base64Data = base64Image.split(',')[1];
       
-      const formData = new FormData();
-      formData.append('image', base64Data);
+      // בדיקת גודל - ImgBB מגביל ל-32MB
+      const sizeInBytes = Math.ceil(base64Data.length * 3 / 4);
+      console.log('📏 [ImgBB] Image size:', Math.round(sizeInBytes / 1024), 'KB');
+      
+      if (sizeInBytes > 32 * 1024 * 1024) {
+        throw new Error('התמונה גדולה מדי עבור ImgBB (מקסימום 32MB)');
+      }
+
+      // שליחה בפורמט URL-encoded (יותר תואם ל-ImgBB)
+      const params = new URLSearchParams();
+      params.append('image', base64Data);
       
       const response = await fetch('https://api.imgbb.com/1/upload?key=f706bcf744e5ee62e389284b874c696a', {
         method: 'POST',
-        body: formData
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to upload image to ImgBB');
+      const data = await response.json();
+      console.log('📋 [ImgBB] Response:', JSON.stringify(data));
+      
+      if (!response.ok || !data.success) {
+        const errorMsg = data.error?.message || data.error || `HTTP ${response.status}`;
+        console.error('❌ [ImgBB] Server error:', errorMsg);
+        throw new Error(`ImgBB error: ${errorMsg}`);
       }
       
-      const data = await response.json();
       console.log('✅ [ImgBB] Image uploaded successfully:', data.data.url);
-      
       return data.data.url;
     } catch (error) {
       console.error('❌ [ImgBB] Upload failed:', error);
