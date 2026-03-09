@@ -14,7 +14,11 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
   const [loadingLeagues, setLoadingLeagues] = useState(false);
   const [editingMatchDetails, setEditingMatchDetails] = useState(null);
   const [showActivationDialog, setShowActivationDialog] = useState(false);
-const [sendPushNotifications, setSendPushNotifications] = useState(true);
+  const [sendPushNotifications, setSendPushNotifications] = useState(true);
+  const [pushTitle, setPushTitle] = useState('');
+  const [pushBody, setPushBody] = useState('');
+  const [pushImageUrl, setPushImageUrl] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -285,6 +289,42 @@ const [sendPushNotifications, setSendPushNotifications] = useState(true);
   setShowActivationDialog(true);
 };
 
+const handlePushImageUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) {
+    alert('התמונה גדולה מדי! מקסימום 10MB');
+    e.target.value = '';
+    return;
+  }
+  try {
+    setUploadingImage(true);
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    const response = await fetch(`${API_URL}/upload/notification-image`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: base64 })
+    });
+    if (!response.ok) throw new Error('Failed to upload image');
+    const data = await response.json();
+    if (data.success) {
+      setPushImageUrl(data.url);
+    } else {
+      throw new Error(data.message || 'Upload failed');
+    }
+  } catch (error) {
+    alert('שגיאה בהעלאת התמונה: ' + error.message);
+    e.target.value = '';
+  } finally {
+    setUploadingImage(false);
+  }
+};
+
 const confirmActivateWeek = async () => {
   try {
     const earliestMatch = findEarliestMatch(matches);
@@ -314,9 +354,12 @@ const confirmActivateWeek = async () => {
     const response = await fetch(`${API_URL}/weeks/${selectedWeek._id}/activate`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         lockTime: localISOTime,
-        sendNotifications: sendPushNotifications 
+        sendNotifications: sendPushNotifications,
+        ...(pushTitle && { notificationTitle: pushTitle }),
+        ...(pushBody && { notificationBody: pushBody }),
+        ...(pushImageUrl && { imageUrl: pushImageUrl })
       })
     });
 
@@ -349,9 +392,12 @@ const confirmActivateWeek = async () => {
       onWeekSelect({ ...updatedWeek, active: true, lockTime });
     }
     
-    // סגור את הדיאלוג
+    // סגור את הדיאלוג ואפס state
     setShowActivationDialog(false);
-    setSendPushNotifications(true); // אפס לברירת מחדל
+    setSendPushNotifications(true);
+    setPushTitle('');
+    setPushBody('');
+    setPushImageUrl('');
   } catch (error) {
     console.error('Error activating week:', error);
     alert('שגיאה בהפעלת השבוע: ' + error.message);
@@ -1227,54 +1273,135 @@ const confirmActivateWeek = async () => {
           <div className="card" style={{
             maxWidth: '500px',
             width: '90%',
-            margin: '1rem'
+            margin: '1rem',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column'
           }}>
-            <h3 style={{ marginBottom: '1rem' }}>🏆 הפעלת שבוע</h3>
-            
-            <p style={{ marginBottom: '1.5rem', lineHeight: '1.6' }}>
-              האם להפעיל את השבוע <strong>{selectedWeek?.name}</strong>?
-              <br />
-              השבוע ינעל אוטומטית בזמן המשחק הראשון.
-            </p>
+            {/* תוכן גלילה */}
+            <div style={{ overflowY: 'auto', flex: 1, padding: '0.25rem 0' }}>
+              <h3 style={{ marginBottom: '1rem' }}>🏆 הפעלת שבוע</h3>
 
-            {/* אופציה להתראות Push */}
-            <div style={{
-              backgroundColor: '#f8f9fa',
-              padding: '1rem',
-              borderRadius: '8px',
-              marginBottom: '1.5rem'
-            }}>
-              <label style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                cursor: 'pointer',
-                fontSize: '16px'
+              <p style={{ marginBottom: '1.5rem', lineHeight: '1.6' }}>
+                האם להפעיל את השבוע <strong>{selectedWeek?.name}</strong>?
+                <br />
+                השבוע ינעל אוטומטית בזמן המשחק הראשון.
+              </p>
+
+              {/* אופציה להתראות Push */}
+              <div style={{
+                backgroundColor: '#f8f9fa',
+                padding: '1rem',
+                borderRadius: '8px',
+                marginBottom: sendPushNotifications ? '1rem' : '1.5rem'
               }}>
-                <input
-                  type="checkbox"
-                  checked={sendPushNotifications}
-                  onChange={(e) => setSendPushNotifications(e.target.checked)}
-                  style={{
-                    width: '20px',
-                    height: '20px',
-                    cursor: 'pointer'
-                  }}
-                />
-                <span style={{ flex: 1 }}>
-                  <strong>📢 שלח התראות Push לכל המשתמשים</strong>
-                  <div style={{ fontSize: '12px', color: '#666', marginTop: '0.25rem' }}>
-                    ההתראה תכלול את שם השבוע ושעת הנעילה
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  cursor: 'pointer',
+                  fontSize: '16px'
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={sendPushNotifications}
+                    onChange={(e) => setSendPushNotifications(e.target.checked)}
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <span style={{ flex: 1 }}>
+                    <strong>📢 שלח התראות Push לכל המשתמשים</strong>
+                    <div style={{ fontSize: '12px', color: '#666', marginTop: '0.25rem' }}>
+                      ההתראה תכלול את שם השבוע ושעת הנעילה
+                    </div>
+                  </span>
+                </label>
+              </div>
+
+              {/* הגדרות נוספות לפוש - מוצגות רק אם מסומן */}
+              {sendPushNotifications && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  {/* העלאת תמונה */}
+                  <div style={{ marginBottom: '1rem' }}>
+                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 'bold', fontSize: '14px' }}>
+                      🖼️ תמונה להתראה (אופציונלי):
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePushImageUpload}
+                      className="input"
+                      disabled={uploadingImage}
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                    />
+                    {uploadingImage && (
+                      <div style={{ fontSize: '12px', color: '#666', marginTop: '0.35rem' }}>⏳ מעלה תמונה...</div>
+                    )}
+                    {pushImageUrl && (
+                      <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <img src={pushImageUrl} alt="preview" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }} />
+                        <button
+                          onClick={() => setPushImageUrl('')}
+                          style={{ fontSize: '12px', color: '#dc3545', background: 'none', border: 'none', cursor: 'pointer' }}
+                        >
+                          ❌ הסר תמונה
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </span>
-              </label>
+
+                  {/* כותרת */}
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 'bold', fontSize: '14px' }}>
+                      📝 כותרת ההתראה:
+                    </label>
+                    <input
+                      type="text"
+                      value={pushTitle}
+                      onChange={(e) => setPushTitle(e.target.value)}
+                      placeholder={`שבוע ${selectedWeek?.name} נפתח!`}
+                      className="input"
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                    />
+                  </div>
+
+                  {/* תוכן */}
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 'bold', fontSize: '14px' }}>
+                      💬 תוכן ההתראה:
+                    </label>
+                    <input
+                      type="text"
+                      value={pushBody}
+                      onChange={(e) => setPushBody(e.target.value)}
+                      placeholder="מהרו להמר לפני הנעילה!"
+                      className="input"
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+            {/* כפתורים - sticky בתחתית */}
+            <div style={{
+              display: 'flex',
+              gap: '0.5rem',
+              justifyContent: 'flex-end',
+              paddingTop: '1rem',
+              borderTop: '1px solid #e9ecef',
+              marginTop: '0.5rem'
+            }}>
               <button
                 onClick={() => {
                   setShowActivationDialog(false);
                   setSendPushNotifications(true);
+                  setPushTitle('');
+                  setPushBody('');
+                  setPushImageUrl('');
                 }}
                 className="btn"
                 style={{
