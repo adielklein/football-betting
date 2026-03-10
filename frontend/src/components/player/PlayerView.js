@@ -188,64 +188,43 @@ function PlayerView({ user, onLogout }) {
       <div className="container">
         <NotificationSettings user={user} />
         
-        <div style={{ 
-          display: 'flex', 
-          gap: '1rem', 
-          marginBottom: '2rem',
-          borderBottom: '1px solid #ddd',
-          paddingBottom: '1rem',
-          overflowX: 'auto',
-          flexWrap: 'nowrap',
-          WebkitOverflowScrolling: 'touch'
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '0.3rem',
+          marginBottom: '0.75rem',
+          padding: '0.25rem',
+          backgroundColor: '#f0f0f0',
+          borderRadius: '10px'
         }}>
-          <button 
-            onClick={() => setActiveTab('betting')}
-            className="btn"
-            style={{ 
-              backgroundColor: activeTab === 'betting' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'betting' ? 'white' : '#333',
-              flexShrink: 0,
-              whiteSpace: 'nowrap'
-            }}
-          >
-            הימורים נוכחי
-          </button>
-          <button 
-            onClick={() => setActiveTab('allbets')}
-            className="btn"
-            style={{ 
-              backgroundColor: activeTab === 'allbets' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'allbets' ? 'white' : '#333',
-              flexShrink: 0,
-              whiteSpace: 'nowrap'
-            }}
-          >
-            הימורי כולם
-          </button>
-          <button 
-            onClick={() => setActiveTab('leaderboard')}
-            className="btn"
-            style={{ 
-              backgroundColor: activeTab === 'leaderboard' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'leaderboard' ? 'white' : '#333',
-              flexShrink: 0,
-              whiteSpace: 'nowrap'
-            }}
-          >
-            לוח תוצאות
-          </button>
-          <button 
-            onClick={() => setActiveTab('history')}
-            className="btn"
-            style={{ 
-              backgroundColor: activeTab === 'history' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'history' ? 'white' : '#333',
-              flexShrink: 0,
-              whiteSpace: 'nowrap'
-            }}
-          >
-            היסטוריה
-          </button>
+          {[
+            { key: 'betting', label: 'הימורים' },
+            { key: 'allbets', label: 'כל ההימורים' },
+            { key: 'leaderboard', label: 'טבלה' },
+            { key: 'history', label: 'היסטוריה' }
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                padding: '0.5rem 0.15rem',
+                border: 'none',
+                borderRadius: '8px',
+                backgroundColor: activeTab === tab.key ? '#007bff' : 'transparent',
+                color: activeTab === tab.key ? 'white' : '#555',
+                fontWeight: activeTab === tab.key ? '600' : '500',
+                fontSize: '13px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                WebkitAppearance: 'none',
+                touchAction: 'manipulation',
+                whiteSpace: 'nowrap',
+                margin: 0
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {activeTab === 'betting' && (
