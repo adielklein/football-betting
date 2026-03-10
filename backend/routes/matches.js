@@ -8,12 +8,24 @@ const router = express.Router();
 const calculateYear = (month) => {
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
-  
+
   // אם אנחנו בדצמבר והמשחק בינואר - הוסף שנה
   if (currentMonth === 12 && parseInt(month) === 1) {
     return currentYear + 1;
   }
   return currentYear;
+};
+
+// יצירת תאריך בשעון ישראל (Asia/Jerusalem) - מטפל גם בשעון קיץ/חורף
+const createIsraelDate = (year, month, day, hour, minute) => {
+  // יוצרים תאריך UTC זמני
+  const tempDate = new Date(Date.UTC(year, month, day, hour, minute));
+  // מוצאים את ה-offset של ישראל לתאריך הזה (2 או 3 שעות)
+  const israelString = tempDate.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' });
+  const israelDate = new Date(israelString);
+  const offsetMs = israelDate.getTime() - tempDate.getTime();
+  // מחסירים את ה-offset כדי לקבל UTC שמייצג את השעה הישראלית
+  return new Date(tempDate.getTime() - offsetMs);
 };
 
 // Get all matches for a week
@@ -72,11 +84,11 @@ router.post('/', async (req, res) => {
     const [day, month] = date.split('.');
     const [hour, minute] = time.split(':');
     const year = calculateYear(month);
-    const matchFullDate = new Date(
-      year, 
-      parseInt(month) - 1, 
-      parseInt(day), 
-      parseInt(hour), 
+    const matchFullDate = createIsraelDate(
+      year,
+      parseInt(month) - 1,
+      parseInt(day),
+      parseInt(hour),
       parseInt(minute)
     );
     
@@ -178,11 +190,11 @@ router.patch('/:id', async (req, res) => {
       const [hour, minute] = finalTime.split(':');
       const year = calculateYear(month);
       
-      updateData.fullDate = new Date(
-        year, 
-        parseInt(month) - 1, 
-        parseInt(day), 
-        parseInt(hour), 
+      updateData.fullDate = createIsraelDate(
+        year,
+        parseInt(month) - 1,
+        parseInt(day),
+        parseInt(hour),
         parseInt(minute)
       );
     }
