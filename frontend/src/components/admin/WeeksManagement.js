@@ -1663,10 +1663,15 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
           <div className="card" style={{
             maxWidth: '500px',
             width: '90%',
-            margin: '1rem'
+            margin: '1rem',
+            maxHeight: '85vh',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
           }}>
-            <h3 style={{ marginBottom: '1rem' }}>🏆 הפעלת שבוע</h3>
-            
+            <h3 style={{ marginBottom: '1rem', flexShrink: 0 }}>🏆 הפעלת שבוע</h3>
+
+            <div style={{ overflowY: 'auto', flex: 1, paddingLeft: '0.25rem', paddingRight: '0.25rem' }}>
             <p style={{ marginBottom: '1.5rem', lineHeight: '1.6' }}>
               האם להפעיל את השבוע <strong>{selectedWeek?.name}</strong>?
               <br />
@@ -1833,8 +1838,9 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                 </div>
               )}
             </div>
+            </div>
 
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexShrink: 0, paddingTop: '1rem', borderTop: '1px solid #dee2e6' }}>
               <button
                 onClick={() => {
                   setShowActivationDialog(false);
