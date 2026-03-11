@@ -184,4 +184,266 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
+// GET /api/stats/admin - סטטיסטיקות מקיפות לאדמין
+router.get('/admin', async (req, res) => {
+  try {
+    const User = require('../models/User');
+    const League = require('../models/League');
+
+    const [allUsers, allWeeks, allMatches, allBets, allScores] = await Promise.all([
+      User.find({}).lean(),
+      Week.find({}).sort({ createdAt: 1 }).lean(),
+      Match.find({}).lean(),
+      Bet.find({}).populate('matchId').populate('weekId').lean(),
+      Score.find({}).populate('weekId').populate('userId').lean(),
+    ]);
+
+    const players = allUsers.filter(u => u.role !== 'admin');
+    const matchesWithResults = allMatches.filter(m => m.result && m.result.team1Goals != null);
+
+    // === סטטיסטיקות כלליות ===
+    const systemOverview = {
+      totalPlayers: players.length,
+      totalWeeks: allWeeks.length,
+      activeWeeks: allWeeks.filter(w => w.active).length,
+      totalMatches: allMatches.length,
+      matchesWithResults: matchesWithResults.length,
+      totalBets: allBets.length,
+      avgBetsPerMatch: allMatches.length > 0 ? Math.round(allBets.length / allMatches.length * 10) / 10 : 0,
+      avgBetsPerPlayer: players.length > 0 ? Math.round(allBets.length / players.length * 10) / 10 : 0,
+    };
+
+    // === Helper: classify bet ===
+    function classifyBet(bet) {
+      const match = bet.matchId;
+      const pred = bet.prediction;
+      if (!match || !pred || !match.result || match.result.team1Goals == null) return null;
+
+      const isExact = pred.team1Goals === match.result.team1Goals && pred.team2Goals === match.result.team2Goals;
+      const actualDir = match.result.team1Goals > match.result.team2Goals ? 'home' : match.result.team1Goals < match.result.team2Goals ? 'away' : 'draw';
+      const predDir = pred.team1Goals > pred.team2Goals ? 'home' : pred.team1Goals < pred.team2Goals ? 'away' : 'draw';
+      const isDirection = !isExact && actualDir === predDir;
+
+      return { isExact, isDirection, isWrong: !isExact && !isDirection, points: bet.points || 0 };
+    }
+
+    // === סטטיסטיקות לפי שחקן (דירוג מקיף) ===
+    const playerStatsMap = {};
+    for (const player of players) {
+      playerStatsMap[player._id.toString()] = {
+        id: player._id,
+        name: player.name,
+        username: player.username,
+        totalBets: 0,
+        completedBets: 0,
+        exact: 0,
+        direction: 0,
+        wrong: 0,
+        points: 0,
+        weeklyScores: [],
+      };
+    }
+
+    // Process bets
+    const completedBets = [];
+    for (const bet of allBets) {
+      const uid = (bet.userId || '').toString();
+      if (!playerStatsMap[uid]) continue;
+      playerStatsMap[uid].totalBets++;
+
+      const result = classifyBet(bet);
+      if (!result) continue;
+
+      playerStatsMap[uid].completedBets++;
+      if (result.isExact) playerStatsMap[uid].exact++;
+      else if (result.isDirection) playerStatsMap[uid].direction++;
+      else playerStatsMap[uid].wrong++;
+      playerStatsMap[uid].points += result.points;
+
+      completedBets.push(bet);
+    }
+
+    // Process scores for weekly data
+    for (const score of allScores) {
+      if (!score.userId || !score.weekId) continue;
+      const uid = (score.userId._id || score.userId).toString();
+      if (playerStatsMap[uid]) {
+        playerStatsMap[uid].weeklyScores.push({
+          weekName: score.weekId.name || '',
+          weeklyScore: score.weeklyScore || 0,
+        });
+      }
+    }
+
+    // Build player rankings
+    const playerRankings = Object.values(playerStatsMap)
+      .map(p => ({
+        ...p,
+        accuracy: p.completedBets > 0 ? Math.round(((p.exact + p.direction) / p.completedBets) * 100) : 0,
+        exactRate: p.completedBets > 0 ? Math.round((p.exact / p.completedBets) * 100) : 0,
+        avgPoints: p.completedBets > 0 ? Math.round((p.points / p.completedBets) * 10) / 10 : 0,
+        points: Math.round(p.points * 10) / 10,
+        participation: allWeeks.length > 0 ? Math.round((p.weeklyScores.length / allWeeks.length) * 100) : 0,
+      }))
+      .sort((a, b) => b.points - a.points);
+
+    // === דירוגים שונים ===
+    const topByPoints = [...playerRankings].slice(0, 10);
+    const topByAccuracy = [...playerRankings].filter(p => p.completedBets >= 10).sort((a, b) => b.accuracy - a.accuracy).slice(0, 10);
+    const topByExact = [...playerRankings].filter(p => p.completedBets >= 10).sort((a, b) => b.exactRate - a.exactRate).slice(0, 10);
+    const topByParticipation = [...playerRankings].sort((a, b) => b.participation - a.participation).slice(0, 10);
+
+    // === סטטיסטיקות לפי שבוע ===
+    const weeklyStats = [];
+    for (const week of allWeeks) {
+      const weekBets = allBets.filter(b => {
+        const wid = b.weekId && (b.weekId._id || b.weekId);
+        return wid && wid.toString() === week._id.toString();
+      });
+
+      const weekScores = allScores.filter(s => {
+        const wid = s.weekId && (s.weekId._id || s.weekId);
+        return wid && wid.toString() === week._id.toString();
+      });
+
+      let weekExact = 0, weekDir = 0, weekWrong = 0;
+      for (const bet of weekBets) {
+        const r = classifyBet(bet);
+        if (!r) continue;
+        if (r.isExact) weekExact++;
+        else if (r.isDirection) weekDir++;
+        else weekWrong++;
+      }
+
+      const totalClassified = weekExact + weekDir + weekWrong;
+      const activePlayers = new Set(weekBets.map(b => (b.userId || '').toString())).size;
+
+      // Best player this week
+      let bestPlayer = null;
+      let bestScore = -1;
+      for (const s of weekScores) {
+        if (s.userId && s.userId.role !== 'admin' && (s.weeklyScore || 0) > bestScore) {
+          bestScore = s.weeklyScore;
+          bestPlayer = s.userId.name;
+        }
+      }
+
+      weeklyStats.push({
+        weekName: week.name,
+        activePlayers,
+        totalBets: weekBets.length,
+        exact: weekExact,
+        direction: weekDir,
+        wrong: weekWrong,
+        accuracy: totalClassified > 0 ? Math.round(((weekExact + weekDir) / totalClassified) * 100) : 0,
+        bestPlayer,
+        bestScore,
+      });
+    }
+
+    // === סטטיסטיקות לפי קבוצה (כלל השחקנים) ===
+    const globalTeamStats = {};
+    for (const bet of completedBets) {
+      const match = bet.matchId;
+      if (!match) continue;
+      const r = classifyBet(bet);
+      if (!r) continue;
+
+      const team1 = normalizeTeamName(match.team1);
+      const team2 = normalizeTeamName(match.team2);
+
+      for (const team of [team1, team2]) {
+        if (!globalTeamStats[team]) {
+          globalTeamStats[team] = { bets: 0, exact: 0, direction: 0, wrong: 0 };
+        }
+        globalTeamStats[team].bets++;
+        if (r.isExact) globalTeamStats[team].exact++;
+        else if (r.isDirection) globalTeamStats[team].direction++;
+        else globalTeamStats[team].wrong++;
+      }
+    }
+
+    const globalTeamRankings = Object.entries(globalTeamStats)
+      .map(([name, s]) => ({
+        name,
+        ...s,
+        accuracy: s.bets > 0 ? Math.round(((s.exact + s.direction) / s.bets) * 100) : 0,
+        exactRate: s.bets > 0 ? Math.round((s.exact / s.bets) * 100) : 0,
+      }))
+      .sort((a, b) => b.bets - a.bets);
+
+    const teamsEnough = globalTeamRankings.filter(t => t.bets >= 20);
+    const easiestTeams = [...teamsEnough].sort((a, b) => b.accuracy - a.accuracy).slice(0, 5);
+    const hardestTeams = [...teamsEnough].sort((a, b) => a.accuracy - b.accuracy).slice(0, 5);
+
+    // === תוצאות מפתיעות - משחקים שאף אחד לא ניחש נכון ===
+    const matchBetMap = {};
+    for (const bet of completedBets) {
+      const mid = bet.matchId && bet.matchId._id && bet.matchId._id.toString();
+      if (!mid) continue;
+      if (!matchBetMap[mid]) matchBetMap[mid] = { match: bet.matchId, bets: [], exactCount: 0 };
+      const r = classifyBet(bet);
+      if (r) {
+        matchBetMap[mid].bets.push(bet);
+        if (r.isExact) matchBetMap[mid].exactCount++;
+      }
+    }
+
+    const surprisingMatches = Object.values(matchBetMap)
+      .filter(m => m.bets.length >= 5 && m.exactCount === 0)
+      .sort((a, b) => b.bets.length - a.bets.length)
+      .slice(0, 5)
+      .map(m => ({
+        team1: m.match.team1,
+        team2: m.match.team2,
+        result: m.match.result.team1Goals + '-' + m.match.result.team2Goals,
+        totalBets: m.bets.length,
+      }));
+
+    // === ניחוש פופולרי כללי ===
+    const globalPredictions = {};
+    for (const bet of completedBets) {
+      const pred = bet.prediction;
+      if (!pred || pred.team1Goals == null) continue;
+      const key = pred.team1Goals + '-' + pred.team2Goals;
+      globalPredictions[key] = (globalPredictions[key] || 0) + 1;
+    }
+    const topGlobalPredictions = Object.entries(globalPredictions)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([score, count]) => ({ score, count }));
+
+    // === תוצאות בפועל הכי נפוצות ===
+    const resultCounts = {};
+    for (const match of matchesWithResults) {
+      const key = match.result.team1Goals + '-' + match.result.team2Goals;
+      resultCounts[key] = (resultCounts[key] || 0) + 1;
+    }
+    const topResults = Object.entries(resultCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([score, count]) => ({ score, count }));
+
+    res.json({
+      systemOverview,
+      playerRankings,
+      topByPoints,
+      topByAccuracy,
+      topByExact,
+      topByParticipation,
+      weeklyStats,
+      globalTeamRankings: globalTeamRankings.slice(0, 25),
+      easiestTeams,
+      hardestTeams,
+      surprisingMatches,
+      topGlobalPredictions,
+      topResults,
+    });
+
+  } catch (error) {
+    console.error('Admin stats error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

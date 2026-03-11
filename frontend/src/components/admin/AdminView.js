@@ -6,6 +6,7 @@ import UsersManagement from './UsersManagement';
 import BetsManagement from './BetsManagement';
 import LeaguesManagement from './LeaguesManagement';
 import PushManagement from './PushManagement';
+import AdminStats from './AdminStats';
 import LoadingSpinner from './LoadingSpinner';
 
 function AdminView({ user, onLogout }) {
@@ -112,7 +113,8 @@ function AdminView({ user, onLogout }) {
     { key: 'leagues', label: 'ליגות', icon: '🏆' },
     { key: 'users', label: 'משתמשים', icon: '👥' },
     { key: 'bets', label: 'הימורים', icon: '🎯' },
-    { key: 'push', label: 'התראות', icon: '📢' }
+    { key: 'push', label: 'התראות', icon: '📢' },
+    { key: 'stats', label: 'סטטיסטיקה', icon: '📊' }
   ];
 
   return (
@@ -123,7 +125,7 @@ function AdminView({ user, onLogout }) {
         {/* iOS-style segmented tab bar */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(5, 1fr)',
+          gridTemplateColumns: 'repeat(6, 1fr)',
           gap: '3px',
           marginBottom: '0.75rem',
           padding: '3px',
@@ -172,6 +174,7 @@ function AdminView({ user, onLogout }) {
           {activeTab === 'users' && <UsersManagement {...sharedProps} />}
           {activeTab === 'bets' && <BetsManagement {...sharedProps} />}
           {activeTab === 'push' && <PushManagement />}
+          {activeTab === 'stats' && <AdminStats />}
         </div>
       </div>
     </div>
