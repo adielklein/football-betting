@@ -1,6 +1,5 @@
-/* 🆕 CSS Variables לערכות נושא */
+/* CSS Variables לערכות נושא */
 :root {
-  /* ערכי ברירת מחדל */
   --theme-primary: #007bff;
   --theme-secondary: #6c757d;
   --theme-accent: #28a745;
@@ -24,69 +23,50 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--theme-background);
+  background-color: #f0f2f5;
   color: var(--theme-text);
   direction: rtl;
   position: relative;
-  /* 🍎 תיקון ל-iOS Safari */
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* 🍎 סמל ברקע עם תיקונים ל-iOS - אמוג'ים */
+/* סמל ברקע - אמוג'ים */
 body::before {
   content: var(--theme-icon);
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  /* 🍎 תיקון גדלים ל-iOS */
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* 🍎 גודל עם fallback ל-iOS */
-  font-size: 300px; /* fallback */
-  font-size: min(25vw, 300px); /* מוגבל ל-300px מקסימום */
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100vw; height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 300px;
+  font-size: min(25vw, 300px);
   opacity: 0.03;
   z-index: -1;
   pointer-events: none;
   color: var(--theme-primary);
   user-select: none;
-  /* 🍎 תיקונים נוספים ל-iOS */
   -webkit-user-select: none;
   -webkit-touch-callout: none;
   line-height: 1;
-  /* 🍎 מונע זום לא רצוי ב-iOS */
   will-change: transform;
 }
 
-/* 🍎 תמיכה בתמונות לברקע עם תיקונים ל-iOS */
-body.has-image-logo::before {
-  display: none;
-}
+/* תמיכה בתמונות לברקע */
+body.has-image-logo::before { display: none; }
 
 body.has-image-logo::after {
   content: '';
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100vw;
-  height: 100vh;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100vw; height: 100vh;
   background-image: var(--theme-icon-image);
-  /* 🍎 גודל עם fallback */
-  background-size: 400px; /* fallback */
+  background-size: 400px;
   background-size: min(50vw, 400px);
   background-repeat: no-repeat;
   background-position: center center;
   opacity: 0.04;
   z-index: -1;
   pointer-events: none;
-  /* 🍎 תיקון רינדור ב-iOS */
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   filter: grayscale(20%) drop-shadow(0 0 20px rgba(0,0,0,0.1));
@@ -96,65 +76,51 @@ body.has-image-logo::after {
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 16px;
 }
 
-/* Header עם תיקונים ל-iOS */
+/* Header */
 .header {
   background: var(--theme-header-bg);
   color: white;
   padding: 2rem 0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
   position: relative;
   overflow: hidden;
   min-height: 120px;
-  /* 🍎 תיקונים ל-iOS */
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 
-/* 🍎 סמל בheader עם תיקונים ל-iOS - אמוג'ים */
+/* סמל בheader - אמוג'ים */
 .header::before {
   content: var(--theme-icon);
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  /* 🍎 תיקון transform ל-iOS */
+  top: 0; bottom: 0; left: 50%;
   -webkit-transform: translateX(-50%);
   transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* 🍎 גודל עם fallback וגבלת מקסימום */
-  font-size: 80px; /* fallback בסיסי */
-  font-size: min(calc(100% + 2rem), 120px); /* מוגבל ל-120px */
+  display: flex; align-items: center; justify-content: center;
+  font-size: 80px;
+  font-size: min(calc(100% + 2rem), 120px);
   line-height: 1;
   opacity: 0.15;
   z-index: 1;
   text-shadow: 0 4px 8px rgba(0,0,0,0.3);
   color: rgba(255,255,255,0.3);
-  /* 🍎 מניעת בעיות רינדור */
   -webkit-font-smoothing: antialiased;
   will-change: transform;
 }
 
-/* 🍎 סמל בheader עם תיקונים ל-iOS - תמונות */
-.header.has-image-logo::before {
-  display: none;
-}
+/* סמל בheader - תמונות */
+.header.has-image-logo::before { display: none; }
 
 .header.has-image-logo::after {
   content: '';
   position: absolute;
-  top: 50%;
-  left: 50%;
-  /* 🍎 תיקון transform ל-iOS */
+  top: 50%; left: 50%;
   -webkit-transform: translate(-50%, -50%);
   transform: translate(-50%, -50%);
-  /* 🍎 גדלים עם fallbacks */
-  width: 160px; /* fallback */
-  height: 80px; /* fallback */
+  width: 160px; height: 80px;
   width: min(calc(100% - 4rem), 200px);
   height: min(calc(100% - 1rem), 100px);
   background-image: var(--theme-icon-image);
@@ -163,7 +129,6 @@ body.has-image-logo::after {
   background-position: center;
   opacity: 0.2;
   z-index: 1;
-  /* 🍎 תיקון רינדור ו-filters ל-iOS */
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)) brightness(1.2);
@@ -178,7 +143,6 @@ body.has-image-logo::after {
   font-weight: 700;
   position: relative;
   z-index: 2;
-  /* 🍎 תיקון טקסט ב-iOS */
   -webkit-font-smoothing: antialiased;
 }
 
@@ -189,7 +153,7 @@ body.has-image-logo::after {
   z-index: 2;
 }
 
-/* כפתורים עם תיקונים ל-iOS */
+/* כפתורים */
 .btn {
   display: inline-block;
   padding: 0.75rem 1.5rem;
@@ -198,125 +162,123 @@ body.has-image-logo::after {
   color: white;
   text-decoration: none;
   border: none;
-  border-radius: 4px;
+  border-radius: 10px;
   cursor: pointer;
   font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  font-weight: 600;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   z-index: 2;
-  /* 🍎 תיקונים ל-iOS */
   -webkit-appearance: none;
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
-  /* 🍎 מניעת זום בלחיצה */
   touch-action: manipulation;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .btn:hover {
-  background-color: var(--theme-secondary);
-  /* 🍎 תיקון transform ל-iOS */
-  -webkit-transform: translateY(-1px);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  -webkit-transform: translateY(-2px);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  filter: brightness(1.06);
 }
 
 .btn:active {
-  /* 🍎 תיקון transform ל-iOS */
-  -webkit-transform: translateY(0);
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  -webkit-transform: translateY(0) scale(0.98);
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
 .btn:disabled {
-  background-color: var(--theme-text-light);
+  background-color: #d1d5db;
+  color: #9ca3af;
   cursor: not-allowed;
-  /* 🍎 איפוס transforms */
   -webkit-transform: none;
   transform: none;
   box-shadow: none;
+  filter: none;
 }
 
 .btn-primary {
-  background-color: var(--theme-primary);
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+  box-shadow: 0 2px 10px rgba(0,0,0,0.12);
 }
 
 .btn-primary:hover {
-  background-color: var(--theme-secondary);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
 }
 
 .btn-success {
-  background-color: var(--theme-accent);
+  background: linear-gradient(135deg, #28a745, #20c997);
+  box-shadow: 0 2px 10px rgba(40,167,69,0.25);
 }
 
 .btn-success:hover {
-  background-color: var(--theme-primary);
+  box-shadow: 0 4px 16px rgba(40,167,69,0.35);
 }
 
-/* כרטיסים עם תיקונים ל-iOS */
+/* כרטיסים */
 .card {
   background: var(--theme-background);
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 2rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  transition: box-shadow 0.2s ease;
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
   position: relative;
   z-index: 1;
-  /* 🍎 תיקון רינדור ב-iOS */
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 
 .card:hover {
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.06);
 }
 
 .card h2 {
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.75rem 0;
   color: var(--theme-text);
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 700;
 }
 
 .card h3 {
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 0.5rem 0;
   color: var(--theme-primary);
-  font-size: 1.25rem;
-  font-weight: 500;
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
-/* שדות קלט עם תיקונים ל-iOS */
+/* שדות קלט */
 .input {
   width: 100%;
-  padding: 0.75rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 4px;
+  padding: 0.65rem 0.75rem;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
   font-size: 14px;
-  transition: all 0.2s ease;
-  background-color: var(--theme-background);
+  transition: all 0.25s ease;
+  background-color: #fafbfc;
   color: var(--theme-text);
   position: relative;
   z-index: 2;
-  /* 🍎 תיקונים ל-iOS */
   -webkit-appearance: none;
-  -webkit-border-radius: 4px;
+  -webkit-border-radius: 10px;
   -webkit-tap-highlight-color: transparent;
-  /* 🍎 מניעת זום אוטומטי ב-iOS */
-  font-size: 16px; /* מעל 16px מונע זום ב-iOS */
+  font-size: 16px;
 }
 
 .input:focus {
   outline: none;
   border-color: var(--theme-primary);
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.12);
+  background-color: var(--theme-background);
 }
 
 .input::placeholder {
-  color: var(--theme-text-light);
+  color: #b0b8c4;
 }
 
 /* טבלאות */
@@ -352,48 +314,47 @@ tr:hover {
 /* התראות */
 .alert {
   padding: 1rem;
-  border-radius: 4px;
+  border-radius: 12px;
   margin-bottom: 1rem;
-  border-left: 4px solid var(--theme-primary);
+  border-right: 4px solid var(--theme-primary);
   position: relative;
   z-index: 2;
   background: var(--theme-background);
 }
 
 .alert-success {
-  background-color: #d4edda;
-  border-left-color: var(--theme-accent);
-  color: #155724;
+  background: linear-gradient(135deg, #dcfce7, #d1fae5);
+  border-right-color: var(--theme-accent);
+  color: #166534;
 }
 
 .alert-error {
-  background-color: #f8d7da;
-  border-left-color: #dc3545;
-  color: #721c24;
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  border-right-color: #dc3545;
+  color: #991b1b;
 }
 
 .alert-warning {
-  background-color: #fff3cd;
-  border-left-color: #ffc107;
-  color: #856404;
+  background: linear-gradient(135deg, #fef9c3, #fef3c7);
+  border-right-color: #ffc107;
+  color: #92400e;
 }
 
-/* עיצוב מיוחד לערכות נושא */
+/* Badge ערכת נושא */
 .theme-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 8px;
+  padding: 4px 10px;
   background-color: var(--theme-primary);
   color: white;
-  border-radius: 4px;
+  border-radius: 20px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   position: relative;
   z-index: 2;
 }
 
-/* רכיב תמונה בתוך theme badge */
 .theme-logo-image {
   width: 20px;
   height: 20px;
@@ -401,7 +362,7 @@ tr:hover {
   border-radius: 2px;
 }
 
-/* 🍎 Responsive Design עם תיקונים ל-iOS */
+/* Responsive - Mobile */
 @media screen and (max-width: 768px) {
   .container {
     padding: 0 10px;
@@ -421,20 +382,17 @@ tr:hover {
     margin-top: 0.25rem;
   }
 
-  /* 🍎 תיקונים למובייל iOS */
   .header::before {
     font-size: 60px;
     font-size: min(calc(100% + 1rem), 80px);
   }
 
   .header.has-image-logo::after {
-    width: 120px;
-    height: 60px;
+    width: 120px; height: 60px;
     width: min(150px, calc(100% - 2rem));
     height: min(80px, calc(100% - 0.5rem));
   }
 
-  /* 🍎 סמל רקע למובייל */
   body::before {
     font-size: 200px;
     font-size: min(30vw, 250px);
@@ -446,30 +404,29 @@ tr:hover {
   }
 
   .card {
-    padding: 1rem;
-    margin-bottom: 0.75rem;
-    border-radius: 10px;
+    padding: 0.85rem;
+    margin-bottom: 0.6rem;
+    border-radius: 14px;
   }
 
   .card h2 {
-    font-size: 1.15rem;
-    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
   }
 
   .card h3 {
-    font-size: 1rem;
+    font-size: 0.85rem;
   }
 
   .btn {
     padding: 0.5rem 1rem;
-    font-size: 16px; /* 🍎 מניעת זום ב-iOS */
-    border-radius: 8px;
+    font-size: 16px;
+    border-radius: 10px;
   }
 
-  /* 🍎 תיקון גלילה ב-iOS */
   .input {
-    font-size: 16px; /* חיוני למניעת זום */
-    padding: 0.6rem;
+    font-size: 16px;
+    padding: 0.55rem 0.65rem;
   }
 
   th {
@@ -502,22 +459,21 @@ tr:hover {
   }
 
   .header.has-image-logo::after {
-    width: 100px;
-    height: 50px;
+    width: 100px; height: 50px;
   }
 
   .card {
-    padding: 0.75rem;
-    margin-bottom: 0.6rem;
+    padding: 0.7rem;
+    margin-bottom: 0.5rem;
   }
 
   .card h2 {
-    font-size: 1.05rem;
+    font-size: 0.9rem;
   }
 
   .btn {
     padding: 0.45rem 0.75rem;
-    font-size: 16px; /* 🍎 זום prevention */
+    font-size: 16px;
   }
 
   th {
@@ -531,43 +487,30 @@ tr:hover {
   }
 }
 
-/* 🍎 תיקונים ספציפיים ל-iOS Safari */
+/* iOS Safari fixes */
 @supports (-webkit-touch-callout: none) {
-  /* זה יפעל רק ב-iOS Safari */
   body::before,
   body.has-image-logo::after {
-    /* 🍎 תיקון position fixed ב-iOS */
     position: absolute;
-    top: 0;
-    height: 100%;
+    top: 0; height: 100%;
   }
-  
+
   .header::before,
   .header.has-image-logo::after {
-    /* 🍎 שיפור רינדור ב-iOS */
     -webkit-transform: translate3d(-50%, -50%, 0);
     transform: translate3d(-50%, -50%, 0);
   }
-  
-  /* 🍎 תיקון כפתורים ב-iOS */
+
   .btn {
     -webkit-transform: translate3d(0, 0, 0);
     transform: translate3d(0, 0, 0);
   }
 }
 
-/* אנימציות עם תיקונים ל-iOS */
+/* אנימציות */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    -webkit-transform: translateY(10px);
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    -webkit-transform: translateY(0);
-    transform: translateY(0);
-  }
+  from { opacity: 0; -webkit-transform: translateY(10px); transform: translateY(10px); }
+  to { opacity: 1; -webkit-transform: translateY(0); transform: translateY(0); }
 }
 
 .fade-in {
@@ -576,21 +519,13 @@ tr:hover {
 }
 
 @keyframes slideUp {
-  from {
-    opacity: 0;
-    -webkit-transform: translateY(16px);
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    -webkit-transform: translateY(0);
-    transform: translateY(0);
-  }
+  from { opacity: 0; -webkit-transform: translateY(16px); transform: translateY(16px); }
+  to { opacity: 1; -webkit-transform: translateY(0); transform: translateY(0); }
 }
 
 @keyframes pulseGlow {
   0%, 100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4); }
-  50% { box-shadow: 0 0 0 6px rgba(40, 167, 69, 0); }
+  50% { box-shadow: 0 0 0 8px rgba(40, 167, 69, 0); }
 }
 
 @keyframes shimmer {
@@ -599,48 +534,39 @@ tr:hover {
 }
 
 @keyframes toastIn {
-  from {
-    opacity: 0;
-    -webkit-transform: translateX(-50%) translateY(-20px);
-    transform: translateX(-50%) translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    -webkit-transform: translateX(-50%) translateY(0);
-    transform: translateX(-50%) translateY(0);
-  }
+  from { opacity: 0; -webkit-transform: translateX(-50%) translateY(-20px); transform: translateX(-50%) translateY(-20px); }
+  to { opacity: 1; -webkit-transform: translateX(-50%) translateY(0); transform: translateX(-50%) translateY(0); }
 }
 
 @keyframes scaleIn {
-  from {
-    opacity: 0;
-    -webkit-transform: scale(0.92);
-    transform: scale(0.92);
-  }
-  to {
-    opacity: 1;
-    -webkit-transform: scale(1);
-    transform: scale(1);
-  }
+  from { opacity: 0; -webkit-transform: scale(0.95); transform: scale(0.95); }
+  to { opacity: 1; -webkit-transform: scale(1); transform: scale(1); }
 }
 
-/* 🍎 אנימציה עדינה עם תיקונים ל-iOS */
+@keyframes spin {
+  0% { -webkit-transform: rotate(0deg); transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
+}
+
+@keyframes bounceIn {
+  0% { opacity: 0; -webkit-transform: scale(0.3); transform: scale(0.3); }
+  50% { -webkit-transform: scale(1.05); transform: scale(1.05); }
+  70% { -webkit-transform: scale(0.95); transform: scale(0.95); }
+  100% { opacity: 1; -webkit-transform: scale(1); transform: scale(1); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; -webkit-transform: translateX(30px); transform: translateX(30px); }
+  to { opacity: 1; -webkit-transform: translateX(0); transform: translateX(0); }
+}
+
+/* אנימציה עדינה לברקע */
 @keyframes floatBg {
-  0%, 100% {
-    -webkit-transform: translate(0, 0) scale(1);
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    -webkit-transform: translate(-10px, -15px) scale(1.02);
-    transform: translate(-10px, -15px) scale(1.02);
-  }
-  66% {
-    -webkit-transform: translate(10px, -10px) scale(0.98);
-    transform: translate(10px, -10px) scale(0.98);
-  }
+  0%, 100% { -webkit-transform: translate(0, 0) scale(1); transform: translate(0, 0) scale(1); }
+  33% { -webkit-transform: translate(-10px, -15px) scale(1.02); transform: translate(-10px, -15px) scale(1.02); }
+  66% { -webkit-transform: translate(10px, -10px) scale(0.98); transform: translate(10px, -10px) scale(0.98); }
 }
 
-/* 🍎 אנימציה מופעלת רק אם הדפדפן תומך */
 @media (prefers-reduced-motion: no-preference) {
   body::before,
   body.has-image-logo::after {
@@ -649,7 +575,7 @@ tr:hover {
   }
 }
 
-/* מצב כהה אוטומטי */
+/* מצב כהה */
 @media (prefers-color-scheme: dark) {
   .auto-dark-mode {
     --theme-background: #1a1a1a;
@@ -658,19 +584,13 @@ tr:hover {
   }
 }
 
-/* 🍎 תיקונים נוספים ל-iOS landscape mode */
+/* iOS landscape */
 @media screen and (orientation: landscape) and (max-height: 500px) {
   .header {
     min-height: 60px;
     padding: 1rem 0;
   }
-  
-  .header::before {
-    font-size: 40px;
-  }
-  
-  .header.has-image-logo::after {
-    width: 80px;
-    height: 40px;
-  }
+
+  .header::before { font-size: 40px; }
+  .header.has-image-logo::after { width: 80px; height: 40px; }
 }

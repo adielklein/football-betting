@@ -74,3 +74,4 @@ Create week → Add matches (with optional odds) → Activate (set lockTime + op
 - Hebrew (RTL) throughout — all UI strings are in Hebrew
 - iOS Safari has extensive compatibility fixes in CSS and theme application
 - Inline styles used extensively alongside CSS variables
+- **Always respond to the user in Hebrew (עברית)**
