@@ -4,10 +4,32 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
   const [localBets, setLocalBets] = useState({});
   const [savingMatch, setSavingMatch] = useState(null);
   const [savedAnimation, setSavedAnimation] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(null);
 
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
+
+  // Live countdown timer
+  useEffect(() => {
+    if (!selectedWeek?.lockTime) { setTimeLeft(null); return; }
+    const calcTimeLeft = () => {
+      const diff = new Date(selectedWeek.lockTime) - new Date();
+      if (diff <= 0) return null;
+      const days = Math.floor(diff / 86400000);
+      const hours = Math.floor((diff % 86400000) / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      return { days, hours, minutes, seconds, total: diff };
+    };
+    setTimeLeft(calcTimeLeft());
+    const timer = setInterval(() => {
+      const tl = calcTimeLeft();
+      setTimeLeft(tl);
+      if (!tl) clearInterval(timer);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [selectedWeek?.lockTime]);
 
   useEffect(() => {
     const existingBets = {};
@@ -149,6 +171,13 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
     return bet && bet.team1Goals !== '' && bet.team2Goals !== '';
   };
 
+  const countdownBoxStyle = (total) => ({
+    padding: '2px 5px', borderRadius: '6px', fontSize: '13px', fontWeight: '800',
+    fontVariantNumeric: 'tabular-nums', textAlign: 'center',
+    background: total < 3600000 ? '#fecaca' : total < 86400000 ? '#fde68a' : '#bfdbfe',
+    color: total < 3600000 ? '#991b1b' : total < 86400000 ? '#92400e' : '#1e3a5f',
+  });
+
   if (!selectedWeek?.active) {
     return (
       <div className="card" style={{
@@ -223,6 +252,48 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
             transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
           }}></div>
         </div>
+
+        {/* Countdown Timer */}
+        {timeLeft && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: '6px', marginTop: '0.5rem', padding: '0.45rem 0.6rem',
+            background: timeLeft.total < 3600000
+              ? 'linear-gradient(135deg, #fef2f2, #fee2e2)'
+              : timeLeft.total < 86400000
+                ? 'linear-gradient(135deg, #fffbeb, #fef3c7)'
+                : 'linear-gradient(135deg, #eff6ff, #dbeafe)',
+            borderRadius: '12px',
+            border: `1px solid ${timeLeft.total < 3600000 ? '#fca5a5' : timeLeft.total < 86400000 ? '#fde68a' : '#bfdbfe'}`
+          }}>
+            <span style={{ fontSize: '13px' }}>
+              {timeLeft.total < 3600000 ? '🔥' : timeLeft.total < 86400000 ? '⏳' : '⏰'}
+            </span>
+            <span style={{
+              fontSize: '12px', fontWeight: '600',
+              color: timeLeft.total < 3600000 ? '#dc2626' : timeLeft.total < 86400000 ? '#d97706' : '#2563eb'
+            }}>
+              נסגר בעוד
+            </span>
+            <div style={{ display: 'flex', gap: '3px' }}>
+              {timeLeft.days > 0 && (
+                <span style={countdownBoxStyle(timeLeft.total)}>{timeLeft.days}<small>י</small></span>
+              )}
+              <span style={countdownBoxStyle(timeLeft.total)}>
+                {String(timeLeft.hours).padStart(2, '0')}<small>ש</small>
+              </span>
+              <span style={{ ...countdownBoxStyle(timeLeft.total), minWidth: '32px' }}>
+                {String(timeLeft.minutes).padStart(2, '0')}<small>ד</small>
+              </span>
+              <span style={{
+                ...countdownBoxStyle(timeLeft.total), minWidth: '32px',
+                animation: 'pulse 1s ease infinite'
+              }}>
+                {String(timeLeft.seconds).padStart(2, '0')}<small>ש</small>
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

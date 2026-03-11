@@ -4,6 +4,7 @@ function NotificationSettings({ user }) {
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [hoursBeforeLock, setHoursBeforeLock] = useState(2);
+  const [exactScoreAlerts, setExactScoreAlerts] = useState(true);
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -36,6 +37,9 @@ function NotificationSettings({ user }) {
         const currentUser = users.find(u => u._id === userId || u.id === userId);
         if (currentUser?.pushSettings?.hoursBeforeLock) {
           setHoursBeforeLock(currentUser.pushSettings.hoursBeforeLock);
+        }
+        if (currentUser?.pushSettings?.exactScoreAlerts === false) {
+          setExactScoreAlerts(false);
         }
       }
     } catch (error) {
@@ -139,7 +143,7 @@ function NotificationSettings({ user }) {
       const response = await fetch(`${API_URL}/notifications/settings`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, hoursBeforeLock, soundEnabled: true })
+        body: JSON.stringify({ userId, hoursBeforeLock, soundEnabled: true, exactScoreAlerts })
       });
 
       if (response.ok) alert('הגדרות עודכנו בהצלחה!');
@@ -257,6 +261,34 @@ function NotificationSettings({ user }) {
                 <option value={12}>12 שעות</option>
                 <option value={24}>יום לפני</option>
               </select>
+            </div>
+
+            {/* Exact Score Alerts Toggle */}
+            <div
+              onClick={() => setExactScoreAlerts(!exactScoreAlerts)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '0.4rem 0', cursor: 'pointer', marginBottom: '0.4rem',
+                WebkitTapHighlightColor: 'transparent'
+              }}
+            >
+              <label style={{ fontSize: '12px', fontWeight: '600', color: '#555', cursor: 'pointer' }}>
+                🎯 התראה על ניחוש מדויק
+              </label>
+              <div style={{
+                width: '40px', height: '22px', borderRadius: '11px',
+                background: exactScoreAlerts ? 'linear-gradient(135deg, #28a745, #20c997)' : '#ccc',
+                position: 'relative', transition: 'background 0.3s ease',
+                flexShrink: 0
+              }}>
+                <div style={{
+                  width: '18px', height: '18px', borderRadius: '50%',
+                  background: '#fff', position: 'absolute', top: '2px',
+                  left: exactScoreAlerts ? '20px' : '2px',
+                  transition: 'left 0.3s ease',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                }} />
+              </div>
             </div>
 
             {isSubscribed && (

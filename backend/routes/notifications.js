@@ -218,14 +218,19 @@ router.post('/unsubscribe', async (req, res) => {
 // עדכן הגדרות
 router.patch('/settings', async (req, res) => {
   try {
-    const { userId, hoursBeforeLock, soundEnabled } = req.body;
-    
+    const { userId, hoursBeforeLock, soundEnabled, exactScoreAlerts } = req.body;
+
     console.log(`⚙️ Updating settings for user ${userId}`);
-    
-    const user = await User.findByIdAndUpdate(userId, {
+
+    const updateFields = {
       'pushSettings.hoursBeforeLock': hoursBeforeLock,
       'pushSettings.soundEnabled': soundEnabled
-    }, { new: true });
+    };
+    if (exactScoreAlerts !== undefined) {
+      updateFields['pushSettings.exactScoreAlerts'] = exactScoreAlerts;
+    }
+
+    const user = await User.findByIdAndUpdate(userId, updateFields, { new: true });
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });

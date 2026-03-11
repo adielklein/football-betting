@@ -40,9 +40,13 @@ const userSchema = new mongoose.Schema({
       type: Number, 
       default: 2 
     },
-    soundEnabled: { 
-      type: Boolean, 
-      default: true 
+    soundEnabled: {
+      type: Boolean,
+      default: true
+    },
+    exactScoreAlerts: {
+      type: Boolean,
+      default: true
     }
   },
   createdAt: {

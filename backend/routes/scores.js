@@ -3,6 +3,7 @@ const Score = require('../models/Score');
 const Bet = require('../models/Bet');
 const Match = require('../models/Match');
 const User = require('../models/User');
+const { sendNotificationToUsers } = require('../services/pushNotifications');
 const router = express.Router();
 
 // Calculate scores for a week
@@ -23,22 +24,35 @@ router.post('/calculate/:weekId', async (req, res) => {
     
     // Get all users
     const users = await User.find();
-    
+    const exactScoreUsers = []; // Users who got exact scores
+
     for (const user of users) {
       let totalPoints = 0;
-      
+      let exactCount = 0;
+
       for (const match of matches) {
         const bet = await Bet.findOne({ userId: user._id, matchId: match._id });
-        
+
         if (bet) {
           const points = calculateMatchPoints(bet.prediction, match.result, match.odds);
-          
+
           // Update bet points
           await Bet.findByIdAndUpdate(bet._id, { points });
           totalPoints += points;
+
+          // Track exact scores
+          if (bet.prediction.team1Goals === match.result.team1Goals &&
+              bet.prediction.team2Goals === match.result.team2Goals) {
+            exactCount++;
+          }
         }
       }
-      
+
+      // Track users with exact scores for push notification
+      if (exactCount > 0 && user.role !== 'admin') {
+        exactScoreUsers.push({ userId: user._id, name: user.name, exactCount });
+      }
+
       // Update user's score for this week
       await Score.findOneAndUpdate(
         { userId: user._id, weekId },
@@ -48,18 +62,45 @@ router.post('/calculate/:weekId', async (req, res) => {
         },
         { upsert: true }
       );
-      
+
       // Calculate total score across all weeks
       const userScores = await Score.find({ userId: user._id });
       const totalScore = userScores.reduce((sum, score) => sum + score.weeklyScore, 0);
-      
+
       // Update all scores with new total
       await Score.updateMany(
         { userId: user._id },
         { totalScore }
       );
     }
-    
+
+    // Send push notifications to users who got exact scores
+    if (exactScoreUsers.length > 0) {
+      try {
+        // Filter only users who have exactScoreAlerts enabled (default true)
+        const usersToNotify = [];
+        for (const eu of exactScoreUsers) {
+          const u = await User.findById(eu.userId);
+          if (u && u.pushSettings?.enabled && u.pushSettings?.exactScoreAlerts !== false) {
+            usersToNotify.push(eu);
+          }
+        }
+
+        if (usersToNotify.length > 0) {
+          for (const eu of usersToNotify) {
+            const title = '🎯 דייקת!';
+            const body = eu.exactCount === 1
+              ? 'ניחשת תוצאה מדויקת! כל הכבוד 🔥'
+              : `ניחשת ${eu.exactCount} תוצאות מדויקות! מכונה! 🔥`;
+            await sendNotificationToUsers([eu.userId], title, body, { type: 'exact_score' });
+          }
+          console.log(`🎯 Exact score notifications sent to ${usersToNotify.length} users`);
+        }
+      } catch (pushError) {
+        console.error('Push notification error (non-critical):', pushError.message);
+      }
+    }
+
     res.json({ message: 'Scores calculated successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
