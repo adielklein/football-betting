@@ -291,13 +291,19 @@ app.listen(PORT, () => {
   console.log(`🔐 Auth System: Username/Password`);
 
   // Keep-alive: ping ourselves every 14 minutes to prevent Render from sleeping
+  // Disabled between 01:00-07:00 Israel time to save Render hours
   if (process.env.NODE_ENV !== 'development') {
     const RENDER_URL = 'https://football-betting-backend.onrender.com';
     setInterval(() => {
+      const israelHour = new Date().toLocaleString('en-US', { timeZone: 'Asia/Jerusalem', hour: 'numeric', hour12: false });
+      const hour = parseInt(israelHour, 10);
+      if (hour >= 1 && hour < 7) {
+        return; // Sleep hours - don't ping
+      }
       fetch(`${RENDER_URL}/api/debug`)
         .then(() => console.log('🏓 Keep-alive ping sent'))
         .catch(() => console.log('🏓 Keep-alive ping failed (will retry)'));
     }, 14 * 60 * 1000);
-    console.log('🏓 Keep-alive enabled: pinging every 14 minutes');
+    console.log('🏓 Keep-alive enabled: pinging every 14 min (paused 01:00-07:00 IST)');
   }
 });
