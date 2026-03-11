@@ -29,6 +29,7 @@ router.post('/calculate/:weekId', async (req, res) => {
     for (const user of users) {
       let totalPoints = 0;
       let exactCount = 0;
+      const exactMatches = []; // Track which matches were exact
 
       for (const match of matches) {
         const bet = await Bet.findOne({ userId: user._id, matchId: match._id });
@@ -40,17 +41,22 @@ router.post('/calculate/:weekId', async (req, res) => {
           await Bet.findByIdAndUpdate(bet._id, { points });
           totalPoints += points;
 
-          // Track exact scores
+          // Track exact scores with match details
           if (bet.prediction.team1Goals === match.result.team1Goals &&
               bet.prediction.team2Goals === match.result.team2Goals) {
             exactCount++;
+            exactMatches.push({
+              team1: match.team1,
+              team2: match.team2,
+              score: `${match.result.team1Goals}-${match.result.team2Goals}`
+            });
           }
         }
       }
 
       // Track users with exact scores for push notification
       if (exactCount > 0 && user.role !== 'admin') {
-        exactScoreUsers.push({ userId: user._id, name: user.name, exactCount });
+        exactScoreUsers.push({ userId: user._id, name: user.name, exactCount, exactMatches });
       }
 
       // Update user's score for this week
@@ -88,10 +94,14 @@ router.post('/calculate/:weekId', async (req, res) => {
 
         if (usersToNotify.length > 0) {
           for (const eu of usersToNotify) {
-            const title = '🎯 דייקת!';
+            const title = eu.exactCount === 1 ? '🎯 דייקת!' : `🎯 ${eu.exactCount} דיוקים!`;
+
+            // Build match details string
+            const matchLines = eu.exactMatches.map(m => `⚽ ${m.team1} - ${m.team2} (${m.score})`).join('\n');
+
             const body = eu.exactCount === 1
-              ? 'ניחשת תוצאה מדויקת! כל הכבוד 🔥'
-              : `ניחשת ${eu.exactCount} תוצאות מדויקות! מכונה! 🔥`;
+              ? `ניחשת בול!\n${matchLines}\nכל הכבוד 🔥`
+              : `ניחשת ${eu.exactCount} תוצאות מדויקות!\n${matchLines}\nמכונה! 🔥`;
             await sendNotificationToUsers([eu.userId], title, body, { type: 'exact_score' });
           }
           console.log(`🎯 Exact score notifications sent to ${usersToNotify.length} users`);

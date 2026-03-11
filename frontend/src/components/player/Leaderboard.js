@@ -8,6 +8,7 @@ function Leaderboard({ leaderboard, user }) {
   const [selectedSeason, setSelectedSeason] = useState('2025-26');
   const [selectedWeekId, setSelectedWeekId] = useState('');
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('monthly');
 
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
@@ -188,36 +189,88 @@ function Leaderboard({ leaderboard, user }) {
     );
   };
 
+  const tabs = [
+    { key: 'monthly', label: 'חודשי', icon: '🏅' },
+    { key: 'weekly', label: 'שבועי', icon: '📊' },
+    { key: 'general', label: 'כללי', icon: '🏆' }
+  ];
+
   return (
     <div>
-      {/* סינון */}
+      {/* Tab bar */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '0.5rem',
-        marginBottom: '0.75rem'
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '3px',
+        marginBottom: '0.75rem',
+        padding: '3px',
+        backgroundColor: '#f0f2f5',
+        borderRadius: '14px',
+        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)'
       }}>
-        <select
-          value={selectedSeason}
-          onChange={(e) => setSelectedSeason(e.target.value)}
-          className="input"
-          style={{ width: '100%', fontSize: '13px', padding: '0.45rem', borderRadius: '10px' }}
-        >
-          {seasons.map(season => (
-            <option key={season.value} value={season.value}>{season.label}</option>
-          ))}
-        </select>
-        <select
-          value={selectedMonth}
-          onChange={(e) => { setSelectedMonth(parseInt(e.target.value)); setSelectedWeekId(''); }}
-          className="input"
-          style={{ width: '100%', fontSize: '13px', padding: '0.45rem', borderRadius: '10px' }}
-        >
-          {months.map(month => (
-            <option key={month.value} value={month.value}>{month.label}</option>
-          ))}
-        </select>
+        {tabs.map(tab => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                padding: '0.5rem 0.2rem',
+                border: 'none',
+                borderRadius: '11px',
+                backgroundColor: isActive ? '#fff' : 'transparent',
+                color: isActive ? 'var(--theme-primary, #007bff)' : '#888',
+                fontWeight: isActive ? '700' : '500',
+                fontSize: '13px',
+                cursor: 'pointer',
+                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                WebkitAppearance: 'none',
+                touchAction: 'manipulation',
+                boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '2px',
+                lineHeight: 1.2
+              }}
+            >
+              <span style={{ fontSize: '16px', lineHeight: 1 }}>{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
+
+      {/* סינון עונה + חודש - מוצג בטאבים חודשי ושבועי */}
+      {(activeTab === 'monthly' || activeTab === 'weekly') && (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '0.5rem',
+          marginBottom: '0.75rem'
+        }}>
+          <select
+            value={selectedSeason}
+            onChange={(e) => setSelectedSeason(e.target.value)}
+            className="input"
+            style={{ width: '100%', fontSize: '13px', padding: '0.45rem', borderRadius: '10px' }}
+          >
+            {seasons.map(season => (
+              <option key={season.value} value={season.value}>{season.label}</option>
+            ))}
+          </select>
+          <select
+            value={selectedMonth}
+            onChange={(e) => { setSelectedMonth(parseInt(e.target.value)); setSelectedWeekId(''); }}
+            className="input"
+            style={{ width: '100%', fontSize: '13px', padding: '0.45rem', borderRadius: '10px' }}
+          >
+            {months.map(month => (
+              <option key={month.value} value={month.value}>{month.label}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {loading && (
         <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
@@ -228,81 +281,107 @@ function Leaderboard({ leaderboard, user }) {
             margin: '0 auto 0.5rem'
           }}></div>
           <span style={{ fontSize: '13px' }}>טוען נתונים...</span>
-          <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
         </div>
       )}
 
-      {/* דירוג חודשי */}
-      <div className="card" style={{ marginBottom: '0.75rem' }}>
-        <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
-          🏅 דירוג {months.find(m => m.value === selectedMonth)?.label}
-        </h2>
-        {!loading && monthlyScores.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-            {monthlyScores.map((player, index) =>
-              renderPlayerRow(player, index, 'monthlyScore', player.name === user.name, index * 0.04)
+      <div style={{ animation: 'scaleIn 0.2s ease' }}>
+        {/* דירוג חודשי */}
+        {activeTab === 'monthly' && (
+          <div className="card">
+            <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
+              🏅 דירוג {months.find(m => m.value === selectedMonth)?.label}
+            </h2>
+            {!loading && monthlyScores.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                {monthlyScores.map((player, index) =>
+                  renderPlayerRow(player, index, 'monthlyScore', player.name === user.name, index * 0.04)
+                )}
+              </div>
+            )}
+            {monthlyScores.length === 0 && !loading && (
+              <div style={{ textAlign: 'center', color: '#999', padding: '1.5rem', fontSize: '14px' }}>
+                אין נתונים לחודש {months.find(m => m.value === selectedMonth)?.label}
+              </div>
             )}
           </div>
         )}
-        {monthlyScores.length === 0 && !loading && (
-          <div style={{ textAlign: 'center', color: '#999', padding: '1.5rem', fontSize: '14px' }}>
-            אין נתונים לחודש {months.find(m => m.value === selectedMonth)?.label}
-          </div>
-        )}
-      </div>
 
-      {/* פירוט שבוע */}
-      {availableWeeks.length > 0 && (
-        <div className="card" style={{ marginBottom: '0.75rem' }}>
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            marginBottom: '0.5rem', gap: '0.5rem'
-          }}>
-            <h2 style={{ fontSize: '0.95rem', margin: 0, flexShrink: 0, fontWeight: '700' }}>📊 פירוט שבוע</h2>
-            <select
-              value={selectedWeekId}
-              onChange={(e) => setSelectedWeekId(e.target.value)}
-              className="input"
-              style={{ fontSize: '13px', padding: '0.35rem', maxWidth: '55%', borderRadius: '10px' }}
-            >
-              {availableWeeks.map(week => (
-                <option key={week._id} value={week._id}>{week.name}</option>
-              ))}
-            </select>
-          </div>
+        {/* פירוט שבוע */}
+        {activeTab === 'weekly' && (
+          <div className="card">
+            {availableWeeks.length > 0 ? (
+              <>
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  marginBottom: '0.5rem', gap: '0.5rem'
+                }}>
+                  <h2 style={{ fontSize: '0.95rem', margin: 0, flexShrink: 0, fontWeight: '700' }}>📊 פירוט שבוע</h2>
+                  <select
+                    value={selectedWeekId}
+                    onChange={(e) => setSelectedWeekId(e.target.value)}
+                    className="input"
+                    style={{ fontSize: '13px', padding: '0.35rem', maxWidth: '55%', borderRadius: '10px' }}
+                  >
+                    {availableWeeks.map(week => (
+                      <option key={week._id} value={week._id}>{week.name}</option>
+                    ))}
+                  </select>
+                </div>
 
-          {selectedWeekId && selectedWeekScores.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              {selectedWeekScores.map((player, index) =>
-                renderPlayerRow(player, index, 'score', player.name === user.name, index * 0.03)
-              )}
-            </div>
-          )}
-          {selectedWeekScores.length === 0 && selectedWeekId && (
-            <div style={{ textAlign: 'center', color: '#999', padding: '0.75rem', fontSize: '13px' }}>
-              אין נתוני ניקוד לשבוע זה
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* דירוג כללי */}
-      <div className="card">
-        <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
-          🏆 דירוג כללי - {selectedSeason}
-        </h2>
-        {leaderboard.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-            {leaderboard.map((entry, index) =>
-              renderPlayerRow(
-                { name: entry.user.name, score: entry.totalScore },
-                index, 'score', entry.user._id === user.id, index * 0.04
-              )
+                {selectedWeekId && selectedWeekScores.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    {selectedWeekScores.map((player, index) =>
+                      renderPlayerRow(player, index, 'score', player.name === user.name, index * 0.03)
+                    )}
+                  </div>
+                )}
+                {selectedWeekScores.length === 0 && selectedWeekId && (
+                  <div style={{ textAlign: 'center', color: '#999', padding: '0.75rem', fontSize: '13px' }}>
+                    אין נתוני ניקוד לשבוע זה
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ textAlign: 'center', color: '#999', padding: '1.5rem', fontSize: '14px' }}>
+                אין שבועות בחודש {months.find(m => m.value === selectedMonth)?.label}
+              </div>
             )}
           </div>
-        ) : (
-          <div style={{ textAlign: 'center', color: '#999', padding: '1.5rem', fontSize: '14px' }}>
-            אין נתוני דירוג עדיין
+        )}
+
+        {/* דירוג כללי */}
+        {activeTab === 'general' && (
+          <div className="card">
+            <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
+              🏆 דירוג כללי - {selectedSeason}
+            </h2>
+            {/* בורר עונה לטאב כללי */}
+            <div style={{ marginBottom: '0.5rem' }}>
+              <select
+                value={selectedSeason}
+                onChange={(e) => setSelectedSeason(e.target.value)}
+                className="input"
+                style={{ width: '100%', fontSize: '13px', padding: '0.45rem', borderRadius: '10px' }}
+              >
+                {seasons.map(season => (
+                  <option key={season.value} value={season.value}>{season.label}</option>
+                ))}
+              </select>
+            </div>
+            {leaderboard.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                {leaderboard.map((entry, index) =>
+                  renderPlayerRow(
+                    { name: entry.user.name, score: entry.totalScore },
+                    index, 'score', entry.user._id === user.id, index * 0.04
+                  )
+                )}
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', color: '#999', padding: '1.5rem', fontSize: '14px' }}>
+                אין נתוני דירוג עדיין
+              </div>
+            )}
           </div>
         )}
       </div>
