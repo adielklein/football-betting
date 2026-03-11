@@ -1,22 +1,21 @@
 import React, { useState } from 'react';
-import { getThemesByCategory, getTheme } from '../../themes'; // 🎨 יבוא מקובץ הערכות
+import { getThemesByCategory, getTheme } from '../../themes';
 
 function UsersManagement({ users, loadData, user }) {
-  const [newUser, setNewUser] = useState({ 
-    name: '', 
-    username: '', 
-    password: '', 
+  const [newUser, setNewUser] = useState({
+    name: '',
+    username: '',
+    password: '',
     role: 'player',
     theme: 'default'
   });
   const [editingUser, setEditingUser] = useState(null);
   const [editForm, setEditForm] = useState({});
 
-  const API_URL = window.location.hostname === 'localhost' 
+  const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
 
-  // 🎨 קבלת ערכות נושא מקובצות לפי קטגוריות
   const themeCategories = getThemesByCategory();
 
   const handleAddUser = async () => {
@@ -26,8 +25,6 @@ function UsersManagement({ users, loadData, user }) {
     }
 
     try {
-      console.log('🔧 שולח משתמש חדש:', newUser);
-      
       const response = await fetch(`${API_URL}/auth/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -35,31 +32,20 @@ function UsersManagement({ users, loadData, user }) {
       });
 
       if (response.ok) {
-        const result = await response.json();
-        console.log('✅ משתמש חדש נוצר:', result);
-        
-        setNewUser({ 
-          name: '', 
-          username: '', 
-          password: '', 
-          role: 'player',
-          theme: 'default' 
-        });
+        setNewUser({ name: '', username: '', password: '', role: 'player', theme: 'default' });
         await loadData();
         alert('משתמש חדש נוסף בהצלחה!');
       } else {
         const error = await response.json();
-        console.error('⌐ שגיאה ביצירת משתמש:', error);
         alert('שגיאה: ' + error.message);
       }
     } catch (error) {
-      console.error('⌐ שגיאה בהוספת משתמש:', error);
+      console.error('שגיאה בהוספת משתמש:', error);
       alert('שגיאה בהוספת המשתמש');
     }
   };
 
   const startEditing = (userItem) => {
-    console.log('🖊️ מתחיל עריכה למשתמש:', userItem);
     setEditingUser(userItem._id);
     setEditForm({
       name: userItem.name,
@@ -75,7 +61,6 @@ function UsersManagement({ users, loadData, user }) {
     setEditForm({});
   };
 
-  // 🔧 פונקציית saveEdit עם תיקון localStorage ורענון נתונים
   const saveEdit = async (userId) => {
     try {
       const updateData = {
@@ -89,8 +74,6 @@ function UsersManagement({ users, loadData, user }) {
         updateData.password = editForm.password;
       }
 
-      console.log('🔧 שולח עדכון למשתמש:', userId, updateData);
-
       const response = await fetch(`${API_URL}/auth/users/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -98,47 +81,28 @@ function UsersManagement({ users, loadData, user }) {
       });
 
       if (response.ok) {
-        const updatedUser = await response.json();
-        console.log('✅ משתמש עודכן בשרת:', updatedUser);
-        
-        // 🔧 אם זה המשתמש הנוכחי, עדכן localStorage ורענן
         if (userId === user?.id) {
-          console.log('🎨 עדכון המשתמש הנוכחי - מרענן את הדף...');
-          
           const currentUser = JSON.parse(localStorage.getItem('football_betting_user'));
-          
-          // עדכן את כל הפרטים החדשים
           currentUser.theme = editForm.theme;
           currentUser.name = editForm.name;
           currentUser.username = editForm.username;
           currentUser.role = editForm.role;
-          
           localStorage.setItem('football_betting_user', JSON.stringify(currentUser));
-          
-          console.log('🎨 localStorage עודכן עם:', currentUser);
-          
           alert('ערכת נושא עודכנה בהצלחה! הדף יתרענן תוך שניה...');
-          
-          // רענן את הדף כדי שערכת הנושא תיכנס לתוקף
-          setTimeout(() => {
-            window.location.reload();
-          }, 1500);
-          
+          setTimeout(() => { window.location.reload(); }, 1500);
           return;
         }
-        
-        // עבור משתמשים אחרים
+
         setEditingUser(null);
         setEditForm({});
         await loadData();
         alert('משתמש עודכן בהצלחה!');
       } else {
         const error = await response.json();
-        console.error('⌐ שגיאה בעדכון:', error);
         alert('שגיאה: ' + error.message);
       }
     } catch (error) {
-      console.error('⌐ שגיאה בעדכון משתמש:', error);
+      console.error('שגיאה בעדכון משתמש:', error);
       alert('שגיאה בעדכון המשתמש');
     }
   };
@@ -151,10 +115,7 @@ function UsersManagement({ users, loadData, user }) {
 
     if (window.confirm(`האם אתה בטוח שברצונך למחוק את ${userName}?\n\nהפעולה הזו תמחק גם את כל ההימורים והניקוד שלו.`)) {
       try {
-        const response = await fetch(`${API_URL}/auth/users/${userId}`, {
-          method: 'DELETE'
-        });
-
+        const response = await fetch(`${API_URL}/auth/users/${userId}`, { method: 'DELETE' });
         if (response.ok) {
           await loadData();
           alert('משתמש נמחק בהצלחה!');
@@ -169,14 +130,8 @@ function UsersManagement({ users, loadData, user }) {
     }
   };
 
-  // 🎨 רכיב בחירת ערכת נושא
   const ThemeSelector = ({ value, onChange, style = {} }) => (
-    <select
-      value={value}
-      onChange={onChange}
-      className="input"
-      style={style}
-    >
+    <select value={value} onChange={onChange} className="input" style={{ borderRadius: '10px', ...style }}>
       <option value="default">בחר ערכת נושא</option>
       {Object.entries(themeCategories).map(([categoryName, themes]) => (
         <optgroup key={categoryName} label={categoryName}>
@@ -190,317 +145,350 @@ function UsersManagement({ users, loadData, user }) {
     </select>
   );
 
-  // 🎨 תצוגת ערכת נושא נוכחית - עם תמיכה בתמונות ובאמוג'ים
   const ThemeDisplay = ({ themeName }) => {
     const theme = getTheme(themeName);
-    
     return (
       <span style={{
-        padding: '6px 12px',
+        padding: '4px 10px',
         backgroundColor: theme.colors.primary,
         color: theme.colors.primary === '#ffffff' ? '#000' : '#fff',
-        borderRadius: '6px',
-        fontSize: '13px',
+        borderRadius: '20px',
+        fontSize: '12px',
         display: 'inline-flex',
         alignItems: 'center',
-        gap: '6px',
-        fontWeight: '500',
+        gap: '4px',
+        fontWeight: '600',
         border: theme.colors.primary === '#ffffff' ? '1px solid #ddd' : 'none'
       }}>
-        {/* תמיכה בסמלי תמונה ואמוג'י */}
         {theme.logoType === 'image' ? (
-          <img 
-            src={theme.logo} 
+          <img
+            src={theme.logo}
             alt={theme.name}
             className="theme-logo-image"
             onError={(e) => {
-              // אם התמונה לא נטענת, הצג אמוג'י חלופי
               e.target.style.display = 'none';
               e.target.nextSibling.style.display = 'inline';
             }}
           />
         ) : (
-          <span style={{ fontSize: '16px' }}>{theme.logo}</span>
+          <span style={{ fontSize: '14px' }}>{theme.logo}</span>
         )}
         {theme.logoType === 'image' && (
-          <span style={{ fontSize: '16px', display: 'none' }}>🖼️</span>
+          <span style={{ fontSize: '14px', display: 'none' }}>🖼️</span>
         )}
         {theme.name}
       </span>
     );
   };
 
+  const labelStyle = {
+    fontSize: '11px',
+    color: '#888',
+    display: 'block',
+    marginBottom: '3px',
+    fontWeight: '600'
+  };
+
+  const inputStyle = {
+    borderRadius: '10px',
+    fontSize: '13px',
+    padding: '0.45rem 0.6rem'
+  };
+
   return (
     <div>
-      {/* הוסף משתמש חדש */}
-      <div className="card">
-        <h2>הוסף משתמש חדש</h2>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-          gap: '1rem', 
-          alignItems: 'end' 
+      {/* Add user form */}
+      <div className="card" style={{ marginBottom: '0.75rem' }}>
+        <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.6rem 0', fontWeight: '700' }}>
+          ➕ הוסף משתמש חדש
+        </h2>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          gap: '0.5rem',
+          alignItems: 'end'
         }}>
           <div>
-            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
-              שם מלא:
-            </label>
+            <label style={labelStyle}>שם מלא</label>
             <input
               type="text"
               placeholder="שם מלא"
               value={newUser.name}
               onChange={(e) => setNewUser(prev => ({ ...prev, name: e.target.value }))}
               className="input"
+              style={inputStyle}
             />
           </div>
-          
           <div>
-            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
-              שם משתמש:
-            </label>
+            <label style={labelStyle}>שם משתמש</label>
             <input
               type="text"
               placeholder="שם משתמש"
               value={newUser.username}
               onChange={(e) => setNewUser(prev => ({ ...prev, username: e.target.value }))}
               className="input"
+              style={inputStyle}
             />
           </div>
-          
           <div>
-            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
-              סיסמה:
-            </label>
+            <label style={labelStyle}>סיסמה</label>
             <input
               type="password"
               placeholder="סיסמה"
               value={newUser.password}
               onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
               className="input"
+              style={inputStyle}
             />
           </div>
-          
           <div>
-            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
-              ערכת נושא:
-            </label>
+            <label style={labelStyle}>ערכת נושא</label>
             <ThemeSelector
               value={newUser.theme}
               onChange={(e) => setNewUser(prev => ({ ...prev, theme: e.target.value }))}
+              style={inputStyle}
             />
           </div>
-          
           <div>
-            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
-              תפקיד:
-            </label>
+            <label style={labelStyle}>תפקיד</label>
             <select
               value={newUser.role}
               onChange={(e) => setNewUser(prev => ({ ...prev, role: e.target.value }))}
               className="input"
+              style={inputStyle}
             >
               <option value="player">שחקן</option>
               <option value="admin">מנהל</option>
             </select>
           </div>
-          
-          <button onClick={handleAddUser} className="btn btn-success">
-            ➕ הוסף משתמש
-          </button>
         </div>
+        <button
+          onClick={handleAddUser}
+          style={{
+            width: '100%',
+            marginTop: '0.6rem',
+            padding: '0.55rem',
+            background: 'linear-gradient(135deg, #28a745, #20c997)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '10px',
+            fontSize: '14px',
+            fontWeight: '700',
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(40,167,69,0.3)',
+            transition: 'all 0.2s ease',
+            WebkitAppearance: 'none',
+            touchAction: 'manipulation'
+          }}
+        >
+          ➕ הוסף משתמש
+        </button>
       </div>
 
-      {/* רשימת משתמשים */}
+      {/* User list */}
       <div className="card">
-        <h2>רשימת משתמשים ({users.length})</h2>
-        
+        <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
+          👥 רשימת משתמשים ({users.length})
+        </h2>
+
         {users.length === 0 ? (
-          <div style={{ textAlign: 'center', color: '#666', padding: '2rem' }}>
-            <div style={{ fontSize: '48px', marginBottom: '1rem' }}>👥</div>
-            <h3>אין משתמשים במערכת עדיין</h3>
-            <p>השתמש בטופס למעלה כדי להוסיף משתמש ראשון</p>
+          <div style={{ textAlign: 'center', color: '#999', padding: '2rem', fontSize: '14px' }}>
+            <div style={{ fontSize: '40px', marginBottom: '0.5rem' }}>👥</div>
+            אין משתמשים במערכת עדיין
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#f8f9fa' }}>
-                  <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid #ddd' }}>שם</th>
-                  <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid #ddd' }}>שם משתמש</th>
-                  <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid #ddd' }}>ערכת נושא</th>
-                  <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid #ddd' }}>תפקיד</th>
-                  <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid #ddd' }}>סיסמה חדשה</th>
-                  <th style={{ padding: '12px', textAlign: 'center', borderBottom: '2px solid #ddd' }}>פעולות</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(userItem => {
-                  if (!userItem || !userItem._id) return null;
-                  
-                  const isEditing = editingUser === userItem._id;
-                  const isCurrentUser = userItem._id === user?.id;
-                  
-                  return (
-                    <tr key={userItem._id} style={{ 
-                      borderBottom: '1px solid #eee',
-                      backgroundColor: isCurrentUser ? '#e3f2fd' : 'transparent'
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+            {users.map((userItem, index) => {
+              if (!userItem || !userItem._id) return null;
+
+              const isEditing = editingUser === userItem._id;
+              const isCurrentUser = userItem._id === user?.id;
+
+              if (isEditing) {
+                return (
+                  <div key={userItem._id} style={{
+                    padding: '0.6rem',
+                    background: 'linear-gradient(135deg, #fff9c4 0%, #fff8e1 100%)',
+                    borderRadius: '12px',
+                    border: '1px solid #ffe082',
+                    animation: `slideUp 0.25s ease ${index * 0.03}s both`
+                  }}>
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#f57f17', marginBottom: '0.4rem' }}>
+                      ✏️ עריכת {userItem.name}
+                    </div>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                      gap: '0.4rem',
+                      marginBottom: '0.5rem'
                     }}>
-                      <td style={{ padding: '12px' }}>
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={editForm.name || ''}
-                            onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                            className="input"
-                            style={{ width: '100%' }}
-                            placeholder="שם מלא"
-                          />
-                        ) : (
-                          <div style={{ fontWeight: '500' }}>
-                            {userItem.name || 'ללא שם'}
-                            {isCurrentUser && (
-                              <div style={{ color: '#1976d2', fontSize: '11px', marginTop: '2px' }}>
-                                👤 זה אתה
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </td>
+                      <div>
+                        <label style={labelStyle}>שם מלא</label>
+                        <input
+                          type="text"
+                          value={editForm.name || ''}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                          className="input"
+                          style={inputStyle}
+                        />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>שם משתמש</label>
+                        <input
+                          type="text"
+                          value={editForm.username || ''}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, username: e.target.value }))}
+                          className="input"
+                          style={inputStyle}
+                        />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>סיסמה חדשה</label>
+                        <input
+                          type="password"
+                          placeholder="אופציונלי"
+                          value={editForm.password || ''}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, password: e.target.value }))}
+                          className="input"
+                          style={inputStyle}
+                        />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>ערכת נושא</label>
+                        <ThemeSelector
+                          value={editForm.theme || 'default'}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, theme: e.target.value }))}
+                          style={inputStyle}
+                        />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>תפקיד</label>
+                        <select
+                          value={editForm.role || 'player'}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, role: e.target.value }))}
+                          className="input"
+                          style={inputStyle}
+                        >
+                          <option value="player">שחקן</option>
+                          <option value="admin">מנהל</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      <button
+                        onClick={() => saveEdit(userItem._id)}
+                        style={{
+                          flex: 1,
+                          padding: '0.45rem',
+                          background: 'linear-gradient(135deg, #28a745, #20c997)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          fontWeight: '700',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        💾 שמור
+                      </button>
+                      <button
+                        onClick={cancelEditing}
+                        style={{
+                          flex: 1,
+                          padding: '0.45rem',
+                          backgroundColor: '#6c757d',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        ביטול
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
 
-                      <td style={{ padding: '12px' }}>
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={editForm.username || ''}
-                            onChange={(e) => setEditForm(prev => ({ ...prev, username: e.target.value }))}
-                            className="input"
-                            style={{ width: '100%' }}
-                            placeholder="שם משתמש"
-                          />
-                        ) : (
-                          <span style={{ fontFamily: 'monospace', fontSize: '14px' }}>
-                            {userItem.username || 'ללא שם משתמש'}
-                          </span>
-                        )}
-                      </td>
-
-                      <td style={{ padding: '12px' }}>
-                        {isEditing ? (
-                          <ThemeSelector
-                            value={editForm.theme || 'default'}
-                            onChange={(e) => setEditForm(prev => ({ ...prev, theme: e.target.value }))}
-                            style={{ minWidth: '200px' }}
-                          />
-                        ) : (
-                          <ThemeDisplay themeName={userItem.theme || 'default'} />
-                        )}
-                      </td>
-
-                      <td style={{ padding: '12px' }}>
-                        {isEditing ? (
-                          <select
-                            value={editForm.role || 'player'}
-                            onChange={(e) => setEditForm(prev => ({ ...prev, role: e.target.value }))}
-                            className="input"
-                          >
-                            <option value="player">שחקן</option>
-                            <option value="admin">מנהל</option>
-                          </select>
-                        ) : (
-                          <span style={{
-                            padding: '4px 8px',
-                            backgroundColor: userItem.role === 'admin' ? '#dc3545' : '#28a745',
-                            color: 'white',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            fontWeight: '500'
-                          }}>
-                            {userItem.role === 'admin' ? '👑 מנהל' : '⚽ שחקן'}
-                          </span>
-                        )}
-                      </td>
-
-                      <td style={{ padding: '12px' }}>
-                        {isEditing ? (
-                          <input
-                            type="password"
-                            placeholder="סיסמה חדשה (אופציונלי)"
-                            value={editForm.password || ''}
-                            onChange={(e) => setEditForm(prev => ({ ...prev, password: e.target.value }))}
-                            className="input"
-                            style={{ minWidth: '150px' }}
-                          />
-                        ) : (
-                          <span style={{ color: '#999', fontSize: '12px' }}>🔒 ••••••</span>
-                        )}
-                      </td>
-
-                      <td style={{ padding: '12px', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                          {isEditing ? (
-                            <>
-                              <button
-                                onClick={() => saveEdit(userItem._id)}
-                                className="btn"
-                                style={{ 
-                                  fontSize: '12px', 
-                                  padding: '6px 12px', 
-                                  backgroundColor: '#28a745', 
-                                  color: 'white' 
-                                }}
-                              >
-                                💾 שמור
-                              </button>
-                              <button
-                                onClick={cancelEditing}
-                                className="btn"
-                                style={{ 
-                                  fontSize: '12px', 
-                                  padding: '6px 12px', 
-                                  backgroundColor: '#6c757d', 
-                                  color: 'white' 
-                                }}
-                              >
-                                ⌐ ביטול
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => startEditing(userItem)}
-                                className="btn"
-                                style={{ 
-                                  fontSize: '12px', 
-                                  padding: '6px 12px', 
-                                  backgroundColor: '#ffc107', 
-                                  color: 'white' 
-                                }}
-                              >
-                                ✏️ ערוך
-                              </button>
-                              {!isCurrentUser && (
-                                <button
-                                  onClick={() => handleDeleteUser(userItem._id, userItem.name)}
-                                  className="btn"
-                                  style={{ 
-                                    fontSize: '12px', 
-                                    padding: '6px 12px', 
-                                    backgroundColor: '#dc3545', 
-                                    color: 'white' 
-                                  }}
-                                >
-                                  🗑️ מחק
-                                </button>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+              return (
+                <div key={userItem._id} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.5rem 0.6rem',
+                  background: isCurrentUser
+                    ? 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)'
+                    : (index % 2 === 0 ? '#fafafa' : '#fff'),
+                  borderRadius: '10px',
+                  border: isCurrentUser ? '1.5px solid #64b5f6' : '1px solid #f0f0f0',
+                  animation: `slideUp 0.25s ease ${index * 0.03}s both`,
+                  transition: 'all 0.2s ease'
+                }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: '600', fontSize: '14px', color: '#333' }}>
+                        {userItem.name}
+                      </span>
+                      <span style={{
+                        padding: '2px 8px',
+                        backgroundColor: userItem.role === 'admin' ? '#dc3545' : '#28a745',
+                        color: 'white',
+                        borderRadius: '20px',
+                        fontSize: '10px',
+                        fontWeight: '700'
+                      }}>
+                        {userItem.role === 'admin' ? '👑 מנהל' : '⚽ שחקן'}
+                      </span>
+                      {isCurrentUser && (
+                        <span style={{ color: '#1976d2', fontSize: '10px', fontWeight: '600' }}>(אתה)</span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '2px', flexWrap: 'wrap' }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#888' }}>
+                        @{userItem.username}
+                      </span>
+                      <ThemeDisplay themeName={userItem.theme || 'default'} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.3rem', flexShrink: 0 }}>
+                    <button
+                      onClick={() => startEditing(userItem)}
+                      style={{
+                        padding: '0.3rem 0.6rem',
+                        background: 'linear-gradient(135deg, #ffc107, #ffb300)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ✏️
+                    </button>
+                    {!isCurrentUser && (
+                      <button
+                        onClick={() => handleDeleteUser(userItem._id, userItem.name)}
+                        style={{
+                          padding: '0.3rem 0.6rem',
+                          background: 'linear-gradient(135deg, #dc3545, #c62828)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

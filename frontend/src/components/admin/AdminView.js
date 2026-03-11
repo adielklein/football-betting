@@ -5,7 +5,7 @@ import WeeksManagement from './WeeksManagement';
 import UsersManagement from './UsersManagement';
 import BetsManagement from './BetsManagement';
 import LeaguesManagement from './LeaguesManagement';
-import PushManagement from './PushManagement'; // 🆕 הוספה
+import PushManagement from './PushManagement';
 import LoadingSpinner from './LoadingSpinner';
 
 function AdminView({ user, onLogout }) {
@@ -17,7 +17,7 @@ function AdminView({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('weeks');
   const [loading, setLoading] = useState(true);
 
-  const API_URL = window.location.hostname === 'localhost' 
+  const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
 
@@ -32,10 +32,10 @@ function AdminView({ user, onLogout }) {
         api.getWeeks(),
         api.getUsers()
       ]);
-      
+
       setWeeks(Array.isArray(weeksData) ? weeksData.filter(w => w && w._id) : []);
       setUsers(Array.isArray(usersData) ? usersData.filter(u => u && u._id) : []);
-      
+
       if (weeksData && weeksData.length > 0) {
         const activeWeek = weeksData.find(w => w && w.active) || weeksData[0];
         if (activeWeek && activeWeek._id) {
@@ -54,15 +54,15 @@ function AdminView({ user, onLogout }) {
 
   const loadWeekData = async (weekId) => {
     if (!weekId) return;
-    
+
     try {
       const [matchesData, betsResponse] = await Promise.all([
         api.getMatches(weekId),
         fetch(`${API_URL}/bets/week/${weekId}`)
       ]);
-      
+
       const betsData = await betsResponse.json();
-      
+
       setMatches(Array.isArray(matchesData) ? matchesData : []);
       setAllBets(Array.isArray(betsData) ? betsData : []);
     } catch (error) {
@@ -90,7 +90,6 @@ function AdminView({ user, onLogout }) {
     return <LoadingSpinner message="טוען נתונים..." />;
   }
 
-  // Shared props for all components
   const sharedProps = {
     weeks,
     selectedWeek,
@@ -108,95 +107,72 @@ function AdminView({ user, onLogout }) {
     setUsers
   };
 
+  const tabs = [
+    { key: 'weeks', label: 'שבועות', icon: '📅' },
+    { key: 'leagues', label: 'ליגות', icon: '🏆' },
+    { key: 'users', label: 'משתמשים', icon: '👥' },
+    { key: 'bets', label: 'הימורים', icon: '🎯' },
+    { key: 'push', label: 'התראות', icon: '📢' }
+  ];
+
   return (
     <div>
       <AdminHeader user={user} onLogout={onLogout} />
 
       <div className="container">
-        {/* Navigation Tabs */}
-        <div style={{ 
-          display: 'flex', 
-          gap: '1rem', 
-          marginBottom: '2rem',
-          borderBottom: '1px solid #ddd',
-          paddingBottom: '1rem',
-          overflowX: 'auto',
-          flexWrap: 'nowrap',
-          WebkitOverflowScrolling: 'touch'
+        {/* iOS-style segmented tab bar */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(5, 1fr)',
+          gap: '3px',
+          marginBottom: '0.75rem',
+          padding: '3px',
+          backgroundColor: '#f0f2f5',
+          borderRadius: '14px',
+          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)'
         }}>
-          <button 
-            onClick={() => setActiveTab('weeks')}
-            className="btn"
-            style={{ 
-              backgroundColor: activeTab === 'weeks' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'weeks' ? 'white' : '#333',
-              flexShrink: 0,
-              whiteSpace: 'nowrap'
-            }}
-          >
-            📅 ניהול שבועות
-          </button>
-          
-          <button 
-            onClick={() => setActiveTab('leagues')}
-            className="btn"
-            style={{ 
-              backgroundColor: activeTab === 'leagues' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'leagues' ? 'white' : '#333',
-              flexShrink: 0,
-              whiteSpace: 'nowrap'
-            }}
-          >
-            🏆 ניהול ליגות
-          </button>
-          
-          <button 
-            onClick={() => setActiveTab('users')}
-            className="btn"
-            style={{ 
-              backgroundColor: activeTab === 'users' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'users' ? 'white' : '#333',
-              flexShrink: 0,
-              whiteSpace: 'nowrap'
-            }}
-          >
-            👥 ניהול משתמשים
-          </button>
-          
-          <button 
-            onClick={() => setActiveTab('bets')}
-            className="btn"
-            style={{ 
-              backgroundColor: activeTab === 'bets' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'bets' ? 'white' : '#333',
-              flexShrink: 0,
-              whiteSpace: 'nowrap'
-            }}
-          >
-            🎯 עריכת הימורים
-          </button>
-
-          {/* 🆕 כפתור התראות חדש */}
-          <button 
-            onClick={() => setActiveTab('push')}
-            className="btn"
-            style={{ 
-              backgroundColor: activeTab === 'push' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'push' ? 'white' : '#333',
-              flexShrink: 0,
-              whiteSpace: 'nowrap'
-            }}
-          >
-            📢 התראות
-          </button>
+          {tabs.map(tab => {
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                style={{
+                  padding: '0.45rem 0.1rem',
+                  border: 'none',
+                  borderRadius: '11px',
+                  backgroundColor: isActive ? '#fff' : 'transparent',
+                  color: isActive ? 'var(--theme-primary, #007bff)' : '#888',
+                  fontWeight: isActive ? '700' : '500',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                  WebkitAppearance: 'none',
+                  touchAction: 'manipulation',
+                  whiteSpace: 'nowrap',
+                  margin: 0,
+                  boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '1px',
+                  lineHeight: 1.2
+                }}
+              >
+                <span style={{ fontSize: '15px', lineHeight: 1 }}>{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Tab Content */}
-        {activeTab === 'weeks' && <WeeksManagement {...sharedProps} />}
-        {activeTab === 'leagues' && <LeaguesManagement />}
-        {activeTab === 'users' && <UsersManagement {...sharedProps} />}
-        {activeTab === 'bets' && <BetsManagement {...sharedProps} />}
-        {activeTab === 'push' && <PushManagement />} {/* 🆕 טאב התראות חדש */}
+        <div style={{ animation: 'scaleIn 0.2s ease' }}>
+          {activeTab === 'weeks' && <WeeksManagement {...sharedProps} />}
+          {activeTab === 'leagues' && <LeaguesManagement />}
+          {activeTab === 'users' && <UsersManagement {...sharedProps} />}
+          {activeTab === 'bets' && <BetsManagement {...sharedProps} />}
+          {activeTab === 'push' && <PushManagement />}
+        </div>
       </div>
     </div>
   );
