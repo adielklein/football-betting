@@ -289,8 +289,15 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔐 Auth System: Username/Password`);
-  console.log(`🔍 Debug URL: http://localhost:${PORT}/api/debug`);
-  console.log(`🔄 Migration URL: http://localhost:${PORT}/api/migrate/add-theme-field`);
-  console.log(`🔧 Cleanup URL: http://localhost:${PORT}/api/admin/cleanup-subscriptions`);
-  console.log(`🏆 Leagues URL: http://localhost:${PORT}/api/leagues`);
+
+  // Keep-alive: ping ourselves every 14 minutes to prevent Render from sleeping
+  if (process.env.NODE_ENV !== 'development') {
+    const RENDER_URL = 'https://football-betting-backend.onrender.com';
+    setInterval(() => {
+      fetch(`${RENDER_URL}/api/debug`)
+        .then(() => console.log('🏓 Keep-alive ping sent'))
+        .catch(() => console.log('🏓 Keep-alive ping failed (will retry)'));
+    }, 14 * 60 * 1000);
+    console.log('🏓 Keep-alive enabled: pinging every 14 minutes');
+  }
 });
