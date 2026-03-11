@@ -202,8 +202,10 @@ const betsRoutes = require('./routes/bets');
 const scoresRoutes = require('./routes/scores');
 const leaguesRoutes = require('./routes/leagues');
 const uploadRouter = require('./routes/upload');
+const statsRoutes = require('./routes/stats');
 
 app.use('/api/upload', uploadRouter);
+app.use('/api/stats', statsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/weeks', weeksRoutes);
 app.use('/api/matches', matchesRoutes);

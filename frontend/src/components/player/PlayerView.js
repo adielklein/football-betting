@@ -6,6 +6,7 @@ import BettingInterface from './BettingInterface';
 import Leaderboard from './Leaderboard';
 import HistoryViewer from './HistoryViewer';
 import AllBetsViewer from './AllBetsViewer';
+import PlayerStats from './PlayerStats';
 import NotificationSettings from '../NotificationSettings';
 
 function PlayerView({ user, onLogout }) {
@@ -129,7 +130,8 @@ function PlayerView({ user, onLogout }) {
     { key: 'betting', label: 'הימורים', icon: '⚽' },
     { key: 'allbets', label: 'כל ההימורים', icon: '👥' },
     { key: 'leaderboard', label: 'טבלה', icon: '🏆' },
-    { key: 'history', label: 'היסטוריה', icon: '📋' }
+    { key: 'history', label: 'היסטוריה', icon: '📋' },
+    { key: 'stats', label: 'סטטיסטיקה', icon: '📊' }
   ];
 
   if (loading) {
@@ -179,7 +181,7 @@ function PlayerView({ user, onLogout }) {
         {/* Tab Bar */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
+          gridTemplateColumns: 'repeat(5, 1fr)',
           gap: '4px',
           marginBottom: '0.75rem',
           padding: '4px',
@@ -252,6 +254,10 @@ function PlayerView({ user, onLogout }) {
               weeks={weeks}
               user={user}
             />
+          )}
+
+          {activeTab === 'stats' && (
+            <PlayerStats user={user} />
           )}
         </div>
       </div>
