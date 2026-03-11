@@ -17,12 +17,11 @@ function PlayerView({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('betting');
   const [loading, setLoading] = useState(true);
 
-  const API_URL = window.location.hostname === 'localhost' 
+  const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
 
   useEffect(() => {
-    console.log('🎨 PlayerView: מחיל ערכת נושא למשתמש:', user);
     applyTheme(user);
   }, [user, user?.theme]);
 
@@ -33,56 +32,39 @@ function PlayerView({ user, onLogout }) {
   const loadData = async () => {
     try {
       setLoading(true);
-      
+
       const [weeksData, leaderboardResponse] = await Promise.all([
         api.getWeeks(),
         fetch(`${API_URL}/scores/leaderboard`)
       ]);
-      
+
       setWeeks(Array.isArray(weeksData) ? weeksData : []);
-      
+
       const leaderData = await leaderboardResponse.json();
-      const playersOnly = leaderData.filter(entry => 
+      const playersOnly = leaderData.filter(entry =>
         entry.user && entry.user.role !== 'admin'
       );
       setLeaderboard(playersOnly);
-      
-      console.log('🏆 כל השבועות שהתקבלו:', weeksData);
-      
+
       if (weeksData && weeksData.length > 0) {
         const activeUnlockedWeek = weeksData.find(w => {
-          if (!w || !w.active || w.locked) {
-            console.log(`🔍 שבוע "${w?.name}" - פעיל: ${w?.active}, נעול: ${w?.locked} - לא מתאים`);
-            return false;
-          }
-          
+          if (!w || !w.active || w.locked) return false;
           if (w.lockTime) {
             const lockTime = new Date(w.lockTime);
             const now = new Date();
-            if (now >= lockTime) {
-              console.log(`🔍 שבוע "${w.name}" - עבר זמן הנעילה (${lockTime}) - לא מתאים`);
-              return false;
-            }
+            if (now >= lockTime) return false;
           }
-          
-          console.log(`✅ שבוע "${w.name}" - פעיל ולא נעול ולא עבר זמן - מתאים!`);
           return true;
         });
-        
-        console.log('🔍 שבוע פעיל אמיתי שנמצא:', activeUnlockedWeek);
-        
+
         if (activeUnlockedWeek && activeUnlockedWeek._id) {
           setSelectedWeek(activeUnlockedWeek);
           await loadWeekData(activeUnlockedWeek._id);
-          console.log('✅ נמצא שבוע פעיל אמיתי:', activeUnlockedWeek.name);
         } else {
-          console.log('⌫ אין שבוע פעיל אמיתי - לא מציג כלום בהימורים נוכחי');
           setSelectedWeek(null);
           setMatches([]);
           setBets({});
         }
-      } else {
-        console.log('⌫ אין שבועות בכלל');
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -93,15 +75,15 @@ function PlayerView({ user, onLogout }) {
 
   const loadWeekData = async (weekId) => {
     if (!weekId) return;
-    
+
     try {
       const [matchesData, betsData] = await Promise.all([
         api.getMatches(weekId),
         api.getUserBets(user.id, weekId)
       ]);
-      
+
       setMatches(Array.isArray(matchesData) ? matchesData : []);
-      
+
       const betsObj = {};
       if (Array.isArray(betsData)) {
         betsData.forEach(bet => {
@@ -122,11 +104,10 @@ function PlayerView({ user, onLogout }) {
     try {
       const leaderboardResponse = await fetch(`${API_URL}/scores/leaderboard`);
       const leaderData = await leaderboardResponse.json();
-      const playersOnly = leaderData.filter(entry => 
+      const playersOnly = leaderData.filter(entry =>
         entry.user && entry.user.role !== 'admin'
       );
       setLeaderboard(playersOnly);
-      console.log('✅ לוח התוצאות רוענן');
     } catch (error) {
       console.error('Error refreshing leaderboard:', error);
     }
@@ -144,10 +125,17 @@ function PlayerView({ user, onLogout }) {
     return userEntry ? userEntry.totalScore : 0;
   };
 
+  const tabs = [
+    { key: 'betting', label: 'הימורים', icon: '⚽' },
+    { key: 'allbets', label: 'כל ההימורים', icon: '👥' },
+    { key: 'leaderboard', label: 'טבלה', icon: '🏆' },
+    { key: 'history', label: 'היסטוריה', icon: '📋' }
+  ];
+
   if (loading) {
     return (
-      <div style={{ 
-        padding: '2rem', 
+      <div style={{
+        padding: '2rem',
         textAlign: 'center',
         minHeight: '50vh',
         display: 'flex',
@@ -156,16 +144,16 @@ function PlayerView({ user, onLogout }) {
         alignItems: 'center'
       }}>
         <div style={{
-          width: '40px',
-          height: '40px',
-          border: '4px solid #f3f3f3',
-          borderTop: '4px solid #007bff',
+          width: '44px',
+          height: '44px',
+          border: '3px solid #f0f0f0',
+          borderTop: '3px solid var(--theme-primary, #007bff)',
           borderRadius: '50%',
-          animation: 'spin 1s linear infinite',
+          animation: 'spin 0.8s linear infinite',
           marginBottom: '1rem'
         }}></div>
-        <h2 style={{ color: '#666', fontSize: '1.2rem' }}>טוען נתונים...</h2>
-        
+        <h2 style={{ color: '#888', fontSize: '1rem', fontWeight: '500' }}>טוען נתונים...</h2>
+
         <style>{`
           @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -178,85 +166,94 @@ function PlayerView({ user, onLogout }) {
 
   return (
     <div>
-      <PlayerHeader 
-        user={user} 
-        selectedWeek={selectedWeek} 
-        userScore={getUserTotalScore()} 
-        onLogout={onLogout} 
+      <PlayerHeader
+        user={user}
+        selectedWeek={selectedWeek}
+        userScore={getUserTotalScore()}
+        onLogout={onLogout}
       />
 
       <div className="container">
         <NotificationSettings user={user} />
-        
+
+        {/* Tab Bar */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '0.3rem',
+          gap: '4px',
           marginBottom: '0.75rem',
-          padding: '0.25rem',
-          backgroundColor: '#f0f0f0',
-          borderRadius: '10px'
+          padding: '4px',
+          backgroundColor: '#f0f2f5',
+          borderRadius: '14px',
+          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)'
         }}>
-          {[
-            { key: 'betting', label: 'הימורים' },
-            { key: 'allbets', label: 'כל ההימורים' },
-            { key: 'leaderboard', label: 'טבלה' },
-            { key: 'history', label: 'היסטוריה' }
-          ].map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              style={{
-                padding: '0.5rem 0.15rem',
-                border: 'none',
-                borderRadius: '8px',
-                backgroundColor: activeTab === tab.key ? '#007bff' : 'transparent',
-                color: activeTab === tab.key ? 'white' : '#555',
-                fontWeight: activeTab === tab.key ? '600' : '500',
-                fontSize: '13px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                WebkitAppearance: 'none',
-                touchAction: 'manipulation',
-                whiteSpace: 'nowrap',
-                margin: 0
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
+          {tabs.map(tab => {
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                style={{
+                  padding: '0.5rem 0.1rem',
+                  border: 'none',
+                  borderRadius: '11px',
+                  backgroundColor: isActive ? '#fff' : 'transparent',
+                  color: isActive ? 'var(--theme-primary, #007bff)' : '#888',
+                  fontWeight: isActive ? '700' : '500',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                  WebkitAppearance: 'none',
+                  touchAction: 'manipulation',
+                  whiteSpace: 'nowrap',
+                  margin: 0,
+                  boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '2px',
+                  lineHeight: 1.2
+                }}
+              >
+                <span style={{ fontSize: '16px', lineHeight: 1 }}>{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {activeTab === 'betting' && (
-          <BettingInterface 
-            selectedWeek={selectedWeek}
-            matches={matches}
-            bets={bets}
-            user={user}
-            onBetUpdate={handleBetUpdate}
-          />
-        )}
+        <div style={{ animation: 'scaleIn 0.2s ease' }}>
+          {activeTab === 'betting' && (
+            <BettingInterface
+              selectedWeek={selectedWeek}
+              matches={matches}
+              bets={bets}
+              user={user}
+              onBetUpdate={handleBetUpdate}
+            />
+          )}
 
-        {activeTab === 'allbets' && (
-          <AllBetsViewer 
-            weeks={weeks}
-            user={user}
-          />
-        )}
+          {activeTab === 'allbets' && (
+            <AllBetsViewer
+              weeks={weeks}
+              user={user}
+            />
+          )}
 
-        {activeTab === 'leaderboard' && (
-          <Leaderboard 
-            leaderboard={leaderboard}
-            user={user}
-          />
-        )}
+          {activeTab === 'leaderboard' && (
+            <Leaderboard
+              leaderboard={leaderboard}
+              user={user}
+            />
+          )}
 
-        {activeTab === 'history' && (
-          <HistoryViewer 
-            weeks={weeks}
-            user={user}
-          />
-        )}
+          {activeTab === 'history' && (
+            <HistoryViewer
+              weeks={weeks}
+              user={user}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

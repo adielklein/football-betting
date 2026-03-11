@@ -34,16 +34,10 @@ function Leaderboard({ leaderboard, user }) {
       let scoresData = [];
       let weeksData = [];
 
-      if (scoresResponse.ok) {
-        scoresData = await scoresResponse.json();
-      }
-
-      if (weeksResponse.ok) {
-        weeksData = await weeksResponse.json();
-      }
+      if (scoresResponse.ok) scoresData = await scoresResponse.json();
+      if (weeksResponse.ok) weeksData = await weeksResponse.json();
 
       calculateMonthlyScores(scoresData, weeksData);
-
     } catch (error) {
       console.error('Error loading scores data:', error);
       setMonthlyScores([]);
@@ -75,17 +69,12 @@ function Leaderboard({ leaderboard, user }) {
 
     scoresData.forEach(score => {
       if (!score.userId || score.userId.role === 'admin') return;
-
       const userId = score.userId._id;
       const userName = score.userId.name;
       const weekId = score.weekId && score.weekId._id ? score.weekId._id : score.weekId;
 
       if (!userScores[userId]) {
-        userScores[userId] = {
-          name: userName,
-          monthlyScore: 0,
-          totalScore: score.totalScore || 0
-        };
+        userScores[userId] = { name: userName, monthlyScore: 0, totalScore: score.totalScore || 0 };
       }
 
       if (monthWeekIds.includes(weekId)) {
@@ -98,43 +87,23 @@ function Leaderboard({ leaderboard, user }) {
   };
 
   const loadWeekScores = async () => {
-    if (!selectedWeekId) {
-      setSelectedWeekScores([]);
-      return;
-    }
+    if (!selectedWeekId) { setSelectedWeekScores([]); return; }
 
     try {
       const betsResponse = await fetch(`${API_URL}/bets/week/${selectedWeekId}`);
-
-      if (!betsResponse.ok) {
-        setSelectedWeekScores([]);
-        return;
-      }
+      if (!betsResponse.ok) { setSelectedWeekScores([]); return; }
 
       const betsData = await betsResponse.json();
-
       const weekScores = {};
 
       betsData.forEach(bet => {
         if (!bet.userId || bet.userId.role === 'admin') return;
-
         const userId = bet.userId._id;
-        const userName = bet.userId.name;
-        const points = bet.points || 0;
-
-        if (!weekScores[userId]) {
-          weekScores[userId] = {
-            name: userName,
-            score: 0
-          };
-        }
-
-        weekScores[userId].score += points;
+        if (!weekScores[userId]) { weekScores[userId] = { name: bet.userId.name, score: 0 }; }
+        weekScores[userId].score += bet.points || 0;
       });
 
-      const weekScoresArray = Object.values(weekScores).sort((a, b) => b.score - a.score);
-      setSelectedWeekScores(weekScoresArray);
-
+      setSelectedWeekScores(Object.values(weekScores).sort((a, b) => b.score - a.score));
     } catch (error) {
       console.error('Error loading week scores:', error);
       setSelectedWeekScores([]);
@@ -153,16 +122,75 @@ function Leaderboard({ leaderboard, user }) {
     { value: '2026-27', label: 'עונת 2026-27' }
   ];
 
-  const getMedalOrRank = (index) => {
-    if (index === 0) return '🥇';
-    if (index === 1) return '🥈';
-    if (index === 2) return '🥉';
-    return index + 1;
+  const getRankStyle = (index) => {
+    if (index === 0) return { icon: '🥇', bg: 'linear-gradient(135deg, #fff9c4 0%, #fff176 100%)', border: '#ffd54f', shadow: '0 2px 8px rgba(255,193,7,0.2)' };
+    if (index === 1) return { icon: '🥈', bg: 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)', border: '#bdbdbd', shadow: '0 2px 8px rgba(0,0,0,0.08)' };
+    if (index === 2) return { icon: '🥉', bg: 'linear-gradient(135deg, #ffe0b2 0%, #ffcc80 100%)', border: '#ffb74d', shadow: '0 2px 8px rgba(255,152,0,0.15)' };
+    return { icon: null, bg: 'transparent', border: 'transparent', shadow: 'none' };
+  };
+
+  const renderPlayerRow = (player, index, scoreKey, isMe, animDelay) => {
+    const rank = getRankStyle(index);
+    const isTop3 = index < 3;
+    const score = player[scoreKey] !== undefined ? player[scoreKey] : player.score;
+
+    return (
+      <div key={player.name} style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: isTop3 ? '0.6rem 0.65rem' : '0.45rem 0.6rem',
+        background: isMe ? 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)' : (isTop3 ? rank.bg : (index % 2 === 0 ? '#fafafa' : '#fff')),
+        borderRadius: isTop3 ? '12px' : '8px',
+        border: isMe ? '2px solid #64b5f6' : (isTop3 ? `1px solid ${rank.border}` : '1px solid #f0f0f0'),
+        boxShadow: isMe ? '0 2px 8px rgba(33,150,243,0.15)' : rank.shadow,
+        animation: `slideUp 0.25s ease ${animDelay}s both`,
+        transition: 'all 0.2s ease'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, flex: 1 }}>
+          <span style={{
+            fontSize: isTop3 ? '20px' : '13px',
+            fontWeight: '800',
+            minWidth: '28px',
+            textAlign: 'center',
+            color: !isTop3 ? '#bbb' : undefined
+          }}>
+            {rank.icon || (index + 1)}
+          </span>
+          <span style={{
+            fontWeight: isMe ? '700' : '500',
+            fontSize: '14px',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            color: '#333'
+          }}>
+            {player.name}
+            {isMe && (
+              <span style={{ color: '#1976d2', fontSize: '10px', marginRight: '3px', fontWeight: '600' }}> (אתה)</span>
+            )}
+          </span>
+        </div>
+        <span style={{
+          fontWeight: '800',
+          fontSize: isTop3 ? '18px' : '15px',
+          color: isTop3 ? '#333' : '#555',
+          flexShrink: 0,
+          background: isTop3 ? 'rgba(255,255,255,0.7)' : '#f5f5f5',
+          padding: '2px 12px',
+          borderRadius: '10px',
+          minWidth: '40px',
+          textAlign: 'center'
+        }}>
+          {score}
+        </span>
+      </div>
+    );
   };
 
   return (
     <div>
-      {/* סינון עונה + חודש */}
+      {/* סינון */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
@@ -173,98 +201,51 @@ function Leaderboard({ leaderboard, user }) {
           value={selectedSeason}
           onChange={(e) => setSelectedSeason(e.target.value)}
           className="input"
-          style={{ width: '100%', fontSize: '13px', padding: '0.45rem' }}
+          style={{ width: '100%', fontSize: '13px', padding: '0.45rem', borderRadius: '10px' }}
         >
           {seasons.map(season => (
-            <option key={season.value} value={season.value}>
-              {season.label}
-            </option>
+            <option key={season.value} value={season.value}>{season.label}</option>
           ))}
         </select>
-
         <select
           value={selectedMonth}
-          onChange={(e) => {
-            setSelectedMonth(parseInt(e.target.value));
-            setSelectedWeekId('');
-          }}
+          onChange={(e) => { setSelectedMonth(parseInt(e.target.value)); setSelectedWeekId(''); }}
           className="input"
-          style={{ width: '100%', fontSize: '13px', padding: '0.45rem' }}
+          style={{ width: '100%', fontSize: '13px', padding: '0.45rem', borderRadius: '10px' }}
         >
           {months.map(month => (
-            <option key={month.value} value={month.value}>
-              {month.label}
-            </option>
+            <option key={month.value} value={month.value}>{month.label}</option>
           ))}
         </select>
       </div>
 
       {loading && (
-        <div style={{ textAlign: 'center', padding: '1.5rem', color: '#666', fontSize: '14px' }}>
-          טוען נתונים...
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
+          <div style={{
+            width: '36px', height: '36px',
+            border: '3px solid #f0f0f0', borderTop: '3px solid var(--theme-primary, #007bff)',
+            borderRadius: '50%', animation: 'spin 0.8s linear infinite',
+            margin: '0 auto 0.5rem'
+          }}></div>
+          <span style={{ fontSize: '13px' }}>טוען נתונים...</span>
+          <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
         </div>
       )}
 
       {/* דירוג חודשי */}
       <div className="card" style={{ marginBottom: '0.75rem' }}>
-        <h2 style={{ fontSize: '1rem', margin: '0 0 0.5rem 0' }}>
-          דירוג {months.find(m => m.value === selectedMonth)?.label} - {selectedSeason}
+        <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
+          🏅 דירוג {months.find(m => m.value === selectedMonth)?.label}
         </h2>
         {!loading && monthlyScores.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-            {monthlyScores.map((player, index) => (
-              <div key={player.name} style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0.5rem 0.6rem',
-                backgroundColor: player.name === user.name ? '#e3f2fd' : (index % 2 === 0 ? '#fafafa' : '#fff'),
-                borderRadius: '8px',
-                border: player.name === user.name ? '2px solid #90caf9' : '1px solid #f0f0f0'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, flex: 1 }}>
-                  <span style={{
-                    fontSize: index < 3 ? '18px' : '13px',
-                    fontWeight: 'bold',
-                    minWidth: '28px',
-                    textAlign: 'center',
-                    color: index >= 3 ? '#999' : undefined
-                  }}>
-                    {getMedalOrRank(index)}
-                  </span>
-                  <span style={{
-                    fontWeight: '500',
-                    fontSize: '14px',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {player.name}
-                    {player.name === user.name && (
-                      <span style={{ color: '#1976d2', fontSize: '11px', marginRight: '4px' }}> (אתה)</span>
-                    )}
-                  </span>
-                </div>
-                <span style={{
-                  fontWeight: 'bold',
-                  fontSize: '16px',
-                  color: '#333',
-                  flexShrink: 0,
-                  backgroundColor: index === 0 ? '#fff9c4' : '#f5f5f5',
-                  padding: '2px 10px',
-                  borderRadius: '12px',
-                  minWidth: '40px',
-                  textAlign: 'center'
-                }}>
-                  {player.monthlyScore}
-                </span>
-              </div>
-            ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+            {monthlyScores.map((player, index) =>
+              renderPlayerRow(player, index, 'monthlyScore', player.name === user.name, index * 0.04)
+            )}
           </div>
         )}
-
         {monthlyScores.length === 0 && !loading && (
-          <div style={{ textAlign: 'center', color: '#666', padding: '1rem', fontSize: '14px' }}>
+          <div style={{ textAlign: 'center', color: '#999', padding: '1.5rem', fontSize: '14px' }}>
             אין נתונים לחודש {months.find(m => m.value === selectedMonth)?.label}
           </div>
         )}
@@ -274,80 +255,31 @@ function Leaderboard({ leaderboard, user }) {
       {availableWeeks.length > 0 && (
         <div className="card" style={{ marginBottom: '0.75rem' }}>
           <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '0.5rem',
-            gap: '0.5rem'
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            marginBottom: '0.5rem', gap: '0.5rem'
           }}>
-            <h2 style={{ fontSize: '1rem', margin: 0, flexShrink: 0 }}>פירוט שבוע</h2>
+            <h2 style={{ fontSize: '0.95rem', margin: 0, flexShrink: 0, fontWeight: '700' }}>📊 פירוט שבוע</h2>
             <select
               value={selectedWeekId}
               onChange={(e) => setSelectedWeekId(e.target.value)}
               className="input"
-              style={{ fontSize: '13px', padding: '0.35rem', maxWidth: '55%' }}
+              style={{ fontSize: '13px', padding: '0.35rem', maxWidth: '55%', borderRadius: '10px' }}
             >
               {availableWeeks.map(week => (
-                <option key={week._id} value={week._id}>
-                  {week.name}
-                </option>
+                <option key={week._id} value={week._id}>{week.name}</option>
               ))}
             </select>
           </div>
 
           {selectedWeekId && selectedWeekScores.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-              {selectedWeekScores.map((player, index) => (
-                <div key={player.name} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0.4rem 0.5rem',
-                  backgroundColor: player.name === user.name ? '#e3f2fd' : (index % 2 === 0 ? '#fafafa' : '#fff'),
-                  borderRadius: '6px',
-                  border: player.name === user.name ? '1px solid #90caf9' : 'none'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, flex: 1 }}>
-                    <span style={{
-                      fontSize: index < 3 ? '16px' : '12px',
-                      fontWeight: 'bold',
-                      minWidth: '24px',
-                      textAlign: 'center',
-                      color: index >= 3 ? '#999' : undefined
-                    }}>
-                      {getMedalOrRank(index)}
-                    </span>
-                    <span style={{
-                      fontWeight: '500',
-                      fontSize: '13px',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {player.name}
-                      {player.name === user.name && (
-                        <span style={{ color: '#1976d2', fontSize: '10px' }}> (אתה)</span>
-                      )}
-                    </span>
-                  </div>
-                  <span style={{
-                    fontWeight: 'bold',
-                    fontSize: '14px',
-                    color: '#333',
-                    flexShrink: 0,
-                    padding: '1px 8px',
-                    backgroundColor: '#f5f5f5',
-                    borderRadius: '10px'
-                  }}>
-                    {player.score}
-                  </span>
-                </div>
-              ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              {selectedWeekScores.map((player, index) =>
+                renderPlayerRow(player, index, 'score', player.name === user.name, index * 0.03)
+              )}
             </div>
           )}
-
           {selectedWeekScores.length === 0 && selectedWeekId && (
-            <div style={{ textAlign: 'center', color: '#666', padding: '0.75rem', fontSize: '13px' }}>
+            <div style={{ textAlign: 'center', color: '#999', padding: '0.75rem', fontSize: '13px' }}>
               אין נתוני ניקוד לשבוע זה
             </div>
           )}
@@ -356,60 +288,20 @@ function Leaderboard({ leaderboard, user }) {
 
       {/* דירוג כללי */}
       <div className="card">
-        <h2 style={{ fontSize: '1rem', margin: '0 0 0.5rem 0' }}>דירוג כללי - {selectedSeason}</h2>
+        <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
+          🏆 דירוג כללי - {selectedSeason}
+        </h2>
         {leaderboard.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-            {leaderboard.map((entry, index) => (
-              <div key={entry.user._id} style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0.5rem 0.6rem',
-                backgroundColor: entry.user._id === user.id ? '#e3f2fd' : (index % 2 === 0 ? '#fafafa' : '#fff'),
-                borderRadius: '8px',
-                border: entry.user._id === user.id ? '2px solid #90caf9' : '1px solid #f0f0f0'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, flex: 1 }}>
-                  <span style={{
-                    fontSize: index < 3 ? '18px' : '13px',
-                    fontWeight: 'bold',
-                    minWidth: '28px',
-                    textAlign: 'center',
-                    color: index >= 3 ? '#999' : undefined
-                  }}>
-                    {getMedalOrRank(index)}
-                  </span>
-                  <span style={{
-                    fontWeight: '500',
-                    fontSize: '14px',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {entry.user.name}
-                    {entry.user._id === user.id && (
-                      <span style={{ color: '#1976d2', fontSize: '11px', marginRight: '4px' }}> (אתה)</span>
-                    )}
-                  </span>
-                </div>
-                <span style={{
-                  fontWeight: 'bold',
-                  fontSize: '18px',
-                  color: '#333',
-                  flexShrink: 0,
-                  backgroundColor: index === 0 ? '#fff9c4' : '#f5f5f5',
-                  padding: '2px 12px',
-                  borderRadius: '12px',
-                  minWidth: '44px',
-                  textAlign: 'center'
-                }}>
-                  {entry.totalScore}
-                </span>
-              </div>
-            ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+            {leaderboard.map((entry, index) =>
+              renderPlayerRow(
+                { name: entry.user.name, score: entry.totalScore },
+                index, 'score', entry.user._id === user.id, index * 0.04
+              )
+            )}
           </div>
         ) : (
-          <div style={{ textAlign: 'center', color: '#666', padding: '1rem', fontSize: '14px' }}>
+          <div style={{ textAlign: 'center', color: '#999', padding: '1.5rem', fontSize: '14px' }}>
             אין נתוני דירוג עדיין
           </div>
         )}

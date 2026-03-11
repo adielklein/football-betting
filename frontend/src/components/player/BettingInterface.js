@@ -3,12 +3,12 @@ import React, { useState, useEffect } from 'react';
 function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
   const [localBets, setLocalBets] = useState({});
   const [savingMatch, setSavingMatch] = useState(null);
+  const [savedAnimation, setSavedAnimation] = useState(null);
 
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
 
-  // טען הימורים קיימים כשמקבלים נתונים חדשים
   useEffect(() => {
     const existingBets = {};
     Object.keys(bets).forEach(matchId => {
@@ -33,7 +33,6 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
   };
 
   const saveSingleBet = async (matchId) => {
-    // בדוק נעילת שבוע
     if (selectedWeek?.locked) {
       alert('ההימורים נעולים לשבוע זה');
       return;
@@ -71,15 +70,22 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
 
       if (response.ok) {
         await onBetUpdate();
+        setSavedAnimation(matchId);
+        setTimeout(() => setSavedAnimation(null), 1500);
 
-        // הצג הודעת הצלחה
         const successMsg = document.createElement('div');
-        successMsg.textContent = '✅ ההימור נשמר בהצלחה!';
-        successMsg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#d4edda;color:#155724;padding:12px 20px;border-radius:10px;z-index:10000;font-weight:bold;box-shadow:0 4px 15px rgba(0,0,0,0.2);font-size:14px;white-space:nowrap';
+        successMsg.textContent = 'ההימור נשמר בהצלחה!';
+        successMsg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#28a745,#20c997);color:white;padding:12px 24px;border-radius:12px;z-index:10000;font-weight:600;box-shadow:0 8px 24px rgba(40,167,69,0.35);font-size:14px;white-space:nowrap;animation:toastIn 0.3s ease';
         document.body.appendChild(successMsg);
         setTimeout(() => {
           if (document.body.contains(successMsg)) {
-            document.body.removeChild(successMsg);
+            successMsg.style.transition = 'opacity 0.3s ease';
+            successMsg.style.opacity = '0';
+            setTimeout(() => {
+              if (document.body.contains(successMsg)) {
+                document.body.removeChild(successMsg);
+              }
+            }, 300);
           }
         }, 2000);
       } else {
@@ -145,45 +151,78 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
 
   if (!selectedWeek?.active) {
     return (
-      <div className="card" style={{ textAlign: 'center', padding: '2rem 1rem' }}>
-        <h2 style={{ fontSize: '1.1rem' }}>ממתינים לשבוע החדש</h2>
-        <p style={{ color: '#666', fontSize: '0.9rem' }}>השבוע עדיין לא הופעל על ידי המנהל</p>
+      <div className="card" style={{
+        textAlign: 'center',
+        padding: '2.5rem 1rem',
+        background: 'linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%)'
+      }}>
+        <div style={{ fontSize: '40px', marginBottom: '0.75rem' }}>⏳</div>
+        <h2 style={{ fontSize: '1.1rem', color: '#444', marginBottom: '0.3rem' }}>ממתינים לשבוע החדש</h2>
+        <p style={{ color: '#888', fontSize: '0.85rem' }}>השבוע עדיין לא הופעל על ידי המנהל</p>
       </div>
     );
   }
 
   if (isLocked()) {
     return (
-      <div className="card" style={{ textAlign: 'center', padding: '2rem 1rem' }}>
-        <h2 style={{ fontSize: '1.1rem' }}>השבוע הסתיים</h2>
-        <p style={{ color: '#666', fontSize: '0.9rem' }}>שבוע {selectedWeek.name} הסתיים. עבור להיסטוריה לצפייה בתוצאות.</p>
+      <div className="card" style={{
+        textAlign: 'center',
+        padding: '2.5rem 1rem',
+        background: 'linear-gradient(135deg, #fff8f0 0%, #fff3e0 100%)'
+      }}>
+        <div style={{ fontSize: '40px', marginBottom: '0.75rem' }}>🔒</div>
+        <h2 style={{ fontSize: '1.1rem', color: '#444', marginBottom: '0.3rem' }}>השבוע הסתיים</h2>
+        <p style={{ color: '#888', fontSize: '0.85rem' }}>שבוע {selectedWeek.name} הסתיים. עבור להיסטוריה לצפייה בתוצאות.</p>
       </div>
     );
   }
 
   const savedCount = Object.keys(bets).filter(id => bets[id].team1Goals !== undefined).length;
+  const progressPercent = matches.length > 0 ? (savedCount / matches.length) * 100 : 0;
 
   return (
     <div>
-      {/* כותרת + סטטוס */}
+      {/* כותרת + פרוגרס */}
       <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '0.5rem',
-        padding: '0 0.25rem'
+        marginBottom: '0.6rem',
+        padding: '0 0.15rem'
       }}>
-        <h2 style={{ margin: 0, fontSize: '1.1rem' }}>{selectedWeek.name}</h2>
-        <span style={{
-          fontSize: '12px',
-          color: '#fff',
-          backgroundColor: '#28a745',
-          padding: '3px 8px',
-          borderRadius: '12px',
-          fontWeight: '600'
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '0.4rem'
         }}>
-          {savedCount}/{matches.length} נשמרו
-        </span>
+          <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '700', color: '#333' }}>{selectedWeek.name}</h2>
+          <span style={{
+            fontSize: '12px',
+            color: savedCount === matches.length ? '#fff' : '#28a745',
+            backgroundColor: savedCount === matches.length ? '#28a745' : '#e8f5e9',
+            padding: '3px 10px',
+            borderRadius: '12px',
+            fontWeight: '700',
+            transition: 'all 0.3s ease'
+          }}>
+            {savedCount}/{matches.length}
+          </span>
+        </div>
+        {/* Progress bar */}
+        <div style={{
+          height: '3px',
+          backgroundColor: '#e8e8e8',
+          borderRadius: '2px',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            height: '100%',
+            width: `${progressPercent}%`,
+            background: progressPercent === 100
+              ? 'linear-gradient(90deg, #28a745, #20c997)'
+              : 'linear-gradient(90deg, #007bff, #0dcaf0)',
+            borderRadius: '2px',
+            transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}></div>
+        </div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -195,15 +234,20 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
           const isComplete = isBetComplete(match._id);
           const isSaving = savingMatch === match._id;
           const isSaved = existingBet.team1Goals !== undefined;
+          const justSaved = savedAnimation === match._id;
 
           return (
             <div key={match._id} style={{
-              padding: '0.65rem',
+              padding: '0.7rem',
               border: '2px solid',
-              borderColor: isSaved ? '#28a745' : '#e0e0e0',
-              borderRadius: '10px',
-              backgroundColor: isSaved ? '#f8fff8' : '#fafafa',
-              transition: 'all 0.3s ease'
+              borderColor: justSaved ? '#20c997' : (isSaved ? '#c3e6cb' : '#eee'),
+              borderRadius: '14px',
+              backgroundColor: isSaved ? '#fbfefb' : '#fff',
+              transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+              boxShadow: justSaved
+                ? '0 0 0 3px rgba(40,167,69,0.15), 0 4px 12px rgba(40,167,69,0.1)'
+                : (isSaved ? '0 2px 8px rgba(0,0,0,0.04)' : '0 1px 4px rgba(0,0,0,0.06)'),
+              animation: `slideUp 0.3s ease ${index * 0.03}s both`
             }}>
               {/* שורה עליונה: מספר + ליגה + תאריך */}
               <div style={{
@@ -214,25 +258,27 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   <span style={{
-                    fontSize: '11px',
-                    color: '#999',
-                    fontWeight: 'bold',
+                    fontSize: '10px',
+                    color: '#bbb',
+                    fontWeight: '700',
                     minWidth: '18px'
                   }}>
                     #{index + 1}
                   </span>
                   <span style={{
-                    padding: '2px 6px',
+                    padding: '2px 8px',
                     backgroundColor: getLeagueColor(match),
                     color: 'white',
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    fontWeight: '600'
+                    borderRadius: '6px',
+                    fontSize: '10px',
+                    fontWeight: '700',
+                    letterSpacing: '0.3px',
+                    boxShadow: `0 2px 4px ${getLeagueColor(match)}33`
                   }}>
                     {getLeagueName(match)}
                   </span>
                 </div>
-                <span style={{ color: '#888', fontSize: '12px' }}>
+                <span style={{ color: '#aaa', fontSize: '11px', fontWeight: '500' }}>
                   {match.date} • {match.time}
                 </span>
               </div>
@@ -242,59 +288,48 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                 <div style={{
                   display: 'flex',
                   justifyContent: 'center',
-                  gap: '0.3rem',
+                  gap: '0.25rem',
                   marginBottom: '0.4rem'
                 }}>
-                  <span style={{
-                    padding: '1px 8px',
-                    backgroundColor: '#e3f2fd',
-                    borderRadius: '10px',
-                    fontSize: '11px',
-                    color: '#1565c0',
-                    fontWeight: 'bold'
-                  }}>
-                    1: {match.odds.homeWin || '-'}
-                  </span>
-                  <span style={{
-                    padding: '1px 8px',
-                    backgroundColor: '#fff3e0',
-                    borderRadius: '10px',
-                    fontSize: '11px',
-                    color: '#e65100',
-                    fontWeight: 'bold'
-                  }}>
-                    X: {match.odds.draw || '-'}
-                  </span>
-                  <span style={{
-                    padding: '1px 8px',
-                    backgroundColor: '#e8f5e9',
-                    borderRadius: '10px',
-                    fontSize: '11px',
-                    color: '#2e7d32',
-                    fontWeight: 'bold'
-                  }}>
-                    2: {match.odds.awayWin || '-'}
-                  </span>
+                  {[
+                    { label: '1', value: match.odds.homeWin, bg: '#eef4ff', color: '#3b6fd4' },
+                    { label: 'X', value: match.odds.draw, bg: '#fef6e6', color: '#c67e00' },
+                    { label: '2', value: match.odds.awayWin, bg: '#edf7ee', color: '#2d8a3e' }
+                  ].map(odd => (
+                    <span key={odd.label} style={{
+                      padding: '2px 10px',
+                      backgroundColor: odd.bg,
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                      color: odd.color,
+                      fontWeight: '700',
+                      minWidth: '48px',
+                      textAlign: 'center'
+                    }}>
+                      {odd.label}: {odd.value || '-'}
+                    </span>
+                  ))}
                 </div>
               )}
 
-              {/* שמות קבוצות + קלט ניקוד - עיצוב מובייל */}
+              {/* שמות קבוצות + קלט ניקוד */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '0.4rem',
-                marginBottom: '0.3rem'
+                gap: '0.35rem',
+                marginBottom: '0.4rem'
               }}>
                 <div style={{
                   flex: '1 1 0',
                   textAlign: 'center',
-                  fontWeight: '600',
+                  fontWeight: '700',
                   fontSize: '13px',
                   lineHeight: '1.2',
                   minWidth: 0,
                   overflow: 'hidden',
-                  textOverflow: 'ellipsis'
+                  textOverflow: 'ellipsis',
+                  color: '#333'
                 }}>
                   {match.team1}
                 </div>
@@ -302,7 +337,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.3rem',
+                  gap: '0.25rem',
                   flexShrink: 0
                 }}>
                   <input
@@ -312,22 +347,32 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                     value={currentBet.team1Goals || ''}
                     onChange={(e) => handleBetChange(match._id, 'team1Goals', e.target.value)}
                     style={{
-                      width: '44px',
-                      height: '40px',
+                      width: '46px',
+                      height: '42px',
                       textAlign: 'center',
                       padding: '4px',
                       border: '2px solid',
-                      borderColor: currentBet.team1Goals !== '' ? '#28a745' : '#ccc',
-                      borderRadius: '8px',
-                      fontSize: '18px',
-                      fontWeight: 'bold',
-                      backgroundColor: '#fff'
+                      borderColor: currentBet.team1Goals !== '' && currentBet.team1Goals !== undefined ? '#28a745' : '#ddd',
+                      borderRadius: '10px',
+                      fontSize: '20px',
+                      fontWeight: '800',
+                      backgroundColor: '#fff',
+                      color: '#333',
+                      boxShadow: currentBet.team1Goals !== '' && currentBet.team1Goals !== undefined
+                        ? '0 0 0 3px rgba(40,167,69,0.1)' : 'inset 0 1px 3px rgba(0,0,0,0.06)',
+                      transition: 'all 0.2s ease',
+                      outline: 'none'
                     }}
                     className="input"
                     placeholder="?"
                     disabled={isSaving}
                   />
-                  <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#999' }}>:</span>
+                  <span style={{
+                    fontSize: '18px',
+                    fontWeight: '800',
+                    color: '#ccc',
+                    lineHeight: 1
+                  }}>:</span>
                   <input
                     type="number"
                     min="0"
@@ -335,16 +380,21 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                     value={currentBet.team2Goals || ''}
                     onChange={(e) => handleBetChange(match._id, 'team2Goals', e.target.value)}
                     style={{
-                      width: '44px',
-                      height: '40px',
+                      width: '46px',
+                      height: '42px',
                       textAlign: 'center',
                       padding: '4px',
                       border: '2px solid',
-                      borderColor: currentBet.team2Goals !== '' ? '#28a745' : '#ccc',
-                      borderRadius: '8px',
-                      fontSize: '18px',
-                      fontWeight: 'bold',
-                      backgroundColor: '#fff'
+                      borderColor: currentBet.team2Goals !== '' && currentBet.team2Goals !== undefined ? '#28a745' : '#ddd',
+                      borderRadius: '10px',
+                      fontSize: '20px',
+                      fontWeight: '800',
+                      backgroundColor: '#fff',
+                      color: '#333',
+                      boxShadow: currentBet.team2Goals !== '' && currentBet.team2Goals !== undefined
+                        ? '0 0 0 3px rgba(40,167,69,0.1)' : 'inset 0 1px 3px rgba(0,0,0,0.06)',
+                      transition: 'all 0.2s ease',
+                      outline: 'none'
                     }}
                     className="input"
                     placeholder="?"
@@ -355,12 +405,13 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                 <div style={{
                   flex: '1 1 0',
                   textAlign: 'center',
-                  fontWeight: '600',
+                  fontWeight: '700',
                   fontSize: '13px',
                   lineHeight: '1.2',
                   minWidth: 0,
                   overflow: 'hidden',
-                  textOverflow: 'ellipsis'
+                  textOverflow: 'ellipsis',
+                  color: '#333'
                 }}>
                   {match.team2}
                 </div>
@@ -372,18 +423,22 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                 disabled={isSaving || !isComplete || !hasChanges}
                 style={{
                   width: '100%',
-                  padding: '0.45rem',
+                  padding: '0.5rem',
                   border: 'none',
-                  borderRadius: '8px',
+                  borderRadius: '10px',
                   fontSize: '14px',
-                  fontWeight: 'bold',
-                  backgroundColor: hasChanges && isComplete ? '#28a745' : (isSaved ? '#e8f5e9' : '#e9ecef'),
-                  color: hasChanges && isComplete ? 'white' : (isSaved ? '#2e7d32' : '#999'),
-                  opacity: (!isComplete || !hasChanges) ? 0.8 : 1,
+                  fontWeight: '700',
+                  background: hasChanges && isComplete
+                    ? 'linear-gradient(135deg, #28a745, #20c997)'
+                    : (isSaved ? '#f0faf0' : '#f5f5f5'),
+                  color: hasChanges && isComplete ? 'white' : (isSaved ? '#2e7d32' : '#aaa'),
+                  opacity: (!isComplete || !hasChanges) ? 0.85 : 1,
                   cursor: (!isComplete || !hasChanges) ? 'default' : 'pointer',
-                  transition: 'all 0.2s ease',
+                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                   WebkitAppearance: 'none',
-                  touchAction: 'manipulation'
+                  touchAction: 'manipulation',
+                  boxShadow: hasChanges && isComplete ? '0 4px 12px rgba(40,167,69,0.25)' : 'none',
+                  letterSpacing: '0.3px'
                 }}
               >
                 {isSaving ? '⏳ שומר...' : isSaved ? (hasChanges ? '💾 עדכן' : '✅ נשמר') : '💾 שמור'}
@@ -396,9 +451,10 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   fontSize: '11px',
                   color: '#856404',
                   marginTop: '0.3rem',
-                  backgroundColor: '#fff3cd',
-                  padding: '3px 6px',
-                  borderRadius: '6px'
+                  backgroundColor: '#fff8e1',
+                  padding: '4px 8px',
+                  borderRadius: '8px',
+                  border: '1px solid #ffe082'
                 }}>
                   {existingBet.team1Goals}-{existingBet.team2Goals} ← {currentBet.team1Goals || '?'}-{currentBet.team2Goals || '?'}
                 </div>
@@ -409,7 +465,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                 <div style={{
                   marginTop: '0.4rem',
                   paddingTop: '0.4rem',
-                  borderTop: '1px solid #eee',
+                  borderTop: '1px solid #f0f0f0',
                   textAlign: 'center',
                   fontSize: '13px',
                   display: 'flex',
@@ -418,24 +474,24 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   gap: '0.5rem',
                   flexWrap: 'wrap'
                 }}>
-                  <span style={{ color: '#666' }}>תוצאה: </span>
-                  <span style={{ fontWeight: 'bold' }}>
+                  <span style={{ color: '#999', fontSize: '12px' }}>תוצאה:</span>
+                  <span style={{ fontWeight: '800', fontSize: '15px', color: '#333' }}>
                     {match.result.team1Goals}-{match.result.team2Goals}
                   </span>
                   {isSaved && (
                     <span style={{
-                      padding: '2px 8px',
-                      borderRadius: '6px',
+                      padding: '2px 10px',
+                      borderRadius: '8px',
                       backgroundColor:
                         existingBet.team1Goals == match.result.team1Goals &&
                         existingBet.team2Goals == match.result.team2Goals
-                          ? '#d4edda' : '#f8d7da',
+                          ? '#d4edda' : '#fce4ec',
                       color:
                         existingBet.team1Goals == match.result.team1Goals &&
                         existingBet.team2Goals == match.result.team2Goals
-                          ? '#155724' : '#721c24',
+                          ? '#155724' : '#c62828',
                       fontSize: '11px',
-                      fontWeight: 'bold'
+                      fontWeight: '700'
                     }}>
                       {existingBet.team1Goals == match.result.team1Goals &&
                        existingBet.team2Goals == match.result.team2Goals
