@@ -4,8 +4,9 @@ function Leaderboard({ leaderboard, user }) {
   const [monthlyScores, setMonthlyScores] = useState([]);
   const [selectedWeekScores, setSelectedWeekScores] = useState([]);
   const [availableWeeks, setAvailableWeeks] = useState([]);
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [selectedSeason, setSelectedSeason] = useState('2025-26');
+  const [selectedMonth, setSelectedMonth] = useState(null);
+  const [selectedSeason, setSelectedSeason] = useState(null);
+  const [initializedFromData, setInitializedFromData] = useState(false);
   const [selectedWeekId, setSelectedWeekId] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('monthly');
@@ -15,7 +16,12 @@ function Leaderboard({ leaderboard, user }) {
     : 'https://football-betting-backend.onrender.com/api';
 
   useEffect(() => {
-    loadScoresData();
+    if (selectedMonth === null && selectedSeason === null) {
+      // First load - initialize from data
+      loadScoresData();
+    } else if (selectedMonth !== null && selectedSeason !== null) {
+      loadScoresData();
+    }
   }, [selectedMonth, selectedSeason]);
 
   useEffect(() => {
@@ -38,6 +44,20 @@ function Leaderboard({ leaderboard, user }) {
       if (scoresResponse.ok) scoresData = await scoresResponse.json();
       if (weeksResponse.ok) weeksData = await weeksResponse.json();
 
+      // On first load, find the most recent week and use its month/season as default
+      if (!initializedFromData && weeksData.length > 0) {
+        const sorted = [...weeksData].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const latest = sorted[0];
+        const latestMonth = latest.month || new Date(latest.createdAt).getMonth() + 1;
+        const latestSeason = latest.season || '2025-26';
+        setSelectedMonth(latestMonth);
+        setSelectedSeason(latestSeason);
+        setInitializedFromData(true);
+        // Calculate with the correct values directly
+        calculateMonthlyScores(scoresData, weeksData, latestMonth, latestSeason);
+        return;
+      }
+
       calculateMonthlyScores(scoresData, weeksData);
     } catch (error) {
       console.error('Error loading scores data:', error);
@@ -48,18 +68,22 @@ function Leaderboard({ leaderboard, user }) {
     }
   };
 
-  const calculateMonthlyScores = (scoresData, weeksData) => {
+  const calculateMonthlyScores = (scoresData, weeksData, overrideMonth, overrideSeason) => {
+    const useMonth = overrideMonth || selectedMonth;
+    const useSeason = overrideSeason || selectedSeason;
+    if (!useMonth || !useSeason) return;
+
     const monthWeeks = weeksData.filter(week => {
       if (!week) return false;
       const weekMonth = week.month || new Date(week.createdAt).getMonth() + 1;
       const weekSeason = week.season || '2025-26';
-      return weekMonth === selectedMonth && weekSeason === selectedSeason;
+      return weekMonth === useMonth && weekSeason === useSeason;
     });
 
     setAvailableWeeks(monthWeeks);
 
     if (monthWeeks.length > 0 && !selectedWeekId) {
-      setSelectedWeekId(monthWeeks[0]._id);
+      setSelectedWeekId(monthWeeks[monthWeeks.length - 1]._id);
     } else if (monthWeeks.length === 0) {
       setSelectedWeekId('');
       setSelectedWeekScores([]);
