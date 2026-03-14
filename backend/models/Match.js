@@ -56,11 +56,6 @@ const matchSchema = new mongoose.Schema({
     awayWin: { type: Number, min: 1 }     // יחס לניצחון חוץ
   },
   
-  notifiedExactScore: {
-    type: Boolean,
-    default: false
-  },
-
   createdAt: {
     type: Date,
     default: Date.now

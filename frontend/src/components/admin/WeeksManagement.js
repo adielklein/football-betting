@@ -604,7 +604,9 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
       console.log('🧮 מחשב ניקוד מחדש לכל השחקנים...');
       
       const scoresResponse = await fetch(`${API_URL}/scores/calculate/${selectedWeek._id}`, {
-        method: 'POST'
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ matchId })
       });
 
       if (scoresResponse.ok) {

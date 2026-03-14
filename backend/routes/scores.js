@@ -10,41 +10,38 @@ const router = express.Router();
 router.post('/calculate/:weekId', async (req, res) => {
   try {
     const weekId = req.params.weekId;
-    
+    const { matchId } = req.body || {}; // Optional: specific match that was just updated
+
     // Get all matches with results for this week
-    const matches = await Match.find({ 
-      weekId, 
+    const matches = await Match.find({
+      weekId,
       'result.team1Goals': { $exists: true },
       'result.team2Goals': { $exists: true }
     });
-    
+
     if (matches.length === 0) {
       return res.status(400).json({ message: 'No completed matches found' });
     }
-    
+
     // Get all users
     const users = await User.find();
-    const exactScoreUsers = []; // Users who got exact scores
-    // Only track exact scores for matches that haven't been notified yet
-    const newResultMatches = matches.filter(m => !m.notifiedExactScore);
+    const exactScoreUsers = []; // Users who got exact scores on the specific match
 
     for (const user of users) {
       let totalPoints = 0;
       let exactCount = 0;
-      const exactMatches = []; // Track which matches were exact
+      const exactMatches = [];
 
       for (const match of matches) {
         const bet = await Bet.findOne({ userId: user._id, matchId: match._id });
 
         if (bet) {
           const points = calculateMatchPoints(bet.prediction, match.result, match.odds);
-
-          // Update bet points
           await Bet.findByIdAndUpdate(bet._id, { points });
           totalPoints += points;
 
-          // Track exact scores only for newly-resulted matches
-          if (newResultMatches.some(m => m._id.equals(match._id)) &&
+          // Track exact scores only for the specific match that was just updated
+          if (matchId && match._id.toString() === matchId &&
               bet.prediction.team1Goals === match.result.team1Goals &&
               bet.prediction.team2Goals === match.result.team2Goals) {
             exactCount++;
@@ -83,10 +80,9 @@ router.post('/calculate/:weekId', async (req, res) => {
       );
     }
 
-    // Send push notifications to users who got exact scores
+    // Send push notifications to users who got exact scores on this specific match
     if (exactScoreUsers.length > 0) {
       try {
-        // Filter only users who have exactScoreAlerts enabled (default true)
         const usersToNotify = [];
         for (const eu of exactScoreUsers) {
           const u = await User.findById(eu.userId);
@@ -97,14 +93,9 @@ router.post('/calculate/:weekId', async (req, res) => {
 
         if (usersToNotify.length > 0) {
           for (const eu of usersToNotify) {
-            const title = eu.exactCount === 1 ? '🎯 דייקת!' : `🎯 ${eu.exactCount} דיוקים!`;
-
-            // Build match details string
+            const title = '🎯 דייקת!';
             const matchLines = eu.exactMatches.map(m => `⚽ ${m.team1} ${m.score} ${m.team2}`).join('\n');
-
-            const body = eu.exactCount === 1
-              ? `ניחשת בול!\n${matchLines}\nכל הכבוד 🔥`
-              : `ניחשת ${eu.exactCount} תוצאות מדויקות!\n${matchLines}\nמכונה! 🔥`;
+            const body = `ניחשת בול!\n${matchLines}\nכל הכבוד 🔥`;
             await sendNotificationToUsers([eu.userId], title, body, { type: 'exact_score' });
           }
           console.log(`🎯 Exact score notifications sent to ${usersToNotify.length} users`);
@@ -112,14 +103,6 @@ router.post('/calculate/:weekId', async (req, res) => {
       } catch (pushError) {
         console.error('Push notification error (non-critical):', pushError.message);
       }
-    }
-
-    // Mark new matches as notified so we don't send duplicate notifications
-    if (newResultMatches.length > 0) {
-      await Match.updateMany(
-        { _id: { $in: newResultMatches.map(m => m._id) } },
-        { notifiedExactScore: true }
-      );
     }
 
     res.json({ message: 'Scores calculated successfully' });
