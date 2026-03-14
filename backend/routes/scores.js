@@ -97,7 +97,7 @@ router.post('/calculate/:weekId', async (req, res) => {
             const title = eu.exactCount === 1 ? '🎯 דייקת!' : `🎯 ${eu.exactCount} דיוקים!`;
 
             // Build match details string
-            const matchLines = eu.exactMatches.map(m => `⚽ ${m.team2} ${m.score.split('-').reverse().join('-')} ${m.team1}`).join('\n');
+            const matchLines = eu.exactMatches.map(m => `⚽ ${m.team1} ${m.score} ${m.team2}`).join('\n');
 
             const body = eu.exactCount === 1
               ? `ניחשת בול!\n${matchLines}\nכל הכבוד 🔥`
