@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import PlayerStats from '../player/PlayerStats';
 
 function AdminStats() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('overview');
+  const [players, setPlayers] = useState([]);
+  const [selectedPlayerId, setSelectedPlayerId] = useState('');
 
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
@@ -11,7 +14,20 @@ function AdminStats() {
 
   useEffect(() => {
     loadStats();
+    loadPlayers();
   }, []);
+
+  const loadPlayers = async () => {
+    try {
+      const response = await fetch(`${API_URL}/auth/users`);
+      if (response.ok) {
+        const data = await response.json();
+        setPlayers(data.filter(u => u.role !== 'admin'));
+      }
+    } catch (error) {
+      console.error('Error loading players:', error);
+    }
+  };
 
   const loadStats = async () => {
     try {
@@ -55,6 +71,7 @@ function AdminStats() {
     { key: 'players', label: 'שחקנים', icon: '👥' },
     { key: 'weeks', label: 'שבועות', icon: '📅' },
     { key: 'teams', label: 'קבוצות', icon: '⚽' },
+    { key: 'player', label: 'שחקן', icon: '🔍' },
   ];
 
   // === Reusable Components ===
@@ -476,6 +493,35 @@ function AdminStats() {
       )}
 
       {/* === TEAMS === */}
+      {activeSection === 'player' && (
+        <div>
+          <div style={{
+            background: '#fff', borderRadius: '12px', padding: '10px',
+            marginBottom: '0.6rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            border: '1px solid rgba(0,0,0,0.05)'
+          }}>
+            <select
+              value={selectedPlayerId}
+              onChange={e => setSelectedPlayerId(e.target.value)}
+              style={{
+                width: '100%', padding: '10px 12px', fontSize: '14px',
+                borderRadius: '8px', border: '1px solid #e0e0e0',
+                background: '#fafbfc', color: '#333', fontWeight: '600',
+                direction: 'rtl', cursor: 'pointer'
+              }}
+            >
+              <option value="">בחר שחקן...</option>
+              {players.map(p => (
+                <option key={p._id} value={p._id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+          {selectedPlayerId && (
+            <PlayerStats user={{ _id: selectedPlayerId }} />
+          )}
+        </div>
+      )}
+
       {activeSection === 'teams' && (
         <div style={{ animation: 'scaleIn 0.2s ease' }}>
           {/* Easiest Teams */}
