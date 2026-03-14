@@ -25,6 +25,8 @@ router.post('/calculate/:weekId', async (req, res) => {
     // Get all users
     const users = await User.find();
     const exactScoreUsers = []; // Users who got exact scores
+    // Only track exact scores for matches that haven't been notified yet
+    const newResultMatches = matches.filter(m => !m.notifiedExactScore);
 
     for (const user of users) {
       let totalPoints = 0;
@@ -41,8 +43,9 @@ router.post('/calculate/:weekId', async (req, res) => {
           await Bet.findByIdAndUpdate(bet._id, { points });
           totalPoints += points;
 
-          // Track exact scores with match details
-          if (bet.prediction.team1Goals === match.result.team1Goals &&
+          // Track exact scores only for newly-resulted matches
+          if (newResultMatches.some(m => m._id.equals(match._id)) &&
+              bet.prediction.team1Goals === match.result.team1Goals &&
               bet.prediction.team2Goals === match.result.team2Goals) {
             exactCount++;
             exactMatches.push({
@@ -109,6 +112,14 @@ router.post('/calculate/:weekId', async (req, res) => {
       } catch (pushError) {
         console.error('Push notification error (non-critical):', pushError.message);
       }
+    }
+
+    // Mark new matches as notified so we don't send duplicate notifications
+    if (newResultMatches.length > 0) {
+      await Match.updateMany(
+        { _id: { $in: newResultMatches.map(m => m._id) } },
+        { notifiedExactScore: true }
+      );
     }
 
     res.json({ message: 'Scores calculated successfully' });
