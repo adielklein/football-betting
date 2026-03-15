@@ -6,6 +6,7 @@ function AllBetsViewer({ weeks, user }) {
   const [allBets, setAllBets] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [expandedMatches, setExpandedMatches] = useState({});
 
   const [selectedSeason, setSelectedSeason] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
@@ -224,20 +225,31 @@ function AllBetsViewer({ weeks, user }) {
                   padding: '0.65rem',
                   animation: `slideUp 0.25s ease ${matchIndex * 0.04}s both`
                 }}>
-                  {/* כותרת משחק */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
-                    <span style={{
-                      padding: '2px 8px', backgroundColor: getLeagueColor(match), color: 'white',
-                      borderRadius: '6px', fontSize: '10px', fontWeight: '700',
-                      boxShadow: `0 2px 4px ${getLeagueColor(match)}33`
-                    }}>{getLeagueName(match)}</span>
-                    <span style={{ fontSize: '11px', color: '#aaa', fontWeight: '500' }}>{match.date} • {match.time}</span>
+                  {/* כותרת משחק - לחיץ */}
+                  <div style={{ cursor: 'pointer' }} onClick={() => setExpandedMatches(prev => ({ ...prev, [match._id]: !prev[match._id] }))}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <span style={{ fontSize: '12px', color: '#999', transition: 'transform 0.2s', transform: expandedMatches[match._id] ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                        <span style={{
+                          padding: '2px 8px', backgroundColor: getLeagueColor(match), color: 'white',
+                          borderRadius: '6px', fontSize: '10px', fontWeight: '700',
+                          boxShadow: `0 2px 4px ${getLeagueColor(match)}33`
+                        }}>{getLeagueName(match)}</span>
+                      </div>
+                      <span style={{ fontSize: '11px', color: '#aaa', fontWeight: '500' }}>{match.date} • {match.time}</span>
+                    </div>
+
+                    <div style={{ textAlign: 'center', fontWeight: '700', fontSize: '14px', marginBottom: '0.3rem', color: '#333' }}>
+                      {match.team1} נגד {match.team2}
+                      {match.result && match.result.team1Goals !== undefined && (
+                        <span style={{ fontSize: '12px', color: '#2e7d32', marginRight: '0.4rem' }}>
+                          ({match.result.team2Goals}-{match.result.team1Goals})
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  <div style={{ textAlign: 'center', fontWeight: '700', fontSize: '14px', marginBottom: '0.3rem', color: '#333' }}>
-                    {match.team1} נגד {match.team2}
-                  </div>
-
+                  {expandedMatches[match._id] && (<div>
                   {/* יחסים */}
                   {match.odds && (match.odds.homeWin || match.odds.draw || match.odds.awayWin) && (
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '0.25rem', marginBottom: '0.3rem' }}>
@@ -313,6 +325,7 @@ function AllBetsViewer({ weeks, user }) {
                       );
                     })}
                   </div>
+                  </div>)}
                 </div>
               ))}
 

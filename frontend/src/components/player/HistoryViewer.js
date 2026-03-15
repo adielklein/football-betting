@@ -25,7 +25,15 @@ function HistoryViewer({ weeks, user }) {
   useEffect(() => {
     if (!weeks || !selectedSeason) return;
     const weeksInSeason = weeks.filter(w => (w.season || '2025-26') === selectedSeason);
-    const months = [...new Set(weeksInSeason.map(w => w.month))].sort((a, b) => b - a);
+    // Sort months by actual most recent week date, not month number
+    const monthLatestDate = {};
+    weeksInSeason.forEach(w => {
+      const date = new Date(w.createdAt).getTime();
+      if (!monthLatestDate[w.month] || date > monthLatestDate[w.month]) {
+        monthLatestDate[w.month] = date;
+      }
+    });
+    const months = [...new Set(weeksInSeason.map(w => w.month))].sort((a, b) => monthLatestDate[b] - monthLatestDate[a]);
     setAvailableMonths(months);
     if (!selectedMonth && months.length > 0) setSelectedMonth(months[0]);
   }, [weeks, selectedSeason]);
