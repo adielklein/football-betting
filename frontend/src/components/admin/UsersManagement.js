@@ -15,6 +15,7 @@ function UsersManagement({ users, loadData, user }) {
   const [exclusionSeason, setExclusionSeason] = useState('2025-26');
   const [excludedUserIds, setExcludedUserIds] = useState([]);
   const [loadingExclusions, setLoadingExclusions] = useState(false);
+  const [exclusionsOpen, setExclusionsOpen] = useState(false);
 
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
@@ -350,9 +351,22 @@ function UsersManagement({ users, loadData, user }) {
 
       {/* Month exclusions */}
       <div className="card" style={{ marginBottom: '0.75rem' }}>
-        <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.6rem 0', fontWeight: '700' }}>
-          🚫 ניהול השתתפות חודשית
-        </h2>
+        <div
+          onClick={() => setExclusionsOpen(prev => !prev)}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            cursor: 'pointer', userSelect: 'none'
+          }}
+        >
+          <h2 style={{ fontSize: '0.95rem', margin: 0, fontWeight: '700' }}>
+            🚫 ניהול השתתפות חודשית
+          </h2>
+          <span style={{
+            fontSize: '18px', transition: 'transform 0.2s ease',
+            transform: exclusionsOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+          }}>▼</span>
+        </div>
+        {!exclusionsOpen ? null : (<div style={{ marginTop: '0.6rem' }}>
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.6rem' }}>
           <select
             value={exclusionMonth || ''}
@@ -422,6 +436,7 @@ function UsersManagement({ users, loadData, user }) {
         <div style={{ marginTop: '0.5rem', fontSize: '11px', color: '#888', textAlign: 'center' }}>
           ירוק = משתתף | אדום = לא משתתף בחודש זה
         </div>
+        </div>)}
       </div>
 
       {/* User list */}
