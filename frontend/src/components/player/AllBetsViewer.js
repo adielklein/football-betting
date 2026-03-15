@@ -226,6 +226,16 @@ function AllBetsViewer({ weeks, user }) {
                   animation: `slideUp 0.25s ease ${matchIndex * 0.04}s both`
                 }}>
                   {/* כותרת משחק - לחיץ */}
+                  {(() => {
+                    const myBet = getBetForUserAndMatch(user.id, match._id);
+                    let myPoints = 0;
+                    let myExact = false;
+                    if (myBet && match.result && match.result.team1Goals !== undefined) {
+                      myPoints = myBet.points !== undefined && myBet.points !== null ? myBet.points : calculateMatchPoints(myBet.prediction, match.result, match.odds);
+                      myExact = myBet.prediction && myBet.prediction.team1Goals === match.result.team1Goals && myBet.prediction.team2Goals === match.result.team2Goals;
+                    }
+                    const myBadge = getPointsBadge(myPoints, myExact);
+                    return (
                   <div style={{ cursor: 'pointer' }} onClick={() => setExpandedMatches(prev => ({ ...prev, [match._id]: !prev[match._id] }))}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -236,7 +246,15 @@ function AllBetsViewer({ weeks, user }) {
                           boxShadow: `0 2px 4px ${getLeagueColor(match)}33`
                         }}>{getLeagueName(match)}</span>
                       </div>
-                      <span style={{ fontSize: '11px', color: '#aaa', fontWeight: '500' }}>{match.date} • {match.time}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        {myBet && match.result && match.result.team1Goals !== undefined && (
+                          <span style={{
+                            padding: '1px 6px', borderRadius: '6px', fontSize: '10px', fontWeight: '700',
+                            backgroundColor: myBadge.bg, color: myBadge.color
+                          }}>{myBadge.text}</span>
+                        )}
+                        <span style={{ fontSize: '11px', color: '#aaa', fontWeight: '500' }}>{match.date} • {match.time}</span>
+                      </div>
                     </div>
 
                     <div style={{ textAlign: 'center', fontWeight: '700', fontSize: '14px', marginBottom: '0.3rem', color: '#333' }}>
@@ -248,6 +266,8 @@ function AllBetsViewer({ weeks, user }) {
                       )}
                     </div>
                   </div>
+                    );
+                  })()}
 
                   {expandedMatches[match._id] && (<div>
                   {/* יחסים */}
