@@ -85,11 +85,14 @@ function AllBetsViewer({ weeks, user }) {
       const betsData = await betsResponse.json();
       const usersData = await usersResponse.json();
 
-      // Fetch excluded users for current month/season
+      // Fetch excluded users - get month/season from the selected week
       let excludedIds = [];
-      if (selectedMonth && selectedSeason) {
+      const weekData = weeks?.find(w => w._id === weekId);
+      const weekMonth = weekData?.month || selectedMonth;
+      const weekSeason = weekData?.season || selectedSeason || '2025-26';
+      if (weekMonth && weekSeason) {
         try {
-          const exclResponse = await fetch(`${API_URL}/exclusions?month=${selectedMonth}&season=${selectedSeason}`);
+          const exclResponse = await fetch(`${API_URL}/exclusions?month=${weekMonth}&season=${weekSeason}`);
           if (exclResponse.ok) excludedIds = await exclResponse.json();
         } catch (e) { /* ignore */ }
       }
