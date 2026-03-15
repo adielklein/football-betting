@@ -3,6 +3,8 @@ const Score = require('../models/Score');
 const Bet = require('../models/Bet');
 const Match = require('../models/Match');
 const User = require('../models/User');
+const Week = require('../models/Week');
+const MonthExclusion = require('../models/MonthExclusion');
 const { sendNotificationToUsers } = require('../services/pushNotifications');
 const router = express.Router();
 
@@ -10,7 +12,10 @@ const router = express.Router();
 router.post('/calculate/:weekId', async (req, res) => {
   try {
     const weekId = req.params.weekId;
-    const { matchId } = req.body || {}; // Optional: specific match that was just updated
+    const { matchId } = req.body || {};
+
+    // Get week info for month exclusion check
+    const week = await Week.findById(weekId);
 
     // Get all matches with results for this week
     const matches = await Match.find({
@@ -83,8 +88,13 @@ router.post('/calculate/:weekId', async (req, res) => {
     // Send push notifications to users who got exact scores on this specific match
     if (exactScoreUsers.length > 0) {
       try {
+        // Get excluded users for this month
+        const excludedIds = week ? (await MonthExclusion.find({ month: week.month, season: week.season }))
+          .map(e => e.userId.toString()) : [];
+
         const usersToNotify = [];
         for (const eu of exactScoreUsers) {
+          if (excludedIds.includes(eu.userId.toString())) continue;
           const u = await User.findById(eu.userId);
           if (u && u.pushSettings?.enabled && u.pushSettings?.exactScoreAlerts !== false) {
             usersToNotify.push(eu);

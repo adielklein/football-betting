@@ -203,6 +203,7 @@ const scoresRoutes = require('./routes/scores');
 const leaguesRoutes = require('./routes/leagues');
 const uploadRouter = require('./routes/upload');
 const statsRoutes = require('./routes/stats');
+const exclusionsRoutes = require('./routes/exclusions');
 
 app.use('/api/upload', uploadRouter);
 app.use('/api/stats', statsRoutes);
@@ -212,6 +213,7 @@ app.use('/api/matches', matchesRoutes);
 app.use('/api/bets', betsRoutes);
 app.use('/api/scores', scoresRoutes);
 app.use('/api/leagues', leaguesRoutes);
+app.use('/api/exclusions', exclusionsRoutes);
 
 // Debug endpoint
 app.get('/api/debug', async (req, res) => {

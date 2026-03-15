@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getThemesByCategory, getTheme } from '../../themes';
 
 function UsersManagement({ users, loadData, user }) {
@@ -11,12 +11,75 @@ function UsersManagement({ users, loadData, user }) {
   });
   const [editingUser, setEditingUser] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [exclusionMonth, setExclusionMonth] = useState(null);
+  const [exclusionSeason, setExclusionSeason] = useState('2025-26');
+  const [excludedUserIds, setExcludedUserIds] = useState([]);
+  const [loadingExclusions, setLoadingExclusions] = useState(false);
 
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
 
   const themeCategories = getThemesByCategory();
+
+  const months = [
+    { value: 1, label: 'ינואר' }, { value: 2, label: 'פברואר' }, { value: 3, label: 'מרץ' },
+    { value: 4, label: 'אפריל' }, { value: 5, label: 'מאי' }, { value: 6, label: 'יוני' },
+    { value: 7, label: 'יולי' }, { value: 8, label: 'אוגוסט' }, { value: 9, label: 'ספטמבר' },
+    { value: 10, label: 'אוקטובר' }, { value: 11, label: 'נובמבר' }, { value: 12, label: 'דצמבר' }
+  ];
+
+  // Initialize exclusion month from current date on first render
+  useEffect(() => {
+    if (exclusionMonth === null) {
+      setExclusionMonth(new Date().getMonth() + 1);
+    }
+  }, []);
+
+  // Load exclusions when month/season changes
+  useEffect(() => {
+    if (exclusionMonth !== null) {
+      loadExclusions();
+    }
+  }, [exclusionMonth, exclusionSeason]);
+
+  const loadExclusions = async () => {
+    setLoadingExclusions(true);
+    try {
+      const response = await fetch(`${API_URL}/exclusions?month=${exclusionMonth}&season=${exclusionSeason}`);
+      if (response.ok) {
+        const data = await response.json();
+        setExcludedUserIds(data);
+      }
+    } catch (error) {
+      console.error('Error loading exclusions:', error);
+    } finally {
+      setLoadingExclusions(false);
+    }
+  };
+
+  const toggleExclusion = async (userId, isCurrentlyExcluded) => {
+    try {
+      if (isCurrentlyExcluded) {
+        await fetch(`${API_URL}/exclusions`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, month: exclusionMonth, season: exclusionSeason })
+        });
+        setExcludedUserIds(prev => prev.filter(id => id !== userId));
+      } else {
+        await fetch(`${API_URL}/exclusions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, month: exclusionMonth, season: exclusionSeason })
+        });
+        setExcludedUserIds(prev => [...prev, userId]);
+      }
+    } catch (error) {
+      console.error('Error toggling exclusion:', error);
+      alert('שגיאה בעדכון');
+    }
+  };
 
   const handleAddUser = async () => {
     if (!newUser.name || !newUser.username || !newUser.password) {
@@ -283,6 +346,82 @@ function UsersManagement({ users, loadData, user }) {
         >
           ➕ הוסף משתמש
         </button>
+      </div>
+
+      {/* Month exclusions */}
+      <div className="card" style={{ marginBottom: '0.75rem' }}>
+        <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.6rem 0', fontWeight: '700' }}>
+          🚫 ניהול השתתפות חודשית
+        </h2>
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.6rem' }}>
+          <select
+            value={exclusionMonth || ''}
+            onChange={e => setExclusionMonth(parseInt(e.target.value))}
+            className="input"
+            style={{ flex: 1, borderRadius: '10px', fontSize: '13px', padding: '0.45rem 0.6rem' }}
+          >
+            {months.map(m => (
+              <option key={m.value} value={m.value}>{m.label}</option>
+            ))}
+          </select>
+          <select
+            value={exclusionSeason}
+            onChange={e => setExclusionSeason(e.target.value)}
+            className="input"
+            style={{ flex: 1, borderRadius: '10px', fontSize: '13px', padding: '0.45rem 0.6rem' }}
+          >
+            <option value="2024-25">2024-25</option>
+            <option value="2025-26">2025-26</option>
+            <option value="2026-27">2026-27</option>
+          </select>
+        </div>
+        {loadingExclusions ? (
+          <div style={{ textAlign: 'center', padding: '1rem', color: '#888', fontSize: '13px' }}>טוען...</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+            {users.filter(u => u.role !== 'admin').map(userItem => {
+              const isExcluded = excludedUserIds.includes(userItem._id);
+              return (
+                <div key={userItem._id} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '0.45rem 0.6rem', borderRadius: '10px',
+                  background: isExcluded ? '#fff5f5' : '#f0fff4',
+                  border: isExcluded ? '1px solid #fed7d7' : '1px solid #c6f6d5',
+                  transition: 'all 0.2s ease'
+                }}>
+                  <span style={{
+                    fontSize: '13px', fontWeight: '600',
+                    color: isExcluded ? '#c53030' : '#276749',
+                    textDecoration: isExcluded ? 'line-through' : 'none'
+                  }}>
+                    {userItem.name}
+                  </span>
+                  <div
+                    onClick={() => toggleExclusion(userItem._id, isExcluded)}
+                    style={{
+                      width: '44px', height: '24px', borderRadius: '12px',
+                      background: isExcluded ? '#fc8181' : '#68d391',
+                      position: 'relative', cursor: 'pointer',
+                      transition: 'background 0.2s ease',
+                      flexShrink: 0
+                    }}
+                  >
+                    <div style={{
+                      width: '20px', height: '20px', borderRadius: '50%',
+                      background: '#fff', position: 'absolute', top: '2px',
+                      transition: 'right 0.2s ease, left 0.2s ease',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                      ...(isExcluded ? { left: '2px' } : { right: '2px' })
+                    }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <div style={{ marginTop: '0.5rem', fontSize: '11px', color: '#888', textAlign: 'center' }}>
+          ירוק = משתתף | אדום = לא משתתף בחודש זה
+        </div>
       </div>
 
       {/* User list */}

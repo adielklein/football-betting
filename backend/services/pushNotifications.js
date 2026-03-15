@@ -340,14 +340,19 @@ async function sendNotificationToUsers(userIds, title, body, data = {}, imageUrl
 async function sendWeekActivationNotification(week, options = {}) {
   try {
     console.log('🏆 [PUSH] Week activation notification');
-    
-    const users = await User.find({
+
+    // Filter out users excluded from this month
+    const MonthExclusion = require('../models/MonthExclusion');
+    const exclusions = await MonthExclusion.find({ month: week.month, season: week.season });
+    const excludedIds = exclusions.map(e => e.userId.toString());
+
+    const users = (await User.find({
       'pushSettings.enabled': true,
       $or: [
         { 'pushSettings.subscriptions.0': { $exists: true } },
         { 'pushSettings.subscription': { $exists: true, $ne: null } }
       ]
-    });
+    })).filter(u => !excludedIds.includes(u._id.toString()));
 
     if (users.length === 0) {
       return { success: true, sent: 0, users: 0 };

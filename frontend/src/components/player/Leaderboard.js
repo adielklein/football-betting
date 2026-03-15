@@ -53,7 +53,6 @@ function Leaderboard({ leaderboard, user }) {
         setSelectedMonth(latestMonth);
         setSelectedSeason(latestSeason);
         setInitializedFromData(true);
-        // Calculate with the correct values directly
         calculateMonthlyScores(scoresData, weeksData, latestMonth, latestSeason);
         return;
       }
@@ -68,10 +67,17 @@ function Leaderboard({ leaderboard, user }) {
     }
   };
 
-  const calculateMonthlyScores = (scoresData, weeksData, overrideMonth, overrideSeason) => {
+  const calculateMonthlyScores = async (scoresData, weeksData, overrideMonth, overrideSeason) => {
     const useMonth = overrideMonth || selectedMonth;
     const useSeason = overrideSeason || selectedSeason;
     if (!useMonth || !useSeason) return;
+
+    // Fetch excluded users for this month
+    let excludedIds = [];
+    try {
+      const exclResponse = await fetch(`${API_URL}/exclusions?month=${useMonth}&season=${useSeason}`);
+      if (exclResponse.ok) excludedIds = await exclResponse.json();
+    } catch (e) { /* ignore */ }
 
     const monthWeeks = weeksData.filter(week => {
       if (!week) return false;
@@ -95,6 +101,7 @@ function Leaderboard({ leaderboard, user }) {
     scoresData.forEach(score => {
       if (!score.userId || score.userId.role === 'admin') return;
       const userId = score.userId._id;
+      if (excludedIds.includes(userId)) return;
       const userName = score.userId.name;
       const weekId = score.weekId && score.weekId._id ? score.weekId._id : score.weekId;
 
@@ -115,6 +122,15 @@ function Leaderboard({ leaderboard, user }) {
     if (!selectedWeekId) { setSelectedWeekScores([]); return; }
 
     try {
+      // Fetch exclusions for current month/season
+      let excludedIds = [];
+      if (selectedMonth && selectedSeason) {
+        try {
+          const exclResponse = await fetch(`${API_URL}/exclusions?month=${selectedMonth}&season=${selectedSeason}`);
+          if (exclResponse.ok) excludedIds = await exclResponse.json();
+        } catch (e) { /* ignore */ }
+      }
+
       const betsResponse = await fetch(`${API_URL}/bets/week/${selectedWeekId}`);
       if (!betsResponse.ok) { setSelectedWeekScores([]); return; }
 
@@ -124,6 +140,7 @@ function Leaderboard({ leaderboard, user }) {
       betsData.forEach(bet => {
         if (!bet.userId || bet.userId.role === 'admin') return;
         const userId = bet.userId._id;
+        if (excludedIds.includes(userId)) return;
         if (!weekScores[userId]) { weekScores[userId] = { name: bet.userId.name, score: 0 }; }
         weekScores[userId].score += bet.points || 0;
       });

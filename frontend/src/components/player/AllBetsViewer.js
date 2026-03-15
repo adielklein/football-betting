@@ -84,9 +84,19 @@ function AllBetsViewer({ weeks, user }) {
       const matchesData = await matchesResponse.json();
       const betsData = await betsResponse.json();
       const usersData = await usersResponse.json();
+
+      // Fetch excluded users for current month/season
+      let excludedIds = [];
+      if (selectedMonth && selectedSeason) {
+        try {
+          const exclResponse = await fetch(`${API_URL}/exclusions?month=${selectedMonth}&season=${selectedSeason}`);
+          if (exclResponse.ok) excludedIds = await exclResponse.json();
+        } catch (e) { /* ignore */ }
+      }
+
       setMatches(Array.isArray(matchesData) ? matchesData : []);
       setAllBets(Array.isArray(betsData) ? betsData : []);
-      setUsers(usersData.filter(u => u.role !== 'admin'));
+      setUsers(usersData.filter(u => u.role !== 'admin' && !excludedIds.includes(u._id)));
     } catch (error) {
       console.error('Error loading week data:', error);
       setMatches([]); setAllBets([]); setUsers([]);
