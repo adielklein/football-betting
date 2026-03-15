@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 
 function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, user }) {
   const [savingBet, setSavingBet] = useState(null);
-  const [collapsedMatches, setCollapsedMatches] = useState({});
+  const [expandedMatches, setExpandedMatches] = useState({});
 
   const toggleMatchCollapse = (matchId) => {
-    setCollapsedMatches(prev => ({ ...prev, [matchId]: !prev[matchId] }));
+    setExpandedMatches(prev => ({ ...prev, [matchId]: !prev[matchId] }));
   };
 
   const API_URL = window.location.hostname === 'localhost'
@@ -210,7 +210,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                   style={{
                     padding: '0.5rem 0.7rem',
                     background: `linear-gradient(135deg, ${leagueColor}12, ${leagueColor}06)`,
-                    borderBottom: collapsedMatches[match._id] ? 'none' : `2px solid ${leagueColor}25`,
+                    borderBottom: expandedMatches[match._id] ? `2px solid ${leagueColor}25` : 'none',
                     cursor: 'pointer', userSelect: 'none'
                   }}
                 >
@@ -241,7 +241,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                       )}
                       <span style={{
                         fontSize: '14px', transition: 'transform 0.2s ease',
-                        transform: collapsedMatches[match._id] ? 'rotate(0deg)' : 'rotate(180deg)',
+                        transform: expandedMatches[match._id] ? 'rotate(180deg)' : 'rotate(0deg)',
                         color: '#999'
                       }}>▼</span>
                     </div>
@@ -249,7 +249,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                 </div>
 
                 {/* Players bets */}
-                {!collapsedMatches[match._id] && <div style={{ padding: '0.3rem' }}>
+                {expandedMatches[match._id] && <div style={{ padding: '0.3rem' }}>
                   {playerUsers.map((player, playerIndex) => {
                     const playerBets = allBets.filter(bet => bet && bet.userId && bet.userId._id === player._id);
                     const bet = playerBets.find(b => b && b.matchId && b.matchId._id === match._id);
