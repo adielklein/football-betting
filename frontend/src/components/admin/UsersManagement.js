@@ -16,6 +16,8 @@ function UsersManagement({ users, loadData, user }) {
   const [excludedUserIds, setExcludedUserIds] = useState([]);
   const [loadingExclusions, setLoadingExclusions] = useState(false);
   const [exclusionsOpen, setExclusionsOpen] = useState(false);
+  const [addUserOpen, setAddUserOpen] = useState(false);
+  const [userListOpen, setUserListOpen] = useState(false);
 
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
@@ -263,9 +265,22 @@ function UsersManagement({ users, loadData, user }) {
     <div>
       {/* Add user form */}
       <div className="card" style={{ marginBottom: '0.75rem' }}>
-        <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.6rem 0', fontWeight: '700' }}>
-          ➕ הוסף משתמש חדש
-        </h2>
+        <div
+          onClick={() => setAddUserOpen(prev => !prev)}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            cursor: 'pointer', userSelect: 'none'
+          }}
+        >
+          <h2 style={{ fontSize: '0.95rem', margin: 0, fontWeight: '700' }}>
+            ➕ הוסף משתמש חדש
+          </h2>
+          <span style={{
+            fontSize: '18px', transition: 'transform 0.2s ease',
+            transform: addUserOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+          }}>▼</span>
+        </div>
+        {!addUserOpen ? null : (<div style={{ marginTop: '0.6rem' }}>
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
@@ -347,6 +362,7 @@ function UsersManagement({ users, loadData, user }) {
         >
           ➕ הוסף משתמש
         </button>
+        </div>)}
       </div>
 
       {/* Month exclusions */}
@@ -441,9 +457,22 @@ function UsersManagement({ users, loadData, user }) {
 
       {/* User list */}
       <div className="card">
-        <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
-          👥 רשימת משתמשים ({users.length})
-        </h2>
+        <div
+          onClick={() => setUserListOpen(prev => !prev)}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            cursor: 'pointer', userSelect: 'none'
+          }}
+        >
+          <h2 style={{ fontSize: '0.95rem', margin: 0, fontWeight: '700' }}>
+            👥 רשימת משתמשים ({users.length})
+          </h2>
+          <span style={{
+            fontSize: '18px', transition: 'transform 0.2s ease',
+            transform: userListOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+          }}>▼</span>
+        </div>
+        {!userListOpen ? null : (<div style={{ marginTop: '0.5rem' }}>
 
         {users.length === 0 ? (
           <div style={{ textAlign: 'center', color: '#999', padding: '2rem', fontSize: '14px' }}>
@@ -645,6 +674,7 @@ function UsersManagement({ users, loadData, user }) {
             })}
           </div>
         )}
+        </div>)}
       </div>
     </div>
   );
