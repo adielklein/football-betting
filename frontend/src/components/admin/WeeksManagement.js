@@ -18,7 +18,10 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
   const [notificationImage, setNotificationImage] = useState(null);
   const [customNotificationTitle, setCustomNotificationTitle] = useState("");
   const [customNotificationBody, setCustomNotificationBody] = useState("");
-  const [uploadingImage, setUploadingImage] = useState(false); // ✅ NEW!
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [createWeekOpen, setCreateWeekOpen] = useState(false);
+  const [addMatchOpen, setAddMatchOpen] = useState(false);
+  const [matchListOpen, setMatchListOpen] = useState(true);
 
   // State עבור ה-dropdown המקונן
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -805,7 +808,15 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
 
       {/* יצירת שבוע חדש */}
       <div className="card">
-        <h3>צור שבוע חדש</h3>
+        <div onClick={() => setCreateWeekOpen(prev => !prev)} style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          cursor: 'pointer', userSelect: 'none'
+        }}>
+          <h3 style={{ margin: 0 }}>צור שבוע חדש</h3>
+          <span style={{ fontSize: '18px', transition: 'transform 0.2s ease',
+            transform: createWeekOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+        </div>
+        {!createWeekOpen ? null : (<div style={{ marginTop: '0.6rem' }}>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div style={{ flex: '1 1 200px' }}>
             <label>שם השבוע:</label>
@@ -853,6 +864,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
             ➕ צור שבוע
           </button>
         </div>
+        </div>)}
       </div>
 
       {/* בחירת שבוע - Dropdown מקונן */}
@@ -1155,7 +1167,15 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
       {/* הוסף משחק */}
       {selectedWeek && (
         <div className="card">
-          <h3>הוסף משחק ל-{selectedWeek.name}</h3>
+          <div onClick={() => setAddMatchOpen(prev => !prev)} style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            cursor: 'pointer', userSelect: 'none'
+          }}>
+            <h3 style={{ margin: 0 }}>הוסף משחק ל-{selectedWeek.name}</h3>
+            <span style={{ fontSize: '18px', transition: 'transform 0.2s ease',
+              transform: addMatchOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+          </div>
+          {!addMatchOpen ? null : (<div style={{ marginTop: '0.6rem' }}>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <div style={{ flex: '1 1 150px' }}>
               <label>ליגה:</label>
@@ -1259,13 +1279,22 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
               />
             </div>
           </div>
+          </div>)}
         </div>
       )}
 
       {/* רשימת משחקים */}
       {selectedWeek && matches.length > 0 && (
         <div className="card">
-          <h2>משחקי {selectedWeek.name}</h2>
+          <div onClick={() => setMatchListOpen(prev => !prev)} style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            cursor: 'pointer', userSelect: 'none'
+          }}>
+            <h2 style={{ margin: 0 }}>משחקי {selectedWeek.name}</h2>
+            <span style={{ fontSize: '18px', transition: 'transform 0.2s ease',
+              transform: matchListOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+          </div>
+          {!matchListOpen ? null : (<div style={{ marginTop: '0.6rem' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {matches.map(match => {
               const isEditingThis = editingMatchDetails?._id === match._id;
@@ -1645,6 +1674,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
               );
             })}
           </div>
+          </div>)}
         </div>
       )}
 

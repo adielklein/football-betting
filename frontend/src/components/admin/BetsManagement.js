@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 
 function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, user }) {
   const [savingBet, setSavingBet] = useState(null);
+  const [collapsedMatches, setCollapsedMatches] = useState({});
+
+  const toggleMatchCollapse = (matchId) => {
+    setCollapsedMatches(prev => ({ ...prev, [matchId]: !prev[matchId] }));
+  };
 
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
@@ -199,12 +204,16 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                 padding: 0, overflow: 'hidden',
                 animation: `slideUp 0.25s ease ${matchIndex * 0.04}s both`
               }}>
-                {/* Match header */}
-                <div style={{
-                  padding: '0.5rem 0.7rem',
-                  background: `linear-gradient(135deg, ${leagueColor}12, ${leagueColor}06)`,
-                  borderBottom: `2px solid ${leagueColor}25`
-                }}>
+                {/* Match header - clickable */}
+                <div
+                  onClick={() => toggleMatchCollapse(match._id)}
+                  style={{
+                    padding: '0.5rem 0.7rem',
+                    background: `linear-gradient(135deg, ${leagueColor}12, ${leagueColor}06)`,
+                    borderBottom: collapsedMatches[match._id] ? 'none' : `2px solid ${leagueColor}25`,
+                    cursor: 'pointer', userSelect: 'none'
+                  }}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                       <div style={{ fontWeight: '700', fontSize: '14px', color: '#333' }}>
@@ -219,21 +228,28 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                         {getLeagueName(match)} • {match.date} {match.time}
                       </div>
                     </div>
-                    {hasResult && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      {hasResult && (
+                        <span style={{
+                          padding: '3px 10px', borderRadius: '20px',
+                          background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)',
+                          color: '#16a34a', fontSize: '13px', fontWeight: '800',
+                          border: '1px solid #86efac'
+                        }}>
+                          {match.result.team1Goals}-{match.result.team2Goals}
+                        </span>
+                      )}
                       <span style={{
-                        padding: '3px 10px', borderRadius: '20px',
-                        background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)',
-                        color: '#16a34a', fontSize: '13px', fontWeight: '800',
-                        border: '1px solid #86efac'
-                      }}>
-                        {match.result.team1Goals}-{match.result.team2Goals}
-                      </span>
-                    )}
+                        fontSize: '14px', transition: 'transform 0.2s ease',
+                        transform: collapsedMatches[match._id] ? 'rotate(0deg)' : 'rotate(180deg)',
+                        color: '#999'
+                      }}>▼</span>
+                    </div>
                   </div>
                 </div>
 
                 {/* Players bets */}
-                <div style={{ padding: '0.3rem' }}>
+                {!collapsedMatches[match._id] && <div style={{ padding: '0.3rem' }}>
                   {playerUsers.map((player, playerIndex) => {
                     const playerBets = allBets.filter(bet => bet && bet.userId && bet.userId._id === player._id);
                     const bet = playerBets.find(b => b && b.matchId && b.matchId._id === match._id);
@@ -331,7 +347,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                       </div>
                     );
                   })}
-                </div>
+                </div>}
               </div>
             );
           })}
