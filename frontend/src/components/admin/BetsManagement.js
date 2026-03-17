@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, user }) {
   const [savingBet, setSavingBet] = useState(null);
   const [expandedMatches, setExpandedMatches] = useState({});
+  const [excludedUserIds, setExcludedUserIds] = useState([]);
 
   const toggleMatchCollapse = (matchId) => {
     setExpandedMatches(prev => ({ ...prev, [matchId]: !prev[matchId] }));
@@ -11,6 +12,18 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
+
+  const weekId = selectedWeek?._id;
+  const weekMonth = selectedWeek?.month;
+  const weekSeason = selectedWeek?.season;
+
+  useEffect(() => {
+    if (!weekMonth || !weekSeason) { setExcludedUserIds([]); return; }
+    fetch(`${API_URL}/exclusions?month=${weekMonth}&season=${weekSeason}`)
+      .then(r => r.ok ? r.json() : [])
+      .then(ids => { console.log('🚫 Excluded users:', ids); setExcludedUserIds(ids); })
+      .catch(() => setExcludedUserIds([]));
+  }, [weekId, weekMonth, weekSeason, API_URL]);
 
   const saveBet = async (playerId, matchId, team1Goals, team2Goals) => {
     try {
@@ -108,7 +121,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
   const weekStatus = getWeekStatusForAdmin();
   const isCurrentUserAdmin = user && user.role === 'admin';
   const canEdit = isCurrentUserAdmin || weekStatus?.type === 'active';
-  const playerUsers = users.filter(u => u && u.role !== 'admin');
+  const playerUsers = users.filter(u => u && u.role !== 'admin' && !excludedUserIds.includes(u._id));
 
   return (
     <div>
