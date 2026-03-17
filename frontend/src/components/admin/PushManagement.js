@@ -147,7 +147,7 @@ function PushManagement() {
     { key: 'stats', label: 'משתמשים', icon: '📊' }
   ];
 
-  const NotificationFormFields = () => (
+  const notificationFormFields = (
     <>
       <div style={{ marginBottom: '0.5rem' }}>
         <label style={labelStyle}>כותרת ההתראה</label>
@@ -164,10 +164,10 @@ function PushManagement() {
           className="input" style={{ ...inputStyle, width: '100%', minHeight: '70px', resize: 'vertical' }} />
       </div>
       <div style={{ marginBottom: '0.6rem' }}>
-        <label style={labelStyle}>תמונה (אופציונלי)</label>
+        <label style={labelStyle}>תמונה (אופציונלי - אנדרואיד בלבד)</label>
         <input type="file" accept="image/*" onChange={handleImageSelect}
           className="input" style={{ ...inputStyle, width: '100%' }} />
-        <div style={{ fontSize: '10px', color: '#aaa', marginTop: '2px' }}>מקסימום 10MB</div>
+        <div style={{ fontSize: '10px', color: '#aaa', marginTop: '2px' }}>מקסימום 10MB • אייפון לא תומך בתמונות בהתראות</div>
         {notificationImage && (
           <div style={{ marginTop: '0.4rem' }}>
             <img src={notificationImage} alt="תצוגה מקדימה" style={{
@@ -255,7 +255,7 @@ function PushManagement() {
           <h3 style={{ fontSize: '0.9rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
             📢 שלח התראה לכולם
           </h3>
-          <NotificationFormFields />
+          {notificationFormFields}
           <button onClick={sendToAll}
             disabled={loading || !notificationForm.title || !notificationForm.body}
             style={{
@@ -277,7 +277,7 @@ function PushManagement() {
           <h3 style={{ fontSize: '0.9rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
             🎯 שלח התראה למשתמשים נבחרים
           </h3>
-          <NotificationFormFields />
+          {notificationFormFields}
 
           <div style={{ marginBottom: '0.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
