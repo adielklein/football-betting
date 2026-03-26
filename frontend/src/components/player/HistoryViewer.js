@@ -273,9 +273,9 @@ function HistoryViewer({ weeks, user }) {
                       )}
 
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginBottom: '0.35rem' }}>
-                        <span style={{ flex: '1 1 0', textAlign: 'center', fontWeight: '700', fontSize: '13px', lineHeight: 1.2, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', color: '#333', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                        <span style={{ flex: '1 1 0', textAlign: 'center', fontWeight: '700', fontSize: '13px', lineHeight: 1.2, minWidth: 0, color: '#333', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                           <TeamLogo name={match.team1} />
-                          {match.team1}
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{match.team1}</span>
                         </span>
                         <div style={{ textAlign: 'center', flexShrink: 0 }}>
                           <div style={{ fontSize: '20px', fontWeight: '800', color: '#1976d2', fontFamily: 'monospace', lineHeight: 1 }}>
@@ -287,9 +287,9 @@ function HistoryViewer({ weeks, user }) {
                             </div>
                           )}
                         </div>
-                        <span style={{ flex: '1 1 0', textAlign: 'center', fontWeight: '700', fontSize: '13px', lineHeight: 1.2, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', color: '#333', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                        <span style={{ flex: '1 1 0', textAlign: 'center', fontWeight: '700', fontSize: '13px', lineHeight: 1.2, minWidth: 0, color: '#333', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                           <TeamLogo name={match.team2} />
-                          {match.team2}
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{match.team2}</span>
                         </span>
                       </div>
 

@@ -230,9 +230,9 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <div style={{ fontWeight: '700', fontSize: '14px', color: '#333', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ fontWeight: '700', fontSize: '14px', color: '#333', display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden' }}>
                         <TeamLogo name={match.team1} />
-                        {match.team1} נגד {match.team2}
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{match.team1} נגד {match.team2}</span>
                         <TeamLogo name={match.team2} />
                       </div>
                       <div style={{ fontSize: '11px', color: '#888', marginTop: '1px' }}>

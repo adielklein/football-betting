@@ -394,17 +394,19 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
               }}>
                 <div style={{
                   flex: '1 1 0',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 2,
                   textAlign: 'center',
                   fontWeight: '700',
                   fontSize: '13px',
                   lineHeight: '1.2',
                   minWidth: 0,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
                   color: '#333'
                 }}>
                   <TeamLogo name={match.team1} />
-                  {match.team1}
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{match.team1}</span>
                 </div>
 
                 <div style={{
@@ -477,17 +479,19 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
 
                 <div style={{
                   flex: '1 1 0',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 2,
                   textAlign: 'center',
                   fontWeight: '700',
                   fontSize: '13px',
                   lineHeight: '1.2',
                   minWidth: 0,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
                   color: '#333'
                 }}>
                   <TeamLogo name={match.team2} />
-                  {match.team2}
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{match.team2}</span>
                 </div>
               </div>
 
