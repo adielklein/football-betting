@@ -258,9 +258,9 @@ function AllBetsViewer({ weeks, user }) {
                       </div>
                     </div>
 
-                    <div style={{ textAlign: 'center', fontWeight: '700', fontSize: '14px', marginBottom: '0.3rem', color: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', flexWrap: 'nowrap', overflow: 'hidden' }}>
+                    <div style={{ textAlign: 'center', fontWeight: '700', fontSize: '14px', marginBottom: '0.3rem', color: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', flexWrap: 'wrap' }}>
                       <TeamLogo name={match.team1} />
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{match.team1} נגד {match.team2}</span>
+                      {match.team1} נגד {match.team2}
                       <TeamLogo name={match.team2} />
                       {match.result && match.result.team1Goals !== undefined && (
                         <span style={{ fontSize: '12px', color: '#2e7d32', flexShrink: 0 }}>

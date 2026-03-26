@@ -406,7 +406,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   color: '#333'
                 }}>
                   <TeamLogo name={match.team1} />
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{match.team1}</span>
+                  {match.team1}
                 </div>
 
                 <div style={{
@@ -491,7 +491,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   color: '#333'
                 }}>
                   <TeamLogo name={match.team2} />
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{match.team2}</span>
+                  {match.team2}
                 </div>
               </div>
 

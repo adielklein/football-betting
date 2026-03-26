@@ -1586,9 +1586,9 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                         alignItems: 'center',
                         marginBottom: '0.75rem'
                       }}>
-                        <div style={{ textAlign: 'center', fontWeight: '500', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', overflow: 'hidden' }}>
+                        <div style={{ textAlign: 'center', fontWeight: '500', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
                           <TeamLogo name={match.team1} />
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%', fontSize: '13px' }}>{match.team1} (בית)</span>
+                          <span style={{ fontSize: '13px' }}>{match.team1} (בית)</span>
                         </div>
                         
                         <input
@@ -1643,9 +1643,9 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                           disabled={hasResult}
                         />
                         
-                        <div style={{ textAlign: 'center', fontWeight: '500', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', overflow: 'hidden' }}>
+                        <div style={{ textAlign: 'center', fontWeight: '500', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
                           <TeamLogo name={match.team2} />
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%', fontSize: '13px' }}>{match.team2} (חוץ)</span>
+                          <span style={{ fontSize: '13px' }}>{match.team2} (חוץ)</span>
                         </div>
                       </div>
 
