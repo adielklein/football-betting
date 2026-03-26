@@ -1,8 +1,9 @@
 /**
- * Team Logos via Google Favicon Service
- * מיפוי שמות קבוצות לדומיינים + נורמליזציה חכמה
+ * Team Logos - Google Favicon + TheSportsDB auto-discovery
+ * מיפוי סטטי + חיפוש אוטומטי לקבוצות חדשות
  */
 
+// === מיפוי סטטי: שם קנוני → דומיין ===
 const TEAM_DOMAINS = {
   // ספרד
   'ריאל מדריד': 'realmadrid.com',
@@ -119,7 +120,95 @@ const TEAM_DOMAINS = {
   'טורקיה': 'tff.org',
 };
 
-// אלייאסים - אותו מיפוי כמו בבקאנד
+// === שם באנגלית לחיפוש אוטומטי ב-TheSportsDB ===
+const TEAM_ENGLISH = {
+  'ריאל מדריד': 'Real Madrid',
+  'ברצלונה': 'Barcelona',
+  'אטלטיקו מדריד': 'Atletico Madrid',
+  'אתלטיק בילבאו': 'Athletic Bilbao',
+  'ויאריאל': 'Villarreal',
+  'בטיס': 'Real Betis',
+  'סביליה': 'Sevilla',
+  'ריאל סוסיאדד': 'Real Sociedad',
+  'אספניול': 'Espanyol',
+  'סלטה ויגו': 'Celta Vigo',
+  'מיורקה': 'Mallorca',
+  'ולנסיה': 'Valencia',
+  'אלצ\'ה': 'Elche',
+  'ראיו': 'Rayo Vallecano',
+  'לבאנטה': 'Levante',
+  'אוססונה': 'Osasuna',
+  'ג\'ירונה': 'Girona',
+  'ליברפול': 'Liverpool',
+  'ארסנל': 'Arsenal',
+  'צ\'לסי': 'Chelsea',
+  'טוטנהאם': 'Tottenham',
+  'מנצ\'סטר סיטי': 'Manchester City',
+  'מנצ\'סטר יונייטד': 'Manchester United',
+  'ניוקאסל': 'Newcastle United',
+  'אסטון וילה': 'Aston Villa',
+  'ווסטהאם': 'West Ham',
+  'קריסטל פאלאס': 'Crystal Palace',
+  'לידס': 'Leeds United',
+  'ברנלי': 'Burnley',
+  'סנדרלנד': 'Sunderland',
+  'נוטינגהאם פורסט': 'Nottingham Forest',
+  'בורנמות\'': 'Bournemouth',
+  'וולבס': 'Wolverhampton',
+  'ברנטפורד': 'Brentford',
+  'אינטר': 'Inter Milan',
+  'יובנטוס': 'Juventus',
+  'נאפולי': 'Napoli',
+  'מילאן': 'AC Milan',
+  'אטאלנטה': 'Atalanta',
+  'רומא': 'AS Roma',
+  'בולוניה': 'Bologna',
+  'קומו': 'Como',
+  'באיירן מינכן': 'Bayern Munich',
+  'דורטמונד': 'Borussia Dortmund',
+  'לברקוזן': 'Bayer Leverkusen',
+  'לייפציג': 'RB Leipzig',
+  'פריז סן ז\'רמן': 'Paris Saint-Germain',
+  'מרסיי': 'Marseille',
+  'מונאקו': 'Monaco',
+  'בנפיקה': 'Benfica',
+  'ספורטינג ליסבון': 'Sporting Lisbon',
+  'אייאקס': 'Ajax',
+  'פ.ס.וו': 'PSV Eindhoven',
+  'גלאטסראיי': 'Galatasaray',
+  'בודה גלימט': 'Bodo Glimt',
+  'סלביה פראג': 'Slavia Prague',
+  'אולימפיאקוס': 'Olympiacos',
+  'קלאב ברוז\'': 'Club Brugge',
+  'קראבג': 'Qarabag',
+  'מכבי תל אביב': 'Maccabi Tel Aviv',
+  'הפועל באר שבע': 'Hapoel Beer Sheva',
+  'בית"ר ירושלים': 'Beitar Jerusalem',
+  'הפועל תל אביב': 'Hapoel Tel Aviv',
+  'מכבי חיפה': 'Maccabi Haifa',
+  'מכבי נתניה': 'Maccabi Netanya',
+  'הפועל ירושלים': 'Hapoel Jerusalem',
+  'הפועל חיפה': 'Hapoel Haifa',
+  'עירוני קרית שמונה': 'Hapoel Ironi Kiryat Shmona',
+  'עירוני טבריה': 'Ironi Tiberias',
+  'בני סכנין': 'Bnei Sakhnin',
+  'מ.ס. אשדוד': 'MS Ashdod',
+  'הפועל פתח תקווה': 'Hapoel Petah Tikva',
+  'מכבי בני ריינה': 'Maccabi Bnei Reineh',
+  'ספרד': 'Spain',
+  'אנגליה': 'England',
+  'הולנד': 'Netherlands',
+  'איטליה': 'Italy',
+  'פולין': 'Poland',
+  'גאורגיה': 'Georgia',
+  'אלבניה': 'Albania',
+  'ישראל': 'Israel',
+  'מולדובה': 'Moldova',
+  'נורווגיה': 'Norway',
+  'טורקיה': 'Turkey',
+};
+
+// === אלייאסים (שגיאות כתיב) ===
 const TEAM_ALIASES = {
   'ריאל מטריד': 'ריאל מדריד',
   'ריאל מנדריל': 'ריאל מדריד',
@@ -155,25 +244,18 @@ function normalizeTeamName(teamName) {
   if (!teamName) return teamName;
   const trimmed = teamName.trim();
 
-  // חיפוש ישיר בדומיינים
   if (TEAM_DOMAINS[trimmed]) return trimmed;
-
-  // חיפוש באלייאסים
   if (TEAM_ALIASES[trimmed]) return TEAM_ALIASES[trimmed];
 
   // Fuzzy - חיפוש לפי הכלה
-  const allCanonical = Object.keys(TEAM_DOMAINS);
-  const allAliases = Object.entries(TEAM_ALIASES);
-
-  for (const canonical of allCanonical) {
+  for (const canonical of Object.keys(TEAM_DOMAINS)) {
     if (trimmed.length >= 4 && canonical.length >= 4) {
       if (trimmed.includes(canonical) || canonical.includes(trimmed)) {
         return canonical;
       }
     }
   }
-
-  for (const [alias, canonical] of allAliases) {
+  for (const [alias, canonical] of Object.entries(TEAM_ALIASES)) {
     if (trimmed.length >= 4 && alias.length >= 4) {
       if (trimmed.includes(alias) || alias.includes(trimmed)) {
         return canonical;
@@ -185,10 +267,7 @@ function normalizeTeamName(teamName) {
 }
 
 /**
- * מחזיר URL ללוגו של קבוצה דרך Google Favicon Service
- * @param {string} teamName - שם הקבוצה (גם עם שגיאות כתיב)
- * @param {number} size - גודל בפיקסלים (16, 32, 64, 128)
- * @returns {string|null} URL ללוגו או null אם לא נמצא
+ * מחזיר URL סטטי (Google Favicon) - מיידי, ללא async
  */
 function getTeamLogoUrl(teamName, size = 32) {
   const canonical = normalizeTeamName(teamName);
@@ -197,4 +276,54 @@ function getTeamLogoUrl(teamName, size = 32) {
   return `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`;
 }
 
-export { getTeamLogoUrl, normalizeTeamName };
+// === חיפוש אוטומטי דרך TheSportsDB (לקבוצות לא מוכרות) ===
+
+const LOGO_CACHE_PREFIX = 'team_logo_';
+
+/**
+ * חיפוש אסינכרוני של לוגו קבוצה
+ * 1. בודק מיפוי סטטי (מיידי)
+ * 2. בודק localStorage cache
+ * 3. מחפש ב-TheSportsDB לפי שם באנגלית
+ * 4. שומר ב-cache לשימוש עתידי
+ */
+async function fetchTeamLogoUrl(teamName) {
+  const canonical = normalizeTeamName(teamName);
+
+  // 1. מיפוי סטטי - Google Favicon
+  const domain = TEAM_DOMAINS[canonical];
+  if (domain) return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+
+  // 2. בדיקת cache
+  const cacheKey = LOGO_CACHE_PREFIX + canonical;
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached !== null) return cached === '' ? null : cached;
+  } catch (e) { /* localStorage לא זמין */ }
+
+  // 3. חיפוש ב-TheSportsDB
+  const english = TEAM_ENGLISH[canonical];
+  if (english) {
+    try {
+      const res = await fetch(
+        `https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(english)}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data.teams && data.teams[0]) {
+          const badge = data.teams[0].strBadge || data.teams[0].strLogo;
+          if (badge) {
+            try { localStorage.setItem(cacheKey, badge); } catch (e) {}
+            return badge;
+          }
+        }
+      }
+    } catch (e) { /* network error - fail silently */ }
+  }
+
+  // 4. לא נמצא - שמור null ב-cache כדי לא לחפש שוב
+  try { localStorage.setItem(cacheKey, ''); } catch (e) {}
+  return null;
+}
+
+export { getTeamLogoUrl, fetchTeamLogoUrl, normalizeTeamName, TEAM_ENGLISH };

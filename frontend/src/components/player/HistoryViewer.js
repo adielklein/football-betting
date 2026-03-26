@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getTeamLogoUrl } from '../../utils/teamLogos';
+import TeamLogo from '../TeamLogo';
 
 function HistoryViewer({ weeks, user }) {
   const [selectedHistoryWeek, setSelectedHistoryWeek] = useState(null);
@@ -274,7 +274,7 @@ function HistoryViewer({ weeks, user }) {
 
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginBottom: '0.35rem' }}>
                         <span style={{ flex: '1 1 0', textAlign: 'center', fontWeight: '700', fontSize: '13px', lineHeight: 1.2, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', color: '#333', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                          {getTeamLogoUrl(match.team1) && <img src={getTeamLogoUrl(match.team1)} alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />}
+                          <TeamLogo name={match.team1} />
                           {match.team1}
                         </span>
                         <div style={{ textAlign: 'center', flexShrink: 0 }}>
@@ -288,7 +288,7 @@ function HistoryViewer({ weeks, user }) {
                           )}
                         </div>
                         <span style={{ flex: '1 1 0', textAlign: 'center', fontWeight: '700', fontSize: '13px', lineHeight: 1.2, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', color: '#333', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                          {getTeamLogoUrl(match.team2) && <img src={getTeamLogoUrl(match.team2)} alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />}
+                          <TeamLogo name={match.team2} />
                           {match.team2}
                         </span>
                       </div>
