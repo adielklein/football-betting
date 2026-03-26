@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { getTeamLogoUrl } from '../../utils/teamLogos';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -1585,7 +1586,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                         alignItems: 'center',
                         marginBottom: '0.75rem'
                       }}>
-                        <div style={{ textAlign: 'center', fontWeight: '500' }}>
+                        <div style={{ textAlign: 'center', fontWeight: '500', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                          {getTeamLogoUrl(match.team1) && <img src={getTeamLogoUrl(match.team1)} alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />}
                           {match.team1} (בית)
                         </div>
                         
@@ -1641,7 +1643,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
                           disabled={hasResult}
                         />
                         
-                        <div style={{ textAlign: 'center', fontWeight: '500' }}>
+                        <div style={{ textAlign: 'center', fontWeight: '500', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                          {getTeamLogoUrl(match.team2) && <img src={getTeamLogoUrl(match.team2)} alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />}
                           {match.team2} (חוץ)
                         </div>
                       </div>

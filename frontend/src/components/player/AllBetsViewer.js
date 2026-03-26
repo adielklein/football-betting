@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getTeamLogoUrl } from '../../utils/teamLogos';
 
 function AllBetsViewer({ weeks, user }) {
   const [selectedWeek, setSelectedWeek] = useState(null);
@@ -257,8 +258,10 @@ function AllBetsViewer({ weeks, user }) {
                       </div>
                     </div>
 
-                    <div style={{ textAlign: 'center', fontWeight: '700', fontSize: '14px', marginBottom: '0.3rem', color: '#333' }}>
+                    <div style={{ textAlign: 'center', fontWeight: '700', fontSize: '14px', marginBottom: '0.3rem', color: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                      {getTeamLogoUrl(match.team1) && <img src={getTeamLogoUrl(match.team1)} alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />}
                       {match.team1} נגד {match.team2}
+                      {getTeamLogoUrl(match.team2) && <img src={getTeamLogoUrl(match.team2)} alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />}
                       {match.result && match.result.team1Goals !== undefined && (
                         <span style={{ fontSize: '12px', color: '#2e7d32', marginRight: '0.4rem' }}>
                           ({match.result.team2Goals}-{match.result.team1Goals})

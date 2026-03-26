@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getTeamLogoUrl } from '../../utils/teamLogos';
 
 function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, user }) {
   const [savingBet, setSavingBet] = useState(null);
@@ -229,8 +230,10 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <div style={{ fontWeight: '700', fontSize: '14px', color: '#333' }}>
+                      <div style={{ fontWeight: '700', fontSize: '14px', color: '#333', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {getTeamLogoUrl(match.team1) && <img src={getTeamLogoUrl(match.team1)} alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />}
                         {match.team1} נגד {match.team2}
+                        {getTeamLogoUrl(match.team2) && <img src={getTeamLogoUrl(match.team2)} alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />}
                       </div>
                       <div style={{ fontSize: '11px', color: '#888', marginTop: '1px' }}>
                         <span style={{

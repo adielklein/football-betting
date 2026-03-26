@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getTeamLogoUrl } from '../../utils/teamLogos';
 
 function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
   const [localBets, setLocalBets] = useState({});
@@ -402,6 +403,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   textOverflow: 'ellipsis',
                   color: '#333'
                 }}>
+                  {getTeamLogoUrl(match.team1) && <img src={getTeamLogoUrl(match.team1)} alt="" style={{ width: 18, height: 18, objectFit: 'contain', marginBottom: 2 }} />}
                   {match.team1}
                 </div>
 
@@ -484,6 +486,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   textOverflow: 'ellipsis',
                   color: '#333'
                 }}>
+                  {getTeamLogoUrl(match.team2) && <img src={getTeamLogoUrl(match.team2)} alt="" style={{ width: 18, height: 18, objectFit: 'contain', marginBottom: 2 }} />}
                   {match.team2}
                 </div>
               </div>
