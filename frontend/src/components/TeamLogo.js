@@ -30,9 +30,28 @@ function TeamLogo({ name, size = 18 }) {
     return () => { cancelled = true; };
   }, [name, flag]);
 
-  // נבחרת - דגל אימוג'י
+  // נבחרת - דגל אימוג'י מתנופף
   if (flag) {
-    return <span style={{ fontSize: size, lineHeight: 1, flexShrink: 0 }}>{flag}</span>;
+    return (
+      <span style={{
+        fontSize: size,
+        lineHeight: 1,
+        flexShrink: 0,
+        display: 'inline-block',
+        animation: 'wave-flag 2s ease-in-out infinite',
+        transformOrigin: 'bottom left'
+      }}>
+        {flag}
+        <style>{`
+          @keyframes wave-flag {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(8deg); }
+            50% { transform: rotate(-4deg); }
+            75% { transform: rotate(6deg); }
+          }
+        `}</style>
+      </span>
+    );
   }
 
   // מועדון - תמונת לוגו
