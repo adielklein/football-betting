@@ -44,9 +44,10 @@ function Leaderboard({ leaderboard, user }) {
       if (scoresResponse.ok) scoresData = await scoresResponse.json();
       if (weeksResponse.ok) weeksData = await weeksResponse.json();
 
-      // On first load, find the most recent week and use its month/season as default
+      // On first load, find the most recent active week and use its month/season as default
       if (!initializedFromData && weeksData.length > 0) {
-        const sorted = [...weeksData].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const sorted = [...weeksData].filter(w => w && w.active).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        if (sorted.length === 0) return;
         const latest = sorted[0];
         const latestMonth = latest.month || new Date(latest.createdAt).getMonth() + 1;
         const latestSeason = latest.season || '2025-26';
@@ -80,7 +81,7 @@ function Leaderboard({ leaderboard, user }) {
     } catch (e) { /* ignore */ }
 
     const monthWeeks = weeksData.filter(week => {
-      if (!week) return false;
+      if (!week || !week.active) return false;
       const weekMonth = week.month || new Date(week.createdAt).getMonth() + 1;
       const weekSeason = week.season || '2025-26';
       return weekMonth === useMonth && weekSeason === useSeason;

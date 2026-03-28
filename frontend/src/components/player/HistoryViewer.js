@@ -18,14 +18,15 @@ function HistoryViewer({ weeks, user }) {
 
   useEffect(() => {
     if (!weeks || weeks.length === 0) return;
-    const seasons = [...new Set(weeks.map(w => w.season || '2025-26'))].sort().reverse();
+    const activeWeeks = weeks.filter(w => w && w.active);
+    const seasons = [...new Set(activeWeeks.map(w => w.season || '2025-26'))].sort().reverse();
     setAvailableSeasons(seasons);
     if (!selectedSeason && seasons.length > 0) setSelectedSeason(seasons[0]);
   }, [weeks]);
 
   useEffect(() => {
     if (!weeks || !selectedSeason) return;
-    const weeksInSeason = weeks.filter(w => (w.season || '2025-26') === selectedSeason);
+    const weeksInSeason = weeks.filter(w => w && w.active && (w.season || '2025-26') === selectedSeason);
     // Sort months by actual most recent week date, not month number
     const monthLatestDate = {};
     weeksInSeason.forEach(w => {
@@ -41,7 +42,7 @@ function HistoryViewer({ weeks, user }) {
 
   useEffect(() => {
     if (!weeks) return;
-    let filtered = weeks;
+    let filtered = weeks.filter(w => w && w.active);
     if (selectedSeason) filtered = filtered.filter(w => (w.season || '2025-26') === selectedSeason);
     if (selectedMonth) filtered = filtered.filter(w => w.month === selectedMonth);
     filtered = filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
