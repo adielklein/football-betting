@@ -3,58 +3,52 @@ import { getTeamLogoUrl, fetchTeamLogoUrl, getTeamFlag } from '../utils/teamLogo
 
 /**
  * קומפוננטת לוגו קבוצה
- * - נבחרות: דגל אימוג'י
- * - מועדונים: favicon סטטי או חיפוש אוטומטי ב-TheSportsDB
+ * - נבחרות: דגל אנימטיבי (WebP מתנופף)
+ * - מועדונים: סמל מ-TheSportsDB (עם favicon כ-placeholder)
  */
 function TeamLogo({ name, size = 18 }) {
-  const flag = getTeamFlag(name);
-  const [logoUrl, setLogoUrl] = useState(() => flag ? null : getTeamLogoUrl(name));
+  const flagUrl = getTeamFlag(name);
+  const [logoUrl, setLogoUrl] = useState(() => {
+    if (flagUrl) return null;
+    try {
+      const cached = localStorage.getItem('team_logo_' + name?.trim());
+      if (cached) return cached;
+    } catch (e) {}
+    return getTeamLogoUrl(name);
+  });
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
-    if (flag) return;
-
-    const staticUrl = getTeamLogoUrl(name);
-    if (staticUrl) {
-      setLogoUrl(staticUrl);
-      setHidden(false);
-      return;
-    }
+    if (flagUrl) return;
 
     let cancelled = false;
-    setLogoUrl(null);
-    setHidden(false);
     fetchTeamLogoUrl(name).then(url => {
-      if (!cancelled) setLogoUrl(url);
+      if (!cancelled && url) {
+        setLogoUrl(url);
+        setHidden(false);
+      }
     });
     return () => { cancelled = true; };
-  }, [name, flag]);
+  }, [name, flagUrl]);
 
-  // נבחרת - דגל אימוג'י מתנופף
-  if (flag) {
+  // נבחרת - דגל אנימטיבי
+  if (flagUrl) {
     return (
-      <span style={{
-        fontSize: size,
-        lineHeight: 1,
-        flexShrink: 0,
-        display: 'inline-block',
-        animation: 'wave-flag 2s ease-in-out infinite',
-        transformOrigin: 'bottom left'
-      }}>
-        {flag}
-        <style>{`
-          @keyframes wave-flag {
-            0%, 100% { transform: rotate(0deg); }
-            25% { transform: rotate(8deg); }
-            50% { transform: rotate(-4deg); }
-            75% { transform: rotate(6deg); }
-          }
-        `}</style>
-      </span>
+      <img
+        src={flagUrl}
+        alt=""
+        onError={(e) => { e.target.style.display = 'none'; }}
+        style={{
+          width: size + 4,
+          height: size,
+          objectFit: 'contain',
+          flexShrink: 0
+        }}
+      />
     );
   }
 
-  // מועדון - תמונת לוגו
+  // מועדון - תמונת סמל
   if (!logoUrl || hidden) return null;
 
   return (
