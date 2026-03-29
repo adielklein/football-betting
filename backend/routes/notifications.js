@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const InAppNotification = require('../models/InAppNotification');
 const { 
   sendNotification, 
   sendNotificationToAll,
@@ -257,9 +258,12 @@ router.post('/send-to-all', async (req, res) => {
     if (imageUrl) {
       console.log('🖼️ With image');
     }
-    
+
+    // שמירה כהתראה in-app
+    await InAppNotification.create({ title, body, imageUrl: imageUrl || undefined });
+
     const result = await sendNotificationToAll(title, body, data, imageUrl); // ✅ העברת imageUrl
-    
+
     res.json(result);
   } catch (error) {
     console.error('Error sending to all:', error);
@@ -284,12 +288,25 @@ router.post('/send-to-users', async (req, res) => {
     if (imageUrl) {
       console.log('🖼️ With image');
     }
-    
+
+    // שמירה כהתראה in-app
+    await InAppNotification.create({ title, body, imageUrl: imageUrl || undefined });
+
     const result = await sendNotificationToUsers(userIds, title, body, data, imageUrl); // ✅ העברת imageUrl
-    
+
     res.json(result);
   } catch (error) {
     console.error('Error sending to users:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// קבלת ההתראה האחרונה (in-app)
+router.get('/latest', async (req, res) => {
+  try {
+    const latest = await InAppNotification.findOne().sort({ createdAt: -1 });
+    res.json(latest || null);
+  } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });

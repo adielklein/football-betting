@@ -8,6 +8,7 @@ import './index.css';
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [inAppNotification, setInAppNotification] = useState(null);
 
   const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000/api'
@@ -52,6 +53,28 @@ function App() {
     }
     setLoading(false);
   }, []); // 🎨 רק פעם אחת בטעינת הדף
+
+  // בדיקת התראה in-app חדשה
+  useEffect(() => {
+    if (!currentUser) return;
+    fetch(`${API_URL}/notifications/latest`)
+      .then(r => r.ok ? r.json() : null)
+      .then(notif => {
+        if (!notif || !notif._id) return;
+        const lastSeen = localStorage.getItem('last_seen_notification');
+        if (lastSeen !== notif._id) {
+          setInAppNotification(notif);
+        }
+      })
+      .catch(() => {});
+  }, [currentUser, API_URL]);
+
+  const dismissNotification = () => {
+    if (inAppNotification) {
+      localStorage.setItem('last_seen_notification', inAppNotification._id);
+    }
+    setInAppNotification(null);
+  };
 
   // 🆕 פונקציה לבדיקת עדכוני ערכת נושא מהשרת
   const checkForThemeUpdates = async (localUser) => {
@@ -184,6 +207,53 @@ function App() {
         <AdminView user={currentUser} onLogout={handleLogout} />
       ) : (
         <PlayerView user={currentUser} onLogout={handleLogout} />
+      )}
+
+      {inAppNotification && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 10000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '1rem'
+        }} onClick={dismissNotification}>
+          <div style={{
+            backgroundColor: '#fff', borderRadius: '16px', maxWidth: '400px', width: '100%',
+            overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            animation: 'slideUp 0.3s ease-out'
+          }} onClick={e => e.stopPropagation()}>
+            {inAppNotification.imageUrl && (
+              <img
+                src={inAppNotification.imageUrl}
+                alt=""
+                style={{ width: '100%', maxHeight: '250px', objectFit: 'cover', display: 'block' }}
+              />
+            )}
+            <div style={{ padding: '1.2rem 1.5rem' }}>
+              <h3 style={{ margin: '0 0 0.5rem', fontSize: '18px', color: '#333', textAlign: 'right' }}>
+                {inAppNotification.title}
+              </h3>
+              <p style={{ margin: '0 0 1rem', fontSize: '15px', color: '#555', lineHeight: 1.5, textAlign: 'right', whiteSpace: 'pre-line' }}>
+                {inAppNotification.body}
+              </p>
+              <button
+                onClick={dismissNotification}
+                style={{
+                  width: '100%', padding: '10px', border: 'none', borderRadius: '10px',
+                  backgroundColor: 'var(--theme-primary, #007bff)', color: '#fff',
+                  fontSize: '16px', fontWeight: '700', cursor: 'pointer'
+                }}
+              >
+                הבנתי 👍
+              </button>
+            </div>
+          </div>
+          <style>{`
+            @keyframes slideUp {
+              from { transform: translateY(30px); opacity: 0; }
+              to { transform: translateY(0); opacity: 1; }
+            }
+          `}</style>
+        </div>
       )}
     </div>
   );
