@@ -218,14 +218,15 @@ function App() {
         }} onClick={dismissNotification}>
           <div style={{
             backgroundColor: '#fff', borderRadius: '16px', maxWidth: '400px', width: '100%',
-            overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            maxHeight: '85vh', overflow: 'auto',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
             animation: 'slideUp 0.3s ease-out'
           }} onClick={e => e.stopPropagation()}>
             {inAppNotification.imageUrl && (
               <img
                 src={inAppNotification.imageUrl}
                 alt=""
-                style={{ width: '100%', maxHeight: '250px', objectFit: 'cover', display: 'block' }}
+                style={{ width: '100%', display: 'block' }}
               />
             )}
             <div style={{ padding: '1.2rem 1.5rem' }}>
