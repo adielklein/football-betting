@@ -24,13 +24,34 @@ router.post('/calculate/:weekId', async (req, res) => {
       'result.team2Goals': { $exists: true }
     });
 
-    if (matches.length === 0) {
-      return res.status(400).json({ message: 'No completed matches found' });
-    }
-
     // Get all users
     const users = await User.find();
     const exactScoreUsers = []; // Users who got exact scores on the specific match
+
+    if (matches.length === 0) {
+      // אין משחקים עם תוצאות - אפס ניקוד לשבוע הזה
+      for (const user of users) {
+        // אפס נקודות בהימורים של השבוע
+        const weekMatches = await Match.find({ weekId });
+        for (const match of weekMatches) {
+          await Bet.updateMany({ userId: user._id, matchId: match._id }, { points: 0 });
+        }
+
+        // אפס ניקוד שבועי
+        await Score.findOneAndUpdate(
+          { userId: user._id, weekId },
+          { weeklyScore: 0, updatedAt: new Date() },
+          { upsert: false }
+        );
+
+        // חשב מחדש סה"כ
+        const userScores = await Score.find({ userId: user._id });
+        const totalScore = userScores.reduce((sum, score) => sum + score.weeklyScore, 0);
+        await Score.updateMany({ userId: user._id }, { totalScore });
+      }
+
+      return res.json({ message: 'Scores reset successfully (no results found)' });
+    }
 
     for (const user of users) {
       let totalPoints = 0;
@@ -53,9 +74,18 @@ router.post('/calculate/:weekId', async (req, res) => {
             exactMatches.push({
               team1: match.team1,
               team2: match.team2,
-              score: `${match.result.team1Goals}-${match.result.team2Goals}`
+              score: `${match.result.team2Goals}-${match.result.team1Goals}`
             });
           }
+        }
+      }
+
+      // אפס נקודות בהימורים על משחקים שאין להם תוצאה עדיין
+      const allWeekMatches = await Match.find({ weekId });
+      const matchesWithResults = matches.map(m => m._id.toString());
+      for (const match of allWeekMatches) {
+        if (!matchesWithResults.includes(match._id.toString())) {
+          await Bet.updateMany({ userId: user._id, matchId: match._id }, { points: 0 });
         }
       }
 
