@@ -229,7 +229,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
       try {
         const response = await fetch(`${API_URL}/weeks/${selectedWeek._id}/deactivate`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminId: user?.id })
         });
 
         if (!response.ok) {
@@ -254,7 +255,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
 
     if (window.confirm(`האם אתה בטוח שברצונך למחוק את "${selectedWeek.name}"? פעולה זו תמחק גם את כל המשחקים וההימורים של השבוע!`)) {
       try {
-        const response = await fetch(`${API_URL}/weeks/${selectedWeek._id}`, {
+        const response = await fetch(`${API_URL}/weeks/${selectedWeek._id}?adminId=${user?.id}`, {
           method: 'DELETE'
         });
 
@@ -460,12 +461,13 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
       const response = await fetch(`${API_URL}/weeks/${selectedWeek._id}/activate`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           lockTime: lockTimeISO,
           sendNotifications: sendPushNotifications,
           notificationTitle: customNotificationTitle,
           notificationBody: customNotificationBody,
-          imageUrl: imageUrl || undefined  // ✅ שולח URL במקום Base64!
+          imageUrl: imageUrl || undefined,
+          adminId: user?.id
         })
       });
 

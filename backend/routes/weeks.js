@@ -2,6 +2,7 @@ const express = require('express');
 const Week = require('../models/Week');
 const Match = require('../models/Match');
 const { sendWeekActivationNotification } = require('../services/pushNotifications');
+const { logAdminAction } = require('../services/auditService');
 const router = express.Router();
 
 // Get all weeks
@@ -96,7 +97,7 @@ router.patch('/:id', async (req, res) => {
 // Activate week with optional notifications
 router.patch('/:id/activate', async (req, res) => {
   try {
-    const { lockTime, sendNotifications, notificationTitle, notificationBody, imageUrl } = req.body;
+    const { lockTime, sendNotifications, notificationTitle, notificationBody, imageUrl, adminId } = req.body;
     
     console.log('📥 Received activation request with:', {
       lockTime,
@@ -147,10 +148,15 @@ router.patch('/:id/activate', async (req, res) => {
       console.log('⏭️ Skipping notifications (sendNotifications = false)');
     }
     
-    res.json({ 
-      week, 
+    // Audit log
+    if (adminId) {
+      logAdminAction(adminId, 'הפעלת שבוע', `${week.name} (נעילה: ${new Date(lockTime).toLocaleString('he-IL')})`, { weekId: week._id });
+    }
+
+    res.json({
+      week,
       notificationResult,
-      message: 'Week activated successfully' 
+      message: 'Week activated successfully'
     });
   } catch (error) {
     console.error('Error activating week:', error);
@@ -161,6 +167,8 @@ router.patch('/:id/activate', async (req, res) => {
 // Deactivate week
 router.patch('/:id/deactivate', async (req, res) => {
   try {
+    const { adminId } = req.body || {};
+
     const week = await Week.findByIdAndUpdate(
       req.params.id,
       {
@@ -170,11 +178,16 @@ router.patch('/:id/deactivate', async (req, res) => {
       },
       { new: true }
     );
-    
+
     if (!week) {
       return res.status(404).json({ message: 'Week not found' });
     }
-    
+
+    // Audit log
+    if (adminId) {
+      logAdminAction(adminId, 'כיבוי שבוע', week.name, { weekId: week._id });
+    }
+
     console.log(`Week ${week.name} deactivated`);
     res.json(week);
   } catch (error) {
@@ -186,17 +199,23 @@ router.patch('/:id/deactivate', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const week = await Week.findById(req.params.id);
-    
+
     if (!week) {
       return res.status(404).json({ message: 'Week not found' });
     }
-    
+
+    // Audit log before deletion
+    const adminId = req.query.adminId;
+    if (adminId) {
+      logAdminAction(adminId, 'מחיקת שבוע', week.name, { weekId: week._id });
+    }
+
     // Delete all matches for this week
     await Match.deleteMany({ weekId: req.params.id });
-    
+
     // Delete the week
     await Week.findByIdAndDelete(req.params.id);
-    
+
     console.log(`Week ${week.name} and its matches deleted`);
     res.json({ message: 'Week deleted successfully' });
   } catch (error) {

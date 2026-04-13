@@ -143,7 +143,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
           </button>
           <button onClick={async () => {
             try {
-              const response = await fetch(`${API_URL}/scores/calculate/${selectedWeek._id}`, { method: 'POST' });
+              const response = await fetch(`${API_URL}/scores/calculate/${selectedWeek._id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: user?.id }) });
               if (response.ok) { await loadWeekData(selectedWeek._id); alert('ניקוד חושב מחדש!'); }
               else alert('שגיאה בחישוב ניקוד');
             } catch (error) { alert('שגיאה בחישוב ניקוד'); }

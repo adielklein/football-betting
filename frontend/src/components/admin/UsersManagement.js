@@ -94,7 +94,7 @@ function UsersManagement({ users, loadData, user }) {
       const response = await fetch(`${API_URL}/auth/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUser)
+        body: JSON.stringify({ ...newUser, adminId: user?.id })
       });
 
       if (response.ok) {
@@ -143,7 +143,7 @@ function UsersManagement({ users, loadData, user }) {
       const response = await fetch(`${API_URL}/auth/users/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updateData)
+        body: JSON.stringify({ ...updateData, adminId: user?.id })
       });
 
       if (response.ok) {
@@ -181,7 +181,7 @@ function UsersManagement({ users, loadData, user }) {
 
     if (window.confirm(`האם אתה בטוח שברצונך למחוק את ${userName}?\n\nהפעולה הזו תמחק גם את כל ההימורים והניקוד שלו.`)) {
       try {
-        const response = await fetch(`${API_URL}/auth/users/${userId}`, { method: 'DELETE' });
+        const response = await fetch(`${API_URL}/auth/users/${userId}?adminId=${user?.id}`, { method: 'DELETE' });
         if (response.ok) {
           await loadData();
           alert('משתמש נמחק בהצלחה!');

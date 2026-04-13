@@ -3,6 +3,7 @@ const Bet = require('../models/Bet');
 const Match = require('../models/Match');
 const Week = require('../models/Week');
 const User = require('../models/User'); // 🆕 נוסף לבדיקת תפקיד משתמש
+const { logAdminAction } = require('../services/auditService');
 const router = express.Router();
 
 // Get user bets for a week
@@ -101,14 +102,21 @@ router.post('/', async (req, res) => {
     
     // אם הגענו עד כאן - הדימור מורשה
     console.log(`✅ Bet allowed for user ${userId} on week ${week.name}${isAdmin ? ` (REQUESTED BY ADMIN: ${requesterUser.name})` : ''}`);
-    
+
     // Update existing bet or create new one
     const bet = await Bet.findOneAndUpdate(
       { userId, matchId },
       { prediction, weekId, updatedAt: new Date() },
       { upsert: true, new: true }
     );
-    
+
+    // Audit log - כשאדמין משנה הימור של שחקן אחר
+    if (isAdmin && requestedByUserId && requestedByUserId !== userId) {
+      const player = await User.findById(userId);
+      const match = await Match.findById(matchId);
+      logAdminAction(requestedByUserId, 'עדכון הימור של שחקן', `${player?.name}: ${match?.team1} ${team1Goals}-${team2Goals} ${match?.team2}`, { playerId: userId, matchId, weekId });
+    }
+
     res.json(bet);
   } catch (error) {
     console.error('Error in bet creation:', error);
@@ -171,6 +179,13 @@ router.patch('/:id', async (req, res) => {
     );
     
     console.log(`✅ Bet update allowed for bet ${req.params.id}${isAdmin ? ` (REQUESTED BY ADMIN: ${requesterUser.name})` : ''}`);
+
+    // Audit log - כשאדמין מעדכן הימור
+    if (isAdmin && requestedByUserId) {
+      const match = await Match.findById(existingBet.matchId);
+      logAdminAction(requestedByUserId, 'עדכון הימור של שחקן', `${betOwner?.name}: ${match?.team1} ${prediction.team1Goals}-${prediction.team2Goals} ${match?.team2}`, { betId: req.params.id, playerId: betOwner._id });
+    }
+
     res.json(bet);
   } catch (error) {
     console.error('Error in bet update:', error);

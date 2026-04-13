@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const { logAdminAction } = require('../services/auditService');
 const router = express.Router();
 
 // אוטומטית צור אדמין בהפעלת השרת
@@ -93,7 +94,7 @@ router.get('/users', async (req, res) => {
 router.post('/users', async (req, res) => {
   try {
     console.log('Creating new user:', req.body);
-    const { name, username, password, role = 'player', theme = 'default' } = req.body;
+    const { name, username, password, role = 'player', theme = 'default', adminId } = req.body;
     
     if (!name || !username || !password) {
       return res.status(400).json({ message: 'שם, שם משתמש וסיסמה נדרשים' });
@@ -117,6 +118,12 @@ router.post('/users', async (req, res) => {
     await user.save();
     
     console.log('User created successfully:', user);
+
+    // Audit log
+    if (adminId) {
+      logAdminAction(adminId, 'יצירת משתמש', `${name} (${username}, ${role})`, { userId: user._id });
+    }
+
     res.status(201).json({
       user: {
         id: user._id,
@@ -136,7 +143,7 @@ router.post('/users', async (req, res) => {
 router.patch('/users/:id', async (req, res) => {
   try {
     console.log(`Updating user ${req.params.id}:`, req.body);
-    const { name, username, role, password, theme } = req.body;
+    const { name, username, role, password, theme, adminId } = req.body;
     
     const updateData = { name, username, role };
     
@@ -160,6 +167,11 @@ router.patch('/users/:id', async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
     
+    // Audit log
+    if (adminId) {
+      logAdminAction(adminId, 'עדכון משתמש', `${user.name} (${user.username})`, { userId: user._id });
+    }
+
     console.log('Updated user:', user);
     res.json(user);
   } catch (error) {
@@ -173,12 +185,20 @@ router.delete('/users/:id', async (req, res) => {
   try {
     console.log('Deleting user:', req.params.id);
     
-    // Delete the user
-    const user = await User.findByIdAndDelete(req.params.id);
+    // Find user before deletion for audit
+    const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
+    // Audit log before deletion
+    const adminId = req.query.adminId;
+    if (adminId) {
+      logAdminAction(adminId, 'מחיקת משתמש', `${user.name} (${user.username})`, { userId: user._id });
+    }
+
+    await User.findByIdAndDelete(req.params.id);
+
     // Delete all user's bets
     await require('../models/Bet').deleteMany({ userId: req.params.id });
     // Delete all user's scores
