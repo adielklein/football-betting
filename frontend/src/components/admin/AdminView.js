@@ -108,7 +108,7 @@ function AdminView({ user, onLogout }) {
     setUsers
   };
 
-  const tabs = [
+  const allTabs = [
     { key: 'weeks', label: 'שבועות', icon: '📅' },
     { key: 'leagues', label: 'ליגות', icon: '🏆' },
     { key: 'users', label: 'משתמשים', icon: '👥' },
@@ -116,6 +116,10 @@ function AdminView({ user, onLogout }) {
     { key: 'push', label: 'התראות', icon: '📢' },
     { key: 'stats', label: 'סטטיסטיקה', icon: '📊' }
   ];
+
+  const tabs = user?.username === 'adielklein'
+    ? allTabs
+    : allTabs.filter(t => t.key !== 'stats');
 
   return (
     <div>
@@ -125,7 +129,7 @@ function AdminView({ user, onLogout }) {
         {/* iOS-style segmented tab bar */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(6, 1fr)',
+          gridTemplateColumns: `repeat(${tabs.length}, 1fr)`,
           gap: '3px',
           marginBottom: '0.75rem',
           padding: '3px',
