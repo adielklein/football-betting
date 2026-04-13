@@ -3,7 +3,7 @@ import TeamLogo from '../TeamLogo';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
-function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
+function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user }) {
   const [weeks, setWeeks] = useState([]);
   const [selectedWeek, setSelectedWeek] = useState(null);
   const [matches, setMatches] = useState([]);
@@ -556,7 +556,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
             homeWin: newMatch.oddsHome || undefined,
             draw: newMatch.oddsDraw || undefined,
             awayWin: newMatch.oddsAway || undefined
-          } : undefined
+          } : undefined,
+          adminId: user?.id
         })
       });
 
@@ -592,9 +593,10 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
       const matchResponse = await fetch(`${API_URL}/matches/${matchId}/result`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          team1Goals: parseInt(team1Goals) || 0, 
-          team2Goals: parseInt(team2Goals) || 0 
+        body: JSON.stringify({
+          team1Goals: parseInt(team1Goals) || 0,
+          team2Goals: parseInt(team2Goals) || 0,
+          adminId: user?.id
         })
       });
 
@@ -610,7 +612,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
       const scoresResponse = await fetch(`${API_URL}/scores/calculate/${selectedWeek._id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matchId })
+        body: JSON.stringify({ matchId, adminId: user?.id })
       });
 
       if (scoresResponse.ok) {
@@ -646,7 +648,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
             homeWin: editingMatchDetails.oddsHome || undefined,
             draw: editingMatchDetails.oddsDraw || undefined,
             awayWin: editingMatchDetails.oddsAway || undefined
-          } : null
+          } : null,
+          adminId: user?.id
         })
       });
 
@@ -667,7 +670,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
   const handleDeleteMatch = async (matchId, matchName) => {
     if (window.confirm(`האם אתה בטוח שברצונך למחוק את המשחק:\n${matchName}?`)) {
       try {
-        const response = await fetch(`${API_URL}/matches/${matchId}`, {
+        const response = await fetch(`${API_URL}/matches/${matchId}?adminId=${user?.id}`, {
           method: 'DELETE'
         });
 
@@ -692,7 +695,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect }) {
     try {
       console.log('🗑️ מוחק תוצאת משחק:', matchId);
       
-      const response = await fetch(`${API_URL}/matches/${matchId}/result`, {
+      const response = await fetch(`${API_URL}/matches/${matchId}/result?adminId=${user?.id}`, {
         method: 'DELETE'
       });
 

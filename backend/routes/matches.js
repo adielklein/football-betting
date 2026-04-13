@@ -2,6 +2,7 @@ const express = require('express');
 const Match = require('../models/Match');
 const Week = require('../models/Week');
 const League = require('../models/League');
+const { logAdminAction } = require('../services/auditService');
 const router = express.Router();
 
 // 🆕 פונקציית עזר לחישוב השנה הנכונה
@@ -124,6 +125,13 @@ router.post('/', async (req, res) => {
     const populatedMatch = await Match.findById(match._id).populate('leagueId');
     
     console.log('✅ משחק חדש נוצר:', populatedMatch);
+
+    // Audit log
+    const { adminId } = req.body;
+    if (adminId) {
+      logAdminAction(adminId, 'הוספת משחק', `${team1} נגד ${team2} (${date} ${time})`, { matchId: match._id, weekId });
+    }
+
     res.status(201).json(populatedMatch);
     
   } catch (error) {
@@ -135,8 +143,8 @@ router.post('/', async (req, res) => {
 // Update match details
 router.patch('/:id', async (req, res) => {
   try {
-    const { leagueId, team1, team2, date, time, odds } = req.body;
-    
+    const { leagueId, team1, team2, date, time, odds, adminId } = req.body;
+
     // קבל את המשחק הנוכחי
     const currentMatch = await Match.findById(req.params.id);
     if (!currentMatch) {
@@ -213,8 +221,14 @@ router.patch('/:id', async (req, res) => {
     ).populate('leagueId');
     
     console.log('✏️ משחק עודכן:', match);
+
+    // Audit log
+    if (adminId) {
+      logAdminAction(adminId, 'עריכת משחק', `${match.team1} נגד ${match.team2}`, { matchId: match._id });
+    }
+
     res.json(match);
-    
+
   } catch (error) {
     console.error('Error updating match:', error);
     res.status(500).json({ message: error.message });
@@ -224,23 +238,28 @@ router.patch('/:id', async (req, res) => {
 // Update match result
 router.patch('/:id/result', async (req, res) => {
   try {
-    const { team1Goals, team2Goals } = req.body;
-    
+    const { team1Goals, team2Goals, adminId } = req.body;
+
     const match = await Match.findByIdAndUpdate(
       req.params.id,
-      { 
-        result: { 
-          team1Goals: parseInt(team1Goals), 
-          team2Goals: parseInt(team2Goals) 
+      {
+        result: {
+          team1Goals: parseInt(team1Goals),
+          team2Goals: parseInt(team2Goals)
         }
       },
       { new: true }
     ).populate('leagueId');
-    
+
     if (!match) {
       return res.status(404).json({ message: 'Match not found' });
     }
-    
+
+    // Audit log
+    if (adminId) {
+      logAdminAction(adminId, 'עדכון תוצאה', `${match.team1} ${team1Goals}-${team2Goals} ${match.team2}`, { matchId: match._id });
+    }
+
     res.json(match);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -252,16 +271,22 @@ router.delete('/:id/result', async (req, res) => {
   try {
     const match = await Match.findByIdAndUpdate(
       req.params.id,
-      { 
+      {
         $unset: { result: 1 }
       },
       { new: true }
     ).populate('leagueId');
-    
+
     if (!match) {
       return res.status(404).json({ message: 'Match not found' });
     }
-    
+
+    // Audit log
+    const adminId = req.query.adminId;
+    if (adminId) {
+      logAdminAction(adminId, 'מחיקת תוצאה', `${match.team1} נגד ${match.team2}`, { matchId: match._id });
+    }
+
     console.log('🗑️ תוצאת משחק נמחקה:', match._id);
     res.json({ message: 'Result deleted successfully', match });
   } catch (error) {
@@ -273,12 +298,18 @@ router.delete('/:id/result', async (req, res) => {
 // Delete match
 router.delete('/:id', async (req, res) => {
   try {
-    const match = await Match.findByIdAndDelete(req.params.id);
-    
+    const match = await Match.findById(req.params.id);
     if (!match) {
       return res.status(404).json({ message: 'Match not found' });
     }
-    
+
+    // Audit log before deletion
+    const adminId = req.query.adminId;
+    if (adminId) {
+      logAdminAction(adminId, 'מחיקת משחק', `${match.team1} נגד ${match.team2}`, { matchId: match._id });
+    }
+
+    await Match.findByIdAndDelete(req.params.id);
     res.json({ message: 'Match deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });

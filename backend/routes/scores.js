@@ -6,13 +6,14 @@ const User = require('../models/User');
 const Week = require('../models/Week');
 const MonthExclusion = require('../models/MonthExclusion');
 const { sendNotificationToUsers } = require('../services/pushNotifications');
+const { logAdminAction } = require('../services/auditService');
 const router = express.Router();
 
 // Calculate scores for a week
 router.post('/calculate/:weekId', async (req, res) => {
   try {
     const weekId = req.params.weekId;
-    const { matchId } = req.body || {};
+    const { matchId, adminId } = req.body || {};
 
     // Get week info for month exclusion check
     const week = await Week.findById(weekId);
@@ -143,6 +144,12 @@ router.post('/calculate/:weekId', async (req, res) => {
       } catch (pushError) {
         console.error('Push notification error (non-critical):', pushError.message);
       }
+    }
+
+    // Audit log
+    if (adminId) {
+      const weekName = week ? week.name : weekId;
+      logAdminAction(adminId, 'חישוב ניקוד', `שבוע: ${weekName} (${matches.length} משחקים)`, { weekId, matchId });
     }
 
     res.json({ message: 'Scores calculated successfully' });
