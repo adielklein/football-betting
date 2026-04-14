@@ -79,6 +79,21 @@ function AdminHeader({ user, onLogout }) {
     }
   };
 
+  const disablePush = async () => {
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) {
+        const sub = await reg.pushManager?.getSubscription();
+        if (sub) {
+          await sub.unsubscribe();
+        }
+      }
+      setPushEnabled(false);
+    } catch (e) {
+      console.error('Push unsubscribe error:', e);
+    }
+  };
+
   return (
     <div className="header" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))' }}>
       <div className="container">
@@ -118,20 +133,36 @@ function AdminHeader({ user, onLogout }) {
               }}>
                 👑 {user?.name || 'מנהל'}
               </span>
-              {user?.username === 'adielklein' && !pushEnabled && (
-                <button onClick={enablePush} style={{
-                  background: 'rgba(255,255,255,0.2)',
-                  color: 'white',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  borderRadius: '20px',
-                  padding: '2px 10px',
-                  fontSize: '11px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  WebkitAppearance: 'none'
-                }}>
-                  🔔 הפעל התראות
-                </button>
+              {user?.username === 'adielklein' && (
+                pushEnabled ? (
+                  <button onClick={disablePush} style={{
+                    background: 'rgba(76,175,80,0.25)',
+                    border: '1px solid rgba(76,175,80,0.4)',
+                    borderRadius: '20px',
+                    padding: '2px 10px',
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    color: 'rgba(255,255,255,0.95)',
+                    cursor: 'pointer',
+                    WebkitAppearance: 'none'
+                  }}>
+                    🔔 התראות פעילות
+                  </button>
+                ) : (
+                  <button onClick={enablePush} style={{
+                    background: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    borderRadius: '20px',
+                    padding: '2px 10px',
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    WebkitAppearance: 'none'
+                  }}>
+                    🔔 הפעל התראות
+                  </button>
+                )
               )}
             </div>
           </div>
