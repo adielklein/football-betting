@@ -21,9 +21,10 @@ function AdminHeader({ user, onLogout }) {
     if (!user || user.username !== 'adielklein') return;
     (async () => {
       try {
-        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-        const reg = await navigator.serviceWorker.ready;
-        const sub = await reg.pushManager.getSubscription();
+        if (!('serviceWorker' in navigator)) return;
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (!reg) return;
+        const sub = await reg.pushManager?.getSubscription();
         setPushEnabled(!!sub);
       } catch (e) { /* ignore */ }
     })();
@@ -31,19 +32,32 @@ function AdminHeader({ user, onLogout }) {
 
   const enablePush = async () => {
     try {
-      const reg = await navigator.serviceWorker.ready;
+      // 1. בקש הרשאת notifications
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        alert('צריך לאשר התראות כדי לקבל עדכונים');
+        return;
+      }
 
-      // קבל VAPID public key
+      // 2. רשום service worker אם אין
+      let reg = await navigator.serviceWorker.getRegistration();
+      if (!reg) {
+        reg = await navigator.serviceWorker.register('/sw.js');
+        await navigator.serviceWorker.ready;
+      }
+
+      // 3. קבל VAPID public key
       const keyRes = await fetch(`${API_URL}/notifications/vapid-public-key`);
       const { publicKey } = await keyRes.json();
 
+      // 4. Subscribe
       const sub = await reg.pushManager.subscribe({
-        userNotificationPermission: true,
+        userVisibleOnly: true,
         applicationServerKey: publicKey
       });
 
-      // שמור subscription בשרת
-      await fetch(`${API_URL}/notifications/subscribe`, {
+      // 5. שמור subscription בשרת
+      const saveRes = await fetch(`${API_URL}/notifications/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -53,7 +67,12 @@ function AdminHeader({ user, onLogout }) {
         })
       });
 
-      setPushEnabled(true);
+      if (saveRes.ok) {
+        setPushEnabled(true);
+        alert('התראות הופעלו בהצלחה!');
+      } else {
+        alert('שגיאה בשמירת ההתראות');
+      }
     } catch (e) {
       console.error('Push subscribe error:', e);
       alert('שגיאה בהפעלת התראות: ' + e.message);
