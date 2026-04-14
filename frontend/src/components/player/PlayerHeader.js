@@ -12,7 +12,7 @@ function PlayerHeader({ user, selectedWeek, userScore, onLogout }) {
   }, [user, user?.theme]);
 
   return (
-    <div className="header">
+    <div className="header" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))' }}>
       <div className="container">
         <div style={{
           display: 'flex',

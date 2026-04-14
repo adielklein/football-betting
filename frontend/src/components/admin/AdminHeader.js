@@ -1,7 +1,13 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { applyTheme } from '../../themes';
 
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:5000/api'
+  : 'https://football-betting-backend.onrender.com/api';
+
 function AdminHeader({ user, onLogout }) {
+  const [pushEnabled, setPushEnabled] = useState(false);
+
   useEffect(() => {
     if (user) {
       setTimeout(() => {
@@ -10,8 +16,52 @@ function AdminHeader({ user, onLogout }) {
     }
   }, [user, user?.theme]);
 
+  // בדוק אם push פעיל
+  useEffect(() => {
+    if (!user || user.username !== 'adielklein') return;
+    (async () => {
+      try {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        setPushEnabled(!!sub);
+      } catch (e) { /* ignore */ }
+    })();
+  }, [user]);
+
+  const enablePush = async () => {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+
+      // קבל VAPID public key
+      const keyRes = await fetch(`${API_URL}/notifications/vapid-public-key`);
+      const { publicKey } = await keyRes.json();
+
+      const sub = await reg.pushManager.subscribe({
+        userNotificationPermission: true,
+        applicationServerKey: publicKey
+      });
+
+      // שמור subscription בשרת
+      await fetch(`${API_URL}/notifications/subscribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          subscription: sub,
+          hoursBeforeLock: 2
+        })
+      });
+
+      setPushEnabled(true);
+    } catch (e) {
+      console.error('Push subscribe error:', e);
+      alert('שגיאה בהפעלת התראות: ' + e.message);
+    }
+  };
+
   return (
-    <div className="header">
+    <div className="header" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))' }}>
       <div className="container">
         <div style={{
           display: 'flex',
@@ -49,6 +99,21 @@ function AdminHeader({ user, onLogout }) {
               }}>
                 👑 {user?.name || 'מנהל'}
               </span>
+              {user?.username === 'adielklein' && !pushEnabled && (
+                <button onClick={enablePush} style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  color: 'white',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  borderRadius: '20px',
+                  padding: '2px 10px',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  WebkitAppearance: 'none'
+                }}>
+                  🔔 הפעל התראות
+                </button>
+              )}
             </div>
           </div>
           <button
