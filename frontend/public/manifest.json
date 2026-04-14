@@ -24,7 +24,7 @@
   "display": "standalone",
   "theme_color": "#007bff",
   "background_color": "#ffffff",
-  "orientation": "portrait",
+  "orientation": "any",
   "categories": ["sports", "games", "entertainment"],
   "description": "אפליקציית הימורי כדורגל - הימורים על משחקי פרמיירליג, לה ליגה וליגת העל הישראלית",
   "dir": "rtl",

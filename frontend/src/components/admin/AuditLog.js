@@ -7,6 +7,7 @@ const API_URL = window.location.hostname === 'localhost'
 function AuditLog() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pushStatus, setPushStatus] = useState('checking'); // checking, off, on, unsupported
 
   const loadLogs = async () => {
     try {
@@ -28,6 +29,88 @@ function AuditLog() {
     return () => clearInterval(interval);
   }, []);
 
+  // בדוק סטטוס push
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!('serviceWorker' in navigator) || !('Notification' in window)) {
+          setPushStatus('unsupported');
+          return;
+        }
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg && reg.pushManager) {
+          const sub = await reg.pushManager.getSubscription();
+          setPushStatus(sub ? 'on' : 'off');
+        } else {
+          setPushStatus('off');
+        }
+      } catch (e) {
+        setPushStatus('off');
+      }
+    })();
+  }, []);
+
+  const enablePush = async () => {
+    try {
+      setPushStatus('checking');
+
+      // בקש הרשאה
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        alert('צריך לאשר התראות בהגדרות הדפדפן');
+        setPushStatus('off');
+        return;
+      }
+
+      // רשום SW אם צריך
+      let reg = await navigator.serviceWorker.getRegistration();
+      if (!reg) {
+        reg = await navigator.serviceWorker.register('/sw.js');
+        // חכה שירשם
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        reg = await navigator.serviceWorker.ready;
+      }
+
+      // קבל VAPID key
+      const keyRes = await fetch(`${API_URL}/notifications/vapid-public-key`);
+      const { publicKey } = await keyRes.json();
+
+      // Subscribe
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: publicKey
+      });
+
+      // שמור בשרת
+      const savedUser = localStorage.getItem('football_betting_user');
+      const userId = savedUser ? JSON.parse(savedUser).id : null;
+
+      if (!userId) {
+        alert('שגיאה: לא נמצא משתמש מחובר');
+        setPushStatus('off');
+        return;
+      }
+
+      const saveRes = await fetch(`${API_URL}/notifications/subscribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, subscription: sub, hoursBeforeLock: 2 })
+      });
+
+      if (saveRes.ok) {
+        setPushStatus('on');
+        alert('התראות הופעלו בהצלחה! תקבל עדכון כשאדמין אחר יבצע פעולה.');
+      } else {
+        setPushStatus('off');
+        alert('שגיאה בשמירת ההתראות');
+      }
+    } catch (e) {
+      console.error('Push error:', e);
+      setPushStatus('off');
+      alert('שגיאה: ' + e.message);
+    }
+  };
+
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
     return d.toLocaleString('he-IL', {
@@ -42,6 +125,42 @@ function AuditLog() {
 
   return (
     <div>
+      {/* Push notification status */}
+      <div style={{
+        backgroundColor: pushStatus === 'on' ? '#e8f5e9' : '#fff3e0',
+        border: `1px solid ${pushStatus === 'on' ? '#c8e6c9' : '#ffe0b2'}`,
+        borderRadius: '12px',
+        padding: '0.7rem 1rem',
+        marginBottom: '0.75rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <div>
+          <div style={{ fontSize: '13px', fontWeight: '700', color: '#333' }}>
+            {pushStatus === 'on' ? '🟢 התראות פעילות' : pushStatus === 'unsupported' ? '⚠️ הדפדפן לא תומך בהתראות' : '🔴 התראות כבויות'}
+          </div>
+          <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>
+            {pushStatus === 'on' ? 'תקבל push כשאדמין אחר יבצע פעולה' : pushStatus === 'unsupported' ? 'השתמש בטאב המעקב לצפייה בפעולות' : 'הפעל כדי לקבל עדכונים מיידיים'}
+          </div>
+        </div>
+        {pushStatus === 'off' && (
+          <button onClick={enablePush} style={{
+            padding: '0.4rem 0.8rem',
+            backgroundColor: '#007bff',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '12px',
+            fontWeight: '700',
+            cursor: 'pointer',
+            flexShrink: 0
+          }}>
+            הפעל התראות
+          </button>
+        )}
+      </div>
+
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         marginBottom: '0.75rem'
