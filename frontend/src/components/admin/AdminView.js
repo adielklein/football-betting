@@ -7,6 +7,7 @@ import BetsManagement from './BetsManagement';
 import LeaguesManagement from './LeaguesManagement';
 import PushManagement from './PushManagement';
 import AdminStats from './AdminStats';
+import AuditLog from './AuditLog';
 import LoadingSpinner from './LoadingSpinner';
 
 function AdminView({ user, onLogout }) {
@@ -17,14 +18,42 @@ function AdminView({ user, onLogout }) {
   const [users, setUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('weeks');
   const [loading, setLoading] = useState(true);
+  const [auditCount, setAuditCount] = useState(0);
 
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
 
+  const isPrimaryAdmin = user?.username === 'adielklein';
+
   useEffect(() => {
     loadData();
   }, []);
+
+  // בדוק פעולות audit חדשות כל 30 שניות
+  useEffect(() => {
+    if (!isPrimaryAdmin) return;
+
+    const checkAudit = async () => {
+      try {
+        const res = await fetch(`${API_URL}/audit?limit=50`);
+        if (res.ok) {
+          const logs = await res.json();
+          // ספור פעולות של אדמינים אחרים מהיום
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const todayLogs = logs.filter(l =>
+            l.adminName !== 'עדיאל קליין' && new Date(l.createdAt) >= today
+          );
+          setAuditCount(todayLogs.length);
+        }
+      } catch (e) { /* ignore */ }
+    };
+
+    checkAudit();
+    const interval = setInterval(checkAudit, 30000);
+    return () => clearInterval(interval);
+  }, [isPrimaryAdmin, API_URL]);
 
   const loadData = async () => {
     try {
@@ -114,12 +143,13 @@ function AdminView({ user, onLogout }) {
     { key: 'users', label: 'משתמשים', icon: '👥' },
     { key: 'bets', label: 'הימורים', icon: '🎯' },
     { key: 'push', label: 'התראות', icon: '📢' },
-    { key: 'stats', label: 'סטטיסטיקה', icon: '📊' }
+    { key: 'stats', label: 'סטטיסטיקה', icon: '📊' },
+    { key: 'audit', label: 'מעקב', icon: '🔍' }
   ];
 
-  const tabs = user?.username === 'adielklein'
+  const tabs = isPrimaryAdmin
     ? allTabs
-    : allTabs.filter(t => t.key !== 'stats');
+    : allTabs.filter(t => t.key !== 'stats' && t.key !== 'audit');
 
   return (
     <div>
@@ -162,11 +192,30 @@ function AdminView({ user, onLogout }) {
                   flexDirection: 'column',
                   alignItems: 'center',
                   gap: '1px',
-                  lineHeight: 1.2
+                  lineHeight: 1.2,
+                  position: 'relative'
                 }}
               >
                 <span style={{ fontSize: '15px', lineHeight: 1 }}>{tab.icon}</span>
                 <span>{tab.label}</span>
+                {tab.key === 'audit' && auditCount > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '2px',
+                    right: '6px',
+                    backgroundColor: '#ff3b30',
+                    color: '#fff',
+                    fontSize: '9px',
+                    fontWeight: '700',
+                    borderRadius: '50%',
+                    width: '16px',
+                    height: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    lineHeight: 1
+                  }}>{auditCount}</span>
+                )}
               </button>
             );
           })}
@@ -179,6 +228,7 @@ function AdminView({ user, onLogout }) {
           {activeTab === 'bets' && <BetsManagement {...sharedProps} />}
           {activeTab === 'push' && <PushManagement />}
           {activeTab === 'stats' && <AdminStats />}
+          {activeTab === 'audit' && <AuditLog />}
         </div>
       </div>
     </div>

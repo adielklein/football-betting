@@ -215,6 +215,20 @@ app.use('/api/scores', scoresRoutes);
 app.use('/api/leagues', leaguesRoutes);
 app.use('/api/exclusions', exclusionsRoutes);
 
+// Audit log endpoint - רק לאדמין הראשי
+app.get('/api/audit', async (req, res) => {
+  try {
+    const AuditLog = require('./models/AuditLog');
+    const limit = parseInt(req.query.limit) || 50;
+    const logs = await AuditLog.find()
+      .sort({ createdAt: -1 })
+      .limit(limit);
+    res.json(logs);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Debug endpoint
 app.get('/api/debug', async (req, res) => {
   try {

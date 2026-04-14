@@ -1,5 +1,6 @@
 const AuditLog = require('../models/AuditLog');
 const User = require('../models/User');
+const InAppNotification = require('../models/InAppNotification');
 const { sendNotificationToUsers } = require('./pushNotifications');
 
 // ID של האדמין הראשי שמקבל התראות
@@ -35,8 +36,10 @@ async function logAdminAction(adminId, action, details, metadata = {}) {
         if (primaryAdmin) {
           const title = `🔔 ${admin.name} ביצע פעולה`;
           const body = `${action}\n${details}`;
+
+          // נסה push notification
           await sendNotificationToUsers([primaryAdmin._id], title, body, { type: 'audit' });
-          console.log(`📨 Audit notification sent to ${PRIMARY_ADMIN_USERNAME}`);
+          console.log(`📨 Audit push sent to ${PRIMARY_ADMIN_USERNAME}`);
         }
       } catch (notifyError) {
         console.error('Audit notification error (non-critical):', notifyError.message);
