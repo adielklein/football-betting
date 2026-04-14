@@ -219,8 +219,15 @@ app.use('/api/exclusions', exclusionsRoutes);
 app.get('/api/audit', async (req, res) => {
   try {
     const AuditLog = require('./models/AuditLog');
-    const limit = parseInt(req.query.limit) || 50;
-    const logs = await AuditLog.find()
+    const limit = parseInt(req.query.limit) || 500;
+    const query = {};
+    if (req.query.from) {
+      query.createdAt = { $gte: new Date(req.query.from) };
+    }
+    if (req.query.to) {
+      query.createdAt = { ...query.createdAt, $lte: new Date(req.query.to + 'T23:59:59.999Z') };
+    }
+    const logs = await AuditLog.find(query)
       .sort({ createdAt: -1 })
       .limit(limit);
     res.json(logs);

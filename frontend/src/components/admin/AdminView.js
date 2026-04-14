@@ -144,7 +144,7 @@ function AdminView({ user, onLogout }) {
     { key: 'bets', label: 'הימורים', icon: '🎯' },
     { key: 'push', label: 'התראות', icon: '📢' },
     { key: 'stats', label: 'סטטיסטיקה', icon: '📊' },
-    { key: 'audit', label: 'מעקב', icon: '🔍' }
+    { key: 'audit', label: 'פעולות', icon: '🔍' }
   ];
 
   const tabs = isPrimaryAdmin

@@ -1,17 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const API_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:5000/api'
   : 'https://football-betting-backend.onrender.com/api';
 
+function getDefaultDates() {
+  const to = new Date();
+  const from = new Date();
+  from.setDate(from.getDate() - 14);
+  return {
+    from: from.toISOString().split('T')[0],
+    to: to.toISOString().split('T')[0]
+  };
+}
+
 function AuditLog() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [pushStatus, setPushStatus] = useState('checking'); // checking, off, on, unsupported
+  const [refreshing, setRefreshing] = useState(false);
+  const [pushStatus, setPushStatus] = useState('checking');
+  const [dateRange, setDateRange] = useState(getDefaultDates);
 
-  const loadLogs = async () => {
+  const loadLogs = useCallback(async (showRefresh) => {
+    if (showRefresh) setRefreshing(true);
     try {
-      const res = await fetch(`${API_URL}/audit?limit=100`);
+      const res = await fetch(`${API_URL}/audit?from=${dateRange.from}&to=${dateRange.to}`);
       if (res.ok) {
         const data = await res.json();
         setLogs(data);
@@ -20,16 +33,17 @@ function AuditLog() {
       console.error('Error loading audit logs:', e);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [dateRange]);
 
   useEffect(() => {
+    setLoading(true);
     loadLogs();
-    const interval = setInterval(loadLogs, 15000);
+    const interval = setInterval(() => loadLogs(false), 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [loadLogs]);
 
-  // בדוק סטטוס push
   useEffect(() => {
     (async () => {
       try {
@@ -53,8 +67,6 @@ function AuditLog() {
   const enablePush = async () => {
     try {
       setPushStatus('checking');
-
-      // בקש הרשאה
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
         alert('צריך לאשר התראות בהגדרות הדפדפן');
@@ -62,26 +74,21 @@ function AuditLog() {
         return;
       }
 
-      // רשום SW אם צריך
       let reg = await navigator.serviceWorker.getRegistration();
       if (!reg) {
         reg = await navigator.serviceWorker.register('/sw.js');
-        // חכה שירשם
         await new Promise(resolve => setTimeout(resolve, 1000));
         reg = await navigator.serviceWorker.ready;
       }
 
-      // קבל VAPID key
       const keyRes = await fetch(`${API_URL}/notifications/vapid-public-key`);
       const { publicKey } = await keyRes.json();
 
-      // Subscribe
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: publicKey
       });
 
-      // שמור בשרת
       const savedUser = localStorage.getItem('football_betting_user');
       const userId = savedUser ? JSON.parse(savedUser).id : null;
 
@@ -141,7 +148,7 @@ function AuditLog() {
             {pushStatus === 'on' ? '🟢 התראות פעילות' : pushStatus === 'unsupported' ? '⚠️ הדפדפן לא תומך בהתראות' : '🔴 התראות כבויות'}
           </div>
           <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>
-            {pushStatus === 'on' ? 'תקבל push כשאדמין אחר יבצע פעולה' : pushStatus === 'unsupported' ? 'השתמש בטאב המעקב לצפייה בפעולות' : 'הפעל כדי לקבל עדכונים מיידיים'}
+            {pushStatus === 'on' ? 'תקבל push כשאדמין אחר יבצע פעולה' : pushStatus === 'unsupported' ? 'השתמש בטאב הפעולות לצפייה' : 'הפעל כדי לקבל עדכונים מיידיים'}
           </div>
         </div>
         {pushStatus === 'off' && (
@@ -161,23 +168,90 @@ function AuditLog() {
         )}
       </div>
 
+      {/* Header + date range */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        marginBottom: '0.75rem'
+        marginBottom: '0.5rem'
       }}>
-        <h3 style={{ margin: 0, fontSize: '16px' }}>מעקב פעולות אדמין</h3>
-        <button onClick={loadLogs} style={{
-          padding: '0.3rem 0.6rem', border: 'none', borderRadius: '8px',
-          backgroundColor: '#f0f2f5', fontSize: '12px', cursor: 'pointer'
-        }}>רענן</button>
+        <h3 style={{ margin: 0, fontSize: '16px' }}>פעולות אדמין</h3>
+        <button
+          onClick={() => loadLogs(true)}
+          disabled={refreshing}
+          style={{
+            padding: '0.35rem 0.7rem',
+            border: '1px solid #e0e0e0',
+            borderRadius: '8px',
+            backgroundColor: refreshing ? '#f5f5f5' : '#fff',
+            fontSize: '12px',
+            fontWeight: '600',
+            cursor: refreshing ? 'default' : 'pointer',
+            color: '#555',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            transition: 'all 0.15s ease'
+          }}>
+          <span style={{
+            display: 'inline-block',
+            animation: refreshing ? 'spin 1s linear infinite' : 'none'
+          }}>🔄</span>
+          {refreshing ? 'טוען...' : 'רענן'}
+        </button>
       </div>
+
+      {/* Date range picker */}
+      <div style={{
+        display: 'flex',
+        gap: '8px',
+        marginBottom: '0.75rem',
+        alignItems: 'center',
+        flexWrap: 'wrap'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <label style={{ fontSize: '12px', color: '#666', fontWeight: '600' }}>מ:</label>
+          <input
+            type="date"
+            value={dateRange.from}
+            onChange={e => setDateRange(prev => ({ ...prev, from: e.target.value }))}
+            style={{
+              padding: '0.3rem 0.5rem',
+              border: '1px solid #ddd',
+              borderRadius: '8px',
+              fontSize: '12px',
+              color: '#333',
+              backgroundColor: '#fff'
+            }}
+          />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <label style={{ fontSize: '12px', color: '#666', fontWeight: '600' }}>עד:</label>
+          <input
+            type="date"
+            value={dateRange.to}
+            onChange={e => setDateRange(prev => ({ ...prev, to: e.target.value }))}
+            style={{
+              padding: '0.3rem 0.5rem',
+              border: '1px solid #ddd',
+              borderRadius: '8px',
+              fontSize: '12px',
+              color: '#333',
+              backgroundColor: '#fff'
+            }}
+          />
+        </div>
+        <span style={{ fontSize: '11px', color: '#999' }}>
+          {logs.length} פעולות
+        </span>
+      </div>
+
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
 
       {logs.length === 0 ? (
         <div style={{
           textAlign: 'center', padding: '2rem', color: '#888',
           backgroundColor: '#f9f9f9', borderRadius: '12px'
         }}>
-          אין פעולות מתועדות
+          אין פעולות בטווח התאריכים שנבחר
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
