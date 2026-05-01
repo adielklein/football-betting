@@ -18,6 +18,7 @@ function AuditLog() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState(null);
   const [pushStatus, setPushStatus] = useState('checking');
   const [dateRange, setDateRange] = useState(getDefaultDates);
 
@@ -28,6 +29,7 @@ function AuditLog() {
       if (res.ok) {
         const data = await res.json();
         setLogs(data);
+        setLastRefreshed(new Date());
       }
     } catch (e) {
       console.error('Error loading audit logs:', e);
@@ -174,29 +176,39 @@ function AuditLog() {
         marginBottom: '0.5rem'
       }}>
         <h3 style={{ margin: 0, fontSize: '16px' }}>פעולות אדמין</h3>
-        <button
-          onClick={() => loadLogs(true)}
-          disabled={refreshing}
-          style={{
-            padding: '0.35rem 0.7rem',
-            border: '1px solid #e0e0e0',
-            borderRadius: '8px',
-            backgroundColor: refreshing ? '#f5f5f5' : '#fff',
-            fontSize: '12px',
-            fontWeight: '600',
-            cursor: refreshing ? 'default' : 'pointer',
-            color: '#555',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            transition: 'all 0.15s ease'
-          }}>
-          <span style={{
-            display: 'inline-block',
-            animation: refreshing ? 'spin 1s linear infinite' : 'none'
-          }}>🔄</span>
-          {refreshing ? 'טוען...' : 'רענן'}
-        </button>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+          <button
+            onClick={() => loadLogs(true)}
+            disabled={refreshing}
+            style={{
+              padding: '0.4rem 0.9rem',
+              border: 'none',
+              borderRadius: '10px',
+              backgroundColor: refreshing ? '#90caf9' : '#1976d2',
+              fontSize: '13px',
+              fontWeight: '700',
+              cursor: refreshing ? 'default' : 'pointer',
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              boxShadow: refreshing ? 'none' : '0 2px 6px rgba(25,118,210,0.3)',
+              transition: 'all 0.15s ease',
+              WebkitAppearance: 'none',
+              touchAction: 'manipulation'
+            }}>
+            <span style={{
+              display: 'inline-block',
+              animation: refreshing ? 'spin 0.8s linear infinite' : 'none'
+            }}>↻</span>
+            {refreshing ? 'טוען...' : 'רענן'}
+          </button>
+          {lastRefreshed && (
+            <span style={{ fontSize: '10px', color: '#aaa' }}>
+              עודכן {lastRefreshed.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Date range picker */}

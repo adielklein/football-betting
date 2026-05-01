@@ -635,12 +635,23 @@ function getTeamLogoUrl(teamName, size = 32) {
 
 // === חיפוש אוטומטי דרך TheSportsDB (לקבוצות לא מוכרות) ===
 
-const LOGO_CACHE_PREFIX = 'team_logo_';
+// v2 = invalidates old cache that may have Arsenal's logo for wrong teams
+const LOGO_CACHE_PREFIX = 'team_logo_v2_';
+
+function _teamNamesMatch(resultName, searchName) {
+  const r = resultName.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const s = searchName.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (r === s) return true;
+  // Accept if first word matches (e.g. "Arsenal FC" vs "Arsenal")
+  const rFirst = r.split(/\s/)[0];
+  const sFirst = s.split(/\s/)[0];
+  return rFirst.length >= 4 && sFirst.length >= 4 && (r.includes(s) || s.includes(r) || rFirst === sFirst);
+}
 
 /**
  * חיפוש אסינכרוני של סמל קבוצה
  * 1. בודק localStorage cache (תוצאת TheSportsDB קודמת)
- * 2. מחפש ב-TheSportsDB לפי שם באנגלית → סמל אמיתי
+ * 2. מחפש ב-TheSportsDB לפי שם באנגלית → סמל אמיתי (עם אימות שם)
  * 3. fallback ל-Google Favicon
  */
 async function fetchTeamLogoUrl(teamName) {
@@ -662,11 +673,15 @@ async function fetchTeamLogoUrl(teamName) {
       );
       if (res.ok) {
         const data = await res.json();
-        if (data.teams && data.teams[0]) {
-          const badge = data.teams[0].strBadge || data.teams[0].strLogo;
-          if (badge) {
-            try { localStorage.setItem(cacheKey, badge); } catch (e) {}
-            return badge;
+        if (data.teams && data.teams.length > 0) {
+          // Find a team whose name actually matches what we searched for
+          const matched = data.teams.find(t => _teamNamesMatch(t.strTeam || '', english));
+          if (matched) {
+            const badge = matched.strBadge || matched.strLogo;
+            if (badge) {
+              try { localStorage.setItem(cacheKey, badge); } catch (e) {}
+              return badge;
+            }
           }
         }
       }

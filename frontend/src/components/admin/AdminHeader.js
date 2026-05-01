@@ -135,19 +135,32 @@ function AdminHeader({ user, onLogout }) {
               </span>
               {user?.username === 'adielklein' && (
                 pushEnabled ? (
-                  <button onClick={disablePush} style={{
-                    background: 'rgba(76,175,80,0.25)',
-                    border: '1px solid rgba(76,175,80,0.4)',
-                    borderRadius: '20px',
-                    padding: '2px 10px',
-                    fontSize: '11px',
-                    fontWeight: '600',
-                    color: 'rgba(255,255,255,0.95)',
-                    cursor: 'pointer',
-                    WebkitAppearance: 'none'
-                  }}>
-                    🔔 התראות פעילות
-                  </button>
+                  <span
+                    onClick={disablePush}
+                    title="התראות פעילות — לחץ לכיבוי"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      background: 'rgba(76,175,80,0.3)',
+                      border: '1px solid rgba(76,175,80,0.5)',
+                      borderRadius: '20px',
+                      padding: '2px 8px',
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      color: 'rgba(255,255,255,0.95)',
+                      cursor: 'pointer',
+                      userSelect: 'none'
+                    }}>
+                    <span style={{
+                      width: '7px', height: '7px',
+                      borderRadius: '50%',
+                      backgroundColor: '#4caf50',
+                      boxShadow: '0 0 4px #4caf50',
+                      flexShrink: 0
+                    }} />
+                    🔔 פעיל
+                  </span>
                 ) : (
                   <button onClick={enablePush} style={{
                     background: 'rgba(255,255,255,0.2)',

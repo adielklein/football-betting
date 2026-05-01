@@ -11,7 +11,7 @@ function TeamLogo({ name, size = 18 }) {
   const [logoUrl, setLogoUrl] = useState(() => {
     if (flagUrl) return null;
     try {
-      const cached = localStorage.getItem('team_logo_' + name?.trim());
+      const cached = localStorage.getItem('team_logo_v2_' + name?.trim());
       if (cached) return cached;
     } catch (e) {}
     return getTeamLogoUrl(name);
