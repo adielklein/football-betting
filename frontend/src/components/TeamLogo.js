@@ -11,8 +11,9 @@ function TeamLogo({ name, size = 18 }) {
   const [logoUrl, setLogoUrl] = useState(() => {
     if (flagUrl) return null;
     try {
-      const cached = localStorage.getItem('team_logo_v2_' + name?.trim());
-      if (cached) return cached;
+      const cached = localStorage.getItem('team_logo_' + name?.trim());
+      // דלג על קאש פגום מ-TheSportsDB (Arsenal לכולם)
+      if (cached && !cached.includes('thesportsdb.com')) return cached;
     } catch (e) {}
     return getTeamLogoUrl(name);
   });

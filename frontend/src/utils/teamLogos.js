@@ -626,77 +626,49 @@ function normalizeTeamName(teamName) {
 /**
  * מחזיר URL סטטי (Google Favicon) - מיידי, ללא async
  */
-function getTeamLogoUrl(teamName, size = 32) {
+function getTeamLogoUrl(teamName, size = 64) {
   const canonical = normalizeTeamName(teamName);
   const domain = TEAM_DOMAINS[canonical];
   if (!domain) return null;
   return `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`;
 }
 
-// === חיפוש אוטומטי דרך TheSportsDB (לקבוצות לא מוכרות) ===
+// === לוגואים - Google Favicon בלבד ===
+// TheSportsDB free key (3) שבור - מחזיר Arsenal לכל שאילתה, לכן אנחנו לא משתמשים בו
 
-// v2 = invalidates old cache that may have Arsenal's logo for wrong teams
-const LOGO_CACHE_PREFIX = 'team_logo_v2_';
-
-function _teamNamesMatch(resultName, searchName) {
-  const r = resultName.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const s = searchName.toLowerCase().replace(/[^a-z0-9]/g, '');
-  if (r === s) return true;
-  // Accept if first word matches (e.g. "Arsenal FC" vs "Arsenal")
-  const rFirst = r.split(/\s/)[0];
-  const sFirst = s.split(/\s/)[0];
-  return rFirst.length >= 4 && sFirst.length >= 4 && (r.includes(s) || s.includes(r) || rFirst === sFirst);
-}
+const LOGO_CACHE_PREFIX = 'team_logo_';
 
 /**
- * חיפוש אסינכרוני של סמל קבוצה
- * 1. בודק localStorage cache (תוצאת TheSportsDB קודמת)
- * 2. מחפש ב-TheSportsDB לפי שם באנגלית → סמל אמיתי (עם אימות שם)
- * 3. fallback ל-Google Favicon
+ * חיפוש אסינכרוני של סמל קבוצה - Google Favicon בלבד
+ * מנקה קאש ישן מ-TheSportsDB (היה מחזיר Arsenal לכל קבוצה)
  */
 async function fetchTeamLogoUrl(teamName) {
   const canonical = normalizeTeamName(teamName);
   const cacheKey = LOGO_CACHE_PREFIX + canonical;
 
-  // 1. בדיקת cache
+  // בדיקת cache - מנקה URLs מ-TheSportsDB שהיו שגויים (Arsenal לכולם)
   try {
     const cached = localStorage.getItem(cacheKey);
-    if (cached !== null) return cached === '' ? null : cached;
+    if (cached !== null) {
+      if (cached === '') return null;
+      if (cached.includes('thesportsdb.com')) {
+        // קאש פגום - מחק ובאה שנית
+        localStorage.removeItem(cacheKey);
+      } else {
+        return cached;
+      }
+    }
   } catch (e) { /* localStorage לא זמין */ }
 
-  // 2. חיפוש ב-TheSportsDB - סמל אמיתי
-  const english = TEAM_ENGLISH[canonical];
-  if (english) {
-    try {
-      const res = await fetch(
-        `https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(english)}`
-      );
-      if (res.ok) {
-        const data = await res.json();
-        if (data.teams && data.teams.length > 0) {
-          // Find a team whose name actually matches what we searched for
-          const matched = data.teams.find(t => _teamNamesMatch(t.strTeam || '', english));
-          if (matched) {
-            const badge = matched.strBadge || matched.strLogo;
-            if (badge) {
-              try { localStorage.setItem(cacheKey, badge); } catch (e) {}
-              return badge;
-            }
-          }
-        }
-      }
-    } catch (e) { /* network error - fail silently */ }
-  }
-
-  // 3. Fallback - Google Favicon
+  // Google Favicon - מהיר, אמין, עובד לכל קבוצה שיש לה דומיין
   const domain = TEAM_DOMAINS[canonical];
   if (domain) {
-    const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+    const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
     try { localStorage.setItem(cacheKey, faviconUrl); } catch (e) {}
     return faviconUrl;
   }
 
-  // 4. לא נמצא
+  // לא נמצא
   try { localStorage.setItem(cacheKey, ''); } catch (e) {}
   return null;
 }
