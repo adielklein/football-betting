@@ -12,8 +12,8 @@ function TeamLogo({ name, size = 18 }) {
     if (flagUrl) return null;
     try {
       const cached = localStorage.getItem('team_logo_' + name?.trim());
-      // דלג על קאש פגום מ-TheSportsDB (Arsenal לכולם)
-      if (cached && !cached.includes('thesportsdb.com')) return cached;
+      // דלג על קאש פגום מה-API הישן של TheSportsDB (לא r2) - החזיר Arsenal לכולם
+      if (cached && (!cached.includes('thesportsdb.com') || cached.includes('r2.thesportsdb.com'))) return cached;
     } catch (e) {}
     return getTeamLogoUrl(name);
   });

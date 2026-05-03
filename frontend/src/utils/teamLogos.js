@@ -653,23 +653,42 @@ function normalizeTeamName(teamName) {
 }
 
 /**
- * מחזיר URL סטטי (Google Favicon) - מיידי, ללא async
+ * מחזיר URL סטטי - מיידי, ללא async
+ * מחזיר כתובת ישירה (TheSportsDB R2) או Google Favicon
  */
 function getTeamLogoUrl(teamName, size = 64) {
   const canonical = normalizeTeamName(teamName);
+  const directUrl = TEAM_DIRECT_URLS[canonical];
+  if (directUrl) return directUrl;
   const domain = TEAM_DOMAINS[canonical];
   if (!domain) return null;
   return `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`;
 }
 
-// === לוגואים - Google Favicon בלבד ===
-// TheSportsDB free key (3) שבור - מחזיר Arsenal לכל שאילתה, לכן אנחנו לא משתמשים בו
+// === כתובות ישירות לסמלי קבוצות (TheSportsDB R2 CDN) ===
+// לקבוצות שגוגל לא מציג favicon עבורן (בעיקר ישראל)
+const TEAM_DIRECT_URLS = {
+  'מכבי תל אביב': 'https://r2.thesportsdb.com/images/media/team/badge/lh08ob1625167121.png',
+  'הפועל באר שבע': 'https://r2.thesportsdb.com/images/media/team/badge/978vgx1579019997.png',
+  'בית"ר ירושלים': 'https://r2.thesportsdb.com/images/media/team/badge/bq7vys1639433460.png',
+  'הפועל תל אביב': 'https://r2.thesportsdb.com/images/media/team/badge/viqboc1579020034.png',
+  'מכבי חיפה': 'https://r2.thesportsdb.com/images/media/team/badge/t73b501639433206.png',
+  'מכבי נתניה': 'https://r2.thesportsdb.com/images/media/team/badge/xqrw8z1639430750.png',
+  'הפועל ירושלים': 'https://r2.thesportsdb.com/images/media/team/badge/cvh4ec1639431062.png',
+  'הפועל חיפה': 'https://r2.thesportsdb.com/images/media/team/badge/ytmoe71639433126.png',
+  'עירוני קרית שמונה': 'https://r2.thesportsdb.com/images/media/team/badge/401ntu1579020023.png',
+  'עירוני טבריה': 'https://r2.thesportsdb.com/images/media/team/badge/78q5ez1656067666.png',
+  'בני סכנין': 'https://r2.thesportsdb.com/images/media/team/badge/kbgr2l1639433190.png',
+  'מ.ס. אשדוד': 'https://r2.thesportsdb.com/images/media/team/badge/ccwrfk1715765767.png',
+  'הפועל פתח תקווה': 'https://r2.thesportsdb.com/images/media/team/badge/agaems1617289236.png',
+  'מכבי בני ריינה': 'https://r2.thesportsdb.com/images/media/team/badge/b97dj21664188696.png',
+};
 
 const LOGO_CACHE_PREFIX = 'team_logo_';
 
 /**
- * חיפוש אסינכרוני של סמל קבוצה - Google Favicon בלבד
- * מנקה קאש ישן מ-TheSportsDB (היה מחזיר Arsenal לכל קבוצה)
+ * חיפוש אסינכרוני של סמל קבוצה
+ * סדר עדיפויות: כתובת ישירה (TheSportsDB R2) → Google Favicon
  */
 async function fetchTeamLogoUrl(teamName) {
   const canonical = normalizeTeamName(teamName);
@@ -680,8 +699,8 @@ async function fetchTeamLogoUrl(teamName) {
     const cached = localStorage.getItem(cacheKey);
     if (cached !== null) {
       if (cached === '') return null;
-      if (cached.includes('thesportsdb.com')) {
-        // קאש פגום - מחק ובאה שנית
+      // קאש מה-API הישן של TheSportsDB (לא r2.thesportsdb.com) - לא אמין
+      if (cached.includes('thesportsdb.com') && !cached.includes('r2.thesportsdb.com')) {
         localStorage.removeItem(cacheKey);
       } else {
         return cached;
@@ -689,7 +708,14 @@ async function fetchTeamLogoUrl(teamName) {
     }
   } catch (e) { /* localStorage לא זמין */ }
 
-  // Google Favicon - מהיר, אמין, עובד לכל קבוצה שיש לה דומיין
+  // כתובת ישירה - עדיפות ראשונה (ישראל + קבוצות ספציפיות)
+  const directUrl = TEAM_DIRECT_URLS[canonical];
+  if (directUrl) {
+    try { localStorage.setItem(cacheKey, directUrl); } catch (e) {}
+    return directUrl;
+  }
+
+  // Google Favicon - עובד לרוב הקבוצות האירופאיות
   const domain = TEAM_DOMAINS[canonical];
   if (domain) {
     const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
