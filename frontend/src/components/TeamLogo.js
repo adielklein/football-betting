@@ -8,15 +8,8 @@ import { getTeamLogoUrl, fetchTeamLogoUrl, getTeamFlag } from '../utils/teamLogo
  */
 function TeamLogo({ name, size = 18 }) {
   const flagUrl = getTeamFlag(name);
-  const [logoUrl, setLogoUrl] = useState(() => {
-    if (flagUrl) return null;
-    try {
-      const cached = localStorage.getItem('team_logo_' + name?.trim());
-      // דלג על קאש פגום מה-API הישן של TheSportsDB (לא r2) - החזיר Arsenal לכולם
-      if (cached && (!cached.includes('thesportsdb.com') || cached.includes('r2.thesportsdb.com'))) return cached;
-    } catch (e) {}
-    return getTeamLogoUrl(name);
-  });
+  // getTeamLogoUrl מחזיר ישירות (כולל TheSportsDB R2 לישראליות) - אין צורך בקאש כאן
+  const [logoUrl, setLogoUrl] = useState(() => flagUrl ? null : getTeamLogoUrl(name));
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {

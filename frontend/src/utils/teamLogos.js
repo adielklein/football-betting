@@ -652,19 +652,6 @@ function normalizeTeamName(teamName) {
   return trimmed;
 }
 
-/**
- * מחזיר URL סטטי - מיידי, ללא async
- * מחזיר כתובת ישירה (TheSportsDB R2) או Google Favicon
- */
-function getTeamLogoUrl(teamName, size = 64) {
-  const canonical = normalizeTeamName(teamName);
-  const directUrl = TEAM_DIRECT_URLS[canonical];
-  if (directUrl) return directUrl;
-  const domain = TEAM_DOMAINS[canonical];
-  if (!domain) return null;
-  return `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`;
-}
-
 // === כתובות ישירות לסמלי קבוצות (TheSportsDB R2 CDN) ===
 // לקבוצות שגוגל לא מציג favicon עבורן (בעיקר ישראל)
 const TEAM_DIRECT_URLS = {
@@ -684,17 +671,37 @@ const TEAM_DIRECT_URLS = {
   'מכבי בני ריינה': 'https://r2.thesportsdb.com/images/media/team/badge/b97dj21664188696.png',
 };
 
+/**
+ * מחזיר URL סטטי - מיידי, ללא async
+ * סדר: כתובת ישירה (TheSportsDB R2) → Google Favicon
+ */
+function getTeamLogoUrl(teamName, size = 64) {
+  const canonical = normalizeTeamName(teamName);
+  const directUrl = TEAM_DIRECT_URLS[canonical];
+  if (directUrl) return directUrl;
+  const domain = TEAM_DOMAINS[canonical];
+  if (!domain) return null;
+  return `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`;
+}
+
 const LOGO_CACHE_PREFIX = 'team_logo_';
 
 /**
  * חיפוש אסינכרוני של סמל קבוצה
- * סדר עדיפויות: כתובת ישירה (TheSportsDB R2) → Google Favicon
+ * סדר: כתובת ישירה (תמיד מנצחת) → cache → Google Favicon
  */
 async function fetchTeamLogoUrl(teamName) {
   const canonical = normalizeTeamName(teamName);
   const cacheKey = LOGO_CACHE_PREFIX + canonical;
 
-  // בדיקת cache - מנקה URLs מ-TheSportsDB שהיו שגויים (Arsenal לכולם)
+  // 1. כתובת ישירה - תמיד מנצחת (גם על cache ישן)
+  const directUrl = TEAM_DIRECT_URLS[canonical];
+  if (directUrl) {
+    try { localStorage.setItem(cacheKey, directUrl); } catch (e) {}
+    return directUrl;
+  }
+
+  // 2. Cache - אם תקין
   try {
     const cached = localStorage.getItem(cacheKey);
     if (cached !== null) {
@@ -708,14 +715,7 @@ async function fetchTeamLogoUrl(teamName) {
     }
   } catch (e) { /* localStorage לא זמין */ }
 
-  // כתובת ישירה - עדיפות ראשונה (ישראל + קבוצות ספציפיות)
-  const directUrl = TEAM_DIRECT_URLS[canonical];
-  if (directUrl) {
-    try { localStorage.setItem(cacheKey, directUrl); } catch (e) {}
-    return directUrl;
-  }
-
-  // Google Favicon - עובד לרוב הקבוצות האירופאיות
+  // 3. Google Favicon - לקבוצות אירופאיות
   const domain = TEAM_DOMAINS[canonical];
   if (domain) {
     const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
