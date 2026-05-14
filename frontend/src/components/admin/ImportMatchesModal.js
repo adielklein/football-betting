@@ -55,7 +55,6 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
 
   useEffect(() => {
     if (leagueId) loadFixtures();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leagueId, days, includeOdds]);
 
   const toggleSelected = (idx) => {
