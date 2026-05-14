@@ -5,7 +5,7 @@ function LeaguesManagement() {
   const [editingLeague, setEditingLeague] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [newLeague, setNewLeague] = useState({
-    name: '', key: '', color: '#6c757d', type: 'club', region: '', active: true, order: 0
+    name: '', key: '', color: '#6c757d', type: 'club', region: '', active: true, order: 0, apiFootballId: ''
   });
   const [loading, setLoading] = useState(true);
 
@@ -35,13 +35,17 @@ function LeaguesManagement() {
       return;
     }
     try {
+      const payload = {
+        ...newLeague,
+        apiFootballId: newLeague.apiFootballId ? parseInt(newLeague.apiFootballId, 10) : null
+      };
       const response = await fetch(`${API_URL}/leagues`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newLeague)
+        body: JSON.stringify(payload)
       });
       if (response.ok) {
-        setNewLeague({ name: '', key: '', color: '#6c757d', type: 'club', region: '', active: true, order: 0 });
+        setNewLeague({ name: '', key: '', color: '#6c757d', type: 'club', region: '', active: true, order: 0, apiFootballId: '' });
         await loadLeagues();
         alert('ליגה נוצרה בהצלחה!');
       } else {
@@ -56,10 +60,17 @@ function LeaguesManagement() {
   const handleUpdateLeague = async () => {
     if (!editingLeague) return;
     try {
+      const payload = {
+        ...editForm,
+        apiFootballId:
+          editForm.apiFootballId === '' || editForm.apiFootballId == null
+            ? null
+            : parseInt(editForm.apiFootballId, 10)
+      };
       const response = await fetch(`${API_URL}/leagues/${editingLeague._id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editForm)
+        body: JSON.stringify(payload)
       });
       if (response.ok) {
         setEditingLeague(null);
@@ -117,7 +128,8 @@ function LeaguesManagement() {
       color: league.color,
       type: league.type,
       region: league.region || '',
-      order: league.order || 0
+      order: league.order || 0,
+      apiFootballId: league.apiFootballId ?? ''
     });
   };
 
@@ -222,6 +234,13 @@ function LeaguesManagement() {
             <input type="number" value={newLeague.order}
               onChange={(e) => setNewLeague(prev => ({ ...prev, order: parseInt(e.target.value) || 0 }))}
               className="input" style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>מזהה API-Football</label>
+            <input type="number" placeholder="39 / 140 / 383" value={newLeague.apiFootballId}
+              onChange={(e) => setNewLeague(prev => ({ ...prev, apiFootballId: e.target.value }))}
+              className="input" style={inputStyle}
+              title="מזהה הליגה ב-API-Football. דוגמאות: פרמייר ליג=39, לה ליגה=140, ליגת העל=383" />
           </div>
         </div>
         <button onClick={handleCreateLeague} style={{
@@ -387,6 +406,13 @@ function LeaguesManagement() {
                   <label style={labelStyle}>סדר תצוגה</label>
                   <input type="number" value={editForm.order || 0} className="input" style={inputStyle}
                     onChange={(e) => setEditForm(prev => ({ ...prev, order: parseInt(e.target.value) || 0 }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>מזהה API-Football (אופציונלי)</label>
+                  <input type="number" placeholder="39 / 140 / 383"
+                    value={editForm.apiFootballId ?? ''} className="input" style={inputStyle}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, apiFootballId: e.target.value }))}
+                    title="פרמייר ליג=39, לה ליגה=140, ליגת העל=383" />
                 </div>
               </div>
             </div>

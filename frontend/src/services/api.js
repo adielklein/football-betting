@@ -206,7 +206,32 @@ export const api = {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   }).then(res => res.json()),
-  
+
+  bulkCreateMatches: (data) => fetch(`${API_BASE_URL}/matches/bulk`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  }).then(async res => {
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
+    return json;
+  }),
+
+  // External fixtures (API-Football)
+  getUpcomingFixtures: ({ leagueId, days = 7, includeOdds = false, refresh = false }) => {
+    const params = new URLSearchParams({
+      leagueId,
+      days: String(days),
+      includeOdds: String(includeOdds),
+      refresh: String(refresh)
+    });
+    return fetch(`${API_BASE_URL}/external/fixtures?${params.toString()}`).then(async res => {
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
+      return json;
+    });
+  },
+
   // Bets
   getUserBets: (userId, weekId) => fetch(`${API_BASE_URL}/bets/user/${userId}/week/${weekId}`).then(res => res.json()),
   getWeekBets: (weekId) => fetch(`${API_BASE_URL}/bets/week/${weekId}`).then(res => res.json()),

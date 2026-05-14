@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import TeamLogo from '../TeamLogo';
+import ImportMatchesModal from './ImportMatchesModal';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -23,6 +24,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
   const [createWeekOpen, setCreateWeekOpen] = useState(false);
   const [addMatchOpen, setAddMatchOpen] = useState(false);
   const [matchListOpen, setMatchListOpen] = useState(true);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   // State עבור ה-dropdown המקונן
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -1173,13 +1175,23 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
       {/* הוסף משחק */}
       {selectedWeek && (
         <div className="card">
-          <div onClick={() => setAddMatchOpen(prev => !prev)} style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            cursor: 'pointer', userSelect: 'none'
-          }}>
-            <h3 style={{ margin: 0 }}>הוסף משחק ל-{selectedWeek.name}</h3>
-            <span style={{ fontSize: '18px', transition: 'transform 0.2s ease',
-              transform: addMatchOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+            <div onClick={() => setAddMatchOpen(prev => !prev)} style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              cursor: 'pointer', userSelect: 'none', flex: 1
+            }}>
+              <h3 style={{ margin: 0 }}>הוסף משחק ל-{selectedWeek.name}</h3>
+              <span style={{ fontSize: '18px', transition: 'transform 0.2s ease',
+                transform: addMatchOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowImportModal(true); }}
+              className="btn"
+              style={{ fontSize: '13px' }}
+              title="ייבוא משחקים קרובים מ-API-Football"
+            >
+              📥 הוסף ממאגר
+            </button>
           </div>
           {!addMatchOpen ? null : (<div style={{ marginTop: '0.6rem' }}>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
@@ -1913,6 +1925,17 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
             </div>
           </div>
         </div>
+      )}
+
+      {/* מודל ייבוא משחקים מ-API */}
+      {showImportModal && selectedWeek && (
+        <ImportMatchesModal
+          week={selectedWeek}
+          leagues={leagues}
+          adminId={user?._id || user?.id}
+          onClose={() => setShowImportModal(false)}
+          onImported={() => loadWeekData(selectedWeek._id)}
+        />
       )}
     </div>
   );

@@ -738,4 +738,30 @@ function getTeamFlag(teamName) {
   return `https://animated-country-flags.malith.dev/webp/${code}.webp`;
 }
 
-export { getTeamLogoUrl, fetchTeamLogoUrl, normalizeTeamName, getTeamFlag, TEAM_ENGLISH };
+const normalizeEnglish = (s) => String(s || '').toLowerCase().replace(/\s+/g, ' ').replace(/[.\-_']/g, '').trim();
+
+const REVERSE_TEAM_NAMES = (() => {
+  const map = {};
+  for (const [hebrew, english] of Object.entries(TEAM_ENGLISH)) {
+    map[normalizeEnglish(english)] = hebrew;
+  }
+  return map;
+})();
+
+/**
+ * חיפוש שם קבוצה בעברית לפי שם באנגלית מ-API חיצוני
+ * אם לא נמצא - מחזיר את המקור
+ */
+function getHebrewNameByEnglish(englishName) {
+  if (!englishName) return englishName;
+  const normalized = normalizeEnglish(englishName);
+  if (REVERSE_TEAM_NAMES[normalized]) return REVERSE_TEAM_NAMES[normalized];
+  for (const key of Object.keys(REVERSE_TEAM_NAMES)) {
+    if (key.includes(normalized) || normalized.includes(key)) {
+      return REVERSE_TEAM_NAMES[key];
+    }
+  }
+  return englishName;
+}
+
+export { getTeamLogoUrl, fetchTeamLogoUrl, normalizeTeamName, getTeamFlag, getHebrewNameByEnglish, TEAM_ENGLISH };

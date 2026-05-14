@@ -51,8 +51,14 @@ const leagueSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  
-  createdAt: { 
+
+  // מזהה הליגה ב-API-Football (לייבוא משחקים אוטומטי)
+  apiFootballId: {
+    type: Number,
+    default: null
+  },
+
+  createdAt: {
     type: Date, 
     default: Date.now 
   },

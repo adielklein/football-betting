@@ -41,19 +41,19 @@ router.get('/:id', async (req, res) => {
 // ➕ יצירת ליגה חדשה (אדמין)
 router.post('/', async (req, res) => {
   try {
-    const { name, key, color, type, region, active, order } = req.body;
-    
+    const { name, key, color, type, region, active, order, apiFootballId } = req.body;
+
     // בדיקת שדות חובה
     if (!name || !key) {
       return res.status(400).json({ message: 'שם ומפתח נדרשים' });
     }
-    
+
     // בדיקה שהמפתח ייחודי
     const existingLeague = await League.findOne({ key });
     if (existingLeague) {
       return res.status(400).json({ message: 'מפתח ליגה כבר קיים' });
     }
-    
+
     const league = new League({
       name,
       key,
@@ -61,7 +61,8 @@ router.post('/', async (req, res) => {
       type: type || 'club',
       region: region || '',
       active: active !== undefined ? active : true,
-      order: order || 0
+      order: order || 0,
+      apiFootballId: apiFootballId == null || apiFootballId === '' ? null : parseInt(apiFootballId, 10)
     });
     
     await league.save();
@@ -84,20 +85,20 @@ router.post('/', async (req, res) => {
 // ✏️ עדכון ליגה (אדמין)
 router.patch('/:id', async (req, res) => {
   try {
-    const { name, key, color, type, region, active, order } = req.body;
-    
+    const { name, key, color, type, region, active, order, apiFootballId } = req.body;
+
     // אם משנים מפתח, בדוק שהוא ייחודי
     if (key) {
-      const existingLeague = await League.findOne({ 
-        key, 
-        _id: { $ne: req.params.id } 
+      const existingLeague = await League.findOne({
+        key,
+        _id: { $ne: req.params.id }
       });
-      
+
       if (existingLeague) {
         return res.status(400).json({ message: 'מפתח ליגה כבר קיים' });
       }
     }
-    
+
     const updateData = {};
     if (name !== undefined) updateData.name = name;
     if (key !== undefined) updateData.key = key;
@@ -106,6 +107,11 @@ router.patch('/:id', async (req, res) => {
     if (region !== undefined) updateData.region = region;
     if (active !== undefined) updateData.active = active;
     if (order !== undefined) updateData.order = order;
+    if (apiFootballId !== undefined) {
+      updateData.apiFootballId = apiFootballId === null || apiFootballId === ''
+        ? null
+        : parseInt(apiFootballId, 10);
+    }
     
     const league = await League.findByIdAndUpdate(
       req.params.id,
@@ -213,6 +219,63 @@ router.post('/initialize', async (req, res) => {
     
   } catch (error) {
     console.error('Error initializing leagues:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// 🌍 הוספת/עדכון חבילת ליגות+גביעים אירופית (אדמין)
+// מוסיף ליגות חסרות ומעדכן apiFootballId לקיימות
+router.post('/seed-european', async (req, res) => {
+  try {
+    const seedLeagues = [
+      // ישראל
+      { name: 'ליגת העל', key: 'israeli', color: '#6f42c1', type: 'club', region: 'ישראל', order: 1, apiFootballId: 383 },
+      { name: 'גביע המדינה', key: 'israeli-cup', color: '#5a32a3', type: 'club', region: 'ישראל', order: 2, apiFootballId: 384 },
+      // ספרד
+      { name: 'לה ליגה', key: 'spanish', color: '#007bff', type: 'club', region: 'ספרד', order: 10, apiFootballId: 140 },
+      { name: 'קופה דל ריי', key: 'spanish-cup', color: '#0056b3', type: 'club', region: 'ספרד', order: 11, apiFootballId: 143 },
+      // אנגליה
+      { name: 'פרמייר ליג', key: 'english', color: '#dc3545', type: 'club', region: 'אנגליה', order: 20, apiFootballId: 39 },
+      { name: 'גביע אנגליה (FA Cup)', key: 'english-fa-cup', color: '#a71d2a', type: 'club', region: 'אנגליה', order: 21, apiFootballId: 45 },
+      // איטליה
+      { name: 'סרייה א', key: 'italian', color: '#28a745', type: 'club', region: 'איטליה', order: 30, apiFootballId: 135 },
+      { name: 'גביע איטליה (Coppa Italia)', key: 'italian-cup', color: '#1e7e34', type: 'club', region: 'איטליה', order: 31, apiFootballId: 137 },
+      // גרמניה
+      { name: 'בונדסליגה', key: 'german', color: '#ffc107', type: 'club', region: 'גרמניה', order: 40, apiFootballId: 78 },
+      { name: 'גביע גרמניה (DFB-Pokal)', key: 'german-cup', color: '#d39e00', type: 'club', region: 'גרמניה', order: 41, apiFootballId: 81 },
+      // צרפת
+      { name: 'ליג 1', key: 'french', color: '#17a2b8', type: 'club', region: 'צרפת', order: 50, apiFootballId: 61 },
+      { name: 'גביע צרפת', key: 'french-cup', color: '#117a8b', type: 'club', region: 'צרפת', order: 51, apiFootballId: 66 },
+      // אירופאיות
+      { name: 'ליגת האלופות', key: 'champions-league', color: '#001f5b', type: 'club', region: 'אירופה', order: 60, apiFootballId: 2 },
+      { name: 'הליגה האירופית', key: 'europa-league', color: '#ff6600', type: 'club', region: 'אירופה', order: 61, apiFootballId: 3 },
+      { name: 'קונפרנס ליג', key: 'conference-league', color: '#00a651', type: 'club', region: 'אירופה', order: 62, apiFootballId: 848 }
+    ];
+
+    const created = [];
+    const updated = [];
+
+    for (const item of seedLeagues) {
+      const existing = await League.findOne({ key: item.key });
+      if (existing) {
+        existing.apiFootballId = item.apiFootballId;
+        if (!existing.region) existing.region = item.region;
+        await existing.save();
+        updated.push(existing);
+      } else {
+        const doc = await League.create(item);
+        created.push(doc);
+      }
+    }
+
+    res.status(201).json({
+      message: `נוצרו ${created.length} ליגות, עודכנו ${updated.length}`,
+      created: created.length,
+      updated: updated.length,
+      leagues: [...created, ...updated]
+    });
+  } catch (error) {
+    console.error('Error seeding European leagues:', error);
     res.status(500).json({ message: error.message });
   }
 });

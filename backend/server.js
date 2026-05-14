@@ -204,6 +204,7 @@ const leaguesRoutes = require('./routes/leagues');
 const uploadRouter = require('./routes/upload');
 const statsRoutes = require('./routes/stats');
 const exclusionsRoutes = require('./routes/exclusions');
+const externalRoutes = require('./routes/external');
 
 app.use('/api/upload', uploadRouter);
 app.use('/api/stats', statsRoutes);
@@ -214,6 +215,7 @@ app.use('/api/bets', betsRoutes);
 app.use('/api/scores', scoresRoutes);
 app.use('/api/leagues', leaguesRoutes);
 app.use('/api/exclusions', exclusionsRoutes);
+app.use('/api/external', externalRoutes);
 
 // Audit log endpoint - רק לאדמין הראשי
 app.get('/api/audit', async (req, res) => {

@@ -140,6 +140,98 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Bulk create matches (for external API import)
+router.post('/bulk', async (req, res) => {
+  try {
+    const { weekId, leagueId, league, matches, adminId } = req.body;
+
+    if (!weekId) return res.status(400).json({ message: 'weekId נדרש' });
+    if (!Array.isArray(matches) || matches.length === 0) {
+      return res.status(400).json({ message: 'matches חייב להיות מערך לא ריק' });
+    }
+
+    let validLeagueId = leagueId;
+    if (!validLeagueId && league) {
+      const found = await League.findOne({ key: league });
+      if (!found) return res.status(400).json({ message: `ליגה '${league}' לא נמצאה` });
+      validLeagueId = found._id;
+    }
+    if (!validLeagueId) return res.status(400).json({ message: 'חובה לבחור ליגה' });
+
+    const leagueDoc = await League.findById(validLeagueId);
+    if (!leagueDoc) return res.status(400).json({ message: 'הליגה שנבחרה לא קיימת' });
+
+    const docs = [];
+    const errors = [];
+
+    matches.forEach((m, idx) => {
+      if (!m.team1 || !m.team2 || !m.date || !m.time) {
+        errors.push({ index: idx, message: 'חסרים שדות חובה (team1/team2/date/time)' });
+        return;
+      }
+
+      const [day, month] = String(m.date).split('.');
+      const [hour, minute] = String(m.time).split(':');
+      if (!day || !month || !hour || !minute) {
+        errors.push({ index: idx, message: 'פורמט תאריך/שעה לא תקין' });
+        return;
+      }
+
+      const year = calculateYear(month);
+      const fullDate = createIsraelDate(
+        year,
+        parseInt(month) - 1,
+        parseInt(day),
+        parseInt(hour),
+        parseInt(minute)
+      );
+
+      const data = {
+        weekId,
+        leagueId: validLeagueId,
+        league: leagueDoc.key,
+        team1: m.team1,
+        team2: m.team2,
+        date: m.date,
+        time: m.time,
+        fullDate
+      };
+
+      if (m.odds) {
+        const oddsData = {};
+        if (m.odds.homeWin && parseFloat(m.odds.homeWin) >= 1) oddsData.homeWin = parseFloat(m.odds.homeWin);
+        if (m.odds.draw && parseFloat(m.odds.draw) >= 1) oddsData.draw = parseFloat(m.odds.draw);
+        if (m.odds.awayWin && parseFloat(m.odds.awayWin) >= 1) oddsData.awayWin = parseFloat(m.odds.awayWin);
+        if (Object.keys(oddsData).length > 0) data.odds = oddsData;
+      }
+
+      docs.push(data);
+    });
+
+    if (docs.length === 0) {
+      return res.status(400).json({ message: 'אין משחקים תקינים להוספה', errors });
+    }
+
+    const inserted = await Match.insertMany(docs);
+    const populated = await Match.find({ _id: { $in: inserted.map((d) => d._id) } })
+      .populate('leagueId');
+
+    if (adminId) {
+      const summary = `${inserted.length} משחקים בליגת ${leagueDoc.name}`;
+      logAdminAction(adminId, 'ייבוא משחקים מ-API', summary, {
+        weekId,
+        leagueId: validLeagueId,
+        count: inserted.length
+      });
+    }
+
+    res.status(201).json({ created: populated.length, matches: populated, errors });
+  } catch (error) {
+    console.error('Error bulk creating matches:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Update match details
 router.patch('/:id', async (req, res) => {
   try {
