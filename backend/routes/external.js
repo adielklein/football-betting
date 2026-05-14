@@ -31,6 +31,17 @@ const israelDateAndTime = (isoString) => {
   };
 };
 
+// בדיקת תקינות מהירה - האם API-Football מוגדר
+router.get('/health', (req, res) => {
+  const configured = footballApi.isConfigured();
+  res.json({
+    apiFootballConfigured: configured,
+    message: configured
+      ? '✅ API_FOOTBALL_KEY מוגדר ומוכן לשימוש'
+      : '❌ API_FOOTBALL_KEY חסר - הוסף אותו ב-Environment Variables ב-Render'
+  });
+});
+
 router.get('/fixtures', async (req, res) => {
   try {
     if (!footballApi.isConfigured()) {
