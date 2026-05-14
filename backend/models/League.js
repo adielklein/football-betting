@@ -58,6 +58,14 @@ const leagueSchema = new mongoose.Schema({
     default: null
   },
 
+  // קוד הליגה ב-football-data.org (PL, PD, SA, BL1, FL1, CL וכו')
+  footballDataCode: {
+    type: String,
+    trim: true,
+    uppercase: true,
+    default: null
+  },
+
   createdAt: {
     type: Date, 
     default: Date.now 

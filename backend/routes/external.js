@@ -1,7 +1,7 @@
 const express = require('express');
 const League = require('../models/League');
 const Match = require('../models/Match');
-const footballApi = require('../services/footballApi');
+const footballApi = require('../services/footballDataApi');
 
 const router = express.Router();
 
@@ -31,14 +31,15 @@ const israelDateAndTime = (isoString) => {
   };
 };
 
-// בדיקת תקינות מהירה - האם API-Football מוגדר
+// בדיקת תקינות מהירה - האם football-data.org מוגדר
 router.get('/health', (req, res) => {
   const configured = footballApi.isConfigured();
   res.json({
-    apiFootballConfigured: configured,
+    apiConfigured: configured,
+    provider: 'football-data.org',
     message: configured
-      ? '✅ API_FOOTBALL_KEY מוגדר ומוכן לשימוש'
-      : '❌ API_FOOTBALL_KEY חסר - הוסף אותו ב-Environment Variables ב-Render'
+      ? '✅ FOOTBALL_DATA_TOKEN מוגדר ומוכן לשימוש'
+      : '❌ FOOTBALL_DATA_TOKEN חסר - הוסף אותו ב-Environment Variables ב-Render'
   });
 });
 
@@ -46,7 +47,7 @@ router.get('/fixtures', async (req, res) => {
   try {
     if (!footballApi.isConfigured()) {
       return res.status(503).json({
-        message: 'API-Football אינו מוגדר. הוסף API_FOOTBALL_KEY ל-.env'
+        message: 'football-data.org אינו מוגדר. הוסף FOOTBALL_DATA_TOKEN ל-Environment Variables'
       });
     }
 
@@ -57,9 +58,9 @@ router.get('/fixtures', async (req, res) => {
 
     const league = await League.findById(leagueId);
     if (!league) return res.status(404).json({ message: 'הליגה לא נמצאה' });
-    if (!league.apiFootballId) {
+    if (!league.footballDataCode) {
       return res.status(400).json({
-        message: 'לליגה זו אין מזהה API-Football. הגדר אותו במסך ניהול ליגות'
+        message: 'לליגה זו אין קוד football-data. הגדר אותו במסך ניהול ליגות'
       });
     }
 
@@ -71,7 +72,7 @@ router.get('/fixtures', async (req, res) => {
     const forceRefresh = refresh === 'true' || refresh === '1';
 
     const fixtures = await footballApi.fetchUpcomingFixtures({
-      apiFootballId: league.apiFootballId,
+      footballDataCode: league.footballDataCode,
       fromDate,
       toDate,
       refresh: forceRefresh
@@ -111,8 +112,8 @@ router.get('/fixtures', async (req, res) => {
     });
   } catch (err) {
     console.error('❌ [external/fixtures] error:', err);
-    if (err.code === 'API_KEY_MISSING') {
-      return res.status(503).json({ message: 'API-Football אינו מוגדר' });
+    if (err.code === 'API_TOKEN_MISSING') {
+      return res.status(503).json({ message: 'football-data.org אינו מוגדר' });
     }
     res.status(500).json({ message: err.message });
   }
