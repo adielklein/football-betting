@@ -132,6 +132,43 @@ router.get('/fixtures', async (req, res) => {
   }
 });
 
+// 🔬 בדיקה רב-טווחית - בודק האם ESPN בכלל מחזיק נתונים על הליגה
+router.get('/probe/:leagueId', async (req, res) => {
+  try {
+    const league = await League.findById(req.params.leagueId);
+    if (!league || !league.espnLeagueCode) {
+      return res.status(400).json({ message: 'Need ESPN league' });
+    }
+    const code = league.espnLeagueCode;
+    const probes = [
+      { label: 'no dates (today)', url: `https://site.api.espn.com/apis/site/v2/sports/soccer/${code}/scoreboard` },
+      { label: 'last 30 days', url: `https://site.api.espn.com/apis/site/v2/sports/soccer/${code}/scoreboard?dates=${formatDateForApi(new Date(Date.now() - 30*86400000)).replace(/-/g,'')}-${formatDateForApi(new Date()).replace(/-/g,'')}` },
+      { label: 'last 90 days', url: `https://site.api.espn.com/apis/site/v2/sports/soccer/${code}/scoreboard?dates=${formatDateForApi(new Date(Date.now() - 90*86400000)).replace(/-/g,'')}-${formatDateForApi(new Date()).replace(/-/g,'')}` },
+      { label: 'next 90 days', url: `https://site.api.espn.com/apis/site/v2/sports/soccer/${code}/scoreboard?dates=${formatDateForApi(new Date()).replace(/-/g,'')}-${formatDateForApi(new Date(Date.now() + 90*86400000)).replace(/-/g,'')}` },
+      { label: 'August 2025 start of season', url: `https://site.api.espn.com/apis/site/v2/sports/soccer/${code}/scoreboard?dates=20250801-20250930` }
+    ];
+    const results = await Promise.all(probes.map(async (p) => {
+      try {
+        const r = await fetch(p.url, { headers: { 'User-Agent': 'football-betting-app/1.0' } });
+        const j = await r.json().catch(() => null);
+        return {
+          label: p.label,
+          url: p.url,
+          status: r.status,
+          eventsCount: j?.events?.length || 0,
+          firstEventDate: j?.events?.[0]?.date || null,
+          lastEventDate: j?.events?.[j?.events?.length - 1]?.date || null
+        };
+      } catch (e) {
+        return { label: p.label, url: p.url, error: e.message };
+      }
+    }));
+    res.json({ league: league.name, espnCode: code, probes: results });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // 🔍 Debug - מחזיר את התגובה הגולמית מהספק כדי לאבחן בעיות
 router.get('/debug/:leagueId', async (req, res) => {
   try {
