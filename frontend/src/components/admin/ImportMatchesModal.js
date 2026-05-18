@@ -7,7 +7,7 @@ const DAYS_OPTIONS = [3, 7, 14, 30];
 
 function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
   const importableLeagues = useMemo(
-    () => (leagues || []).filter((l) => l.footballDataCode || l.espnLeagueCode),
+    () => (leagues || []).filter((l) => l.footballDataCode || l.espnLeagueCode || l.sofaScoreTournamentId),
     [leagues]
   );
 

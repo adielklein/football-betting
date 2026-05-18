@@ -73,6 +73,12 @@ const leagueSchema = new mongoose.Schema({
     default: null
   },
 
+  // מזהה ה-tournament ב-SofaScore (266 = Israeli Premier League, 370 = State Cup)
+  sofaScoreTournamentId: {
+    type: Number,
+    default: null
+  },
+
   createdAt: {
     type: Date, 
     default: Date.now 
