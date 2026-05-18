@@ -85,6 +85,12 @@ const leagueSchema = new mongoose.Schema({
     default: null
   },
 
+  // מזהה התחרות ב-365scores (42 = ליגת העל, 49 = גביע המדינה)
+  scores365CompetitionId: {
+    type: Number,
+    default: null
+  },
+
   createdAt: {
     type: Date, 
     default: Date.now 

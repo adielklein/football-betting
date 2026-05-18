@@ -7,7 +7,7 @@ const DAYS_OPTIONS = [3, 7, 14, 30];
 
 function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
   const importableLeagues = useMemo(
-    () => (leagues || []).filter((l) => l.footballDataCode || l.sportsDbLeagueId || l.sofaScoreTournamentId || l.espnLeagueCode),
+    () => (leagues || []).filter((l) => l.footballDataCode || l.scores365CompetitionId || l.sportsDbLeagueId || l.sofaScoreTournamentId || l.espnLeagueCode),
     [leagues]
   );
 
@@ -35,8 +35,9 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
       const mapped = (data.fixtures || []).map((f) => ({
         ...f,
         selected: false,
-        team1: getHebrewNameByEnglish(f.team1En),
-        team2: getHebrewNameByEnglish(f.team2En),
+        // אם הספק החזיר שם בעברית (365scores) - נשתמש בו ישירות, אחרת נתרגם
+        team1: f.team1He || getHebrewNameByEnglish(f.team1En),
+        team2: f.team2He || getHebrewNameByEnglish(f.team2En),
         oddsEdited: f.odds
           ? {
               homeWin: f.odds.homeWin ?? '',

@@ -5,12 +5,13 @@ const footballDataApi = require('../services/footballDataApi');
 const espnApi = require('../services/espnApi');
 const sofaScoreApi = require('../services/sofaScoreApi');
 const sportsDbApi = require('../services/sportsDbApi');
+const scores365Api = require('../services/scores365Api');
 
 // בוחר ספק לפי השדה הזמין על הליגה
-// עדיפות: football-data > SofaScore > TheSportsDB > ESPN
-// SofaScore עדיף על TheSportsDB אם זמין (TheSportsDB מחזיק רק משחק אחד קרוב)
+// עדיפות: football-data > 365scores (בעיקר ישראל) > SofaScore > TheSportsDB > ESPN
 const pickProvider = (league) => {
   if (league.footballDataCode) return { name: 'football-data.org', api: footballDataApi, codeField: 'footballDataCode' };
+  if (league.scores365CompetitionId) return { name: '365scores', api: scores365Api, codeField: 'scores365CompetitionId' };
   if (league.sofaScoreTournamentId) return { name: 'SofaScore', api: sofaScoreApi, codeField: 'sofaScoreTournamentId' };
   if (league.sportsDbLeagueId) return { name: 'TheSportsDB', api: sportsDbApi, codeField: 'sportsDbLeagueId' };
   if (league.espnLeagueCode) return { name: 'ESPN', api: espnApi, codeField: 'espnLeagueCode' };
@@ -20,6 +21,7 @@ const pickProvider = (league) => {
 // fallback - אם הספק הראשי החזיר 0 או נכשל, ננסה את הבא
 const fallbackProviders = (league, exclude) => {
   const candidates = [];
+  if (league.scores365CompetitionId && exclude !== '365scores') candidates.push({ name: '365scores', api: scores365Api, codeField: 'scores365CompetitionId' });
   if (league.sportsDbLeagueId && exclude !== 'TheSportsDB') candidates.push({ name: 'TheSportsDB', api: sportsDbApi, codeField: 'sportsDbLeagueId' });
   if (league.espnLeagueCode && exclude !== 'ESPN') candidates.push({ name: 'ESPN', api: espnApi, codeField: 'espnLeagueCode' });
   if (league.sofaScoreTournamentId && exclude !== 'SofaScore') candidates.push({ name: 'SofaScore', api: sofaScoreApi, codeField: 'sofaScoreTournamentId' });
@@ -143,6 +145,8 @@ router.get('/fixtures', async (req, res) => {
           apiId: f.apiId,
           team1En: f.team1En,
           team2En: f.team2En,
+          team1He: f.team1He || null,
+          team2He: f.team2He || null,
           team1LogoUrl: f.team1LogoUrl,
           team2LogoUrl: f.team2LogoUrl,
           kickoffIso: f.kickoffIso,
@@ -151,7 +155,7 @@ router.get('/fixtures', async (req, res) => {
           year: israelTs.year
         };
         if (wantOdds) {
-          result.odds = await provider.api.fetchOddsForFixture(f.apiId, forceRefresh);
+          result.odds = await activeProvider.api.fetchOddsForFixture(f.apiId, forceRefresh);
         }
         return result;
       })
