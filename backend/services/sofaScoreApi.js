@@ -1,5 +1,8 @@
 // SofaScore unofficial API - בלי הרשמה. יציב יחסית.
-const API_BASE = 'https://api.sofascore.com/api/v1';
+// SOFASCORE_PROXY_URL מאפשר לעקוף חסימות IP דרך Cloudflare Worker
+// דוגמה: https://my-proxy.username.workers.dev
+const SOFASCORE_HOST = process.env.SOFASCORE_PROXY_URL || 'https://api.sofascore.com';
+const API_BASE = `${SOFASCORE_HOST.replace(/\/$/, '')}/api/v1`;
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
 const cache = new Map();
