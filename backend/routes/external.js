@@ -4,10 +4,13 @@ const Match = require('../models/Match');
 const footballDataApi = require('../services/footballDataApi');
 const espnApi = require('../services/espnApi');
 const sofaScoreApi = require('../services/sofaScoreApi');
+const sportsDbApi = require('../services/sportsDbApi');
 
-// בוחר ספק לפי השדה הזמין על הליגה (סדר עדיפויות: football-data > SofaScore > ESPN)
+// בוחר ספק לפי השדה הזמין על הליגה
+// עדיפות: football-data > TheSportsDB > SofaScore > ESPN
 const pickProvider = (league) => {
   if (league.footballDataCode) return { name: 'football-data.org', api: footballDataApi, codeField: 'footballDataCode' };
+  if (league.sportsDbLeagueId) return { name: 'TheSportsDB', api: sportsDbApi, codeField: 'sportsDbLeagueId' };
   if (league.sofaScoreTournamentId) return { name: 'SofaScore', api: sofaScoreApi, codeField: 'sofaScoreTournamentId' };
   if (league.espnLeagueCode) return { name: 'ESPN', api: espnApi, codeField: 'espnLeagueCode' };
   return null;
@@ -46,10 +49,9 @@ router.get('/health', (req, res) => {
   const fdConfigured = footballDataApi.isConfigured();
   res.json({
     footballDataConfigured: fdConfigured,
-    espnAvailable: true,
-    sofaScoreAvailable: true,
     providers: {
       'football-data.org': fdConfigured ? '✅ מוגדר' : '❌ FOOTBALL_DATA_TOKEN חסר',
+      'TheSportsDB': '✅ זמין (חינמי רשמי)',
       'SofaScore (unofficial)': '✅ זמין (לא דורש מפתח)',
       'ESPN (unofficial)': '✅ זמין (לא דורש מפתח)'
     }

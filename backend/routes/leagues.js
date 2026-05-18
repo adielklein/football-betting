@@ -229,9 +229,9 @@ router.post('/seed-european', async (req, res) => {
   try {
     // עדיפות ספקים: football-data.org > SofaScore > ESPN
     const seedLeagues = [
-      // ישראל - דרך SofaScore
-      { name: 'ליגת העל', key: 'israeli', color: '#6f42c1', type: 'club', region: 'ישראל', order: 1, apiFootballId: 383, footballDataCode: null, espnLeagueCode: null, sofaScoreTournamentId: 266 },
-      { name: 'גביע המדינה', key: 'israeli-cup', color: '#5a32a3', type: 'club', region: 'ישראל', order: 2, apiFootballId: 384, footballDataCode: null, espnLeagueCode: null, sofaScoreTournamentId: 370 },
+      // ישראל - ליגת העל דרך TheSportsDB. גביע המדינה ידני (לא קיים בספקים החינמיים).
+      { name: 'ליגת העל', key: 'israeli', color: '#6f42c1', type: 'club', region: 'ישראל', order: 1, apiFootballId: 383, footballDataCode: null, espnLeagueCode: null, sofaScoreTournamentId: 266, sportsDbLeagueId: 4644 },
+      { name: 'גביע המדינה', key: 'israeli-cup', color: '#5a32a3', type: 'club', region: 'ישראל', order: 2, apiFootballId: 384, footballDataCode: null, espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null },
       // ספרד
       { name: 'לה ליגה', key: 'spanish', color: '#007bff', type: 'club', region: 'ספרד', order: 10, apiFootballId: 140, footballDataCode: 'PD', espnLeagueCode: null, sofaScoreTournamentId: null },
       { name: 'קופה דל ריי', key: 'spanish-cup', color: '#0056b3', type: 'club', region: 'ספרד', order: 11, apiFootballId: 143, footballDataCode: null, espnLeagueCode: 'esp.copa_del_rey', sofaScoreTournamentId: null },
@@ -263,6 +263,7 @@ router.post('/seed-european', async (req, res) => {
         existing.footballDataCode = item.footballDataCode;
         existing.espnLeagueCode = item.espnLeagueCode;
         existing.sofaScoreTournamentId = item.sofaScoreTournamentId;
+        existing.sportsDbLeagueId = item.sportsDbLeagueId;
         if (!existing.region) existing.region = item.region;
         await existing.save();
         updated.push(existing);

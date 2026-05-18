@@ -79,6 +79,12 @@ const leagueSchema = new mongoose.Schema({
     default: null
   },
 
+  // מזהה הליגה ב-TheSportsDB (4644 = Israeli Premier League)
+  sportsDbLeagueId: {
+    type: Number,
+    default: null
+  },
+
   createdAt: {
     type: Date, 
     default: Date.now 
