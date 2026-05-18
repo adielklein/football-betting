@@ -44,6 +44,24 @@ const apiGet = async (path, params = {}) => {
   return res.json();
 };
 
+// ESPN לא תומך טווח dates רב-יומי לליגות קטנות. אנחנו עושים קריאה ליום בודד ומאגדים.
+const enumerateDays = (fromDate, toDate) => {
+  const days = [];
+  const start = new Date(fromDate + 'T00:00:00Z');
+  const end = new Date(toDate + 'T00:00:00Z');
+  for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+    days.push(formatYmd(d));
+  }
+  return days;
+};
+
+const formatYmd = (d) => {
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${y}${m}${day}`;
+};
+
 const fetchUpcomingFixtures = async ({ espnLeagueCode, fromDate, toDate, refresh = false }) => {
   if (!espnLeagueCode) throw new Error('espnLeagueCode is required');
 
@@ -53,16 +71,28 @@ const fetchUpcomingFixtures = async ({ espnLeagueCode, fromDate, toDate, refresh
     if (hit) return hit;
   }
 
-  const dates = `${toEspnDate(fromDate)}-${toEspnDate(toDate)}`;
-  console.log(`🏈 [ESPN] fetchUpcomingFixtures league=${espnLeagueCode} dates=${dates}`);
-  const json = await apiGet(`/${espnLeagueCode}/scoreboard`, { dates });
+  const days = enumerateDays(fromDate, toDate);
+  console.log(`🏈 [ESPN] fetching ${espnLeagueCode} day-by-day over ${days.length} days (${fromDate} → ${toDate})`);
 
-  const events = json.events || [];
-  console.log(`🏈 [ESPN] received ${events.length} raw events for ${espnLeagueCode}`);
-  if (events.length === 0) {
-    console.log(`⚠️ [ESPN] empty response. leagues field:`, JSON.stringify(json.leagues?.[0]?.name || 'none'));
-    console.log(`⚠️ [ESPN] season:`, JSON.stringify(json.season || 'none'));
+  const seen = new Set();
+  const allEvents = [];
+  for (const day of days) {
+    try {
+      const json = await apiGet(`/${espnLeagueCode}/scoreboard`, { dates: day });
+      const evs = json.events || [];
+      for (const ev of evs) {
+        if (!seen.has(ev.id)) {
+          seen.add(ev.id);
+          allEvents.push(ev);
+        }
+      }
+    } catch (err) {
+      console.warn(`⚠️ [ESPN] day ${day} failed:`, err.message);
+    }
   }
+  console.log(`🏈 [ESPN] aggregated ${allEvents.length} unique events for ${espnLeagueCode}`);
+
+  const events = allEvents;
   const fixtures = events.map((ev) => {
     const comp = (ev.competitions || [])[0] || {};
     const competitors = comp.competitors || [];
