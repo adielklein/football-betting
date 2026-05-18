@@ -26,12 +26,15 @@ const toEspnDate = (isoDate) => isoDate.replace(/-/g, '');
 const apiGet = async (path, params = {}) => {
   const qs = new URLSearchParams(params).toString();
   const url = `${API_BASE}${path}${qs ? `?${qs}` : ''}`;
+  console.log(`📡 [ESPN] GET ${url}`);
   const res = await fetch(url, {
     headers: { 'User-Agent': 'football-betting-app/1.0' }
   });
+  console.log(`📡 [ESPN] status=${res.status}`);
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
+    console.error(`❌ [ESPN] error body: ${text.slice(0, 300)}`);
     const err = new Error(`ESPN error ${res.status}: ${text}`);
     err.code = 'API_ERROR';
     err.status = res.status;
@@ -51,9 +54,15 @@ const fetchUpcomingFixtures = async ({ espnLeagueCode, fromDate, toDate, refresh
   }
 
   const dates = `${toEspnDate(fromDate)}-${toEspnDate(toDate)}`;
+  console.log(`🏈 [ESPN] fetchUpcomingFixtures league=${espnLeagueCode} dates=${dates}`);
   const json = await apiGet(`/${espnLeagueCode}/scoreboard`, { dates });
 
   const events = json.events || [];
+  console.log(`🏈 [ESPN] received ${events.length} raw events for ${espnLeagueCode}`);
+  if (events.length === 0) {
+    console.log(`⚠️ [ESPN] empty response. leagues field:`, JSON.stringify(json.leagues?.[0]?.name || 'none'));
+    console.log(`⚠️ [ESPN] season:`, JSON.stringify(json.season || 'none'));
+  }
   const fixtures = events.map((ev) => {
     const comp = (ev.competitions || [])[0] || {};
     const competitors = comp.competitors || [];

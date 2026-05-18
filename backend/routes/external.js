@@ -132,4 +132,58 @@ router.get('/fixtures', async (req, res) => {
   }
 });
 
+// 🔍 Debug - מחזיר את התגובה הגולמית מהספק כדי לאבחן בעיות
+router.get('/debug/:leagueId', async (req, res) => {
+  try {
+    const league = await League.findById(req.params.leagueId);
+    if (!league) return res.status(404).json({ message: 'הליגה לא נמצאה' });
+
+    const provider = pickProvider(league);
+    if (!provider) return res.json({ league: league.name, error: 'no external code' });
+
+    const days = parseInt(req.query.days, 10) || 30;
+    const today = new Date();
+    const fromDate = formatDateForApi(today);
+    const toDate = formatDateForApi(new Date(today.getTime() + days * 24 * 60 * 60 * 1000));
+
+    if (provider.name === 'ESPN') {
+      const dates = `${fromDate.replace(/-/g, '')}-${toDate.replace(/-/g, '')}`;
+      const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${league.espnLeagueCode}/scoreboard?dates=${dates}`;
+      const raw = await fetch(url, { headers: { 'User-Agent': 'football-betting-app/1.0' } });
+      const status = raw.status;
+      const body = await raw.json().catch(() => null);
+      return res.json({
+        league: league.name,
+        provider: provider.name,
+        espnCode: league.espnLeagueCode,
+        url,
+        status,
+        eventsCount: body?.events?.length || 0,
+        leagueInfoFromEspn: body?.leagues?.[0]?.name || 'no league field',
+        season: body?.season || null,
+        sampleEvent: body?.events?.[0] || null
+      });
+    }
+
+    if (provider.name === 'football-data.org') {
+      const url = `https://api.football-data.org/v4/competitions/${league.footballDataCode}/matches?dateFrom=${fromDate}&dateTo=${toDate}`;
+      const raw = await fetch(url, { headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_TOKEN || '' } });
+      const status = raw.status;
+      const body = await raw.json().catch(() => null);
+      return res.json({
+        league: league.name,
+        provider: provider.name,
+        footballDataCode: league.footballDataCode,
+        url,
+        status,
+        matchesCount: body?.matches?.length || 0,
+        sampleMatch: body?.matches?.[0] || null,
+        rawError: body?.message || null
+      });
+    }
+  } catch (err) {
+    res.status(500).json({ message: err.message, stack: err.stack });
+  }
+});
+
 module.exports = router;
