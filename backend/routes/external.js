@@ -208,6 +208,50 @@ router.get('/debug/:leagueId', async (req, res) => {
       });
     }
 
+    if (provider.name === 'TheSportsDB') {
+      const url = `https://www.thesportsdb.com/api/v1/json/3/eventsnextleague.php?id=${league.sportsDbLeagueId}`;
+      const raw = await fetch(url);
+      const status = raw.status;
+      const body = await raw.json().catch(() => null);
+      const all = body?.events || [];
+      const future = all.filter(e => {
+        const ts = e.strTimestamp ? new Date(e.strTimestamp + 'Z').getTime() : null;
+        return ts && ts > Date.now();
+      });
+      return res.json({
+        league: league.name,
+        provider: provider.name,
+        sportsDbLeagueId: league.sportsDbLeagueId,
+        url,
+        status,
+        totalEvents: all.length,
+        futureEvents: future.length,
+        firstThreeFuture: future.slice(0, 3).map(e => ({
+          when: e.strTimestamp,
+          home: e.strHomeTeam,
+          away: e.strAwayTeam
+        }))
+      });
+    }
+
+    if (provider.name === 'SofaScore') {
+      const url = `https://api.sofascore.com/api/v1/unique-tournament/${league.sofaScoreTournamentId}/seasons`;
+      const raw = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+          'Referer': 'https://www.sofascore.com/'
+        }
+      });
+      return res.json({
+        league: league.name,
+        provider: provider.name,
+        sofaScoreTournamentId: league.sofaScoreTournamentId,
+        url,
+        status: raw.status,
+        body: await raw.json().catch(() => null)
+      });
+    }
+
     if (provider.name === 'football-data.org') {
       const url = `https://api.football-data.org/v4/competitions/${league.footballDataCode}/matches?dateFrom=${fromDate}&dateTo=${toDate}`;
       const raw = await fetch(url, { headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_TOKEN || '' } });
