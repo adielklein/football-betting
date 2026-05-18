@@ -66,6 +66,13 @@ const leagueSchema = new mongoose.Schema({
     default: null
   },
 
+  // קוד הליגה ב-ESPN API נסתר (isr.1, eng.fa, uefa.europa, וכו')
+  espnLeagueCode: {
+    type: String,
+    trim: true,
+    default: null
+  },
+
   createdAt: {
     type: Date, 
     default: Date.now 

@@ -1,7 +1,15 @@
 const express = require('express');
 const League = require('../models/League');
 const Match = require('../models/Match');
-const footballApi = require('../services/footballDataApi');
+const footballDataApi = require('../services/footballDataApi');
+const espnApi = require('../services/espnApi');
+
+// בוחר ספק לפי השדה הזמין על הליגה (football-data.org עדיף - יציב יותר)
+const pickProvider = (league) => {
+  if (league.footballDataCode) return { name: 'football-data.org', api: footballDataApi, codeField: 'footballDataCode' };
+  if (league.espnLeagueCode) return { name: 'ESPN', api: espnApi, codeField: 'espnLeagueCode' };
+  return null;
+};
 
 const router = express.Router();
 
@@ -31,26 +39,21 @@ const israelDateAndTime = (isoString) => {
   };
 };
 
-// בדיקת תקינות מהירה - האם football-data.org מוגדר
+// בדיקת תקינות מהירה
 router.get('/health', (req, res) => {
-  const configured = footballApi.isConfigured();
+  const fdConfigured = footballDataApi.isConfigured();
   res.json({
-    apiConfigured: configured,
-    provider: 'football-data.org',
-    message: configured
-      ? '✅ FOOTBALL_DATA_TOKEN מוגדר ומוכן לשימוש'
-      : '❌ FOOTBALL_DATA_TOKEN חסר - הוסף אותו ב-Environment Variables ב-Render'
+    footballDataConfigured: fdConfigured,
+    espnAvailable: true,
+    providers: {
+      'football-data.org': fdConfigured ? '✅ מוגדר' : '❌ FOOTBALL_DATA_TOKEN חסר',
+      'ESPN (unofficial)': '✅ זמין (לא דורש מפתח)'
+    }
   });
 });
 
 router.get('/fixtures', async (req, res) => {
   try {
-    if (!footballApi.isConfigured()) {
-      return res.status(503).json({
-        message: 'football-data.org אינו מוגדר. הוסף FOOTBALL_DATA_TOKEN ל-Environment Variables'
-      });
-    }
-
     const { leagueId, days = '7', includeOdds = 'false', refresh = 'false' } = req.query;
     if (!leagueId) {
       return res.status(400).json({ message: 'leagueId נדרש' });
@@ -58,9 +61,17 @@ router.get('/fixtures', async (req, res) => {
 
     const league = await League.findById(leagueId);
     if (!league) return res.status(404).json({ message: 'הליגה לא נמצאה' });
-    if (!league.footballDataCode) {
+
+    const provider = pickProvider(league);
+    if (!provider) {
       return res.status(400).json({
-        message: 'לליגה זו אין קוד football-data. הגדר אותו במסך ניהול ליגות'
+        message: 'לליגה זו אין מזהה חיצוני (footballDataCode או espnLeagueCode)'
+      });
+    }
+
+    if (!provider.api.isConfigured()) {
+      return res.status(503).json({
+        message: `${provider.name} אינו מוגדר. הוסף את משתנה הסביבה המתאים`
       });
     }
 
@@ -71,12 +82,13 @@ router.get('/fixtures', async (req, res) => {
     const wantOdds = includeOdds === 'true' || includeOdds === '1';
     const forceRefresh = refresh === 'true' || refresh === '1';
 
-    const fixtures = await footballApi.fetchUpcomingFixtures({
-      footballDataCode: league.footballDataCode,
+    const fetchParams = {
+      [provider.codeField]: league[provider.codeField],
       fromDate,
       toDate,
       refresh: forceRefresh
-    });
+    };
+    const fixtures = await provider.api.fetchUpcomingFixtures(fetchParams);
 
     const upcoming = fixtures.filter((f) => new Date(f.kickoffIso).getTime() > Date.now());
 
@@ -95,7 +107,7 @@ router.get('/fixtures', async (req, res) => {
           year: israelTs.year
         };
         if (wantOdds) {
-          result.odds = await footballApi.fetchOddsForFixture(f.apiId, forceRefresh);
+          result.odds = await provider.api.fetchOddsForFixture(f.apiId, forceRefresh);
         }
         return result;
       })
@@ -105,6 +117,7 @@ router.get('/fixtures', async (req, res) => {
 
     res.json({
       league: { _id: league._id, name: league.name, key: league.key },
+      provider: provider.name,
       fromDate,
       toDate,
       includeOdds: wantOdds,
@@ -113,7 +126,7 @@ router.get('/fixtures', async (req, res) => {
   } catch (err) {
     console.error('❌ [external/fixtures] error:', err);
     if (err.code === 'API_TOKEN_MISSING') {
-      return res.status(503).json({ message: 'football-data.org אינו מוגדר' });
+      return res.status(503).json({ message: 'הספק לא מוגדר' });
     }
     res.status(500).json({ message: err.message });
   }
