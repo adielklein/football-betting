@@ -7,13 +7,23 @@ const sofaScoreApi = require('../services/sofaScoreApi');
 const sportsDbApi = require('../services/sportsDbApi');
 
 // בוחר ספק לפי השדה הזמין על הליגה
-// עדיפות: football-data > TheSportsDB > SofaScore > ESPN
+// עדיפות: football-data > SofaScore > TheSportsDB > ESPN
+// SofaScore עדיף על TheSportsDB אם זמין (TheSportsDB מחזיק רק משחק אחד קרוב)
 const pickProvider = (league) => {
   if (league.footballDataCode) return { name: 'football-data.org', api: footballDataApi, codeField: 'footballDataCode' };
-  if (league.sportsDbLeagueId) return { name: 'TheSportsDB', api: sportsDbApi, codeField: 'sportsDbLeagueId' };
   if (league.sofaScoreTournamentId) return { name: 'SofaScore', api: sofaScoreApi, codeField: 'sofaScoreTournamentId' };
+  if (league.sportsDbLeagueId) return { name: 'TheSportsDB', api: sportsDbApi, codeField: 'sportsDbLeagueId' };
   if (league.espnLeagueCode) return { name: 'ESPN', api: espnApi, codeField: 'espnLeagueCode' };
   return null;
+};
+
+// fallback - אם הספק הראשי החזיר 0 או נכשל, ננסה את הבא
+const fallbackProviders = (league, exclude) => {
+  const candidates = [];
+  if (league.sportsDbLeagueId && exclude !== 'TheSportsDB') candidates.push({ name: 'TheSportsDB', api: sportsDbApi, codeField: 'sportsDbLeagueId' });
+  if (league.espnLeagueCode && exclude !== 'ESPN') candidates.push({ name: 'ESPN', api: espnApi, codeField: 'espnLeagueCode' });
+  if (league.sofaScoreTournamentId && exclude !== 'SofaScore') candidates.push({ name: 'SofaScore', api: sofaScoreApi, codeField: 'sofaScoreTournamentId' });
+  return candidates;
 };
 
 const router = express.Router();
@@ -88,13 +98,41 @@ router.get('/fixtures', async (req, res) => {
     const wantOdds = includeOdds === 'true' || includeOdds === '1';
     const forceRefresh = refresh === 'true' || refresh === '1';
 
-    const fetchParams = {
-      [provider.codeField]: league[provider.codeField],
-      fromDate,
-      toDate,
-      refresh: forceRefresh
-    };
-    const fixtures = await provider.api.fetchUpcomingFixtures(fetchParams);
+    let activeProvider = provider;
+    let fixtures = [];
+    try {
+      fixtures = await provider.api.fetchUpcomingFixtures({
+        [provider.codeField]: league[provider.codeField],
+        fromDate,
+        toDate,
+        refresh: forceRefresh
+      });
+    } catch (primaryErr) {
+      console.warn(`⚠️ [external] primary provider ${provider.name} failed:`, primaryErr.message);
+      fixtures = [];
+    }
+
+    // אם הראשי נכשל או החזיר 0, ננסה fallbacks
+    if (fixtures.length === 0) {
+      for (const fb of fallbackProviders(league, provider.name)) {
+        try {
+          console.log(`🔁 [external] trying fallback ${fb.name} for ${league.name}`);
+          const fbFixtures = await fb.api.fetchUpcomingFixtures({
+            [fb.codeField]: league[fb.codeField],
+            fromDate,
+            toDate,
+            refresh: forceRefresh
+          });
+          if (fbFixtures.length > 0) {
+            fixtures = fbFixtures;
+            activeProvider = fb;
+            break;
+          }
+        } catch (fbErr) {
+          console.warn(`⚠️ [external] fallback ${fb.name} failed:`, fbErr.message);
+        }
+      }
+    }
 
     const upcoming = fixtures.filter((f) => new Date(f.kickoffIso).getTime() > Date.now());
 
@@ -123,7 +161,7 @@ router.get('/fixtures', async (req, res) => {
 
     res.json({
       league: { _id: league._id, name: league.name, key: league.key },
-      provider: provider.name,
+      provider: activeProvider.name,
       fromDate,
       toDate,
       includeOdds: wantOdds,
