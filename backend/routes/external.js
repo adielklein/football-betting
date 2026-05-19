@@ -181,15 +181,21 @@ router.get('/fixtures', async (req, res) => {
   }
 });
 
-// נרמול שם קבוצה לצורך השוואה - מסיר גרשיים, רווחים, אותיות גדולות, סיומות נפוצות
+// נרמול שם קבוצה לצורך השוואה
+// - מסיר accents (é→e, í→i)
+// - מסיר גרשיים, רווחים, אותיות גדולות
+// - מסיר סיומות נפוצות (FC, CF, RCD, AFC, Club, de, etc.)
 const normalizeTeamName = (s) => {
   if (!s) return '';
   return String(s)
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') // strip accents
     .toLowerCase()
-    .replace(/["'״׳’“”]/g, '')
+    .replace(/["'״׳’“”`]/g, '')
+    .replace(/\b(fc|cf|rcd|afc|cd|ud|ac|as|sc|cda)\b/g, '')
     .replace(/\bf\.?c\.?\b/g, '')
     .replace(/\bfootball club\b/g, '')
-    .replace(/\bclub\b/g, '')
+    .replace(/\b(club|de|del|the|hotspur)\b/g, '')
     .replace(/[^a-z0-9֐-׿]+/g, '')
     .trim();
 };
