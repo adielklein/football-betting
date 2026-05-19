@@ -180,6 +180,61 @@ router.get('/fixtures', async (req, res) => {
   }
 });
 
+// נרמול שם קבוצה לצורך השוואה - מסיר גרשיים, רווחים, אותיות גדולות, סיומות נפוצות
+const normalizeTeamName = (s) => {
+  if (!s) return '';
+  return String(s)
+    .toLowerCase()
+    .replace(/["'״׳’“”]/g, '')
+    .replace(/\bf\.?c\.?\b/g, '')
+    .replace(/\bfootball club\b/g, '')
+    .replace(/\bclub\b/g, '')
+    .replace(/[^a-z0-9֐-׿]+/g, '')
+    .trim();
+};
+
+// בודק אם שתי קבוצות תואמות (בכל סדר)
+const matchesPair = (a1, a2, b1, b2) => {
+  const A1 = normalizeTeamName(a1), A2 = normalizeTeamName(a2);
+  const B1 = normalizeTeamName(b1), B2 = normalizeTeamName(b2);
+  const eq = (x, y) => x && y && (x === y || x.includes(y) || y.includes(x));
+  return (eq(A1, B1) && eq(A2, B2)) || (eq(A1, B2) && eq(A2, B1));
+};
+
+// 🔎 גילוי externalId למשחק שלא יובא ממאגר
+const discoverExternalId = async (match, providersByName) => {
+  if (!match.leagueId) return null;
+  const league = match.leagueId;
+  const provider = pickProvider(league);
+  if (!provider) return null;
+
+  // טווח של ±3 ימים סביב המשחק
+  const matchTs = match.fullDate ? new Date(match.fullDate).getTime() : Date.now();
+  const fromDate = formatDateForApi(new Date(matchTs - 3 * 86400000));
+  const toDate = formatDateForApi(new Date(matchTs + 3 * 86400000));
+
+  try {
+    const fixtures = await provider.api.fetchUpcomingFixtures({
+      [provider.codeField]: league[provider.codeField],
+      fromDate,
+      toDate,
+      refresh: false
+    });
+
+    for (const f of fixtures) {
+      // התאמה לפי שמות הקבוצות (בעברית או באנגלית)
+      const fxTeam1 = f.team1He || f.team1En;
+      const fxTeam2 = f.team2He || f.team2En;
+      if (matchesPair(match.team1, match.team2, fxTeam1, fxTeam2)) {
+        return { externalId: f.apiId, externalProvider: provider.name };
+      }
+    }
+  } catch (err) {
+    console.warn(`🔎 [discover] failed for match ${match._id}:`, err.message);
+  }
+  return null;
+};
+
 // 🆕 סנכרון תוצאות לשבוע - מושך תוצאות מהספקים, מעדכן רק משחקים בלי תוצאה ידנית
 router.post('/sync-results/:weekId', async (req, res) => {
   try {
@@ -197,7 +252,7 @@ router.post('/sync-results/:weekId', async (req, res) => {
       'SofaScore': sofaScoreApi
     };
 
-    const results = { checked: 0, skippedManual: 0, skippedFuture: 0, skippedNoExternal: 0, notFinished: 0, updated: 0, errors: [] };
+    const results = { checked: 0, skippedManual: 0, skippedFuture: 0, skippedNoExternal: 0, discovered: 0, notFinished: 0, updated: 0, errors: [] };
     const now = Date.now();
 
     for (const m of matches) {
@@ -213,10 +268,19 @@ router.post('/sync-results/:weekId', async (req, res) => {
         results.skippedFuture++;
         continue;
       }
-      // אין מזהה חיצוני - לא ניתן למשוך
+      // אין מזהה חיצוני - ננסה לגלות אוטומטית
       if (!m.externalId || !m.externalProvider) {
-        results.skippedNoExternal++;
-        continue;
+        const discovered = await discoverExternalId(m, providersByName);
+        if (discovered) {
+          m.externalId = discovered.externalId;
+          m.externalProvider = discovered.externalProvider;
+          await m.save();
+          results.discovered++;
+          console.log(`🔎 [sync] discovered ${m.team1} vs ${m.team2} → ${discovered.externalProvider}/${discovered.externalId}`);
+        } else {
+          results.skippedNoExternal++;
+          continue;
+        }
       }
       const provider = providersByName[m.externalProvider];
       if (!provider || typeof provider.fetchResult !== 'function') {
