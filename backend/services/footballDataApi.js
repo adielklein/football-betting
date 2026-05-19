@@ -86,6 +86,7 @@ const fetchResult = async (externalId) => {
   if (!externalId) return null;
   try {
     const json = await apiGet(`/matches/${externalId}`);
+    console.log(`⚽ [FD] match ${externalId} status=${json.status}, score=${json.score?.fullTime?.home}-${json.score?.fullTime?.away}`);
     if (json.status !== 'FINISHED') return null;
     const home = json.score?.fullTime?.home;
     const away = json.score?.fullTime?.away;

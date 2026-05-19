@@ -111,8 +111,9 @@ const fetchResult = async (externalId) => {
     if (!game) return null;
     const home = game.homeCompetitor?.score;
     const away = game.awayCompetitor?.score;
-    // statusGroup: 3 = finished, 2 = live, 1 = scheduled
-    const finished = game.statusGroup === 3;
+    // statusGroup: 1=scheduled, 2=live, 3=postponed, 4=finished
+    // נשתמש גם ב-statusText כגיבוי (כשמתחיל ב-"הסתיים" או "Finished")
+    const finished = game.statusGroup === 4 || /הסתיים|finished|ended/i.test(game.statusText || '');
     if (!finished || home == null || away == null || home < 0 || away < 0) return null;
     return { team1Goals: Math.round(home), team2Goals: Math.round(away) };
   } catch (err) {
