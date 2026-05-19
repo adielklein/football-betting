@@ -202,16 +202,25 @@ const matchesPair = (a1, a2, b1, b2) => {
 };
 
 // 🔎 גילוי externalId למשחק שלא יובא ממאגר
-const discoverExternalId = async (match, providersByName) => {
-  if (!match.leagueId) return null;
+const discoverExternalId = async (match, providersByName, debugCollector = null) => {
+  const dbg = (...args) => { console.log('🔎 [discover]', ...args); if (debugCollector) debugCollector.push(args.join(' ')); };
+
+  if (!match.leagueId) {
+    dbg(`match ${match._id}: no leagueId`);
+    return null;
+  }
   const league = match.leagueId;
   const provider = pickProvider(league);
-  if (!provider) return null;
+  if (!provider) {
+    dbg(`match ${match._id} (${match.team1} vs ${match.team2}): league "${league.name}" has no provider code`);
+    return null;
+  }
 
-  // טווח של ±3 ימים סביב המשחק
+  // טווח של ±5 ימים סביב המשחק (הורחב מ-3)
   const matchTs = match.fullDate ? new Date(match.fullDate).getTime() : Date.now();
-  const fromDate = formatDateForApi(new Date(matchTs - 3 * 86400000));
-  const toDate = formatDateForApi(new Date(matchTs + 3 * 86400000));
+  const fromDate = formatDateForApi(new Date(matchTs - 5 * 86400000));
+  const toDate = formatDateForApi(new Date(matchTs + 5 * 86400000));
+  dbg(`match ${match._id} (${match.team1} vs ${match.team2}): provider=${provider.name}, window=${fromDate}..${toDate}`);
 
   try {
     const fixtures = await provider.api.fetchUpcomingFixtures({
@@ -220,17 +229,20 @@ const discoverExternalId = async (match, providersByName) => {
       toDate,
       refresh: false
     });
+    dbg(`got ${fixtures.length} candidates from ${provider.name}`);
 
     for (const f of fixtures) {
-      // התאמה לפי שמות הקבוצות (בעברית או באנגלית)
       const fxTeam1 = f.team1He || f.team1En;
       const fxTeam2 = f.team2He || f.team2En;
-      if (matchesPair(match.team1, match.team2, fxTeam1, fxTeam2)) {
+      const matched = matchesPair(match.team1, match.team2, fxTeam1, fxTeam2);
+      dbg(`  candidate: "${fxTeam1}" vs "${fxTeam2}" (${f.kickoffIso}) → ${matched ? '✓ MATCH' : 'no'}`);
+      if (matched) {
         return { externalId: f.apiId, externalProvider: provider.name };
       }
     }
+    dbg(`no match found out of ${fixtures.length} candidates`);
   } catch (err) {
-    console.warn(`🔎 [discover] failed for match ${match._id}:`, err.message);
+    dbg(`failed: ${err.message}`);
   }
   return null;
 };
@@ -252,7 +264,7 @@ router.post('/sync-results/:weekId', async (req, res) => {
       'SofaScore': sofaScoreApi
     };
 
-    const results = { checked: 0, skippedManual: 0, skippedFuture: 0, skippedNoExternal: 0, discovered: 0, notFinished: 0, updated: 0, errors: [] };
+    const results = { checked: 0, skippedManual: 0, skippedFuture: 0, skippedNoExternal: 0, discovered: 0, notFinished: 0, updated: 0, errors: [], debug: [] };
     const now = Date.now();
 
     for (const m of matches) {
@@ -270,7 +282,9 @@ router.post('/sync-results/:weekId', async (req, res) => {
       }
       // אין מזהה חיצוני - ננסה לגלות אוטומטית
       if (!m.externalId || !m.externalProvider) {
-        const discovered = await discoverExternalId(m, providersByName);
+        const matchDebug = [];
+        const discovered = await discoverExternalId(m, providersByName, matchDebug);
+        results.debug.push({ match: `${m.team1} vs ${m.team2}`, date: m.date, lines: matchDebug });
         if (discovered) {
           m.externalId = discovered.externalId;
           m.externalProvider = discovered.externalProvider;
