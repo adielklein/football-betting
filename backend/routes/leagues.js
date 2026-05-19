@@ -233,24 +233,24 @@ router.post('/seed-european', async (req, res) => {
       { name: 'ליגת העל', key: 'israeli', color: '#6f42c1', type: 'club', region: 'ישראל', order: 1, apiFootballId: 383, footballDataCode: null, espnLeagueCode: null, sofaScoreTournamentId: 266, sportsDbLeagueId: 4644, scores365CompetitionId: 42 },
       { name: 'גביע המדינה', key: 'israeli-cup', color: '#5a32a3', type: 'club', region: 'ישראל', order: 2, apiFootballId: 384, footballDataCode: null, espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 49 },
       // ספרד
-      { name: 'לה ליגה', key: 'spanish', color: '#007bff', type: 'club', region: 'ספרד', order: 10, apiFootballId: 140, footballDataCode: 'PD', espnLeagueCode: null, sofaScoreTournamentId: null },
-      { name: 'קופה דל ריי', key: 'spanish-cup', color: '#0056b3', type: 'club', region: 'ספרד', order: 11, apiFootballId: 143, footballDataCode: null, espnLeagueCode: 'esp.copa_del_rey', sofaScoreTournamentId: null },
+      { name: 'לה ליגה', key: 'spanish', color: '#007bff', type: 'club', region: 'ספרד', order: 10, apiFootballId: 140, footballDataCode: 'PD', espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 11 },
+      { name: 'קופה דל ריי', key: 'spanish-cup', color: '#0056b3', type: 'club', region: 'ספרד', order: 11, apiFootballId: 143, footballDataCode: null, espnLeagueCode: 'esp.copa_del_rey', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 13 },
       // אנגליה
-      { name: 'פרמייר ליג', key: 'english', color: '#dc3545', type: 'club', region: 'אנגליה', order: 20, apiFootballId: 39, footballDataCode: 'PL', espnLeagueCode: null, sofaScoreTournamentId: null },
-      { name: 'גביע אנגליה (FA Cup)', key: 'english-fa-cup', color: '#a71d2a', type: 'club', region: 'אנגליה', order: 21, apiFootballId: 45, footballDataCode: null, espnLeagueCode: 'eng.fa', sofaScoreTournamentId: null },
+      { name: 'פרמייר ליג', key: 'english', color: '#dc3545', type: 'club', region: 'אנגליה', order: 20, apiFootballId: 39, footballDataCode: 'PL', espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 7 },
+      { name: 'גביע אנגליה (FA Cup)', key: 'english-fa-cup', color: '#a71d2a', type: 'club', region: 'אנגליה', order: 21, apiFootballId: 45, footballDataCode: null, espnLeagueCode: 'eng.fa', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 8 },
       // איטליה
-      { name: 'סרייה א', key: 'italian', color: '#28a745', type: 'club', region: 'איטליה', order: 30, apiFootballId: 135, footballDataCode: 'SA', espnLeagueCode: null, sofaScoreTournamentId: null },
-      { name: 'גביע איטליה (Coppa Italia)', key: 'italian-cup', color: '#1e7e34', type: 'club', region: 'איטליה', order: 31, apiFootballId: 137, footballDataCode: null, espnLeagueCode: 'ita.coppa_italia', sofaScoreTournamentId: null },
+      { name: 'סרייה א', key: 'italian', color: '#28a745', type: 'club', region: 'איטליה', order: 30, apiFootballId: 135, footballDataCode: 'SA', espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 17 },
+      { name: 'גביע איטליה (Coppa Italia)', key: 'italian-cup', color: '#1e7e34', type: 'club', region: 'איטליה', order: 31, apiFootballId: 137, footballDataCode: null, espnLeagueCode: 'ita.coppa_italia', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 20 },
       // גרמניה
-      { name: 'בונדסליגה', key: 'german', color: '#ffc107', type: 'club', region: 'גרמניה', order: 40, apiFootballId: 78, footballDataCode: 'BL1', espnLeagueCode: null, sofaScoreTournamentId: null },
-      { name: 'גביע גרמניה (DFB-Pokal)', key: 'german-cup', color: '#d39e00', type: 'club', region: 'גרמניה', order: 41, apiFootballId: 81, footballDataCode: null, espnLeagueCode: 'ger.dfb_pokal', sofaScoreTournamentId: null },
+      { name: 'בונדסליגה', key: 'german', color: '#ffc107', type: 'club', region: 'גרמניה', order: 40, apiFootballId: 78, footballDataCode: 'BL1', espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 25 },
+      { name: 'גביע גרמניה (DFB-Pokal)', key: 'german-cup', color: '#d39e00', type: 'club', region: 'גרמניה', order: 41, apiFootballId: 81, footballDataCode: null, espnLeagueCode: 'ger.dfb_pokal', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 28 },
       // צרפת
-      { name: 'ליג 1', key: 'french', color: '#17a2b8', type: 'club', region: 'צרפת', order: 50, apiFootballId: 61, footballDataCode: 'FL1', espnLeagueCode: null, sofaScoreTournamentId: null },
-      { name: 'גביע צרפת', key: 'french-cup', color: '#117a8b', type: 'club', region: 'צרפת', order: 51, apiFootballId: 66, footballDataCode: null, espnLeagueCode: 'fra.coupe_de_france', sofaScoreTournamentId: null },
+      { name: 'ליג 1', key: 'french', color: '#17a2b8', type: 'club', region: 'צרפת', order: 50, apiFootballId: 61, footballDataCode: 'FL1', espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 35 },
+      { name: 'גביע צרפת', key: 'french-cup', color: '#117a8b', type: 'club', region: 'צרפת', order: 51, apiFootballId: 66, footballDataCode: null, espnLeagueCode: 'fra.coupe_de_france', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 37 },
       // אירופאיות
-      { name: 'ליגת האלופות', key: 'champions-league', color: '#001f5b', type: 'club', region: 'אירופה', order: 60, apiFootballId: 2, footballDataCode: 'CL', espnLeagueCode: null, sofaScoreTournamentId: null },
-      { name: 'הליגה האירופית', key: 'europa-league', color: '#ff6600', type: 'club', region: 'אירופה', order: 61, apiFootballId: 3, footballDataCode: null, espnLeagueCode: 'uefa.europa', sofaScoreTournamentId: null },
-      { name: 'קונפרנס ליג', key: 'conference-league', color: '#00a651', type: 'club', region: 'אירופה', order: 62, apiFootballId: 848, footballDataCode: null, espnLeagueCode: 'uefa.europa.conf', sofaScoreTournamentId: null }
+      { name: 'ליגת האלופות', key: 'champions-league', color: '#001f5b', type: 'club', region: 'אירופה', order: 60, apiFootballId: 2, footballDataCode: 'CL', espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 572 },
+      { name: 'הליגה האירופית', key: 'europa-league', color: '#ff6600', type: 'club', region: 'אירופה', order: 61, apiFootballId: 3, footballDataCode: null, espnLeagueCode: 'uefa.europa', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 573 },
+      { name: 'קונפרנס ליג', key: 'conference-league', color: '#00a651', type: 'club', region: 'אירופה', order: 62, apiFootballId: 848, footballDataCode: null, espnLeagueCode: 'uefa.europa.conf', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 7685 }
     ];
 
     const created = [];

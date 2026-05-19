@@ -9,23 +9,24 @@ const scores365Api = require('../services/scores365Api');
 const { hebrewToEnglish } = require('../utils/teamNames');
 
 // בוחר ספק לפי השדה הזמין על הליגה
-// עדיפות: football-data > 365scores (בעיקר ישראל) > SofaScore > TheSportsDB > ESPN
+// עדיפות: 365scores (ראשון - שמות בעברית) > football-data > ESPN > TheSportsDB > SofaScore
 const pickProvider = (league) => {
-  if (league.footballDataCode) return { name: 'football-data.org', api: footballDataApi, codeField: 'footballDataCode' };
   if (league.scores365CompetitionId) return { name: '365scores', api: scores365Api, codeField: 'scores365CompetitionId' };
-  if (league.sofaScoreTournamentId) return { name: 'SofaScore', api: sofaScoreApi, codeField: 'sofaScoreTournamentId' };
-  if (league.sportsDbLeagueId) return { name: 'TheSportsDB', api: sportsDbApi, codeField: 'sportsDbLeagueId' };
+  if (league.footballDataCode) return { name: 'football-data.org', api: footballDataApi, codeField: 'footballDataCode' };
   if (league.espnLeagueCode) return { name: 'ESPN', api: espnApi, codeField: 'espnLeagueCode' };
+  if (league.sportsDbLeagueId) return { name: 'TheSportsDB', api: sportsDbApi, codeField: 'sportsDbLeagueId' };
+  if (league.sofaScoreTournamentId) return { name: 'SofaScore', api: sofaScoreApi, codeField: 'sofaScoreTournamentId' };
   return null;
 };
 
 // fallback - אם הספק הראשי החזיר 0 או נכשל, ננסה את הבא
 const fallbackProviders = (league, exclude) => {
   const candidates = [];
-  if (league.scores365CompetitionId && exclude !== '365scores') candidates.push({ name: '365scores', api: scores365Api, codeField: 'scores365CompetitionId' });
-  if (league.sportsDbLeagueId && exclude !== 'TheSportsDB') candidates.push({ name: 'TheSportsDB', api: sportsDbApi, codeField: 'sportsDbLeagueId' });
+  if (league.footballDataCode && exclude !== 'football-data.org') candidates.push({ name: 'football-data.org', api: footballDataApi, codeField: 'footballDataCode' });
   if (league.espnLeagueCode && exclude !== 'ESPN') candidates.push({ name: 'ESPN', api: espnApi, codeField: 'espnLeagueCode' });
+  if (league.sportsDbLeagueId && exclude !== 'TheSportsDB') candidates.push({ name: 'TheSportsDB', api: sportsDbApi, codeField: 'sportsDbLeagueId' });
   if (league.sofaScoreTournamentId && exclude !== 'SofaScore') candidates.push({ name: 'SofaScore', api: sofaScoreApi, codeField: 'sofaScoreTournamentId' });
+  if (league.scores365CompetitionId && exclude !== '365scores') candidates.push({ name: '365scores', api: scores365Api, codeField: 'scores365CompetitionId' });
   return candidates;
 };
 
