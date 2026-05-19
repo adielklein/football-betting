@@ -1320,24 +1320,40 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                 e.stopPropagation();
                 if (syncingResults) return;
                 setSyncingResults(true);
+                console.log('🔄 [SYNC] starting for week', selectedWeek._id, selectedWeek.name);
                 try {
-                  const r = await api.syncResults(selectedWeek._id);
-                  let msg = `✅ נבדקו ${r.checked} משחקים, עודכנו ${r.updated}`;
+                  const syncRes = await fetch(`${API_URL}/external/sync-results/${selectedWeek._id}`, { method: 'POST' });
+                  const r = await syncRes.json().catch(() => ({}));
+                  console.log('🔄 [SYNC] response:', r);
+                  if (!syncRes.ok) throw new Error(r.message || `HTTP ${syncRes.status}`);
+                  let msg = `✅ נבדקו ${r.checked || 0} משחקים, עודכנו ${r.updated || 0}`;
                   if (r.skippedManual) msg += `\n⏭️ דולגו ${r.skippedManual} עם תוצאה ידנית`;
                   if (r.skippedFuture) msg += `\n⏰ דולגו ${r.skippedFuture} שעוד לא התחילו`;
                   if (r.skippedNoExternal) msg += `\n❓ דולגו ${r.skippedNoExternal} בלי מזהה חיצוני`;
                   if (r.notFinished) msg += `\n⏳ ${r.notFinished} עדיין לא הסתיימו`;
-                  if (r.errors?.length) msg += `\n⚠️ ${r.errors.length} שגיאות`;
+                  if (r.errors?.length) {
+                    msg += `\n⚠️ ${r.errors.length} שגיאות`;
+                    console.warn('🔄 [SYNC] errors:', r.errors);
+                  }
                   if (r.updated > 0) {
                     msg += '\n\n🔄 מריץ חישוב נקודות...';
                     alert(msg);
-                    await api.calculateScores(selectedWeek._id);
+                    console.log('🔄 [SYNC] calculating scores...');
+                    const calcRes = await fetch(`${API_URL}/scores/calculate/${selectedWeek._id}`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: '{}'
+                    });
+                    const calcJson = await calcRes.json().catch(() => ({}));
+                    console.log('🔄 [SYNC] score calc response:', calcJson);
+                    if (!calcRes.ok) throw new Error(calcJson.message || 'חישוב נקודות נכשל');
                     alert('✅ נקודות חושבו בהצלחה');
                   } else {
                     alert(msg);
                   }
                   await loadWeekData(selectedWeek._id);
                 } catch (err) {
+                  console.error('❌ [SYNC] error:', err);
                   alert('❌ שגיאה בסנכרון תוצאות: ' + err.message);
                 } finally {
                   setSyncingResults(false);
