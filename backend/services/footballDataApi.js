@@ -46,20 +46,22 @@ const apiGet = async (path, params = {}) => {
   return res.json();
 };
 
-const fetchUpcomingFixtures = async ({ footballDataCode, fromDate, toDate, refresh = false }) => {
+const fetchUpcomingFixtures = async ({ footballDataCode, fromDate, toDate, refresh = false, includePast = false }) => {
   if (!footballDataCode) throw new Error('footballDataCode is required');
 
-  const cacheKey = `fixtures_${footballDataCode}_${fromDate}_${toDate}`;
+  const cacheKey = `fixtures_${footballDataCode}_${fromDate}_${toDate}_${includePast ? 'all' : 'fut'}`;
 
   if (!refresh) {
     const hit = cacheGet(cacheKey);
     if (hit) return hit;
   }
 
+  // includePast=true כולל גם משחקים שנגמרו (לצורך גילוי externalId)
+  const status = includePast ? 'SCHEDULED,TIMED,IN_PLAY,PAUSED,FINISHED' : 'SCHEDULED,TIMED';
   const json = await apiGet(`/competitions/${footballDataCode}/matches`, {
     dateFrom: fromDate,
     dateTo: toDate,
-    status: 'SCHEDULED,TIMED'
+    status
   });
 
   const fixtures = (json.matches || []).map((m) => ({

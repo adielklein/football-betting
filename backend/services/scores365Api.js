@@ -42,19 +42,30 @@ const apiGet = async (path) => {
   return res.json();
 };
 
-const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate, refresh = false }) => {
+const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate, refresh = false, includePast = false }) => {
   if (!scores365CompetitionId) throw new Error('scores365CompetitionId is required');
 
-  const cacheKey = `365_${scores365CompetitionId}_${fromDate}_${toDate}`;
+  const cacheKey = `365_${scores365CompetitionId}_${fromDate}_${toDate}_${includePast ? 'all' : 'fut'}`;
   if (!refresh) {
     const hit = cacheGet(cacheKey);
     if (hit) return hit;
   }
 
-  // המבנה הזה מחזיר את כל המשחקים הקרובים בליגה - אנחנו נסנן לפי הטווח
-  const json = await apiGet(`/games/fixtures/?appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&competitions=${scores365CompetitionId}`);
-  const games = json.games || [];
-  console.log(`⚽ [365] got ${games.length} games for competition ${scores365CompetitionId}`);
+  // עתידיים מ-fixtures, ואם includePast גם משחקים שנגמרו מ-results
+  const endpoints = [`/games/fixtures/?appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&competitions=${scores365CompetitionId}`];
+  if (includePast) {
+    endpoints.push(`/games/results/?appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&competitions=${scores365CompetitionId}`);
+  }
+  const games = [];
+  for (const ep of endpoints) {
+    try {
+      const json = await apiGet(ep);
+      (json.games || []).forEach(g => games.push(g));
+    } catch (err) {
+      console.warn(`⚠️ [365] endpoint ${ep} failed:`, err.message);
+    }
+  }
+  console.log(`⚽ [365] got ${games.length} games for competition ${scores365CompetitionId} (includePast=${includePast})`);
 
   const fromTs = new Date(fromDate + 'T00:00:00Z').getTime();
   const toTs = new Date(toDate + 'T23:59:59Z').getTime();
