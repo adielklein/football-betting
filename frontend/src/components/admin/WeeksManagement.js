@@ -25,6 +25,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
   const [addMatchOpen, setAddMatchOpen] = useState(false);
   const [matchListOpen, setMatchListOpen] = useState(true);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [syncingResults, setSyncingResults] = useState(false);
 
   // State עבור ה-dropdown המקונן
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -1304,13 +1305,51 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
       {/* רשימת משחקים */}
       {selectedWeek && matches.length > 0 && (
         <div className="card">
-          <div onClick={() => setMatchListOpen(prev => !prev)} style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            cursor: 'pointer', userSelect: 'none'
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem'
           }}>
-            <h2 style={{ margin: 0 }}>משחקי {selectedWeek.name}</h2>
-            <span style={{ fontSize: '18px', transition: 'transform 0.2s ease',
-              transform: matchListOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+            <div onClick={() => setMatchListOpen(prev => !prev)} style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', userSelect: 'none', flex: 1
+            }}>
+              <h2 style={{ margin: 0 }}>משחקי {selectedWeek.name}</h2>
+              <span style={{ fontSize: '18px', transition: 'transform 0.2s ease',
+                transform: matchListOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+            </div>
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (syncingResults) return;
+                setSyncingResults(true);
+                try {
+                  const r = await api.syncResults(selectedWeek._id);
+                  let msg = `✅ נבדקו ${r.checked} משחקים, עודכנו ${r.updated}`;
+                  if (r.skippedManual) msg += `\n⏭️ דולגו ${r.skippedManual} עם תוצאה ידנית`;
+                  if (r.skippedFuture) msg += `\n⏰ דולגו ${r.skippedFuture} שעוד לא התחילו`;
+                  if (r.skippedNoExternal) msg += `\n❓ דולגו ${r.skippedNoExternal} בלי מזהה חיצוני`;
+                  if (r.notFinished) msg += `\n⏳ ${r.notFinished} עדיין לא הסתיימו`;
+                  if (r.errors?.length) msg += `\n⚠️ ${r.errors.length} שגיאות`;
+                  if (r.updated > 0) {
+                    msg += '\n\n🔄 מריץ חישוב נקודות...';
+                    alert(msg);
+                    await api.calculateScores(selectedWeek._id);
+                    alert('✅ נקודות חושבו בהצלחה');
+                  } else {
+                    alert(msg);
+                  }
+                  await loadWeekData(selectedWeek._id);
+                } catch (err) {
+                  alert('❌ שגיאה בסנכרון תוצאות: ' + err.message);
+                } finally {
+                  setSyncingResults(false);
+                }
+              }}
+              className="btn"
+              disabled={syncingResults}
+              style={{ fontSize: '13px' }}
+              title="מושך תוצאות אוטומטית מהמאגר ומריץ חישוב נקודות"
+            >
+              {syncingResults ? '⏳ מסנכרן...' : '🔄 עדכן תוצאות מהמאגר'}
+            </button>
           </div>
           {!matchListOpen ? null : (<div style={{ marginTop: '0.6rem' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

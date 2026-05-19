@@ -79,8 +79,26 @@ const fetchUpcomingFixtures = async ({ sportsDbLeagueId, fromDate, toDate, refre
 
 const fetchOddsForFixture = async () => null;
 
+const fetchResult = async (externalId) => {
+  if (!externalId) return null;
+  const id = externalId.startsWith('tsdb_') ? externalId.slice(5) : externalId;
+  try {
+    const json = await apiGet(`/lookupevent.php?id=${id}`);
+    const ev = (json.events || [])[0];
+    if (!ev) return null;
+    const home = parseInt(ev.intHomeScore, 10);
+    const away = parseInt(ev.intAwayScore, 10);
+    if (!Number.isFinite(home) || !Number.isFinite(away)) return null;
+    return { team1Goals: home, team2Goals: away };
+  } catch (err) {
+    console.warn(`⚠️ [TSDB] fetchResult failed for ${externalId}:`, err.message);
+    return null;
+  }
+};
+
 module.exports = {
   isConfigured,
   fetchUpcomingFixtures,
-  fetchOddsForFixture
+  fetchOddsForFixture,
+  fetchResult
 };

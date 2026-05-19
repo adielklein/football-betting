@@ -308,6 +308,41 @@ app.get('/', (req, res) => {
   });
 });
 
+// 🕐 Cron - סנכרון תוצאות אוטומטי כל שעה לשבועות לא נעולים
+const cron = require('node-cron');
+const Week = require('./models/Week');
+const runResultsSync = async () => {
+  try {
+    const RENDER_URL = process.env.NODE_ENV === 'development'
+      ? `http://localhost:${process.env.PORT || 5000}`
+      : 'https://football-betting-backend.onrender.com';
+    const weeks = await Week.find({ locked: false });
+    if (weeks.length === 0) return;
+    console.log(`🕐 [CRON] sync-results: scanning ${weeks.length} unlocked weeks`);
+    for (const w of weeks) {
+      try {
+        const r = await fetch(`${RENDER_URL}/api/external/sync-results/${w._id}`, { method: 'POST' });
+        const j = await r.json().catch(() => null);
+        if (j?.updated > 0) {
+          console.log(`🕐 [CRON] week ${w.name}: updated ${j.updated}, calculating scores...`);
+          await fetch(`${RENDER_URL}/api/scores/calculate/${w._id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: '{}'
+          });
+        }
+      } catch (e) {
+        console.warn(`🕐 [CRON] week ${w.name} sync failed:`, e.message);
+      }
+    }
+  } catch (err) {
+    console.error('❌ [CRON] sync-results error:', err.message);
+  }
+};
+// כל שעה בדקה 17 (כדי לא להתנגש עם שעה עגולה ולחסוך טראפיק לאתרים אחרים)
+cron.schedule('17 * * * *', runResultsSync, { timezone: 'Asia/Jerusalem' });
+console.log('🕐 Cron registered: sync-results every hour at minute 17');
+
 const PORT = process.env.PORT || 5000;
 require('./services/pushNotifications');
 app.listen(PORT, () => {

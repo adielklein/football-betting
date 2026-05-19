@@ -125,8 +125,28 @@ const fetchUpcomingFixtures = async ({ sofaScoreTournamentId, fromDate, toDate, 
 
 const fetchOddsForFixture = async () => null; // SofaScore לא נותן יחסים בקלות
 
+const fetchResult = async (externalId) => {
+  if (!externalId) return null;
+  const id = externalId.startsWith('sofa_') ? externalId.slice(5) : externalId;
+  try {
+    const json = await apiGet(`/event/${id}`);
+    const ev = json.event;
+    if (!ev) return null;
+    const finished = ev.status?.code === 100 || ev.status?.type === 'finished';
+    if (!finished) return null;
+    const home = ev.homeScore?.current;
+    const away = ev.awayScore?.current;
+    if (home == null || away == null) return null;
+    return { team1Goals: home, team2Goals: away };
+  } catch (err) {
+    console.warn(`⚠️ [SOFA] fetchResult failed for ${externalId}:`, err.message);
+    return null;
+  }
+};
+
 module.exports = {
   isConfigured,
   fetchUpcomingFixtures,
-  fetchOddsForFixture
+  fetchOddsForFixture,
+  fetchResult
 };

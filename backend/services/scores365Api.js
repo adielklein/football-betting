@@ -90,8 +90,29 @@ const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate,
 
 const fetchOddsForFixture = async () => null;
 
+// תוצאה למשחק שכבר נגמר - מקבל apiId (פורמט "365_12345")
+const fetchResult = async (externalId) => {
+  if (!externalId) return null;
+  const id = externalId.startsWith('365_') ? externalId.slice(4) : externalId;
+  try {
+    const json = await apiGet(`/games/?appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&games=${id}`);
+    const game = (json.games || [])[0];
+    if (!game) return null;
+    const home = game.homeCompetitor?.score;
+    const away = game.awayCompetitor?.score;
+    // statusGroup: 3 = finished, 2 = live, 1 = scheduled
+    const finished = game.statusGroup === 3;
+    if (!finished || home == null || away == null || home < 0 || away < 0) return null;
+    return { team1Goals: Math.round(home), team2Goals: Math.round(away) };
+  } catch (err) {
+    console.warn(`⚠️ [365] fetchResult failed for ${externalId}:`, err.message);
+    return null;
+  }
+};
+
 module.exports = {
   isConfigured,
   fetchUpcomingFixtures,
-  fetchOddsForFixture
+  fetchOddsForFixture,
+  fetchResult
 };

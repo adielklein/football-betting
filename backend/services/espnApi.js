@@ -117,8 +117,36 @@ const fetchUpcomingFixtures = async ({ espnLeagueCode, fromDate, toDate, refresh
 
 const fetchOddsForFixture = async () => null; // ESPN לא נותן יחסים
 
+// ESPN לא חושף endpoint נקי למשחק בודד דרך scoreboard. ניתן לחפש דרך scoreboard ביום הספציפי.
+const fetchResult = async (externalId, hint) => {
+  if (!externalId) return null;
+  const id = externalId.startsWith('espn_') ? externalId.slice(5) : externalId;
+  const dayParam = hint?.dateYmd || formatYmd(new Date());
+  const code = hint?.espnLeagueCode;
+  if (!code) return null;
+  try {
+    const json = await apiGet(`/${code}/scoreboard`, { dates: dayParam });
+    const ev = (json.events || []).find((e) => String(e.id) === String(id));
+    if (!ev) return null;
+    const comp = (ev.competitions || [])[0] || {};
+    const finished = comp.status?.type?.completed === true;
+    if (!finished) return null;
+    const competitors = comp.competitors || [];
+    const home = competitors.find((c) => c.homeAway === 'home');
+    const away = competitors.find((c) => c.homeAway === 'away');
+    const homeScore = parseInt(home?.score, 10);
+    const awayScore = parseInt(away?.score, 10);
+    if (!Number.isFinite(homeScore) || !Number.isFinite(awayScore)) return null;
+    return { team1Goals: homeScore, team2Goals: awayScore };
+  } catch (err) {
+    console.warn(`⚠️ [ESPN] fetchResult failed for ${externalId}:`, err.message);
+    return null;
+  }
+};
+
 module.exports = {
   isConfigured,
   fetchUpcomingFixtures,
-  fetchOddsForFixture
+  fetchOddsForFixture,
+  fetchResult
 };

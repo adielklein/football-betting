@@ -56,6 +56,12 @@ const matchSchema = new mongoose.Schema({
     awayWin: { type: Number, min: 1 }     // יחס לניצחון חוץ
   },
   
+  // 🆕 מקור חיצוני - לעדכון תוצאות אוטומטי
+  externalId: { type: String, default: null },           // מזהה המשחק אצל הספק
+  externalProvider: { type: String, default: null },      // 365scores / football-data.org / ...
+  resultSource: { type: String, default: null },          // 'manual' / 'auto:365scores' / ...
+  resultUpdatedAt: { type: Date, default: null },
+
   createdAt: {
     type: Date,
     default: Date.now

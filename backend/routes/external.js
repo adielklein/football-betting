@@ -180,6 +180,79 @@ router.get('/fixtures', async (req, res) => {
   }
 });
 
+// 🆕 סנכרון תוצאות לשבוע - מושך תוצאות מהספקים, מעדכן רק משחקים בלי תוצאה ידנית
+router.post('/sync-results/:weekId', async (req, res) => {
+  try {
+    const weekId = req.params.weekId;
+    const matches = await Match.find({ weekId }).populate('leagueId');
+    if (matches.length === 0) {
+      return res.json({ message: 'אין משחקים בשבוע הזה', checked: 0, updated: 0 });
+    }
+
+    const providersByName = {
+      '365scores': scores365Api,
+      'football-data.org': footballDataApi,
+      'ESPN': espnApi,
+      'TheSportsDB': sportsDbApi,
+      'SofaScore': sofaScoreApi
+    };
+
+    const results = { checked: 0, skippedManual: 0, skippedFuture: 0, skippedNoExternal: 0, notFinished: 0, updated: 0, errors: [] };
+    const now = Date.now();
+
+    for (const m of matches) {
+      results.checked++;
+      const hasResult = m.result && m.result.team1Goals != null && m.result.team2Goals != null;
+      // יש תוצאה והיא לא הוזנה אוטומטית - לא נדרוס
+      if (hasResult && (!m.resultSource || !m.resultSource.startsWith('auto:'))) {
+        results.skippedManual++;
+        continue;
+      }
+      // משחק שעוד לא התחיל - דלג
+      if (m.fullDate && new Date(m.fullDate).getTime() > now) {
+        results.skippedFuture++;
+        continue;
+      }
+      // אין מזהה חיצוני - לא ניתן למשוך
+      if (!m.externalId || !m.externalProvider) {
+        results.skippedNoExternal++;
+        continue;
+      }
+      const provider = providersByName[m.externalProvider];
+      if (!provider || typeof provider.fetchResult !== 'function') {
+        results.errors.push({ matchId: m._id, reason: `provider ${m.externalProvider} not supported for results` });
+        continue;
+      }
+
+      try {
+        // ESPN דורש hint נוסף
+        const hint = m.externalProvider === 'ESPN' ? {
+          espnLeagueCode: m.leagueId?.espnLeagueCode,
+          dateYmd: m.fullDate ? new Date(m.fullDate).toISOString().slice(0, 10).replace(/-/g, '') : null
+        } : null;
+
+        const result = await provider.fetchResult(m.externalId, hint);
+        if (!result) {
+          results.notFinished++;
+          continue;
+        }
+        m.result = { team1Goals: result.team1Goals, team2Goals: result.team2Goals };
+        m.resultSource = `auto:${m.externalProvider}`;
+        m.resultUpdatedAt = new Date();
+        await m.save();
+        results.updated++;
+      } catch (err) {
+        results.errors.push({ matchId: m._id, reason: err.message });
+      }
+    }
+
+    res.json({ message: `נבדקו ${results.checked}, עודכנו ${results.updated}`, ...results });
+  } catch (err) {
+    console.error('❌ [sync-results] error:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // 🔬 בדיקה רב-טווחית - בודק האם ESPN בכלל מחזיק נתונים על הליגה
 router.get('/probe/:leagueId', async (req, res) => {
   try {

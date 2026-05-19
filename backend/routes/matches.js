@@ -197,6 +197,10 @@ router.post('/bulk', async (req, res) => {
         fullDate
       };
 
+      // שמירת מזהה חיצוני לעדכון תוצאות אוטומטי
+      if (m.externalId) data.externalId = String(m.externalId);
+      if (m.externalProvider) data.externalProvider = String(m.externalProvider);
+
       if (m.odds) {
         const oddsData = {};
         if (m.odds.homeWin && parseFloat(m.odds.homeWin) >= 1) oddsData.homeWin = parseFloat(m.odds.homeWin);

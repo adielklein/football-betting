@@ -80,8 +80,24 @@ const fetchUpcomingFixtures = async ({ footballDataCode, fromDate, toDate, refre
 // football-data.org free tier doesn't provide odds
 const fetchOddsForFixture = async () => null;
 
+const fetchResult = async (externalId) => {
+  if (!externalId) return null;
+  try {
+    const json = await apiGet(`/matches/${externalId}`);
+    if (json.status !== 'FINISHED') return null;
+    const home = json.score?.fullTime?.home;
+    const away = json.score?.fullTime?.away;
+    if (home == null || away == null) return null;
+    return { team1Goals: home, team2Goals: away };
+  } catch (err) {
+    console.warn(`⚠️ [FD] fetchResult failed for ${externalId}:`, err.message);
+    return null;
+  }
+};
+
 module.exports = {
   isConfigured,
   fetchUpcomingFixtures,
-  fetchOddsForFixture
+  fetchOddsForFixture,
+  fetchResult
 };

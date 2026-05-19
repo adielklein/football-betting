@@ -17,6 +17,7 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [fixtures, setFixtures] = useState([]);
+  const [providerName, setProviderName] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -32,6 +33,7 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
     setFixtures([]);
     try {
       const data = await api.getUpcomingFixtures({ leagueId, days, includeOdds, refresh });
+      setProviderName(data.provider || null);
       const mapped = (data.fixtures || []).map((f) => ({
         ...f,
         selected: false,
@@ -104,7 +106,9 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
             team1: f.team1.trim(),
             team2: f.team2.trim(),
             date: f.date,
-            time: f.time
+            time: f.time,
+            externalId: f.apiId,
+            externalProvider: providerName
           };
           if (includeOdds) {
             const odds = {};

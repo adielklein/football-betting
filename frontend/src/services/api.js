@@ -232,6 +232,25 @@ export const api = {
     });
   },
 
+  // סנכרון תוצאות אוטומטי מהמאגר
+  syncResults: (weekId) => fetch(`${API_BASE_URL}/external/sync-results/${weekId}`, {
+    method: 'POST'
+  }).then(async res => {
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
+    return json;
+  }),
+
+  calculateScores: (weekId) => fetch(`${API_BASE_URL}/scores/calculate/${weekId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({})
+  }).then(async res => {
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
+    return json;
+  }),
+
   // Bets
   getUserBets: (userId, weekId) => fetch(`${API_BASE_URL}/bets/user/${userId}/week/${weekId}`).then(res => res.json()),
   getWeekBets: (weekId) => fetch(`${API_BASE_URL}/bets/week/${weekId}`).then(res => res.json()),
