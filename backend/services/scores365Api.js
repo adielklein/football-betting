@@ -102,20 +102,63 @@ const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate,
 const fetchOddsForFixture = async () => null;
 
 // תוצאה למשחק שכבר נגמר - מקבל apiId (פורמט "365_12345")
+// מחזיר תוצאה ב-90 דקות + finalScore כולל הארכה/פנדלים אם המשחק התארך
 const fetchResult = async (externalId) => {
   if (!externalId) return null;
   const id = externalId.startsWith('365_') ? externalId.slice(4) : externalId;
   try {
-    const json = await apiGet(`/games/?appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&games=${id}`);
-    const game = (json.games || [])[0];
+    // endpoint /game/ מחזיר אובייקט מלא עם stages
+    const json = await apiGet(`/game/?appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&gameId=${id}`);
+    const game = json.game;
     if (!game) return null;
-    const home = game.homeCompetitor?.score;
-    const away = game.awayCompetitor?.score;
-    // statusGroup: 1=scheduled, 2=live, 3=postponed, 4=finished
-    // נשתמש גם ב-statusText כגיבוי (כשמתחיל ב-"הסתיים" או "Finished")
-    const finished = game.statusGroup === 4 || /הסתיים|finished|ended/i.test(game.statusText || '');
-    if (!finished || home == null || away == null || home < 0 || away < 0) return null;
-    return { team1Goals: Math.round(home), team2Goals: Math.round(away) };
+    const finished = game.statusGroup === 4 || /הסתיים|finished|ended/i.test(game.statusText || game.shortStatusText || '');
+    if (!finished) return null;
+
+    // 365scores stages:
+    // id=7 מחצית, id=9 סוף 90 דקות, id=10 הארכה, id=11 פנדלים (לא בטוח), id=1 תוצאה נוכחית
+    const stages = game.stages || [];
+    const stage90 = stages.find((s) => s.id === 9);
+    const stageET = stages.find((s) => s.id === 10);
+    const stagePens = stages.find((s) => s.name?.includes('פנדל') || s.name?.toLowerCase().includes('penalt'));
+    const stageCurrent = stages.find((s) => s.isCurrent || s.id === 1);
+
+    // תוצאה ב-90 דקות
+    let team1Goals, team2Goals;
+    if (stage90) {
+      team1Goals = stage90.homeCompetitorScore;
+      team2Goals = stage90.awayCompetitorScore;
+    } else if (stageCurrent) {
+      // אין stage נפרד ל-90 - המשחק לא עבר הארכה, התוצאה הנוכחית = 90 דקות
+      team1Goals = stageCurrent.homeCompetitorScore;
+      team2Goals = stageCurrent.awayCompetitorScore;
+    } else {
+      // fallback - השדה הראשי
+      team1Goals = game.homeCompetitor?.score;
+      team2Goals = game.awayCompetitor?.score;
+    }
+
+    if (team1Goals == null || team2Goals == null || team1Goals < 0 || team2Goals < 0) return null;
+
+    // אם המשחק עבר הארכה - בונים finalScore
+    let finalScore = null;
+    if (stageET) {
+      finalScore = {
+        team1Goals: stageET.homeCompetitorScore,
+        team2Goals: stageET.awayCompetitorScore
+      };
+      if (stagePens) {
+        finalScore.penalties = {
+          team1: stagePens.homeCompetitorScore,
+          team2: stagePens.awayCompetitorScore
+        };
+      }
+    }
+
+    return {
+      team1Goals: Math.round(team1Goals),
+      team2Goals: Math.round(team2Goals),
+      finalScore
+    };
   } catch (err) {
     console.warn(`⚠️ [365] fetchResult failed for ${externalId}:`, err.message);
     return null;

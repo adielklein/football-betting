@@ -82,16 +82,38 @@ const fetchUpcomingFixtures = async ({ footballDataCode, fromDate, toDate, refre
 // football-data.org free tier doesn't provide odds
 const fetchOddsForFixture = async () => null;
 
+// football-data.org:
+//   score.fullTime    = שערים ב-90 דקות + תוספת
+//   score.extraTime   = שערים בהארכה (תוספתיים)
+//   score.penalties   = פנדלים
+//   score.duration    = "REGULAR" | "EXTRA_TIME" | "PENALTY_SHOOTOUT"
 const fetchResult = async (externalId) => {
   if (!externalId) return null;
   try {
     const json = await apiGet(`/matches/${externalId}`);
-    console.log(`⚽ [FD] match ${externalId} status=${json.status}, score=${json.score?.fullTime?.home}-${json.score?.fullTime?.away}`);
+    console.log(`⚽ [FD] match ${externalId} status=${json.status} duration=${json.score?.duration} ft=${json.score?.fullTime?.home}-${json.score?.fullTime?.away}`);
     if (json.status !== 'FINISHED') return null;
-    const home = json.score?.fullTime?.home;
-    const away = json.score?.fullTime?.away;
-    if (home == null || away == null) return null;
-    return { team1Goals: home, team2Goals: away };
+    const ft = json.score?.fullTime;
+    const et = json.score?.extraTime;
+    const pens = json.score?.penalties;
+    const duration = json.score?.duration || 'REGULAR';
+    if (ft?.home == null || ft?.away == null) return null;
+
+    const team1Goals = ft.home;
+    const team2Goals = ft.away;
+
+    let finalScore = null;
+    if (duration !== 'REGULAR') {
+      // המשחק עבר ל-ET או פנדלים
+      const final1 = (ft.home || 0) + (et?.home || 0);
+      const final2 = (ft.away || 0) + (et?.away || 0);
+      finalScore = { team1Goals: final1, team2Goals: final2 };
+      if (pens?.home != null && pens?.away != null) {
+        finalScore.penalties = { team1: pens.home, team2: pens.away };
+      }
+    }
+
+    return { team1Goals, team2Goals, finalScore };
   } catch (err) {
     console.warn(`⚠️ [FD] fetchResult failed for ${externalId}:`, err.message);
     return null;

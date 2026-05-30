@@ -333,7 +333,12 @@ router.post('/sync-results/:weekId', async (req, res) => {
           results.notFinished++;
           continue;
         }
-        m.result = { team1Goals: result.team1Goals, team2Goals: result.team2Goals };
+        const newResult = {
+          team1Goals: result.team1Goals,
+          team2Goals: result.team2Goals
+        };
+        if (result.finalScore) newResult.finalScore = result.finalScore;
+        m.result = newResult;
         m.resultSource = `auto:${m.externalProvider}`;
         m.resultUpdatedAt = new Date();
         await m.save();

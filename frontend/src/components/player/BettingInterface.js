@@ -556,6 +556,12 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   <span style={{ fontWeight: '800', fontSize: '15px', color: '#333' }}>
                     {match.result.team1Goals}-{match.result.team2Goals}
                   </span>
+                  {match.result.finalScore && (
+                    <span style={{ fontSize: '11px', color: '#888', fontWeight: 'normal' }}>
+                      ({match.result.finalScore.team1Goals}-{match.result.finalScore.team2Goals}
+                      {match.result.finalScore.penalties && `, פנדלים ${match.result.finalScore.penalties.team1}-${match.result.finalScore.penalties.team2}`} לאחר הארכה)
+                    </span>
+                  )}
                   {isSaved && (
                     <span style={{
                       padding: '2px 10px',

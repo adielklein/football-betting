@@ -1740,6 +1740,15 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                             fontWeight: 'bold'
                           }}>
                             ✓ תוצאה סופית: {match.result.team1Goals}-{match.result.team2Goals}
+                            {match.result.finalScore && (
+                              <span style={{ marginRight: '0.5rem', fontSize: '12px', fontWeight: 'normal', color: '#5a6c5e' }}>
+                                ({match.result.finalScore.team1Goals}-{match.result.finalScore.team2Goals}
+                                {match.result.finalScore.penalties &&
+                                  `, פנדלים ${match.result.finalScore.penalties.team1}-${match.result.finalScore.penalties.team2}`
+                                }
+                                {' לאחר הארכה'})
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>

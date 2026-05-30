@@ -46,7 +46,17 @@ const matchSchema = new mongoose.Schema({
   
   result: {
     team1Goals: { type: Number },
-    team2Goals: { type: Number }
+    team2Goals: { type: Number },
+    // תוצאה סופית כולל הארכה/פנדלים (רק אם המשחק עבר ל-ET)
+    // התוצאה הראשית (team1Goals/team2Goals) היא תמיד ה-90 דקות
+    finalScore: {
+      team1Goals: { type: Number },
+      team2Goals: { type: Number },
+      penalties: {
+        team1: { type: Number },
+        team2: { type: Number }
+      }
+    }
   },
 
   // 🆕 יחסים (Odds) - אופציונלי
