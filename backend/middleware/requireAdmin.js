@@ -29,4 +29,33 @@ async function requireAdmin(req, res, next) {
   }
 }
 
-module.exports = { requireAdmin, INTERNAL_TOKEN };
+// לנתיבים אישיים שמקבלים מזהה משתמש בגוף הבקשה (הרשמה להתראות, הגדרות,
+// שליחת בדיקה). משתמש רשאי לפעול על עצמו בלבד; מנהל רשאי לפעול על כל אחד.
+// בלי זה כל אחד יכול היה לבטל את ההתראות של מישהו אחר או להציף אותו.
+function requireSelfOrAdmin(getTargetId) {
+  return async (req, res, next) => {
+    if (req.headers['x-internal-token'] === INTERNAL_TOKEN) return next();
+
+    const requesterId = req.headers['x-user-id'] || req.body?.adminId;
+    if (!requesterId) {
+      return res.status(401).json({ message: 'נדרשת הזדהות' });
+    }
+
+    const targetId = getTargetId(req);
+    if (targetId && String(requesterId) === String(targetId)) return next();
+
+    try {
+      const user = await User.findById(requesterId).select('role name');
+      if (user && user.role === 'admin') {
+        req.adminUser = user;
+        return next();
+      }
+    } catch (err) {
+      // נופל להודעת ההרשאה שלמטה
+    }
+
+    return res.status(403).json({ message: 'אין הרשאה לפעול עבור משתמש אחר' });
+  };
+}
+
+module.exports = { requireAdmin, requireSelfOrAdmin, INTERNAL_TOKEN };

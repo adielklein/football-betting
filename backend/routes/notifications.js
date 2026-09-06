@@ -1,5 +1,5 @@
 const express = require('express');
-const { requireAdmin } = require('../middleware/requireAdmin');
+const { requireAdmin, requireSelfOrAdmin } = require('../middleware/requireAdmin');
 const router = express.Router();
 const User = require('../models/User');
 const InAppNotification = require('../models/InAppNotification');
@@ -113,7 +113,7 @@ router.get('/all-users', async (req, res) => {
 });
 
 // 🔧 שמור subscription - תמיכה בשני המבנים
-router.post('/subscribe', async (req, res) => {
+router.post('/subscribe', requireSelfOrAdmin((req) => req.body?.userId), async (req, res) => {
   try {
     // silent - סנכרון רקע של מנוי קיים. בלעדיו כל פתיחה של האפליקציה
     // הייתה שולחת התראת "התראות הופעלו".
@@ -187,7 +187,7 @@ router.post('/subscribe', async (req, res) => {
 });
 
 // 🔧 בטל subscription
-router.post('/unsubscribe', async (req, res) => {
+router.post('/unsubscribe', requireSelfOrAdmin((req) => req.body?.userId), async (req, res) => {
   try {
     const { userId, endpoint } = req.body;
     
@@ -229,7 +229,7 @@ router.post('/unsubscribe', async (req, res) => {
 });
 
 // עדכן הגדרות
-router.patch('/settings', async (req, res) => {
+router.patch('/settings', requireSelfOrAdmin((req) => req.body?.userId), async (req, res) => {
   try {
     const { userId, hoursBeforeLock, soundEnabled, exactScoreAlerts } = req.body;
 
@@ -324,7 +324,7 @@ router.get('/latest', async (req, res) => {
 });
 
 // 🔧 בדיקת התראה - תומך בשני המבנים
-router.post('/test', async (req, res) => {
+router.post('/test', requireSelfOrAdmin((req) => req.body?.userId), async (req, res) => {
   try {
     const { userId } = req.body;
     
