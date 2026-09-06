@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import TeamLogo from '../TeamLogo';
 import LiveScore from './LiveScore';
 import useLiveScores from '../../services/useLiveScores';
+import MatchInsightsModal from './MatchInsightsModal';
 
 function AllBetsViewer({ weeks, user }) {
   const [selectedWeek, setSelectedWeek] = useState(null);
@@ -12,6 +13,7 @@ function AllBetsViewer({ weeks, user }) {
   const [expandedMatches, setExpandedMatches] = useState({});
 
   const { liveByMatchId } = useLiveScores(selectedWeek?._id);
+  const [insightsFor, setInsightsFor] = useState(null);
 
   const [selectedSeason, setSelectedSeason] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
@@ -267,9 +269,39 @@ function AllBetsViewer({ weeks, user }) {
                     </div>
 
                     <div style={{ textAlign: 'center', fontWeight: '700', fontSize: '14px', marginBottom: '0.3rem', color: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', flexWrap: 'wrap' }}>
-                      <TeamLogo name={match.team1} />
-                      {match.team1} נגד {match.team2}
-                      <TeamLogo name={match.team2} />
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setInsightsFor({ match, focusTeam: 1 }); }}
+                        aria-label={`נתונים על ${match.team1}`}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '4px',
+                          background: 'transparent', border: 'none', padding: '2px 4px',
+                          borderRadius: '8px', font: 'inherit', color: 'inherit',
+                          fontWeight: 700, cursor: 'pointer',
+                          WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation'
+                        }}
+                      >
+                        <TeamLogo name={match.team1} />
+                        {match.team1}
+                        <span style={{ fontSize: '9px', opacity: 0.55 }} aria-hidden="true">📊</span>
+                      </button>
+                      <span style={{ color: '#999', fontWeight: 500 }}>נגד</span>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setInsightsFor({ match, focusTeam: 2 }); }}
+                        aria-label={`נתונים על ${match.team2}`}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '4px',
+                          background: 'transparent', border: 'none', padding: '2px 4px',
+                          borderRadius: '8px', font: 'inherit', color: 'inherit',
+                          fontWeight: 700, cursor: 'pointer',
+                          WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation'
+                        }}
+                      >
+                        <TeamLogo name={match.team2} />
+                        {match.team2}
+                        <span style={{ fontSize: '9px', opacity: 0.55 }} aria-hidden="true">📊</span>
+                      </button>
                       {match.result && match.result.team1Goals !== undefined && (
                         <span style={{ fontSize: '12px', color: '#2e7d32', flexShrink: 0 }}>
                           ({match.result.team1Goals}-{match.result.team2Goals})
@@ -366,6 +398,14 @@ function AllBetsViewer({ weeks, user }) {
             </div>
           )}
         </div>
+      )}
+
+      {insightsFor && (
+        <MatchInsightsModal
+          match={insightsFor.match}
+          focusTeam={insightsFor.focusTeam}
+          onClose={() => setInsightsFor(null)}
+        />
       )}
     </div>
   );
