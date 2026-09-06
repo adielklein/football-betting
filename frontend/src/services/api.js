@@ -241,10 +241,11 @@ export const api = {
     return json;
   }),
 
-  calculateScores: (weekId) => fetch(`${API_BASE_URL}/scores/calculate/${weekId}`, {
+  // matchIds = המשחקים שהתוצאה שלהם נכנסה עכשיו. רק עליהם נשלחת התראת "בול"
+  calculateScores: (weekId, { matchIds = [], adminId } = {}) => fetch(`${API_BASE_URL}/scores/calculate/${weekId}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({})
+    body: JSON.stringify({ matchIds, adminId })
   }).then(async res => {
     const json = await res.json();
     if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
@@ -266,16 +267,4 @@ export const api = {
     body: JSON.stringify({ prediction })
   }).then(res => res.json()),
 
-  // Scores
-  calculateScores: (weekId) => {
-    console.log('API: Calculating scores for week', weekId);
-    return fetch(`${API_BASE_URL}/scores/calculate/${weekId}`, {
-      method: 'POST'
-    }).then(res => {
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      return res.json();
-    });
-  }
 };

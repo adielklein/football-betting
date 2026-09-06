@@ -328,7 +328,7 @@ const runResultsSync = async () => {
           await fetch(`${RENDER_URL}/api/scores/calculate/${w._id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: '{}'
+            body: JSON.stringify({ matchIds: j.updatedMatchIds || [] })
           });
         }
       } catch (e) {

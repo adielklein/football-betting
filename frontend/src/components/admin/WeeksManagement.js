@@ -1343,7 +1343,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                     const calcRes = await fetch(`${API_URL}/scores/calculate/${selectedWeek._id}`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: '{}'
+                      // המשחקים שהתוצאה שלהם נכנסה עכשיו - בלעדיהם לא נשלחת התראת "בול"
+                      body: JSON.stringify({ matchIds: r.updatedMatchIds || [] })
                     });
                     const calcJson = await calcRes.json().catch(() => ({}));
                     console.log('🔄 [SYNC] score calc response:', calcJson);

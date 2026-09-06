@@ -13,7 +13,13 @@ const router = express.Router();
 router.post('/calculate/:weekId', async (req, res) => {
   try {
     const weekId = req.params.weekId;
-    const { matchId, adminId } = req.body || {};
+    const { matchId, matchIds, adminId } = req.body || {};
+
+    // המשחקים שהתוצאה שלהם נכנסה בבקשה הזו - רק עליהם נשלחת התראת "בול".
+    // בלי זה, כל חישוב ניקוד מחדש היה מפוצץ את כולם בהתראות על משחקים ישנים.
+    const notifyMatchIds = new Set(
+      [...(Array.isArray(matchIds) ? matchIds : []), ...(matchId ? [matchId] : [])].map(String)
+    );
 
     // Get week info for month exclusion check
     const week = await Week.findById(weekId);
@@ -68,13 +74,15 @@ router.post('/calculate/:weekId', async (req, res) => {
           totalPoints += points;
 
           // Track exact scores only for the specific match that was just updated
-          if (matchId && match._id.toString() === matchId &&
+          if (notifyMatchIds.has(match._id.toString()) &&
               bet.prediction.team1Goals === match.result.team1Goals &&
               bet.prediction.team2Goals === match.result.team2Goals) {
             exactCount++;
             exactMatches.push({
               team1: match.team1,
               team2: match.team2,
+              // הסדר הפוך בכוונה: בשורה עברית (RTL) רצף ספרות מוצג LTR, ולכן
+              // "1-2" נראה עם ה-2 צמוד לקבוצה הימנית (team1). אל תהפוך בחזרה.
               score: `${match.result.team2Goals}-${match.result.team1Goals}`
             });
           }

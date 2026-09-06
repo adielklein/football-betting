@@ -307,7 +307,7 @@ router.post('/sync-results/:weekId', async (req, res) => {
       'SofaScore': sofaScoreApi
     };
 
-    const results = { checked: 0, skippedManual: 0, skippedFuture: 0, skippedNoExternal: 0, discovered: 0, notFinished: 0, updated: 0, errors: [], debug: [] };
+    const results = { checked: 0, skippedManual: 0, skippedFuture: 0, skippedNoExternal: 0, discovered: 0, notFinished: 0, updated: 0, updatedMatchIds: [], errors: [], debug: [] };
     const now = Date.now();
 
     for (const m of matches) {
@@ -367,6 +367,7 @@ router.post('/sync-results/:weekId', async (req, res) => {
         m.resultUpdatedAt = new Date();
         await m.save();
         results.updated++;
+        results.updatedMatchIds.push(m._id.toString());
       } catch (err) {
         results.errors.push({ matchId: m._id, reason: err.message });
       }
