@@ -3,6 +3,7 @@ import Login from './components/Login';
 import AdminView from './components/admin/AdminView';
 import PlayerView from './components/player/PlayerView';
 import { applyTheme } from './themes'; // 🎨 יבוא פונקציית ערכות הנושא
+import UpdateBanner from './components/UpdateBanner';
 import './index.css';
 
 function App() {
@@ -208,6 +209,8 @@ function App() {
       ) : (
         <PlayerView user={currentUser} onLogout={handleLogout} />
       )}
+
+      <UpdateBanner />
 
       {inAppNotification && (
         <div style={{

@@ -611,3 +611,16 @@ tr:hover {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.55; }
 }
+
+/* רצועת "גרסה חדשה" - ראה components/UpdateBanner.js */
+@keyframes updateBannerIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes updateBannerIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+}
