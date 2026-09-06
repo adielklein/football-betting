@@ -243,19 +243,30 @@ const sameTeam = (a, b) => {
   return eq(normalizeTeamName(hebrewToEnglish(a)), B) || eq(A, normalizeTeamName(hebrewToEnglish(b)));
 };
 
+// מנרמל finalScore. חשוב: mongoose ממציא את result.finalScore כאובייקט ריק
+// אבל truthy ({penalties:{}}) גם כשבמסד אין שדה כזה בכלל, ולכן אי אפשר
+// להסתמך על בדיקת קיום - בודקים שיש ערכים אמיתיים.
+const normalizeFinalScore = (fs) => {
+  if (!fs || fs.team1Goals == null || fs.team2Goals == null) return null;
+  const p = fs.penalties;
+  return {
+    team1Goals: fs.team1Goals,
+    team2Goals: fs.team2Goals,
+    penalties: p && p.team1 != null && p.team2 != null ? { team1: p.team1, team2: p.team2 } : null
+  };
+};
+
 // האם התוצאה שהתקבלה זהה למה שכבר שמור (כולל הארכה ופנדלים)
 const sameResult = (prev, next) => {
   if (!prev || prev.team1Goals !== next.team1Goals || prev.team2Goals !== next.team2Goals) return false;
-  const a = prev.finalScore;
-  const b = next.finalScore;
+  const a = normalizeFinalScore(prev.finalScore);
+  const b = normalizeFinalScore(next.finalScore);
   if (!a && !b) return true;
   if (!a || !b) return false;
   if (a.team1Goals !== b.team1Goals || a.team2Goals !== b.team2Goals) return false;
-  const ap = a.penalties;
-  const bp = b.penalties;
-  if (!ap && !bp) return true;
-  if (!ap || !bp) return false;
-  return ap.team1 === bp.team1 && ap.team2 === bp.team2;
+  if (!a.penalties && !b.penalties) return true;
+  if (!a.penalties || !b.penalties) return false;
+  return a.penalties.team1 === b.penalties.team1 && a.penalties.team2 === b.penalties.team2;
 };
 
 // 🔎 גילוי externalId למשחק שלא יובא ממאגר
