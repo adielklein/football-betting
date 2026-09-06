@@ -180,7 +180,22 @@ const findWeeksToSync = async () => {
 
   const candidateIds = [...new Set([...recentIds, ...pendingIds].map(String))];
   if (candidateIds.length === 0) return [];
-  return Week.find({ _id: { $in: candidateIds }, locked: false });
+  // בכוונה בלי סינון לפי locked: הנעילה נסגרת בבעיטת הפתיחה, בדיוק כשהתוצאות
+  // מתחילות להיכנס. סינון לפי locked היה עוצר את הסנכרון של כל שבוע פעיל.
+  return Week.find({ _id: { $in: candidateIds } });
+};
+
+// נעילת שבועות שזמן הנעילה שלהם עבר. עד עכשיו הדגל locked התהפך רק כשמישהו
+// ניסה להמר באיחור, ולכן שבועות ישנים נשארו מסומנים כפתוחים לנצח. ההימור עצמו
+// תמיד נחסם לפי lockTime, כך שזו התאמה של המצב במסד למה שכבר קורה בפועל.
+const lockExpiredWeeks = async () => {
+  const res = await Week.updateMany(
+    { locked: false, lockTime: { $ne: null, $lte: new Date() } },
+    { $set: { locked: true } }
+  );
+  if (res.modifiedCount > 0) {
+    console.log(`🔒 [CRON] locked ${res.modifiedCount} week(s) whose lock time passed`);
+  }
 };
 
 // האם יש בשבוע תוצאה שנכנסה אחרי הפעם האחרונה שחושב הניקוד
@@ -196,6 +211,7 @@ const weekHasUnscoredResults = async (week) => {
 
 const runResultsSync = async () => {
   try {
+    await lockExpiredWeeks().catch((e) => console.warn('🔒 [CRON] lock sweep failed:', e.message));
     const RENDER_URL = process.env.NODE_ENV === 'development'
       ? `http://localhost:${process.env.PORT || 5000}`
       : 'https://football-betting-backend.onrender.com';

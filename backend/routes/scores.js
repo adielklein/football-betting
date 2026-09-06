@@ -8,6 +8,7 @@ const MonthExclusion = require('../models/MonthExclusion');
 const { sendNotificationToUsers } = require('../services/pushNotifications');
 const { logAdminAction } = require('../services/auditService');
 const { requireAdmin } = require('../middleware/requireAdmin');
+const { calculateMatchPoints } = require('../services/scoring');
 const router = express.Router();
 
 // Calculate scores for a week
@@ -214,59 +215,5 @@ router.get('/detailed', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
-// 🆕 Helper function to calculate points - עם תמיכה ביחסים
-function calculateMatchPoints(prediction, result, odds) {
-  const predTeam1 = prediction.team1Goals;
-  const predTeam2 = prediction.team2Goals;
-  const resultTeam1 = result.team1Goals;
-  const resultTeam2 = result.team2Goals;
-  
-  // חשב את הכיוון (outcome) של הניחוש והתוצאה
-  const predOutcome = predTeam1 > predTeam2 ? 'home' : predTeam1 < predTeam2 ? 'away' : 'draw';
-  const resultOutcome = resultTeam1 > resultTeam2 ? 'home' : resultTeam1 < resultTeam2 ? 'away' : 'draw';
-  
-  // בדוק אם יש יחסים מוגדרים למשחק
-  const hasOdds = odds && (odds.homeWin || odds.draw || odds.awayWin);
-  
-  if (hasOdds) {
-    // === מצב יחסים ===
-    
-    // מצא את היחס הרלוונטי לתוצאה האמיתית
-    let relevantOdd = 1;
-    if (resultOutcome === 'home' && odds.homeWin) relevantOdd = odds.homeWin;
-    else if (resultOutcome === 'draw' && odds.draw) relevantOdd = odds.draw;
-    else if (resultOutcome === 'away' && odds.awayWin) relevantOdd = odds.awayWin;
-    
-    // צלף בדיוק = כפול היחס חלקי 3
-    if (predTeam1 === resultTeam1 && predTeam2 === resultTeam2) {
-      return Math.round(relevantOdd * 2 / 3 * 10) / 10; // עיגול לעשירית
-    }
-    
-    // צדק בכיוון = היחס חלקי 3
-    if (predOutcome === resultOutcome) {
-      return Math.round(relevantOdd / 3 * 10) / 10; // עיגול לעשירית
-    }
-    
-    // טעה = 0
-    return 0;
-    
-  } else {
-    // === מצב קלאסי (ללא יחסים) ===
-    
-    // תוצאה מדויקת = 3 נקודות
-    if (predTeam1 === resultTeam1 && predTeam2 === resultTeam2) {
-      return 3;
-    }
-    
-    // כיוון נכון = 1 נקודה
-    if (predOutcome === resultOutcome) {
-      return 1;
-    }
-    
-    // טעות = 0
-    return 0;
-  }
-}
 
 module.exports = router;
