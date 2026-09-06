@@ -7,10 +7,11 @@ const Week = require('../models/Week');
 const MonthExclusion = require('../models/MonthExclusion');
 const { sendNotificationToUsers } = require('../services/pushNotifications');
 const { logAdminAction } = require('../services/auditService');
+const { requireAdmin } = require('../middleware/requireAdmin');
 const router = express.Router();
 
 // Calculate scores for a week
-router.post('/calculate/:weekId', async (req, res) => {
+router.post('/calculate/:weekId', requireAdmin, async (req, res) => {
   try {
     const weekId = req.params.weekId;
     const { matchId, matchIds, adminId } = req.body || {};

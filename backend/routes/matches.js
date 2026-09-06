@@ -3,6 +3,7 @@ const Match = require('../models/Match');
 const Week = require('../models/Week');
 const League = require('../models/League');
 const { logAdminAction } = require('../services/auditService');
+const { requireAdmin } = require('../middleware/requireAdmin');
 const router = express.Router();
 
 // 🆕 פונקציית עזר לחישוב השנה הנכונה
@@ -42,7 +43,7 @@ router.get('/week/:weekId', async (req, res) => {
 });
 
 // Create new match
-router.post('/', async (req, res) => {
+router.post('/', requireAdmin, async (req, res) => {
   try {
     const { weekId, leagueId, league, team1, team2, date, time, odds } = req.body;
     
@@ -141,7 +142,7 @@ router.post('/', async (req, res) => {
 });
 
 // Bulk create matches (for external API import)
-router.post('/bulk', async (req, res) => {
+router.post('/bulk', requireAdmin, async (req, res) => {
   try {
     const { weekId, leagueId, league, matches, adminId } = req.body;
 
@@ -237,7 +238,7 @@ router.post('/bulk', async (req, res) => {
 });
 
 // Update match details
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireAdmin, async (req, res) => {
   try {
     const { leagueId, team1, team2, date, time, odds, adminId } = req.body;
 
@@ -332,7 +333,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 // Update match result
-router.patch('/:id/result', async (req, res) => {
+router.patch('/:id/result', requireAdmin, async (req, res) => {
   try {
     const { team1Goals, team2Goals, adminId } = req.body;
 
@@ -363,7 +364,7 @@ router.patch('/:id/result', async (req, res) => {
 });
 
 // Delete match result
-router.delete('/:id/result', async (req, res) => {
+router.delete('/:id/result', requireAdmin, async (req, res) => {
   try {
     const match = await Match.findByIdAndUpdate(
       req.params.id,
@@ -392,7 +393,7 @@ router.delete('/:id/result', async (req, res) => {
 });
 
 // Delete match
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     const match = await Match.findById(req.params.id);
     if (!match) {

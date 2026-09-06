@@ -3,6 +3,7 @@ const Week = require('../models/Week');
 const Match = require('../models/Match');
 const { sendWeekActivationNotification } = require('../services/pushNotifications');
 const { logAdminAction } = require('../services/auditService');
+const { requireAdmin } = require('../middleware/requireAdmin');
 const router = express.Router();
 
 // Get all weeks
@@ -32,7 +33,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create new week
-router.post('/', async (req, res) => {
+router.post('/', requireAdmin, async (req, res) => {
   try {
     const { name, month, season } = req.body;
     
@@ -60,7 +61,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update week
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireAdmin, async (req, res) => {
   try {
     const weekId = req.params.id;
     const { name, month, season } = req.body;
@@ -95,7 +96,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 // Activate week with optional notifications
-router.patch('/:id/activate', async (req, res) => {
+router.patch('/:id/activate', requireAdmin, async (req, res) => {
   try {
     const { lockTime, sendNotifications, notificationTitle, notificationBody, imageUrl, adminId } = req.body;
     
@@ -165,7 +166,7 @@ router.patch('/:id/activate', async (req, res) => {
 });
 
 // Deactivate week
-router.patch('/:id/deactivate', async (req, res) => {
+router.patch('/:id/deactivate', requireAdmin, async (req, res) => {
   try {
     const { adminId } = req.body || {};
 
@@ -196,7 +197,7 @@ router.patch('/:id/deactivate', async (req, res) => {
 });
 
 // Delete week
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     const week = await Week.findById(req.params.id);
 

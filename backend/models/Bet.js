@@ -16,4 +16,9 @@ const betSchema = new mongoose.Schema({
 // Prevent duplicate bets for same user/match
 betSchema.index({ userId: 1, matchId: 1 }, { unique: true });
 
+// חישוב הניקוד שולף את כל ההימורים של שבוע לפי matchId, ומסכי ההיסטוריה
+// שולפים לפי weekId. בלי האינדקסים האלה שתי השאילתות סורקות את כל האוסף.
+betSchema.index({ matchId: 1 });
+betSchema.index({ weekId: 1 });
+
 module.exports = mongoose.model('Bet', betSchema);

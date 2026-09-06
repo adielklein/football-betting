@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const notificationRoutes = require('./routes/notifications');
 require('dotenv').config();
+const { requireAdmin, INTERNAL_TOKEN } = require('./middleware/requireAdmin');
 
 const app = express();
 
@@ -15,159 +16,11 @@ app.use(cors({
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Id', 'X-Internal-Token']
 }));
 
 app.use(express.json({ limit: '10mb' })); 
 app.use('/api/notifications', notificationRoutes);
-
-// 🆕 Migration endpoint - להוספת שדה theme למשתמשים קיימים
-app.post('/api/migrate/add-theme-field', async (req, res) => {
-  try {
-    console.log('🔄 Starting theme field migration...');
-    
-    const User = require('./models/User');
-    
-    const result = await User.updateMany(
-      { theme: { $exists: false } },
-      { $set: { theme: 'default' } }
-    );
-    
-    console.log(`✅ Updated ${result.modifiedCount} users with theme field`);
-    
-    const allUsers = await User.find({}).select('name username role theme');
-    
-    res.json({
-      success: true,
-      message: `Migration completed successfully. Updated ${result.modifiedCount} users.`,
-      modifiedCount: result.modifiedCount,
-      users: allUsers
-    });
-    
-  } catch (error) {
-    console.error('❌ Migration error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Migration failed: ' + error.message,
-      error: error.message
-    });
-  }
-});
-
-// 🔧 בדיקת subscriptions לפני ניקוי
-app.get('/api/admin/check-subscriptions', async (req, res) => {
-  try {
-    const User = require('./models/User');
-    const allUsers = await User.find({}, 'name username pushSettings');
-    
-    const problematicUsers = allUsers.filter(user => {
-      const hasEnabled = user.pushSettings?.enabled;
-      const hasSubscription = user.pushSettings?.subscription;
-      const isSubscriptionEmpty = hasSubscription && 
-        (hasSubscription === null || 
-         typeof hasSubscription !== 'object' ||
-         Object.keys(hasSubscription).length === 0);
-      
-      return hasEnabled && isSubscriptionEmpty;
-    });
-
-    res.json({
-      success: true,
-      totalUsers: allUsers.length,
-      problematicCount: problematicUsers.length,
-      problematicUsers: problematicUsers.map(u => ({
-        name: u.name,
-        username: u.username,
-        enabled: u.pushSettings?.enabled,
-        subscription: u.pushSettings?.subscription
-      }))
-    });
-
-  } catch (error) {
-    console.error('❌ Error checking subscriptions:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// 🔧 ניקוי subscriptions ריקים - Route זמני!
-// ⚠️ הסר את זה אחרי שימוש!
-app.post('/api/admin/cleanup-subscriptions', async (req, res) => {
-  try {
-    console.log('🔧 Starting subscriptions cleanup...');
-
-    const User = require('./models/User');
-    
-    // מצא כל המשתמשים
-    const allUsers = await User.find({});
-    console.log(`📊 Found ${allUsers.length} users`);
-
-    let cleanedCount = 0;
-    const cleanedUsers = [];
-
-    for (const user of allUsers) {
-      const hasEnabled = user.pushSettings?.enabled;
-      const hasSubscription = user.pushSettings?.subscription;
-      const isSubscriptionEmpty = hasSubscription && 
-        (hasSubscription === null || 
-         typeof hasSubscription !== 'object' ||
-         Object.keys(hasSubscription).length === 0);
-
-      // אם enabled = true אבל subscription ריק - תקן את זה
-      if (hasEnabled && isSubscriptionEmpty) {
-        console.log(`🔧 Fixing: ${user.name} (@${user.username})`);
-        
-        await User.findByIdAndUpdate(user._id, {
-          'pushSettings.enabled': false,
-          'pushSettings.subscription': null
-        });
-        
-        cleanedUsers.push({
-          name: user.name,
-          username: user.username,
-          before: { enabled: hasEnabled, subscription: hasSubscription },
-          after: { enabled: false, subscription: null }
-        });
-        
-        cleanedCount++;
-      }
-    }
-
-    // הצג סטטיסטיקות מעודכנות
-    const totalUsers = await User.countDocuments();
-    const enabledUsers = await User.countDocuments({
-      'pushSettings.enabled': true,
-      'pushSettings.subscription': { $exists: true, $ne: null }
-    });
-
-    const stats = {
-      totalUsers,
-      enabledUsers,
-      disabledUsers: totalUsers - enabledUsers,
-      percentage: totalUsers > 0 ? Math.round((enabledUsers / totalUsers) * 100) : 0
-    };
-
-    console.log('✅ Cleanup completed successfully!');
-
-    res.json({
-      success: true,
-      message: `ניקוי הסתיים בהצלחה! תוקנו ${cleanedCount} משתמשים`,
-      cleanedCount,
-      cleanedUsers,
-      stats,
-      instructions: 'עכשיו רענן את דף ניהול ההתראות - המספרים צריכים להתאים!'
-    });
-
-  } catch (error) {
-    console.error('❌ Cleanup error:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
 
 // חיבור למונגו
 const connectMongoDB = async () => {
@@ -218,7 +71,7 @@ app.use('/api/exclusions', exclusionsRoutes);
 app.use('/api/external', externalRoutes);
 
 // Audit log endpoint - רק לאדמין הראשי
-app.get('/api/audit', async (req, res) => {
+app.get('/api/audit', requireAdmin, async (req, res) => {
   try {
     const AuditLog = require('./models/AuditLog');
     const limit = parseInt(req.query.limit) || 500;
@@ -239,7 +92,7 @@ app.get('/api/audit', async (req, res) => {
 });
 
 // Debug endpoint
-app.get('/api/debug', async (req, res) => {
+app.get('/api/debug', requireAdmin, async (req, res) => {
   try {
     const stats = {
       users: 0,
@@ -294,10 +147,7 @@ app.get('/', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     authSystem: 'Username/Password',
     endpoints: {
-      debug: '/api/debug',
-      migrate: '/api/migrate/add-theme-field',
-      checkSubscriptions: '/api/admin/check-subscriptions',
-      cleanupSubscriptions: '/api/admin/cleanup-subscriptions',
+      debug: '/api/debug',
       auth: '/api/auth/*',
       weeks: '/api/weeks/*',
       matches: '/api/matches/*',
@@ -354,7 +204,7 @@ const runResultsSync = async () => {
     console.log(`🕐 [CRON] sync-results: scanning ${weeks.length} relevant week(s)`);
     for (const w of weeks) {
       try {
-        const r = await fetch(`${RENDER_URL}/api/external/sync-results/${w._id}`, { method: 'POST' });
+        const r = await fetch(`${RENDER_URL}/api/external/sync-results/${w._id}`, { method: 'POST', headers: { 'X-Internal-Token': INTERNAL_TOKEN } });
         const j = await r.json().catch(() => null);
 
         // תוצאות שנכנסו אך הניקוד מעולם לא רץ עליהן. קורה אם חישוב הניקוד
@@ -370,7 +220,7 @@ const runResultsSync = async () => {
           // ניקוד ישן מתבצע בשקט, בלי להציף התראות על משחקים מלפני ימים.
           await fetch(`${RENDER_URL}/api/scores/calculate/${w._id}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
             body: JSON.stringify({ matchIds: j?.updatedMatchIds || [] })
           });
         }
@@ -403,7 +253,7 @@ app.listen(PORT, () => {
       if (hour >= 1 && hour < 7) {
         return; // Sleep hours - don't ping
       }
-      fetch(`${RENDER_URL}/api/debug`)
+      fetch(`${RENDER_URL}/`)
         .then(() => console.log('🏓 Keep-alive ping sent'))
         .catch(() => console.log('🏓 Keep-alive ping failed (will retry)'));
     }, 14 * 60 * 1000);

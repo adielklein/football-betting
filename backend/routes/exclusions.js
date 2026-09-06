@@ -1,5 +1,6 @@
 const express = require('express');
 const MonthExclusion = require('../models/MonthExclusion');
+const { requireAdmin } = require('../middleware/requireAdmin');
 const router = express.Router();
 
 // Get excluded users for a month+season
@@ -20,7 +21,7 @@ router.get('/', async (req, res) => {
 });
 
 // Exclude a user from a month
-router.post('/', async (req, res) => {
+router.post('/', requireAdmin, async (req, res) => {
   try {
     const { userId, month, season } = req.body;
     await MonthExclusion.findOneAndUpdate(
@@ -35,7 +36,7 @@ router.post('/', async (req, res) => {
 });
 
 // Re-include a user in a month
-router.delete('/', async (req, res) => {
+router.delete('/', requireAdmin, async (req, res) => {
   try {
     const { userId, month, season } = req.body;
     await MonthExclusion.findOneAndDelete({ userId, month, season });

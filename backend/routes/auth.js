@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const { logAdminAction } = require('../services/auditService');
+const { requireAdmin } = require('../middleware/requireAdmin');
 const router = express.Router();
 
 // אוטומטית צור אדמין בהפעלת השרת
@@ -14,8 +15,15 @@ const createDefaultAdmin = async () => {
       return;
     }
 
-    // צור אדמין חדש
-    const hashedPassword = await bcrypt.hash('adiel537', 10);
+    // הסיסמה מגיעה ממשתנה סביבה בלבד. קודם היא הייתה כתובה כאן בטקסט גלוי,
+    // בריפו ציבורי, כך שכל מי שהגיע לקוד יכול היה להתחבר כמנהל.
+    const defaultPassword = process.env.DEFAULT_ADMIN_PASSWORD;
+    if (!defaultPassword) {
+      console.log('ℹ️ DEFAULT_ADMIN_PASSWORD not set - skipping default admin creation');
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
     const adminUser = new User({
       name: 'עדיאל קליין',
       username: 'adielklein',
@@ -25,7 +33,7 @@ const createDefaultAdmin = async () => {
     });
 
     await adminUser.save();
-    console.log('🎉 Default admin user created: adielklein / adiel537');
+    console.log('🎉 Default admin user created: adielklein');
   } catch (error) {
     console.error('Error creating default admin:', error);
   }
@@ -91,7 +99,7 @@ router.get('/users', async (req, res) => {
 });
 
 // Add new user (admin only)
-router.post('/users', async (req, res) => {
+router.post('/users', requireAdmin, async (req, res) => {
   try {
     console.log('Creating new user:', req.body);
     const { name, username, password, role = 'player', theme = 'default', adminId } = req.body;
@@ -140,7 +148,7 @@ router.post('/users', async (req, res) => {
 });
 
 // Update user (admin only)
-router.patch('/users/:id', async (req, res) => {
+router.patch('/users/:id', requireAdmin, async (req, res) => {
   try {
     console.log(`Updating user ${req.params.id}:`, req.body);
     const { name, username, role, password, theme, adminId } = req.body;
@@ -181,7 +189,7 @@ router.patch('/users/:id', async (req, res) => {
 });
 
 // Delete user (admin only)
-router.delete('/users/:id', async (req, res) => {
+router.delete('/users/:id', requireAdmin, async (req, res) => {
   try {
     console.log('Deleting user:', req.params.id);
     

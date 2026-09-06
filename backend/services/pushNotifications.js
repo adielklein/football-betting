@@ -535,6 +535,8 @@ console.log('🖼️ [PUSH SERVICE] Image support enabled with ImgBB upload');
 module.exports = {
   vapidKeys,
   sendNotification,
+  removeDeadSubscriptions,
+  deadEndpointsFrom,
   sendNotificationToAll,
   sendNotificationToUsers,
   sendWeekActivationNotification,

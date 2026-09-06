@@ -1,13 +1,16 @@
 const express = require('express');
+const { requireAdmin } = require('../middleware/requireAdmin');
 const router = express.Router();
 const User = require('../models/User');
 const InAppNotification = require('../models/InAppNotification');
-const { 
-  sendNotification, 
+const {
+  sendNotification,
+  removeDeadSubscriptions,
+  deadEndpointsFrom,
   sendNotificationToAll,
   sendNotificationToUsers,
-  vapidKeys, 
-  checkRoute 
+  vapidKeys,
+  checkRoute
 } = require('../services/pushNotifications');
 
 // 🔧 פונקציית עזר - מחזירה את כל ה-subscriptions (תומך בשני המבנים)
@@ -255,7 +258,7 @@ router.patch('/settings', async (req, res) => {
 });
 
 // ✅ שלח התראה לכולם - עם תמונה
-router.post('/send-to-all', async (req, res) => {
+router.post('/send-to-all', requireAdmin, async (req, res) => {
   try {
     const { title, body, imageUrl, data } = req.body; // ✅ הוספת imageUrl
     
@@ -281,7 +284,7 @@ router.post('/send-to-all', async (req, res) => {
 });
 
 // ✅ שלח התראה למשתמשים נבחרים - עם תמונה
-router.post('/send-to-users', async (req, res) => {
+router.post('/send-to-users', requireAdmin, async (req, res) => {
   try {
     const { userIds, title, body, imageUrl, data } = req.body; // ✅ הוספת imageUrl
     
@@ -360,10 +363,14 @@ router.post('/test', async (req, res) => {
 
     console.log(`✅ Test sent: ${sent} success, ${failed} failed`);
 
+    // גם בדיקה מנקה מנויים מתים, אחרת המשתמש נשאר מסומן כרשום
+    const purged = await removeDeadSubscriptions(user, deadEndpointsFrom(errors));
+
     res.json({
       message: 'Test notification sent',
       sent,
       failed,
+      purged,
       total: subscriptions.length,
       errors
     });

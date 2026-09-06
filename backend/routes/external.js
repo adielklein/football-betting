@@ -30,6 +30,7 @@ const fallbackProviders = (league, exclude) => {
   return candidates;
 };
 
+const { requireAdmin } = require('../middleware/requireAdmin');
 const router = express.Router();
 
 const formatDateForApi = (d) => {
@@ -317,7 +318,7 @@ const discoverExternalId = async (match, providersByName, debugCollector = null)
 };
 
 // 🆕 סנכרון תוצאות לשבוע - מושך תוצאות מהספקים, מעדכן רק משחקים בלי תוצאה ידנית
-router.post('/sync-results/:weekId', async (req, res) => {
+router.post('/sync-results/:weekId', requireAdmin, async (req, res) => {
   try {
     const weekId = req.params.weekId;
     const matches = await Match.find({ weekId }).populate('leagueId');
@@ -553,7 +554,7 @@ router.get('/debug/:leagueId', async (req, res) => {
 // 💰 רענון יחסי ווינר לשבוע קיים
 // ווינר מפרסם יחסים רק למחזור הקרוב, לכן שבוע שיובא מראש יקבל יחסים רק
 // כשמריצים את זה שוב קרוב למשחקים
-router.post('/sync-odds/:weekId', async (req, res) => {
+router.post('/sync-odds/:weekId', requireAdmin, async (req, res) => {
   try {
     const matches = await Match.find({ weekId: req.params.weekId }).populate('leagueId');
     if (matches.length === 0) {

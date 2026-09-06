@@ -1,5 +1,6 @@
 const express = require('express');
 const League = require('../models/League');
+const { requireAdmin } = require('../middleware/requireAdmin');
 const router = express.Router();
 
 // 🔍 קבלת כל הליגות (כולל לא פעילות)
@@ -39,7 +40,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // ➕ יצירת ליגה חדשה (אדמין)
-router.post('/', async (req, res) => {
+router.post('/', requireAdmin, async (req, res) => {
   try {
     const { name, key, color, type, region, active, order, apiFootballId } = req.body;
 
@@ -83,7 +84,7 @@ router.post('/', async (req, res) => {
 });
 
 // ✏️ עדכון ליגה (אדמין)
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireAdmin, async (req, res) => {
   try {
     const { name, key, color, type, region, active, order, apiFootballId } = req.body;
 
@@ -139,7 +140,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 // 🗑️ מחיקת ליגה (אדמין)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     const leagueId = req.params.id;
     
@@ -170,7 +171,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // 🔄 אתחול ליגות ברירת מחדל (פעם אחת)
-router.post('/initialize', async (req, res) => {
+router.post('/initialize', requireAdmin, async (req, res) => {
   try {
     // בדוק אם יש כבר ליגות
     const existingCount = await League.countDocuments();
@@ -225,7 +226,7 @@ router.post('/initialize', async (req, res) => {
 
 // 🌍 הוספת/עדכון חבילת ליגות+גביעים אירופית (אדמין)
 // מוסיף ליגות חסרות ומעדכן apiFootballId לקיימות
-router.post('/seed-european', async (req, res) => {
+router.post('/seed-european', requireAdmin, async (req, res) => {
   try {
     // עדיפות ספקים: football-data.org > SofaScore > ESPN
     const seedLeagues = [
