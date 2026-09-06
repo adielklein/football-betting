@@ -230,17 +230,70 @@ const outcomeFor = (game, teamId) => {
   };
 };
 
-// כל המשחקים שהסתיימו של קבוצה (על פני כל המסגרות), החדשים ראשונים
-const fetchTeamGames = async (competitorId) => {
+const finishedNewestFirst = (games) =>
+  (games || [])
+    .filter((g) => g.statusGroup === 4)
+    .sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+
+// הנתיב לעמוד הישן יותר של אותה רשימה. 365 מחזיר נתיב מלא שכולל כבר /web.
+const olderPagePath = (json) => {
+  const prev = json?.paging?.previousPage;
+  return prev ? prev.replace(/^\/web/, '') : null;
+};
+
+// כל המשחקים שהסתיימו של קבוצה (על פני כל המסגרות), החדשים ראשונים.
+// מוחזר גם מצביע לעמוד הקודם, כדי שחיפוש ראש-בראש יוכל להמשיך מכאן
+// במקום לשלוף שוב את אותו עמוד ראשון.
+const fetchTeamGamesPage = async (competitorId) => {
   try {
     const json = await apiGet(`/games/results/?appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&competitors=${competitorId}`);
-    return (json.games || [])
-      .filter((g) => g.statusGroup === 4)
-      .sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+    return { games: finishedNewestFirst(json.games), nextPath: olderPagePath(json) };
   } catch (err) {
     console.warn(`⚠️ [365] fetchTeamGames failed for ${competitorId}:`, err.message);
-    return [];
+    return { games: [], nextPath: null };
   }
+};
+
+const fetchTeamGames = async (competitorId) => (await fetchTeamGamesPage(competitorId)).games;
+
+// מפגשים קודמים בין שתי קבוצות.
+//
+// ל-365 אין endpoint ייעודי לראש-בראש - competitors= הוא סינון "או", לא "וגם".
+// לכן דופדפים אחורה בתוצאות של קבוצה אחת ומסננים את המשחקים מול היריבה.
+// עמוד אחד מכסה חצי עונה בערך, ולכן בלי דפדוף כמעט תמיד יוצא ריק - וזו
+// הסיבה שהחלון הציג "אין מפגשים" גם לזוגות שנפגשים כל שנה.
+//
+// 365 מאט מאוד תחת בקשות רצופות (עמוד בודד יכול לקחת 4 שניות), ולכן:
+// העמוד הראשון מגיע מהשליפה שכבר נעשתה עבור הכושר, הדפדוף מוגבל בכמות
+// עמודים וגם בתקציב זמן, ומפסיקים ברגע שנאספו מספיק מפגשים.
+const MAX_H2H_PAGES = 3;
+const WANTED_H2H = 5;
+const H2H_TIME_BUDGET_MS = 6000;
+
+const fetchHeadToHead = async (teamId, opponentId, { seedGames = [], seedNextPath = null } = {}) => {
+  if (!teamId || !opponentId) return [];
+
+  const isMeeting = (g) => {
+    const ids = [g.homeCompetitor?.id, g.awayCompetitor?.id];
+    return ids.includes(teamId) && ids.includes(opponentId);
+  };
+
+  const meetings = seedGames.filter(isMeeting);
+  let path = seedNextPath;
+  const deadline = Date.now() + H2H_TIME_BUDGET_MS;
+
+  try {
+    for (let page = 0; page < MAX_H2H_PAGES; page++) {
+      if (!path || meetings.length >= WANTED_H2H || Date.now() > deadline) break;
+      const json = await apiGet(path);
+      meetings.push(...finishedNewestFirst(json.games).filter(isMeeting));
+      path = olderPagePath(json);
+    }
+  } catch (err) {
+    console.warn(`⚠️ [365] fetchHeadToHead ${teamId} vs ${opponentId} failed:`, err.message);
+  }
+
+  return meetings.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
 };
 
 const avg = (nums) => (nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null);
@@ -340,14 +393,24 @@ const fetchTeamInsights = async (externalId, { refresh = false, formSize = 5 } =
     console.warn(`⚠️ [365] standings unavailable for competition ${game.competitionId}:`, err.message);
   }
 
-  const [homeGames, awayGames] = await Promise.all([fetchTeamGames(homeC?.id), fetchTeamGames(awayC?.id)]);
+  const [homePage, awayPage] = await Promise.all([
+    fetchTeamGamesPage(homeC?.id),
+    fetchTeamGamesPage(awayC?.id)
+  ]);
+  const homeGames = homePage.games;
+  const awayGames = awayPage.games;
 
   const home = buildTeamBlock(homeC, homeGames, standingsRows, formSize);
   const away = buildTeamBlock(awayC, awayGames, standingsRows, formSize);
 
-  // ראש בראש - מתוך משחקי הבית שבהם היריבה היא קבוצת החוץ
-  const h2h = homeGames
-    .filter((g) => [g.homeCompetitor?.id, g.awayCompetitor?.id].includes(awayC?.id))
+  // ראש בראש. המשחק הנוכחי עצמו מסונן החוצה - כשהוא כבר הסתיים הוא חוזר
+  // בתוצאות של הקבוצה, ואין טעם להציג אותו כ"מפגש קודם" של עצמו.
+  const h2hGames = (await fetchHeadToHead(homeC?.id, awayC?.id, {
+    seedGames: homeGames,
+    seedNextPath: homePage.nextPath
+  })).filter((g) => g.id !== game.id);
+
+  const h2h = h2hGames
     .map((g) => {
       const o = outcomeFor(g, homeC?.id);
       if (!o) return null;
