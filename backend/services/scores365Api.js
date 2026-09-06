@@ -99,7 +99,48 @@ const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate,
   return fixtures;
 };
 
-const fetchOddsForFixture = async () => null;
+// יחסי ווינר (Winner) למשחק עתידי - מקבל apiId בפורמט "365_12345"
+// מחזיר { homeWin, draw, awayWin } מעוגל לעשירית, או null אם אין יחסים
+const fetchOddsForFixture = async (externalId, refresh = false) => {
+  if (!externalId) return null;
+  const id = externalId.startsWith('365_') ? externalId.slice(4) : externalId;
+  const cacheKey = `365_odds_${id}`;
+  if (!refresh) {
+    const hit = cacheGet(cacheKey);
+    if (hit !== null) return hit;
+  }
+  try {
+    const json = await apiGet(`/game/?appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&gameId=${id}`);
+    const game = json.game;
+    const lines = game?.bestOdds || [];
+
+    // מחפשים את קו ה"תוצאת סיום" (1X2, lineTypeId=1); מעדיפים את ווינר (bookmakerId=1)
+    const fullTimeLines = lines.filter((l) => l.lineTypeId === 1 && Array.isArray(l.options));
+    const line =
+      fullTimeLines.find((l) => l.bookmakerId === 1 || l.bookmaker?.name === 'ווינר') ||
+      fullTimeLines[0];
+    if (!line) {
+      cacheSet(cacheKey, null);
+      return null;
+    }
+
+    const round = (v) => (Number.isFinite(v) && v >= 1 ? Math.round(v * 10) / 10 : undefined);
+    const result = {};
+    for (const opt of line.options) {
+      const rate = opt.rate?.decimal;
+      if (opt.name === '1') result.homeWin = round(rate);
+      else if (opt.name === 'X') result.draw = round(rate);
+      else if (opt.name === '2') result.awayWin = round(rate);
+    }
+
+    const parsed = result.homeWin || result.draw || result.awayWin ? result : null;
+    cacheSet(cacheKey, parsed);
+    return parsed;
+  } catch (err) {
+    console.warn(`⚠️ [365] fetchOddsForFixture failed for ${externalId}:`, err.message);
+    return null;
+  }
+};
 
 // תוצאה למשחק שכבר נגמר - מקבל apiId (פורמט "365_12345")
 // מחזיר תוצאה ב-90 דקות + finalScore כולל הארכה/פנדלים אם המשחק התארך

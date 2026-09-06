@@ -8,7 +8,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
   const [weeks, setWeeks] = useState([]);
   const [selectedWeek, setSelectedWeek] = useState(null);
   const [matches, setMatches] = useState([]);
-  const [newWeek, setNewWeek] = useState({ name: '', month: '', season: '2025-26' });
+  const [newWeek, setNewWeek] = useState({ name: '', month: '', season: '2026-27' });
   const [newMatch, setNewMatch] = useState({ leagueId: '', team1: '', team2: '', date: '', time: '', oddsHome: '', oddsDraw: '', oddsAway: '' });
   const [editingMatch, setEditingMatch] = useState({});
   const [editingWeek, setEditingWeek] = useState(null);
@@ -213,7 +213,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
         throw new Error(error.message || 'Failed to create week');
       }
 
-      setNewWeek({ name: '', month: '', season: '2025-26' });
+      setNewWeek({ name: '', month: '', season: '2026-27' });
       await loadWeeks();
       alert('שבוע חדש נוצר בהצלחה!');
     } catch (error) {
@@ -806,7 +806,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
     if (!selectedWeek) return 'בחר שבוע';
     
     const monthLabel = months.find(m => m.value === selectedWeek.month)?.label || '';
-    const seasonText = selectedWeek.season && selectedWeek.season !== '2025-26' ? ` (${selectedWeek.season})` : '';
+    const seasonText = selectedWeek.season && selectedWeek.season !== '2026-27' ? ` (${selectedWeek.season})` : '';
     
     return `${selectedWeek.name} - ${monthLabel}${seasonText}`;
   };

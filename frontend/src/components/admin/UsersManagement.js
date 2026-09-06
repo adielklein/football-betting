@@ -12,7 +12,7 @@ function UsersManagement({ users, loadData, user }) {
   const [editingUser, setEditingUser] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [exclusionMonth, setExclusionMonth] = useState(null);
-  const [exclusionSeason, setExclusionSeason] = useState('2025-26');
+  const [exclusionSeason, setExclusionSeason] = useState('2026-27');
   const [excludedUserIds, setExcludedUserIds] = useState([]);
   const [loadingExclusions, setLoadingExclusions] = useState(false);
   const [exclusionsOpen, setExclusionsOpen] = useState(false);
