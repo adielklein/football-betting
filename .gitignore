@@ -22,3 +22,6 @@ Thumbs.db
 
 # Backups
 backups/
+# כלי פיתוח מקומיים - לא שייכים לריפו
+.claude/
+fm.json
