@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getThemesByCategory, getTheme } from '../../themes';
+import { toast } from '../../services/toast';
 
 function UsersManagement({ users, loadData, user }) {
   const [newUser, setNewUser] = useState({
@@ -80,13 +81,13 @@ function UsersManagement({ users, loadData, user }) {
       }
     } catch (error) {
       console.error('Error toggling exclusion:', error);
-      alert('שגיאה בעדכון');
+      toast.error('שגיאה בעדכון');
     }
   };
 
   const handleAddUser = async () => {
     if (!newUser.name || !newUser.username || !newUser.password) {
-      alert('יש למלא שם, שם משתמש וסיסמה');
+      toast.warning('יש למלא שם, שם משתמש וסיסמה');
       return;
     }
 
@@ -100,14 +101,14 @@ function UsersManagement({ users, loadData, user }) {
       if (response.ok) {
         setNewUser({ name: '', username: '', password: '', role: 'player', theme: 'default' });
         await loadData();
-        alert('משתמש חדש נוסף בהצלחה!');
+        toast.success('משתמש חדש נוסף בהצלחה!');
       } else {
         const error = await response.json();
-        alert('שגיאה: ' + error.message);
+        toast.error('שגיאה: ' + error.message);
       }
     } catch (error) {
       console.error('שגיאה בהוספת משתמש:', error);
-      alert('שגיאה בהוספת המשתמש');
+      toast.error('שגיאה בהוספת המשתמש');
     }
   };
 
@@ -154,7 +155,7 @@ function UsersManagement({ users, loadData, user }) {
           currentUser.username = editForm.username;
           currentUser.role = editForm.role;
           localStorage.setItem('football_betting_user', JSON.stringify(currentUser));
-          alert('ערכת נושא עודכנה בהצלחה! הדף יתרענן תוך שניה...');
+          toast.success('ערכת נושא עודכנה בהצלחה! הדף יתרענן תוך שניה...');
           setTimeout(() => { window.location.reload(); }, 1500);
           return;
         }
@@ -162,20 +163,20 @@ function UsersManagement({ users, loadData, user }) {
         setEditingUser(null);
         setEditForm({});
         await loadData();
-        alert('משתמש עודכן בהצלחה!');
+        toast.success('משתמש עודכן בהצלחה!');
       } else {
         const error = await response.json();
-        alert('שגיאה: ' + error.message);
+        toast.error('שגיאה: ' + error.message);
       }
     } catch (error) {
       console.error('שגיאה בעדכון משתמש:', error);
-      alert('שגיאה בעדכון המשתמש');
+      toast.error('שגיאה בעדכון המשתמש');
     }
   };
 
   const handleDeleteUser = async (userId, userName) => {
     if (userId === user?.id) {
-      alert('לא ניתן למחוק את המשתמש הנוכחי');
+      toast.error('לא ניתן למחוק את המשתמש הנוכחי');
       return;
     }
 
@@ -184,14 +185,14 @@ function UsersManagement({ users, loadData, user }) {
         const response = await fetch(`${API_URL}/auth/users/${userId}?adminId=${user?.id}`, { method: 'DELETE' });
         if (response.ok) {
           await loadData();
-          alert('משתמש נמחק בהצלחה!');
+          toast.success('משתמש נמחק בהצלחה!');
         } else {
           const error = await response.json();
-          alert('שגיאה: ' + error.message);
+          toast.error('שגיאה: ' + error.message);
         }
       } catch (error) {
         console.error('שגיאה במחיקת משתמש:', error);
-        alert('שגיאה במחיקת המשתמש');
+        toast.error('שגיאה במחיקת המשתמש');
       }
     }
   };

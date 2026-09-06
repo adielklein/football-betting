@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import TeamLogo from '../TeamLogo';
+import { toast } from '../../services/toast';
 
 function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, user }) {
   const [savingBet, setSavingBet] = useState(null);
@@ -28,7 +29,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
 
   const saveBet = async (playerId, matchId, team1Goals, team2Goals) => {
     try {
-      if (!selectedWeek) { alert('שגיאה: אין שבוע נבחר'); return false; }
+      if (!selectedWeek) { toast.error('שגיאה: אין שבוע נבחר'); return false; }
 
       const isCurrentUserAdmin = user && user.role === 'admin';
 
@@ -63,16 +64,16 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
         return true;
       } else {
         const errorData = await response.json();
-        if (errorData.message.includes('locked')) alert('🔒 השבוע נעול');
-        else if (errorData.message.includes('expired')) alert('⏰ זמן ההימורים הסתיים');
-        else if (errorData.message.includes('not active')) alert('❌ השבוע לא פעיל');
-        else alert('שגיאה: ' + errorData.message);
+        if (errorData.message.includes('locked')) toast.error('🔒 השבוע נעול');
+        else if (errorData.message.includes('expired')) toast.error('⏰ זמן ההימורים הסתיים');
+        else if (errorData.message.includes('not active')) toast.error('❌ השבוע לא פעיל');
+        else toast.error('שגיאה: ' + errorData.message);
         setSavingBet(null);
         return false;
       }
     } catch (error) {
       console.error('שגיאת רשת:', error);
-      alert('שגיאה ברשת');
+      toast.error('שגיאה ברשת');
       setSavingBet(null);
       return false;
     }
@@ -144,9 +145,9 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
           <button onClick={async () => {
             try {
               const response = await fetch(`${API_URL}/scores/calculate/${selectedWeek._id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: user?.id }) });
-              if (response.ok) { await loadWeekData(selectedWeek._id); alert('ניקוד חושב מחדש!'); }
-              else alert('שגיאה בחישוב ניקוד');
-            } catch (error) { alert('שגיאה בחישוב ניקוד'); }
+              if (response.ok) { await loadWeekData(selectedWeek._id); toast.success('ניקוד חושב מחדש!'); }
+              else toast.error('שגיאה בחישוב ניקוד');
+            } catch (error) { toast.error('שגיאה בחישוב ניקוד'); }
           }} style={{
             padding: '0.4rem 0.7rem',
             background: 'linear-gradient(135deg, #ffc107, #ffb300)',

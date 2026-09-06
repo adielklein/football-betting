@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from '../services/toast';
 
 function NotificationSettings({ user }) {
   const [isSupported, setIsSupported] = useState(false);
@@ -89,17 +90,17 @@ function NotificationSettings({ user }) {
     setLoading(true);
     try {
       const userId = getUserId();
-      if (!userId) { alert('שגיאה: לא ניתן לזהות את המשתמש'); setLoading(false); return; }
+      if (!userId) { toast.error('שגיאה: לא ניתן לזהות את המשתמש'); setLoading(false); return; }
 
       const permission = await Notification.requestPermission();
-      if (permission !== 'granted') { alert('יש לאשר התראות בדפדפן'); setLoading(false); return; }
+      if (permission !== 'granted') { toast.warning('יש לאשר התראות בדפדפן'); setLoading(false); return; }
 
       const registration = await navigator.serviceWorker.register('/service-worker.js');
       await navigator.serviceWorker.ready;
 
       const response = await fetch(`${API_URL}/notifications/vapid-public-key`);
       const data = await response.json();
-      if (!data.publicKey) { alert('שגיאה: חסר VAPID key'); setLoading(false); return; }
+      if (!data.publicKey) { toast.error('שגיאה: חסר VAPID key'); setLoading(false); return; }
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
@@ -114,12 +115,12 @@ function NotificationSettings({ user }) {
 
       if (saveResponse.ok) {
         setIsSubscribed(true);
-        alert('התראות הופעלו בהצלחה!');
+        toast.success('התראות הופעלו בהצלחה!');
       } else {
         throw new Error('Failed to save subscription');
       }
     } catch (error) {
-      alert('שגיאה בהפעלת התראות: ' + error.message);
+      toast.error('שגיאה בהפעלת התראות: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -129,7 +130,7 @@ function NotificationSettings({ user }) {
     setLoading(true);
     try {
       const userId = getUserId();
-      if (!userId) { alert('שגיאה: לא ניתן לזהות את המשתמש'); setLoading(false); return; }
+      if (!userId) { toast.error('שגיאה: לא ניתן לזהות את המשתמש'); setLoading(false); return; }
 
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
@@ -150,15 +151,15 @@ function NotificationSettings({ user }) {
         const result = await response.json();
         setIsSubscribed(false);
         if (result.devicesRemaining > 0) {
-          alert(`המכשיר הוסר! עוד ${result.devicesRemaining} מכשירים רשומים.`);
+          toast.success(`המכשיר הוסר! עוד ${result.devicesRemaining} מכשירים רשומים.`);
         } else {
-          alert('התראות בוטלו בהצלחה!');
+          toast.success('התראות בוטלו בהצלחה!');
         }
       } else {
         throw new Error('Failed to unsubscribe');
       }
     } catch (error) {
-      alert('שגיאה בביטול התראות: ' + error.message);
+      toast.error('שגיאה בביטול התראות: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -167,7 +168,7 @@ function NotificationSettings({ user }) {
   const updateSettings = async () => {
     try {
       const userId = getUserId();
-      if (!userId) { alert('שגיאה: לא ניתן לזהות את המשתמש'); return; }
+      if (!userId) { toast.error('שגיאה: לא ניתן לזהות את המשתמש'); return; }
 
       const response = await fetch(`${API_URL}/notifications/settings`, {
         method: 'PATCH',
@@ -175,17 +176,17 @@ function NotificationSettings({ user }) {
         body: JSON.stringify({ userId, hoursBeforeLock, soundEnabled: true, exactScoreAlerts })
       });
 
-      if (response.ok) alert('הגדרות עודכנו בהצלחה!');
+      if (response.ok) toast.success('הגדרות עודכנו בהצלחה!');
       else throw new Error('Failed to update');
     } catch (error) {
-      alert('שגיאה בעדכון הגדרות: ' + error.message);
+      toast.error('שגיאה בעדכון הגדרות: ' + error.message);
     }
   };
 
   const sendTestNotification = async () => {
     try {
       const userId = getUserId();
-      if (!userId) { alert('שגיאה: לא ניתן לזהות את המשתמש'); return; }
+      if (!userId) { toast.error('שגיאה: לא ניתן לזהות את המשתמש'); return; }
 
       const response = await fetch(`${API_URL}/notifications/test`, {
         method: 'POST',
@@ -195,12 +196,12 @@ function NotificationSettings({ user }) {
 
       if (response.ok) {
         const result = await response.json();
-        alert(result.sent > 1 ? `התראת בדיקה נשלחה ל-${result.sent} מכשירים!` : 'התראת בדיקה נשלחה!');
+        toast.success(result.sent > 1 ? `התראת בדיקה נשלחה ל-${result.sent} מכשירים!` : 'התראת בדיקה נשלחה!');
       } else {
-        alert('שגיאה בשליחת בדיקה');
+        toast.error('שגיאה בשליחת בדיקה');
       }
     } catch (error) {
-      alert('שגיאה: ' + error.message);
+      toast.error('שגיאה: ' + error.message);
     }
   };
 

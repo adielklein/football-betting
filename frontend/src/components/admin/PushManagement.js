@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from '../../services/toast';
 
 const API_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:5000/api'
@@ -38,7 +39,7 @@ function PushManagement() {
   const handleImageSelect = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) { alert('התמונה גדולה מדי! מקסימום 10MB'); e.target.value = ''; return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error('התמונה גדולה מדי! מקסימום 10MB'); e.target.value = ''; return; }
 
     try {
       setLoading(true);
@@ -57,10 +58,10 @@ function PushManagement() {
 
       if (!response.ok) throw new Error('Failed to upload');
       const data = await response.json();
-      if (data.success) { setNotificationImage(data.url); alert('התמונה הועלתה בהצלחה!'); }
+      if (data.success) { setNotificationImage(data.url); toast.success('התמונה הועלתה בהצלחה!'); }
       else throw new Error(data.message || 'Upload failed');
     } catch (error) {
-      alert('שגיאה בהעלאת התמונה: ' + error.message);
+      toast.error('שגיאה בהעלאת התמונה: ' + error.message);
       e.target.value = '';
     } finally {
       setLoading(false);
@@ -82,7 +83,7 @@ function PushManagement() {
   };
 
   const sendToAll = async () => {
-    if (!notificationForm.title || !notificationForm.body) { alert('נא למלא כותרת ותוכן'); return; }
+    if (!notificationForm.title || !notificationForm.body) { toast.warning('נא למלא כותרת ותוכן'); return; }
     if (!window.confirm('שלח התראה לכל המשתמשים?')) return;
     setLoading(true);
     try {
@@ -94,16 +95,16 @@ function PushManagement() {
       const result = await response.json();
       let msg = `התראה נשלחה ל-${result.users} משתמשים`;
       if (result.usersFailed > 0) msg += `\nנכשלה ל-${result.usersFailed} משתמשים`;
-      alert(msg);
+      toast.info(msg);
       setNotificationForm({ title: '', body: '' });
       setNotificationImage(null);
       await loadStats();
-    } catch (error) { alert('שגיאה בשליחת ההתראה'); } finally { setLoading(false); }
+    } catch (error) { toast.error('שגיאה בשליחת ההתראה'); } finally { setLoading(false); }
   };
 
   const sendToSelected = async () => {
-    if (!notificationForm.title || !notificationForm.body) { alert('נא למלא כותרת ותוכן'); return; }
-    if (selectedUsers.length === 0) { alert('נא לבחור לפחות משתמש אחד'); return; }
+    if (!notificationForm.title || !notificationForm.body) { toast.warning('נא למלא כותרת ותוכן'); return; }
+    if (selectedUsers.length === 0) { toast.warning('נא לבחור לפחות משתמש אחד'); return; }
     if (!window.confirm(`שלח התראה ל-${selectedUsers.length} משתמשים?`)) return;
     setLoading(true);
     try {
@@ -115,12 +116,12 @@ function PushManagement() {
       const result = await response.json();
       let msg = `התראה נשלחה ל-${result.users} משתמשים`;
       if (result.usersFailed > 0) msg += `\nנכשלה ל-${result.usersFailed} משתמשים`;
-      alert(msg);
+      toast.info(msg);
       setNotificationForm({ title: '', body: '' });
       setSelectedUsers([]);
       setNotificationImage(null);
       await loadStats();
-    } catch (error) { alert('שגיאה בשליחת ההתראה'); } finally { setLoading(false); }
+    } catch (error) { toast.error('שגיאה בשליחת ההתראה'); } finally { setLoading(false); }
   };
 
   const sendTestToUser = async (userId) => {
@@ -131,8 +132,8 @@ function PushManagement() {
       });
       if (!response.ok) throw new Error('Failed');
       const result = await response.json();
-      alert(`התראת בדיקה נשלחה! ${result.sent || 1} מכשירים`);
-    } catch (error) { alert('שגיאה בשליחת בדיקה'); }
+      toast.success(`התראת בדיקה נשלחה! ${result.sent || 1} מכשירים`);
+    } catch (error) { toast.error('שגיאה בשליחת בדיקה'); }
   };
 
   const getSubscribedUsers = () => users.filter(isUserSubscribed);

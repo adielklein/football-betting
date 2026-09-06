@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from '../../services/toast';
 
 function LeaguesManagement() {
   const [leagues, setLeagues] = useState([]);
@@ -31,7 +32,7 @@ function LeaguesManagement() {
 
   const handleCreateLeague = async () => {
     if (!newLeague.name || !newLeague.key) {
-      alert('שם ומפתח ליגה נדרשים');
+      toast.warning('שם ומפתח ליגה נדרשים');
       return;
     }
     try {
@@ -47,13 +48,13 @@ function LeaguesManagement() {
       if (response.ok) {
         setNewLeague({ name: '', key: '', color: '#6c757d', type: 'club', region: '', active: true, order: 0, apiFootballId: '' });
         await loadLeagues();
-        alert('ליגה נוצרה בהצלחה!');
+        toast.success('ליגה נוצרה בהצלחה!');
       } else {
         const error = await response.json();
-        alert('שגיאה: ' + error.message);
+        toast.error('שגיאה: ' + error.message);
       }
     } catch (error) {
-      alert('שגיאה ביצירת הליגה');
+      toast.error('שגיאה ביצירת הליגה');
     }
   };
 
@@ -76,13 +77,13 @@ function LeaguesManagement() {
         setEditingLeague(null);
         setEditForm({});
         await loadLeagues();
-        alert('ליגה עודכנה בהצלחה!');
+        toast.success('ליגה עודכנה בהצלחה!');
       } else {
         const error = await response.json();
-        alert('שגיאה: ' + error.message);
+        toast.error('שגיאה: ' + error.message);
       }
     } catch (error) {
-      alert('שגיאה בעדכון הליגה');
+      toast.error('שגיאה בעדכון הליגה');
     }
   };
 
@@ -92,13 +93,13 @@ function LeaguesManagement() {
         const response = await fetch(`${API_URL}/leagues/${leagueId}`, { method: 'DELETE' });
         if (response.ok) {
           await loadLeagues();
-          alert('ליגה נמחקה בהצלחה!');
+          toast.success('ליגה נמחקה בהצלחה!');
         } else {
           const error = await response.json();
-          alert('שגיאה: ' + error.message);
+          toast.error('שגיאה: ' + error.message);
         }
       } catch (error) {
-        alert('שגיאה במחיקת הליגה');
+        toast.error('שגיאה במחיקת הליגה');
       }
     }
   };
@@ -109,13 +110,13 @@ function LeaguesManagement() {
         const response = await fetch(`${API_URL}/leagues/initialize`, { method: 'POST' });
         if (response.ok) {
           await loadLeagues();
-          alert('ליגות ברירת מחדל נוצרו בהצלחה!');
+          toast.success('ליגות ברירת מחדל נוצרו בהצלחה!');
         } else {
           const error = await response.json();
-          alert('שגיאה: ' + error.message);
+          toast.error('שגיאה: ' + error.message);
         }
       } catch (error) {
-        alert('שגיאה באתחול ליגות');
+        toast.error('שגיאה באתחול ליגות');
       }
     }
   };

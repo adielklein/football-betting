@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import TeamLogo from '../TeamLogo';
 import ImportMatchesModal from './ImportMatchesModal';
+import { toast } from '../../services/toast';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -84,7 +85,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
       }
     } catch (error) {
       console.error('Error loading weeks:', error);
-      alert('שגיאה בטעינת השבועות');
+      toast.error('שגיאה בטעינת השבועות');
     }
   };
 
@@ -151,7 +152,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
 
   const handleEditWeek = async (weekId, name, month, season) => {
     if (!name || !name.trim()) {
-      alert('שם השבוע חובה');
+      toast.warning('שם השבוע חובה');
       return;
     }
 
@@ -185,20 +186,20 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
       }
       
       setEditingWeek(null);
-      alert('השבוע עודכן בהצלחה!');
+      toast.success('השבוע עודכן בהצלחה!');
     } catch (error) {
       console.error('Error updating week:', error);
-      alert('שגיאה בעדכון השבוע: ' + error.message);
+      toast.error('שגיאה בעדכון השבוע: ' + error.message);
     }
   };
 
   const createWeek = async () => {
     if (!newWeek.name) {
-      alert('יש להזין שם לשבוע');
+      toast.warning('יש להזין שם לשבוע');
       return;
     }
     if (!newWeek.month) {
-      alert('יש לבחור חודש');
+      toast.warning('יש לבחור חודש');
       return;
     }
 
@@ -216,16 +217,16 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
 
       setNewWeek({ name: '', month: '', season: '2026-27' });
       await loadWeeks();
-      alert('שבוע חדש נוצר בהצלחה!');
+      toast.success('שבוע חדש נוצר בהצלחה!');
     } catch (error) {
       console.error('Error creating week:', error);
-      alert('שגיאה ביצירת השבוע: ' + error.message);
+      toast.error('שגיאה ביצירת השבוע: ' + error.message);
     }
   };
 
   const deactivateWeek = async () => {
     if (!selectedWeek || !selectedWeek._id) {
-      alert('יש לבחור שבוע קודם');
+      toast.warning('יש לבחור שבוע קודם');
       return;
     }
 
@@ -242,18 +243,18 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
           throw new Error(error.message || 'Failed to deactivate week');
         }
 
-        alert('השבוע כובה בהצלחה. עכשיו אתה יכול לערוך אותו.');
+        toast.success('השבוע כובה בהצלחה. עכשיו אתה יכול לערוך אותו.');
         await loadData();
       } catch (error) {
         console.error('שגיאה בכיבוי שבוע:', error);
-        alert('שגיאה בכיבוי השבוע: ' + error.message);
+        toast.error('שגיאה בכיבוי השבוע: ' + error.message);
       }
     }
   };
 
   const deleteWeek = async () => {
     if (!selectedWeek || !selectedWeek._id) {
-      alert('יש לבחור שבוע קודם');
+      toast.warning('יש לבחור שבוע קודם');
       return;
     }
 
@@ -265,7 +266,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
 
         if (!response.ok) throw new Error('Failed to delete week');
 
-        alert('השבוע נמחק בהצלחה');
+        toast.success('השבוע נמחק בהצלחה');
         setSelectedWeek(null);
         setMatches([]);
         await loadWeeks();
@@ -275,7 +276,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
         }
       } catch (error) {
         console.error('שגיאה במחיקת שבוע:', error);
-        alert('שגיאה במחיקת השבוע');
+        toast.error('שגיאה במחיקת השבוע');
       }
     }
   };
@@ -340,7 +341,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
 
   const activateWeek = async () => {
     if (!selectedWeek || !selectedWeek._id || matches.length === 0) {
-      alert('יש להוסיף משחקים לפני הפעלת השבוע');
+      toast.warning('יש להוסיף משחקים לפני הפעלת השבוע');
       return;
     }
 
@@ -409,7 +410,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
       const earliestMatch = findEarliestMatch(matches);
       
       if (!earliestMatch || !earliestMatch.date || !earliestMatch.time) {
-        alert('לא נמצא משחק תקין עם תאריך ושעה');
+        toast.error('לא נמצא משחק תקין עם תאריך ושעה');
         return;
       }
 
@@ -505,7 +506,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
         }
       }
 
-      alert(successMessage);
+      toast.success(successMessage);
       
       await loadData();
       
@@ -521,29 +522,29 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
       setCustomNotificationBody("");
     } catch (error) {
       console.error('Error activating week:', error);
-      alert('שגיאה בהפעלת השבוע: ' + error.message);
+      toast.error('שגיאה בהפעלת השבוע: ' + error.message);
       setShowActivationDialog(false);
     }
   };
 
   const addMatch = async () => {
     if (!selectedWeek || !selectedWeek._id) {
-      alert('יש לבחור שבוע קודם');
+      toast.warning('יש לבחור שבוע קודם');
       return;
     }
 
     if (!newMatch.leagueId || !newMatch.team1 || !newMatch.team2 || !newMatch.date || !newMatch.time) {
-      alert('יש למלא את כל השדות');
+      toast.warning('יש למלא את כל השדות');
       return;
     }
 
     if (!newMatch.date.match(/^\d{1,2}\.\d{1,2}$/)) {
-      alert('פורמט תאריך לא נכון. השתמש בפורמט DD.MM (לדוגמה: 10.08)');
+      toast.error('פורמט תאריך לא נכון. השתמש בפורמט DD.MM (לדוגמה: 10.08)');
       return;
     }
 
     if (!newMatch.time.match(/^\d{1,2}:\d{2}$/)) {
-      alert('פורמט שעה לא נכון. השתמש בפורמט HH:MM (לדוגמה: 20:00)');
+      toast.error('פורמט שעה לא נכון. השתמש בפורמט HH:MM (לדוגמה: 20:00)');
       return;
     }
 
@@ -583,10 +584,10 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
         oddsAway: ''
       });
       await loadWeekData(selectedWeek._id);
-      alert('משחק נוסף בהצלחה!');
+      toast.success('משחק נוסף בהצלחה!');
     } catch (error) {
       console.error('שגיאה בהוספת משחק:', error);
-      alert('שגיאה בהוספת המשחק: ' + error.message);
+      toast.error('שגיאה בהוספת המשחק: ' + error.message);
     }
   };
 
@@ -623,17 +624,17 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
 
       if (scoresResponse.ok) {
         console.log('✅ ניקוד חושב מחדש בהצלחה');
-        alert('תוצאה נשמרה והניקוד חושב מחדש!');
+        toast.success('תוצאה נשמרה והניקוד חושב מחדש!');
       } else {
         console.log('⚠️ התוצאה נשמרה אבל הייתה בעיה בחישוב הניקוד');
-        alert('התוצאה נשמרה אבל הייתה בעיה בחישוב הניקוד');
+        toast.warning('התוצאה נשמרה אבל הייתה בעיה בחישוב הניקוד');
       }
 
       await loadWeekData(selectedWeek._id);
       
     } catch (error) {
       console.error('Error updating result:', error);
-      alert('שגיאה בעדכון התוצאה');
+      toast.error('שגיאה בעדכון התוצאה');
     }
   };
 
@@ -664,12 +665,12 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
         throw new Error(error.message || 'שגיאה בעדכון המשחק');
       }
 
-      alert('✅ המשחק עודכן בהצלחה!');
+      toast.success('✅ המשחק עודכן בהצלחה!');
       setEditingMatchDetails(null);
       await loadWeekData(selectedWeek._id);
     } catch (error) {
       console.error('שגיאה בעדכון משחק:', error);
-      alert('שגיאה בעדכון המשחק: ' + error.message);
+      toast.error('שגיאה בעדכון המשחק: ' + error.message);
     }
   };
 
@@ -684,11 +685,11 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
           throw new Error('שגיאה במחיקת המשחק');
         }
 
-        alert('✅ המשחק נמחק בהצלחה!');
+        toast.success('✅ המשחק נמחק בהצלחה!');
         await loadWeekData(selectedWeek._id);
       } catch (error) {
         console.error('שגיאה במחיקת משחק:', error);
-        alert('שגיאה במחיקת המשחק');
+        toast.error('שגיאה במחיקת המשחק');
       }
     }
   };
@@ -709,7 +710,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
         throw new Error(`שגיאה במחיקת תוצאה: ${response.status}`);
       }
 
-      alert('✅ התוצאה נמחקה בהצלחה!');
+      toast.success('✅ התוצאה נמחקה בהצלחה!');
       
       setEditingMatch(prev => {
         const newState = { ...prev };
@@ -721,7 +722,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
       
     } catch (error) {
       console.error('שגיאה במחיקת תוצאה:', error);
-      alert('שגיאה במחיקת התוצאה');
+      toast.error('שגיאה במחיקת התוצאה');
     }
   };
 
@@ -1339,7 +1340,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                   }
                   if (r.updated > 0) {
                     msg += '\n\n🔄 מריץ חישוב נקודות...';
-                    alert(msg);
+                    toast.info(msg);
                     console.log('🔄 [SYNC] calculating scores...');
                     const calcRes = await fetch(`${API_URL}/scores/calculate/${selectedWeek._id}`, {
                       method: 'POST',
@@ -1350,14 +1351,14 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                     const calcJson = await calcRes.json().catch(() => ({}));
                     console.log('🔄 [SYNC] score calc response:', calcJson);
                     if (!calcRes.ok) throw new Error(calcJson.message || 'חישוב נקודות נכשל');
-                    alert('✅ נקודות חושבו בהצלחה');
+                    toast.success('✅ נקודות חושבו בהצלחה');
                   } else {
-                    alert(msg);
+                    toast.info(msg);
                   }
                   await loadWeekData(selectedWeek._id);
                 } catch (err) {
                   console.error('❌ [SYNC] error:', err);
-                  alert('❌ שגיאה בסנכרון תוצאות: ' + err.message);
+                  toast.error('❌ שגיאה בסנכרון תוצאות: ' + err.message);
                 } finally {
                   setSyncingResults(false);
                 }
@@ -1383,11 +1384,11 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                   if (r.noOdds) msg += `\n⏳ ${r.noOdds} עדיין בלי יחסים בווינר`;
                   if (r.noExternal) msg += `\n❓ ${r.noExternal} בלי התאמה ב-365scores`;
                   if (r.noOdds) msg += '\n\nווינר מפרסמים יחסים רק למחזור הקרוב — נסה שוב קרוב יותר למשחקים.';
-                  alert(msg);
+                  toast.info(msg);
                   await loadWeekData(selectedWeek._id);
                 } catch (err) {
                   console.error('❌ [SYNC-ODDS] error:', err);
-                  alert('❌ שגיאה בעדכון היחסים: ' + err.message);
+                  toast.error('❌ שגיאה בעדכון היחסים: ' + err.message);
                 } finally {
                   setSyncingOdds(false);
                 }
@@ -1887,7 +1888,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                       const file = e.target.files[0];
                       if (file) {
                         if (file.size > 10 * 1024 * 1024) {
-                          alert('התמונה גדולה מדי! מקסימום 10MB');
+                          toast.error('התמונה גדולה מדי! מקסימום 10MB');
                           e.target.value = '';
                           return;
                         }

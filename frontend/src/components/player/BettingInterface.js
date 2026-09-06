@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import TeamLogo from '../TeamLogo';
 import MatchInsightsModal from './MatchInsightsModal';
+import { toast } from '../../services/toast';
 
 // שם קבוצה לחיץ - פותח את חלון הנתונים. התג על הלוגו מסמן שאפשר ללחוץ
 // בלי להוסיף גובה לשורה הצפופה.
@@ -109,7 +110,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
 
   const saveSingleBet = async (matchId) => {
     if (selectedWeek?.locked) {
-      alert('ההימורים נעולים לשבוע זה');
+      toast.error('ההימורים נעולים לשבוע זה');
       return;
     }
 
@@ -117,14 +118,14 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
       const lockTime = new Date(selectedWeek.lockTime);
       const now = new Date();
       if (now >= lockTime) {
-        alert('זמן ההימורים הסתיים לשבוע זה');
+        toast.error('זמן ההימורים הסתיים לשבוע זה');
         return;
       }
     }
 
     const bet = localBets[matchId];
     if (!bet || bet.team1Goals === '' || bet.team2Goals === '') {
-      alert('יש למלא את שני הצדדים של ההימור');
+      toast.warning('יש למלא את שני הצדדים של ההימור');
       return;
     }
 
@@ -148,27 +149,13 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
         setSavedAnimation(matchId);
         setTimeout(() => setSavedAnimation(null), 1500);
 
-        const successMsg = document.createElement('div');
-        successMsg.textContent = 'ההימור נשמר בהצלחה!';
-        successMsg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#28a745,#20c997);color:white;padding:12px 24px;border-radius:12px;z-index:10000;font-weight:600;box-shadow:0 8px 24px rgba(40,167,69,0.35);font-size:14px;white-space:nowrap;animation:toastIn 0.3s ease';
-        document.body.appendChild(successMsg);
-        setTimeout(() => {
-          if (document.body.contains(successMsg)) {
-            successMsg.style.transition = 'opacity 0.3s ease';
-            successMsg.style.opacity = '0';
-            setTimeout(() => {
-              if (document.body.contains(successMsg)) {
-                document.body.removeChild(successMsg);
-              }
-            }, 300);
-          }
-        }, 2000);
+        toast.success('ההימור נשמר בהצלחה!');
       } else {
-        alert('שגיאה בשמירת ההימור');
+        toast.error('שגיאה בשמירת ההימור');
       }
     } catch (error) {
       console.error('Error saving bet:', error);
-      alert('שגיאה בשמירת ההימור');
+      toast.error('שגיאה בשמירת ההימור');
     } finally {
       setSavingMatch(null);
     }

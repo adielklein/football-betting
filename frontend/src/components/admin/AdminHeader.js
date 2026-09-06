@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { applyTheme } from '../../themes';
+import { toast } from '../../services/toast';
 
 const API_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:5000/api'
@@ -35,7 +36,7 @@ function AdminHeader({ user, onLogout }) {
       // 1. בקש הרשאת notifications
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
-        alert('צריך לאשר התראות כדי לקבל עדכונים');
+        toast.warning('צריך לאשר התראות כדי לקבל עדכונים');
         return;
       }
 
@@ -69,13 +70,13 @@ function AdminHeader({ user, onLogout }) {
 
       if (saveRes.ok) {
         setPushEnabled(true);
-        alert('התראות הופעלו בהצלחה!');
+        toast.success('התראות הופעלו בהצלחה!');
       } else {
-        alert('שגיאה בשמירת ההתראות');
+        toast.error('שגיאה בשמירת ההתראות');
       }
     } catch (e) {
       console.error('Push subscribe error:', e);
-      alert('שגיאה בהפעלת התראות: ' + e.message);
+      toast.error('שגיאה בהפעלת התראות: ' + e.message);
     }
   };
 

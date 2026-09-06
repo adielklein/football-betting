@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { toast } from '../../services/toast';
 
 const API_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:5000/api'
@@ -71,7 +72,7 @@ function AuditLog() {
       setPushStatus('checking');
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
-        alert('צריך לאשר התראות בהגדרות הדפדפן');
+        toast.warning('צריך לאשר התראות בהגדרות הדפדפן');
         setPushStatus('off');
         return;
       }
@@ -95,7 +96,7 @@ function AuditLog() {
       const userId = savedUser ? JSON.parse(savedUser).id : null;
 
       if (!userId) {
-        alert('שגיאה: לא נמצא משתמש מחובר');
+        toast.error('שגיאה: לא נמצא משתמש מחובר');
         setPushStatus('off');
         return;
       }
@@ -108,15 +109,15 @@ function AuditLog() {
 
       if (saveRes.ok) {
         setPushStatus('on');
-        alert('התראות הופעלו בהצלחה! תקבל עדכון כשאדמין אחר יבצע פעולה.');
+        toast.success('התראות הופעלו בהצלחה! תקבל עדכון כשאדמין אחר יבצע פעולה.');
       } else {
         setPushStatus('off');
-        alert('שגיאה בשמירת ההתראות');
+        toast.error('שגיאה בשמירת ההתראות');
       }
     } catch (e) {
       console.error('Push error:', e);
       setPushStatus('off');
-      alert('שגיאה: ' + e.message);
+      toast.error('שגיאה: ' + e.message);
     }
   };
 
