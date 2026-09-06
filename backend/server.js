@@ -333,6 +333,17 @@ const findWeeksToSync = async () => {
   return Week.find({ _id: { $in: candidateIds }, locked: false });
 };
 
+// האם יש בשבוע תוצאה שנכנסה אחרי הפעם האחרונה שחושב הניקוד
+const weekHasUnscoredResults = async (week) => {
+  const newest = await Match.findOne(
+    { weekId: week._id, resultUpdatedAt: { $ne: null } },
+    'resultUpdatedAt'
+  ).sort({ resultUpdatedAt: -1 });
+  if (!newest?.resultUpdatedAt) return false;
+  if (!week.scoresCalculatedAt) return true;
+  return newest.resultUpdatedAt > week.scoresCalculatedAt;
+};
+
 const runResultsSync = async () => {
   try {
     const RENDER_URL = process.env.NODE_ENV === 'development'
@@ -345,12 +356,22 @@ const runResultsSync = async () => {
       try {
         const r = await fetch(`${RENDER_URL}/api/external/sync-results/${w._id}`, { method: 'POST' });
         const j = await r.json().catch(() => null);
-        if (j?.updated > 0) {
-          console.log(`🕐 [CRON] week ${w.name}: updated ${j.updated}, calculating scores...`);
+
+        // תוצאות שנכנסו אך הניקוד מעולם לא רץ עליהן. קורה אם חישוב הניקוד
+        // נכשל, נפל ב-timeout, או שהתוצאות נכתבו בלי שהחישוב הופעל אחריהן.
+        // בלי הבדיקה הזו הנקודות נשארות 0 לנצח - הסנכרון הבא כבר לא מוצא
+        // מה לעדכן ולכן לעולם לא מפעיל חישוב.
+        const stale = await weekHasUnscoredResults(w);
+
+        if (j?.updated > 0 || stale) {
+          const reason = j?.updated > 0 ? `updated ${j.updated}` : 'unscored results found';
+          console.log(`🕐 [CRON] week ${w.name}: ${reason}, calculating scores...`);
+          // מתריעים רק על תוצאות שנכנסו בריצה הזו. תיקון רטרואקטיבי של
+          // ניקוד ישן מתבצע בשקט, בלי להציף התראות על משחקים מלפני ימים.
           await fetch(`${RENDER_URL}/api/scores/calculate/${w._id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ matchIds: j.updatedMatchIds || [] })
+            body: JSON.stringify({ matchIds: j?.updatedMatchIds || [] })
           });
         }
       } catch (e) {

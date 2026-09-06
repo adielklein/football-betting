@@ -264,7 +264,7 @@ function AllBetsViewer({ weeks, user }) {
                       <TeamLogo name={match.team2} />
                       {match.result && match.result.team1Goals !== undefined && (
                         <span style={{ fontSize: '12px', color: '#2e7d32', flexShrink: 0 }}>
-                          ({match.result.team2Goals}-{match.result.team1Goals})
+                          ({match.result.team1Goals}-{match.result.team2Goals})
                         </span>
                       )}
                     </div>
@@ -295,7 +295,7 @@ function AllBetsViewer({ weeks, user }) {
                       background: 'linear-gradient(135deg, #e8f5e9, #c8e6c9)', borderRadius: '8px',
                       fontSize: '13px', fontWeight: '700', color: '#2e7d32'
                     }}>
-                      תוצאה: {match.result.team2Goals}-{match.result.team1Goals}
+                      תוצאה: {match.result.team1Goals}-{match.result.team2Goals}
                     </div>
                   )}
 
@@ -329,7 +329,7 @@ function AllBetsViewer({ weeks, user }) {
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
                             {bet && bet.prediction ? (
                               <span style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: '14px', minWidth: '36px', textAlign: 'center', color: '#333' }}>
-                                {bet.prediction.team2Goals}-{bet.prediction.team1Goals}
+                                {bet.prediction.team1Goals}-{bet.prediction.team2Goals}
                               </span>
                             ) : (
                               <span style={{ color: '#ccc', fontSize: '11px' }}>לא הימר</span>

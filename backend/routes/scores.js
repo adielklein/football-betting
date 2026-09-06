@@ -81,9 +81,8 @@ router.post('/calculate/:weekId', async (req, res) => {
             exactMatches.push({
               team1: match.team1,
               team2: match.team2,
-              // הסדר הפוך בכוונה: בשורה עברית (RTL) רצף ספרות מוצג LTR, ולכן
-              // "1-2" נראה עם ה-2 צמוד לקבוצה הימנית (team1). אל תהפוך בחזרה.
-              score: `${match.result.team2Goals}-${match.result.team1Goals}`
+              // סדר טבעי team1-team2, כמו בכל מסכי האפליקציה
+              score: `${match.result.team1Goals}-${match.result.team2Goals}`
             });
           }
         }
@@ -159,6 +158,10 @@ router.post('/calculate/:weekId', async (req, res) => {
       const weekName = week ? week.name : weekId;
       logAdminAction(adminId, 'חישוב ניקוד', `שבוע: ${weekName} (${matches.length} משחקים)`, { weekId, matchId });
     }
+
+    // מסמנים שהניקוד חושב על התוצאות הנוכחיות, כדי שה-cron יזהה שבוע
+    // שנכנסו לו תוצאות אך הניקוד לא רץ עליהן
+    await Week.findByIdAndUpdate(weekId, { scoresCalculatedAt: new Date() });
 
     res.json({ message: 'Scores calculated successfully' });
   } catch (error) {

@@ -31,9 +31,15 @@ const weekSchema = new mongoose.Schema({
   lockTime: { 
     type: Date 
   },
-  createdAt: { 
-    type: Date, 
-    default: Date.now 
+  // מתי חושב הניקוד לאחרונה. משמש לזיהוי שבוע שנכנסו לו תוצאות
+  // אבל הניקוד מעולם לא חושב עליהן (למשל אם החישוב נכשל או קרס באמצע)
+  scoresCalculatedAt: {
+    type: Date,
+    default: null
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   },
   updatedAt: { 
     type: Date, 
