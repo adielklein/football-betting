@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import TeamLogo from '../TeamLogo';
 import MatchInsightsModal from './MatchInsightsModal';
+import LiveScore from './LiveScore';
+import useLiveScores from '../../services/useLiveScores';
 import { toast } from '../../services/toast';
 
 // שם קבוצה לחיץ - פותח את חלון הנתונים. התג על הלוגו מסמן שאפשר ללחוץ
@@ -59,6 +61,8 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
   const [savingMatch, setSavingMatch] = useState(null);
   const [savedAnimation, setSavedAnimation] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
+
+  const { liveByMatchId } = useLiveScores(selectedWeek?._id);
 
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
@@ -346,6 +350,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
           const isSaving = savingMatch === match._id;
           const isSaved = existingBet.team1Goals !== undefined;
           const justSaved = savedAnimation === match._id;
+          const live = liveByMatchId[match._id];
 
           return (
             <div key={match._id} style={{
@@ -389,9 +394,13 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                     {getLeagueName(match)}
                   </span>
                 </div>
-                <span style={{ color: '#aaa', fontSize: '11px', fontWeight: '500' }}>
-                  {match.date} • {match.time}
-                </span>
+                {live && live.status !== 'scheduled' ? (
+                  <LiveScore live={live} />
+                ) : (
+                  <span style={{ color: '#aaa', fontSize: '11px', fontWeight: '500' }}>
+                    {match.date} • {match.time}
+                  </span>
+                )}
               </div>
 
               {/* יחסים */}

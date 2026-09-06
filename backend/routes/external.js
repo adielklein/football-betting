@@ -7,6 +7,7 @@ const sofaScoreApi = require('../services/sofaScoreApi');
 const sportsDbApi = require('../services/sportsDbApi');
 const scores365Api = require('../services/scores365Api');
 const { hebrewToEnglish } = require('../utils/teamNames');
+const liveScores = require('../services/liveScores');
 
 // בוחר ספק לפי השדה הזמין על הליגה
 // עדיפות: 365scores (ראשון - שמות בעברית) > football-data > ESPN > TheSportsDB > SofaScore
@@ -637,6 +638,28 @@ router.get('/insights/:matchId', async (req, res) => {
   } catch (err) {
     console.error('❌ [external/insights] error:', err);
     res.status(500).json({ message: err.message });
+  }
+});
+
+// 🔴 מצב חי - תוצאות ודקת משחק לשבוע. פתוח לשחקנים, קריאה בלבד.
+//
+// התשובה נשמרת בזיכרון לזמן קצר, ולכן כמה שחקנים שמסתכלים במקביל
+// מתורגמים לבקשה אחת ל-365, לא לבקשה לכל אחד.
+router.get('/live/:weekId', async (req, res) => {
+  try {
+    const matches = await Match.find({ weekId: req.params.weekId }, 'externalId fullDate');
+    if (matches.length === 0) return res.json({ games: [], live: false });
+
+    const games = await liveScores.getLiveForWeek(req.params.weekId, matches);
+    res.json({
+      games,
+      live: games.some((g) => g.status === 'live'),
+      at: new Date()
+    });
+  } catch (err) {
+    console.error('❌ [external/live] error:', err.message);
+    // מצב חי הוא תוספת, לא תלות: כישלון לא אמור לשבור את מסך ההימורים
+    res.json({ games: [], live: false, error: true });
   }
 });
 

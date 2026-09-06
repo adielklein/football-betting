@@ -209,37 +209,52 @@ const weekHasUnscoredResults = async (week) => {
   return newest.resultUpdatedAt > week.scoresCalculatedAt;
 };
 
+const INTERNAL_BASE = () =>
+  process.env.NODE_ENV === 'development'
+    ? `http://localhost:${process.env.PORT || 5000}`
+    : 'https://football-betting-backend.onrender.com';
+
+// מסנכרן תוצאות לשבוע אחד, ומחשב ניקוד אם נכנס משהו חדש.
+// משמש גם את הסריקה השעתית וגם את הסריקה הדקתית של מצב חי.
+const syncAndScoreWeek = async (weekId, weekName = weekId) => {
+  const base = INTERNAL_BASE();
+  const r = await fetch(`${base}/api/external/sync-results/${weekId}`, {
+    method: 'POST',
+    headers: { 'X-Internal-Token': INTERNAL_TOKEN }
+  });
+  const j = await r.json().catch(() => null);
+
+  // תוצאות שנכנסו אך הניקוד מעולם לא רץ עליהן. קורה אם חישוב הניקוד
+  // נכשל, נפל ב-timeout, או שהתוצאות נכתבו בלי שהחישוב הופעל אחריהן.
+  // בלי הבדיקה הזו הנקודות נשארות 0 לנצח - הסנכרון הבא כבר לא מוצא
+  // מה לעדכן ולכן לעולם לא מפעיל חישוב.
+  const week = await Week.findById(weekId);
+  const stale = week ? await weekHasUnscoredResults(week) : false;
+
+  if (!(j?.updated > 0 || stale)) return { updated: 0, calculated: false };
+
+  const reason = j?.updated > 0 ? `updated ${j.updated}` : 'unscored results found';
+  console.log(`🔄 week ${weekName}: ${reason}, calculating scores...`);
+
+  // מתריעים רק על תוצאות שנכנסו בריצה הזו. תיקון רטרואקטיבי של ניקוד
+  // ישן מתבצע בשקט, בלי להציף התראות על משחקים מלפני ימים.
+  await fetch(`${base}/api/scores/calculate/${weekId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
+    body: JSON.stringify({ matchIds: j?.updatedMatchIds || [] })
+  });
+  return { updated: j?.updated || 0, calculated: true };
+};
+
 const runResultsSync = async () => {
   try {
     await lockExpiredWeeks().catch((e) => console.warn('🔒 [CRON] lock sweep failed:', e.message));
-    const RENDER_URL = process.env.NODE_ENV === 'development'
-      ? `http://localhost:${process.env.PORT || 5000}`
-      : 'https://football-betting-backend.onrender.com';
     const weeks = await findWeeksToSync();
     if (weeks.length === 0) return;
     console.log(`🕐 [CRON] sync-results: scanning ${weeks.length} relevant week(s)`);
     for (const w of weeks) {
       try {
-        const r = await fetch(`${RENDER_URL}/api/external/sync-results/${w._id}`, { method: 'POST', headers: { 'X-Internal-Token': INTERNAL_TOKEN } });
-        const j = await r.json().catch(() => null);
-
-        // תוצאות שנכנסו אך הניקוד מעולם לא רץ עליהן. קורה אם חישוב הניקוד
-        // נכשל, נפל ב-timeout, או שהתוצאות נכתבו בלי שהחישוב הופעל אחריהן.
-        // בלי הבדיקה הזו הנקודות נשארות 0 לנצח - הסנכרון הבא כבר לא מוצא
-        // מה לעדכן ולכן לעולם לא מפעיל חישוב.
-        const stale = await weekHasUnscoredResults(w);
-
-        if (j?.updated > 0 || stale) {
-          const reason = j?.updated > 0 ? `updated ${j.updated}` : 'unscored results found';
-          console.log(`🕐 [CRON] week ${w.name}: ${reason}, calculating scores...`);
-          // מתריעים רק על תוצאות שנכנסו בריצה הזו. תיקון רטרואקטיבי של
-          // ניקוד ישן מתבצע בשקט, בלי להציף התראות על משחקים מלפני ימים.
-          await fetch(`${RENDER_URL}/api/scores/calculate/${w._id}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN },
-            body: JSON.stringify({ matchIds: j?.updatedMatchIds || [] })
-          });
-        }
+        await syncAndScoreWeek(w._id, w.name);
       } catch (e) {
         console.warn(`🕐 [CRON] week ${w.name} sync failed:`, e.message);
       }
@@ -251,6 +266,65 @@ const runResultsSync = async () => {
 // כל שעה בדקה 17 (כדי לא להתנגש עם שעה עגולה ולחסוך טראפיק לאתרים אחרים)
 cron.schedule('17 * * * *', runResultsSync, { timezone: 'Asia/Jerusalem' });
 console.log('🕐 Cron registered: sync-results every hour at minute 17');
+
+// 🔴 סריקת מצב חי כל דקה.
+//
+// כל משחקי השבוע נשלפים מ-365 בבקשה אחת, וכשיש משחקים חיים 365 עצמם
+// מבקשים רענון כל 5 שניות - דקה היא הרבה מתחת לזה. הסריקה רצה אך ורק
+// כשיש משחק בחלון שידור, כך שברוב שעות היממה היא לא פונה ל-365 בכלל.
+//
+// היא גם מקצרת דרמטית את הזמן עד שהניקוד מתעדכן: עד עכשיו תוצאה סופית
+// יכלה לחכות עד שעה שלמה לסריקה השעתית, ועכשיו היא נתפסת תוך דקה.
+const liveScores = require('./services/liveScores');
+
+let livePollInFlight = false;
+
+const runLivePoll = async () => {
+  if (livePollInFlight) return;
+  livePollInFlight = true;
+  try {
+    const now = Date.now();
+    // מועמדים לפי תאריך בלבד, כדי לא לשלוף את כל המשחקים בכל דקה
+    const from = new Date(now - 4 * 60 * 60 * 1000);
+    const to = new Date(now + 10 * 60 * 1000);
+    const candidates = await Match.find(
+      { fullDate: { $gte: from, $lte: to }, externalId: { $ne: null } },
+      'weekId externalId fullDate result'
+    );
+    const inWindow = candidates.filter((m) => liveScores.inBroadcastWindow(m, now));
+    if (inWindow.length === 0) return;
+
+    const byWeek = new Map();
+    for (const m of inWindow) {
+      const key = String(m.weekId);
+      if (!byWeek.has(key)) byWeek.set(key, []);
+      byWeek.get(key).push(m);
+    }
+
+    for (const [weekId, matches] of byWeek) {
+      liveScores.invalidate(weekId);
+      const games = await liveScores.getLiveForWeek(weekId, matches);
+
+      // משחק שהסתיים אצל הספק אך עדיין אין לו תוצאה אצלנו. הבדיקה הזו
+      // אידמפוטנטית - ברגע שהתוצאה נכנסה היא כבר לא מזוהה שוב.
+      const hasResult = new Map(
+        matches.map((m) => [String(m._id), m.result && m.result.team1Goals != null])
+      );
+      const newlyFinished = games.filter((g) => g.status === 'finished' && !hasResult.get(g.matchId));
+      if (newlyFinished.length === 0) continue;
+
+      console.log(`🔴 [LIVE] ${newlyFinished.length} match(es) just finished, syncing week ${weekId}`);
+      await syncAndScoreWeek(weekId);
+    }
+  } catch (err) {
+    console.warn('🔴 [LIVE] poll failed:', err.message);
+  } finally {
+    livePollInFlight = false;
+  }
+};
+
+cron.schedule('* * * * *', runLivePoll, { timezone: 'Asia/Jerusalem' });
+console.log('🔴 Cron registered: live poll every minute (only while matches are on)');
 
 const PORT = process.env.PORT || 5000;
 require('./services/pushNotifications');

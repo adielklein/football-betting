@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import TeamLogo from '../TeamLogo';
+import LiveScore from './LiveScore';
+import useLiveScores from '../../services/useLiveScores';
 
 function AllBetsViewer({ weeks, user }) {
   const [selectedWeek, setSelectedWeek] = useState(null);
@@ -8,6 +10,8 @@ function AllBetsViewer({ weeks, user }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedMatches, setExpandedMatches] = useState({});
+
+  const { liveByMatchId } = useLiveScores(selectedWeek?._id);
 
   const [selectedSeason, setSelectedSeason] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
@@ -254,7 +258,11 @@ function AllBetsViewer({ weeks, user }) {
                             backgroundColor: myBadge.bg, color: myBadge.color
                           }}>{myBadge.text}</span>
                         )}
-                        <span style={{ fontSize: '11px', color: '#aaa', fontWeight: '500' }}>{match.date} • {match.time}</span>
+                        {liveByMatchId[match._id] && liveByMatchId[match._id].status !== 'scheduled' ? (
+                          <LiveScore live={liveByMatchId[match._id]} compact />
+                        ) : (
+                          <span style={{ fontSize: '11px', color: '#aaa', fontWeight: '500' }}>{match.date} • {match.time}</span>
+                        )}
                       </div>
                     </div>
 

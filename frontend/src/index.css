@@ -637,3 +637,15 @@ tr:hover {
     to   { opacity: 1; }
   }
 }
+
+/* נקודת "משחק חי" - ראה components/player/LiveScore.js */
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.35; transform: scale(0.8); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes livePulse {
+    0%, 100% { opacity: 1; }
+  }
+}
