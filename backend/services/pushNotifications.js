@@ -89,21 +89,33 @@ async function uploadImageToImgBB(base64Image) {
 /**
  * שליחת התראה למכשיר אחד
  */
-async function sendNotification(subscription, payload) {
+// errorSink - מערך אופציונלי שאליו נאספות שגיאות השליחה. בלעדיו השגיאה
+// נבלעת בלוג בלבד, וזו הסיבה שכשל מתמשך בשליחה יכול לעבור מתחת לרדאר.
+async function sendNotification(subscription, payload, errorSink = null) {
   try {
     console.log('📤 [PUSH] Sending notification...');
-    
+
     await webpush.sendNotification(subscription, JSON.stringify(payload));
-    
+
     console.log('✅ [PUSH] Sent successfully');
     return true;
   } catch (error) {
-    console.error('❌ [PUSH] Error:', error.message);
-    
-    if (error.statusCode === 404 || error.statusCode === 410) {
+    const statusCode = error.statusCode || null;
+    const detail = String(error.body || error.message || '').slice(0, 300);
+    console.error(`❌ [PUSH] Error ${statusCode}:`, detail);
+
+    if (errorSink) {
+      errorSink.push({
+        statusCode,
+        detail,
+        endpointHost: (subscription?.endpoint || '').replace(/^https?:\/\//, '').split('/')[0] || null
+      });
+    }
+
+    if (statusCode === 404 || statusCode === 410) {
       console.log('🗑️ [PUSH] Subscription expired');
     }
-    
+
     return false;
   }
 }

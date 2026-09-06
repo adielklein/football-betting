@@ -338,23 +338,25 @@ router.post('/test', async (req, res) => {
     
     let sent = 0;
     let failed = 0;
-    
+    const errors = [];
+
     for (const subscription of subscriptions) {
-      const success = await sendNotification(subscription, payload);
+      const success = await sendNotification(subscription, payload, errors);
       if (success) {
         sent++;
       } else {
         failed++;
       }
     }
-    
+
     console.log(`✅ Test sent: ${sent} success, ${failed} failed`);
-    
-    res.json({ 
+
+    res.json({
       message: 'Test notification sent',
       sent,
       failed,
-      total: subscriptions.length
+      total: subscriptions.length,
+      errors
     });
   } catch (error) {
     console.error('Error sending test:', error);
