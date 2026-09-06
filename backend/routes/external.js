@@ -140,28 +140,43 @@ router.get('/fixtures', async (req, res) => {
 
     const upcoming = fixtures.filter((f) => new Date(f.kickoffIso).getTime() > Date.now());
 
-    const enriched = await Promise.all(
-      upcoming.map(async (f) => {
-        const israelTs = israelDateAndTime(f.kickoffIso);
-        const result = {
-          apiId: f.apiId,
-          team1En: f.team1En,
-          team2En: f.team2En,
-          team1He: f.team1He || null,
-          team2He: f.team2He || null,
-          team1LogoUrl: f.team1LogoUrl,
-          team2LogoUrl: f.team2LogoUrl,
-          kickoffIso: f.kickoffIso,
-          date: israelTs.date,
-          time: israelTs.time,
-          year: israelTs.year
-        };
-        if (wantOdds) {
-          result.odds = await activeProvider.api.fetchOddsForFixture(f.apiId, forceRefresh);
+    const enriched = upcoming.map((f) => {
+      const israelTs = israelDateAndTime(f.kickoffIso);
+      return {
+        apiId: f.apiId,
+        team1En: f.team1En,
+        team2En: f.team2En,
+        team1He: f.team1He || null,
+        team2He: f.team2He || null,
+        team1LogoUrl: f.team1LogoUrl,
+        team2LogoUrl: f.team2LogoUrl,
+        kickoffIso: f.kickoffIso,
+        date: israelTs.date,
+        time: israelTs.time,
+        year: israelTs.year
+      };
+    });
+
+    // משיכת יחסים - כל משחק דורש קריאה נפרדת לספק, לכן מגבילים מקביליות
+    // כדי לא להיחסם (365scores חוסם לפי IP על ריבוי בקשות בו-זמנית)
+    if (wantOdds) {
+      const CONCURRENCY = 4;
+      let cursor = 0;
+      const workers = Array.from({ length: Math.min(CONCURRENCY, enriched.length) }, async () => {
+        while (cursor < enriched.length) {
+          const item = enriched[cursor++];
+          try {
+            item.odds = await activeProvider.api.fetchOddsForFixture(item.apiId, forceRefresh);
+          } catch (oddsErr) {
+            console.warn(`⚠️ [external] odds failed for ${item.apiId}:`, oddsErr.message);
+            item.odds = null;
+          }
         }
-        return result;
-      })
-    );
+      });
+      await Promise.all(workers);
+      const withOdds = enriched.filter((f) => f.odds && (f.odds.homeWin || f.odds.draw || f.odds.awayWin)).length;
+      console.log(`💰 [external] odds resolved for ${withOdds}/${enriched.length} fixtures via ${activeProvider.name}`);
+    }
 
     enriched.sort((a, b) => new Date(a.kickoffIso) - new Date(b.kickoffIso));
 
@@ -217,6 +232,15 @@ const matchesPair = (a1, a2, b1, b2) => {
   const bEn2 = normalizeTeamName(hebrewToEnglish(b2));
   if ((eq(A1, bEn1) && eq(A2, bEn2)) || (eq(A1, bEn2) && eq(A2, bEn1))) return true;
   return false;
+};
+
+// בודק אם שני שמות מתארים את אותה קבוצה (תומך עברית מול אנגלית)
+const sameTeam = (a, b) => {
+  if (!a || !b) return false;
+  const eq = (x, y) => x && y && (x === y || x.includes(y) || y.includes(x));
+  const A = normalizeTeamName(a), B = normalizeTeamName(b);
+  if (eq(A, B)) return true;
+  return eq(normalizeTeamName(hebrewToEnglish(a)), B) || eq(A, normalizeTeamName(hebrewToEnglish(b)));
 };
 
 // 🔎 גילוי externalId למשחק שלא יובא ממאגר
@@ -487,6 +511,119 @@ router.get('/debug/:leagueId', async (req, res) => {
     }
   } catch (err) {
     res.status(500).json({ message: err.message, stack: err.stack });
+  }
+});
+
+// 💰 רענון יחסי ווינר לשבוע קיים
+// ווינר מפרסם יחסים רק למחזור הקרוב, לכן שבוע שיובא מראש יקבל יחסים רק
+// כשמריצים את זה שוב קרוב למשחקים
+router.post('/sync-odds/:weekId', async (req, res) => {
+  try {
+    const matches = await Match.find({ weekId: req.params.weekId }).populate('leagueId');
+    if (matches.length === 0) {
+      return res.json({ message: 'אין משחקים בשבוע הזה', checked: 0, updated: 0 });
+    }
+
+    const summary = { checked: matches.length, updated: 0, unchanged: 0, noOdds: 0, noExternal: 0, details: [] };
+
+    // גילוי externalId חסר - סדרתי, כדי לא להציף את הספק
+    for (const m of matches) {
+      if (!m.externalId || !m.externalProvider) {
+        const discovered = await discoverExternalId(m, { '365scores': scores365Api });
+        if (discovered) {
+          m.externalId = discovered.externalId;
+          m.externalProvider = discovered.externalProvider;
+          await m.save();
+        }
+      }
+    }
+
+    const targets = matches.filter((m) => m.externalId && m.externalProvider === '365scores');
+    summary.noExternal = matches.length - targets.length;
+
+    // משיכה במקביליות מוגבלת כדי לא להיחסם
+    const CONCURRENCY = 4;
+    let cursor = 0;
+    const workers = Array.from({ length: Math.min(CONCURRENCY, targets.length) }, async () => {
+      while (cursor < targets.length) {
+        const m = targets[cursor++];
+        try {
+          const odds = await scores365Api.fetchOddsForFixture(m.externalId, true);
+          const label = `${m.team1} - ${m.team2}`;
+          if (!odds || (!odds.homeWin && !odds.draw && !odds.awayWin)) {
+            summary.noOdds++;
+            summary.details.push({ match: label, status: 'אין יחסים בווינר עדיין' });
+            continue;
+          }
+          const before = m.odds || {};
+          const same = before.homeWin === odds.homeWin && before.draw === odds.draw && before.awayWin === odds.awayWin;
+          if (same) {
+            summary.unchanged++;
+            summary.details.push({ match: label, status: 'ללא שינוי', odds });
+            continue;
+          }
+          m.odds = odds;
+          await m.save();
+          summary.updated++;
+          summary.details.push({ match: label, status: 'עודכן', odds });
+        } catch (err) {
+          summary.details.push({ match: `${m.team1} - ${m.team2}`, status: `שגיאה: ${err.message}` });
+        }
+      }
+    });
+    await Promise.all(workers);
+
+    console.log(`💰 [sync-odds] week ${req.params.weekId}: updated ${summary.updated}/${summary.checked}`);
+    res.json(summary);
+  } catch (err) {
+    console.error('❌ [external/sync-odds] error:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// 📊 תובנות טרום-משחק לקבלת החלטה (כושר, טבלה, ראש בראש, יחסי ווינר)
+// מקור: 365scores בלבד - שאר הספקים לא מספקים את הנתונים האלה
+router.get('/insights/:matchId', async (req, res) => {
+  try {
+    const { refresh = 'false' } = req.query;
+    const forceRefresh = refresh === 'true' || refresh === '1';
+
+    const match = await Match.findById(req.params.matchId).populate('leagueId');
+    if (!match) return res.status(404).json({ message: 'המשחק לא נמצא' });
+
+    // אין מזהה חיצוני - ננסה לגלות ולשמור (עלות חד-פעמית)
+    if (!match.externalId || !match.externalProvider) {
+      const discovered = await discoverExternalId(match, { '365scores': scores365Api });
+      if (discovered) {
+        match.externalId = discovered.externalId;
+        match.externalProvider = discovered.externalProvider;
+        await match.save();
+      }
+    }
+
+    if (!match.externalId || match.externalProvider !== '365scores') {
+      return res.status(404).json({
+        message: 'אין נתונים סטטיסטיים למשחק הזה',
+        reason: match.externalId ? `ספק ${match.externalProvider} לא תומך בסטטיסטיקות` : 'לא נמצאה התאמה ב-365scores'
+      });
+    }
+
+    const insights = await scores365Api.fetchTeamInsights(match.externalId, { refresh: forceRefresh });
+    if (!insights) return res.status(404).json({ message: 'לא הוחזרו נתונים מ-365scores' });
+
+    // סדר הקבוצות אצלנו מול 365 - במשחקים שנוספו ידנית הוא עלול להיות הפוך
+    const flipped = !sameTeam(match.team1, insights.home?.name) && sameTeam(match.team1, insights.away?.name);
+
+    res.json({
+      matchId: match._id,
+      team1: match.team1,
+      team2: match.team2,
+      flipped,
+      ...insights
+    });
+  } catch (err) {
+    console.error('❌ [external/insights] error:', err);
+    res.status(500).json({ message: err.message });
   }
 });
 

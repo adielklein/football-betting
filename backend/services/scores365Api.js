@@ -206,9 +206,192 @@ const fetchResult = async (externalId) => {
   }
 };
 
+// ── תובנות טרום-משחק ─────────────────────────────────────────────
+// לוגו קבוצה לפי competitor.id
+const competitorImgUrl = (id, size = 64) =>
+  id ? `https://imagecache.365scores.com/image/upload/f_png,w_${size},h_${size},c_limit,q_auto:eco,dpr_2,d_Competitors:default1.png/v9/Competitors/${id}` : null;
+
+// תוצאת משחק מנקודת מבט של קבוצה מסוימת
+const outcomeFor = (game, teamId) => {
+  const isHome = game.homeCompetitor?.id === teamId;
+  const gf = isHome ? game.homeCompetitor?.score : game.awayCompetitor?.score;
+  const ga = isHome ? game.awayCompetitor?.score : game.homeCompetitor?.score;
+  if (gf == null || ga == null || gf < 0 || ga < 0) return null;
+  return {
+    isHome,
+    goalsFor: Math.round(gf),
+    goalsAgainst: Math.round(ga),
+    outcome: gf > ga ? 'W' : gf === ga ? 'D' : 'L',
+    opponent: isHome ? game.awayCompetitor?.name : game.homeCompetitor?.name,
+    opponentId: isHome ? game.awayCompetitor?.id : game.homeCompetitor?.id,
+    opponentLogo: competitorImgUrl(isHome ? game.awayCompetitor?.id : game.homeCompetitor?.id),
+    date: game.startTime ? game.startTime.slice(0, 10) : null,
+    competition: game.competitionDisplayName || null
+  };
+};
+
+// כל המשחקים שהסתיימו של קבוצה (על פני כל המסגרות), החדשים ראשונים
+const fetchTeamGames = async (competitorId) => {
+  try {
+    const json = await apiGet(`/games/results/?appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&competitors=${competitorId}`);
+    return (json.games || [])
+      .filter((g) => g.statusGroup === 4)
+      .sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+  } catch (err) {
+    console.warn(`⚠️ [365] fetchTeamGames failed for ${competitorId}:`, err.message);
+    return [];
+  }
+};
+
+const avg = (nums) => (nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null);
+const round1 = (v) => (v == null ? null : Math.round(v * 10) / 10);
+
+// בונה בלוק נתונים לקבוצה אחת
+const buildTeamBlock = (competitor, games, standingsRows, formSize) => {
+  const teamId = competitor?.id;
+  const form = games
+    .map((g) => outcomeFor(g, teamId))
+    .filter(Boolean)
+    .slice(0, formSize);
+
+  const row = standingsRows.find((r) => r.competitor?.id === teamId);
+  const table = row
+    ? {
+        position: row.position,
+        points: row.points,
+        played: row.gamePlayed,
+        won: row.gamesWon,
+        drawn: row.gamesEven,
+        lost: row.gamesLost,
+        goalsFor: row.for,
+        goalsAgainst: row.against,
+        goalDiff: (row.for ?? 0) - (row.against ?? 0)
+      }
+    : null;
+
+  const formPoints = form.reduce((s, f) => s + (f.outcome === 'W' ? 3 : f.outcome === 'D' ? 1 : 0), 0);
+
+  return {
+    id: teamId,
+    name: competitor?.name || null,
+    logo: competitorImgUrl(teamId, 96),
+    color: competitor?.color || null,
+    table,
+    form,
+    formPoints,
+    formMax: form.length * 3,
+    avgScored: round1(avg(form.map((f) => f.goalsFor))),
+    avgConceded: round1(avg(form.map((f) => f.goalsAgainst))),
+    cleanSheets: form.filter((f) => f.goalsAgainst === 0).length,
+    failedToScore: form.filter((f) => f.goalsFor === 0).length
+  };
+};
+
+// הסתברות משתמעת מיחסים, מנורמלת (הסרת מרווח הבוקמייקר)
+const impliedProbabilities = (odds) => {
+  if (!odds) return null;
+  const raw = { home: odds.homeWin ? 1 / odds.homeWin : 0, draw: odds.draw ? 1 / odds.draw : 0, away: odds.awayWin ? 1 / odds.awayWin : 0 };
+  const total = raw.home + raw.draw + raw.away;
+  if (!total) return null;
+  return {
+    home: Math.round((raw.home / total) * 100),
+    draw: Math.round((raw.draw / total) * 100),
+    away: Math.round((raw.away / total) * 100)
+  };
+};
+
+// תחזית תוצאה: כוח התקפה של האחת מול הגנה של השנייה, + יתרון ביתיות קל
+const predictScore = (home, away) => {
+  if (home.avgScored == null || away.avgScored == null) return null;
+  const HOME_EDGE = 1.1;
+  const expHome = ((home.avgScored + away.avgConceded) / 2) * HOME_EDGE;
+  const expAway = ((away.avgScored + home.avgConceded) / 2) / HOME_EDGE;
+  return {
+    expectedHome: round1(expHome),
+    expectedAway: round1(expAway),
+    suggestedHome: Math.max(0, Math.round(expHome)),
+    suggestedAway: Math.max(0, Math.round(expAway))
+  };
+};
+
+// אוסף את כל התובנות למשחק אחד. externalId בפורמט "365_12345"
+const fetchTeamInsights = async (externalId, { refresh = false, formSize = 5 } = {}) => {
+  if (!externalId) return null;
+  const id = externalId.startsWith('365_') ? externalId.slice(4) : externalId;
+  const cacheKey = `365_insights_${id}_${formSize}`;
+  if (!refresh) {
+    const hit = cacheGet(cacheKey);
+    if (hit) return hit;
+  }
+
+  const gameJson = await apiGet(`/game/?appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&gameId=${id}`);
+  const game = gameJson.game;
+  if (!game) return null;
+
+  const homeC = game.homeCompetitor;
+  const awayC = game.awayCompetitor;
+
+  // טבלה - לא קיימת בגביעים, נכשל בשקט
+  let standingsRows = [];
+  try {
+    const st = await apiGet(`/standings/?appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&competitions=${game.competitionId}`);
+    standingsRows = (st.standings || []).flatMap((s) => s.rows || []);
+  } catch (err) {
+    console.warn(`⚠️ [365] standings unavailable for competition ${game.competitionId}:`, err.message);
+  }
+
+  const [homeGames, awayGames] = await Promise.all([fetchTeamGames(homeC?.id), fetchTeamGames(awayC?.id)]);
+
+  const home = buildTeamBlock(homeC, homeGames, standingsRows, formSize);
+  const away = buildTeamBlock(awayC, awayGames, standingsRows, formSize);
+
+  // ראש בראש - מתוך משחקי הבית שבהם היריבה היא קבוצת החוץ
+  const h2h = homeGames
+    .filter((g) => [g.homeCompetitor?.id, g.awayCompetitor?.id].includes(awayC?.id))
+    .map((g) => {
+      const o = outcomeFor(g, homeC?.id);
+      if (!o) return null;
+      return {
+        date: o.date,
+        competition: o.competition,
+        homeTeamWasHome: o.isHome,
+        homeGoals: o.goalsFor,
+        awayGoals: o.goalsAgainst,
+        winner: o.outcome === 'W' ? 'home' : o.outcome === 'L' ? 'away' : 'draw'
+      };
+    })
+    .filter(Boolean)
+    .slice(0, 5);
+
+  const odds = await fetchOddsForFixture(externalId, refresh);
+
+  const insights = {
+    gameId: game.id,
+    competition: game.competitionDisplayName || null,
+    startTime: game.startTime || null,
+    statusText: game.statusText || null,
+    venue: game.venue?.name || null,
+    home,
+    away,
+    h2h,
+    h2hSummary: {
+      homeWins: h2h.filter((m) => m.winner === 'home').length,
+      draws: h2h.filter((m) => m.winner === 'draw').length,
+      awayWins: h2h.filter((m) => m.winner === 'away').length
+    },
+    odds,
+    impliedProbabilities: impliedProbabilities(odds),
+    prediction: predictScore(home, away)
+  };
+
+  cacheSet(cacheKey, insights);
+  return insights;
+};
+
 module.exports = {
   isConfigured,
   fetchUpcomingFixtures,
   fetchOddsForFixture,
-  fetchResult
+  fetchResult,
+  fetchTeamInsights
 };

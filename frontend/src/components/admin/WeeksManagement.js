@@ -26,6 +26,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
   const [matchListOpen, setMatchListOpen] = useState(true);
   const [showImportModal, setShowImportModal] = useState(false);
   const [syncingResults, setSyncingResults] = useState(false);
+  const [syncingOdds, setSyncingOdds] = useState(false);
 
   // State עבור ה-dropdown המקונן
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -1365,6 +1366,36 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
               title="מושך תוצאות אוטומטית מהמאגר ומריץ חישוב נקודות"
             >
               {syncingResults ? '⏳ מסנכרן...' : '🔄 עדכן תוצאות מהמאגר'}
+            </button>
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (syncingOdds) return;
+                setSyncingOdds(true);
+                try {
+                  const res = await fetch(`${API_URL}/external/sync-odds/${selectedWeek._id}`, { method: 'POST' });
+                  const r = await res.json().catch(() => ({}));
+                  if (!res.ok) throw new Error(r.message || `HTTP ${res.status}`);
+                  let msg = `✅ נבדקו ${r.checked || 0} משחקים, עודכנו ${r.updated || 0}`;
+                  if (r.unchanged) msg += `\n➖ ${r.unchanged} ללא שינוי`;
+                  if (r.noOdds) msg += `\n⏳ ${r.noOdds} עדיין בלי יחסים בווינר`;
+                  if (r.noExternal) msg += `\n❓ ${r.noExternal} בלי התאמה ב-365scores`;
+                  if (r.noOdds) msg += '\n\nווינר מפרסמים יחסים רק למחזור הקרוב — נסה שוב קרוב יותר למשחקים.';
+                  alert(msg);
+                  await loadWeekData(selectedWeek._id);
+                } catch (err) {
+                  console.error('❌ [SYNC-ODDS] error:', err);
+                  alert('❌ שגיאה בעדכון היחסים: ' + err.message);
+                } finally {
+                  setSyncingOdds(false);
+                }
+              }}
+              className="btn"
+              disabled={syncingOdds}
+              style={{ fontSize: '13px' }}
+              title="מושך את יחסי ווינר העדכניים מ-365scores. ווינר מפרסמים יחסים רק למחזור הקרוב"
+            >
+              {syncingOdds ? '⏳ מושך...' : '💰 עדכן יחסי ווינר'}
             </button>
           </div>
           {!matchListOpen ? null : (<div style={{ marginTop: '0.6rem' }}>

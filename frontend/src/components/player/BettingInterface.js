@@ -1,7 +1,59 @@
 import React, { useState, useEffect } from 'react';
 import TeamLogo from '../TeamLogo';
+import MatchInsightsModal from './MatchInsightsModal';
+
+// שם קבוצה לחיץ - פותח את חלון הנתונים. התג על הלוגו מסמן שאפשר ללחוץ
+// בלי להוסיף גובה לשורה הצפופה.
+function TeamPicker({ name, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        flex: '1 1 0',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 2,
+        textAlign: 'center',
+        fontWeight: '700',
+        fontSize: '13px',
+        lineHeight: '1.2',
+        minWidth: 0,
+        color: '#333',
+        background: 'transparent',
+        border: 'none',
+        padding: '4px 2px',
+        borderRadius: '10px',
+        cursor: 'pointer',
+        font: 'inherit',
+        WebkitTapHighlightColor: 'transparent',
+        touchAction: 'manipulation',
+        transition: 'background 0.2s ease'
+      }}
+      onTouchStart={(e) => { e.currentTarget.style.background = '#f2f6fc'; }}
+      onTouchEnd={(e) => { e.currentTarget.style.background = 'transparent'; }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = '#f2f6fc'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+      aria-label={`נתונים על ${name}`}
+    >
+      <span style={{ position: 'relative', display: 'inline-flex' }}>
+        <TeamLogo name={name} />
+        <span style={{
+          position: 'absolute', top: '-3px', insetInlineStart: '-5px',
+          width: '15px', height: '15px', borderRadius: '50%',
+          background: '#fff', border: '1px solid #dbe4f0',
+          fontSize: '8px', lineHeight: '13px', textAlign: 'center',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
+        }}>📊</span>
+      </span>
+      <span style={{ fontWeight: 700 }}>{name}</span>
+    </button>
+  );
+}
 
 function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
+  const [insightsFor, setInsightsFor] = useState(null);
   const [localBets, setLocalBets] = useState({});
   const [savingMatch, setSavingMatch] = useState(null);
   const [savedAnimation, setSavedAnimation] = useState(null);
@@ -392,22 +444,10 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                 gap: '0.35rem',
                 marginBottom: '0.4rem'
               }}>
-                <div style={{
-                  flex: '1 1 0',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 2,
-                  textAlign: 'center',
-                  fontWeight: '700',
-                  fontSize: '13px',
-                  lineHeight: '1.2',
-                  minWidth: 0,
-                  color: '#333'
-                }}>
-                  <TeamLogo name={match.team1} />
-                  {match.team1}
-                </div>
+                <TeamPicker
+                  name={match.team1}
+                  onClick={() => setInsightsFor({ match, focusTeam: 1 })}
+                />
 
                 <div style={{
                   display: 'flex',
@@ -477,22 +517,10 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   />
                 </div>
 
-                <div style={{
-                  flex: '1 1 0',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 2,
-                  textAlign: 'center',
-                  fontWeight: '700',
-                  fontSize: '13px',
-                  lineHeight: '1.2',
-                  minWidth: 0,
-                  color: '#333'
-                }}>
-                  <TeamLogo name={match.team2} />
-                  {match.team2}
-                </div>
+                <TeamPicker
+                  name={match.team2}
+                  onClick={() => setInsightsFor({ match, focusTeam: 2 })}
+                />
               </div>
 
               {/* כפתור שמירה */}
@@ -588,6 +616,14 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
           );
         })}
       </div>
+
+      {insightsFor && (
+        <MatchInsightsModal
+          match={insightsFor.match}
+          focusTeam={insightsFor.focusTeam}
+          onClose={() => setInsightsFor(null)}
+        />
+      )}
     </div>
   );
 }
