@@ -243,6 +243,21 @@ const sameTeam = (a, b) => {
   return eq(normalizeTeamName(hebrewToEnglish(a)), B) || eq(A, normalizeTeamName(hebrewToEnglish(b)));
 };
 
+// האם התוצאה שהתקבלה זהה למה שכבר שמור (כולל הארכה ופנדלים)
+const sameResult = (prev, next) => {
+  if (!prev || prev.team1Goals !== next.team1Goals || prev.team2Goals !== next.team2Goals) return false;
+  const a = prev.finalScore;
+  const b = next.finalScore;
+  if (!a && !b) return true;
+  if (!a || !b) return false;
+  if (a.team1Goals !== b.team1Goals || a.team2Goals !== b.team2Goals) return false;
+  const ap = a.penalties;
+  const bp = b.penalties;
+  if (!ap && !bp) return true;
+  if (!ap || !bp) return false;
+  return ap.team1 === bp.team1 && ap.team2 === bp.team2;
+};
+
 // 🔎 גילוי externalId למשחק שלא יובא ממאגר
 const discoverExternalId = async (match, providersByName, debugCollector = null) => {
   const dbg = (...args) => { console.log('🔎 [discover]', ...args); if (debugCollector) debugCollector.push(args.join(' ')); };
@@ -307,7 +322,7 @@ router.post('/sync-results/:weekId', async (req, res) => {
       'SofaScore': sofaScoreApi
     };
 
-    const results = { checked: 0, skippedManual: 0, skippedFuture: 0, skippedNoExternal: 0, discovered: 0, notFinished: 0, updated: 0, updatedMatchIds: [], errors: [], debug: [] };
+    const results = { checked: 0, skippedManual: 0, skippedFuture: 0, skippedNoExternal: 0, discovered: 0, notFinished: 0, alreadyUpToDate: 0, updated: 0, updatedMatchIds: [], errors: [], debug: [] };
     const now = Date.now();
 
     for (const m of matches) {
@@ -362,6 +377,15 @@ router.post('/sync-results/:weekId', async (req, res) => {
           team2Goals: result.team2Goals
         };
         if (result.finalScore) newResult.finalScore = result.finalScore;
+
+        // התוצאה כבר זהה למה שבמסד - לא נוגעים ולא מדווחים כעדכון.
+        // בלי הבדיקה הזו כל ריצת cron הייתה "מעדכנת" מחדש כל משחק שהסתיים,
+        // ומי שקלע בול היה מקבל את אותה התראה שוב כל שעה עד שהשבוע ננעל.
+        if (sameResult(m.result, newResult)) {
+          results.alreadyUpToDate++;
+          continue;
+        }
+
         m.result = newResult;
         m.resultSource = `auto:${m.externalProvider}`;
         m.resultUpdatedAt = new Date();

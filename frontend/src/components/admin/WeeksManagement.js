@@ -1331,6 +1331,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                   if (r.skippedManual) msg += `\n⏭️ דולגו ${r.skippedManual} עם תוצאה ידנית`;
                   if (r.skippedFuture) msg += `\n⏰ דולגו ${r.skippedFuture} שעוד לא התחילו`;
                   if (r.skippedNoExternal) msg += `\n❓ דולגו ${r.skippedNoExternal} בלי מזהה חיצוני`;
+                  if (r.alreadyUpToDate) msg += `\n✔️ ${r.alreadyUpToDate} כבר מעודכנים`;
                   if (r.notFinished) msg += `\n⏳ ${r.notFinished} עדיין לא הסתיימו`;
                   if (r.errors?.length) {
                     msg += `\n⚠️ ${r.errors.length} שגיאות`;
