@@ -3,7 +3,12 @@ import TeamLogo from '../TeamLogo';
 import ImportMatchesModal from './ImportMatchesModal';
 import { toast } from '../../services/toast';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+// אותה קביעה כמו בכל שאר המסכים. קודם זה הסתמך על משתנה סביבה של CRA,
+// והנפילה לברירת המחדל הייתה localhost - כלומר מסך ניהול השבועות היה
+// מתנתק לגמרי בייצור אם המשתנה לא היה מוגדר בדיוק בשם הזה.
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:5000/api'
+  : 'https://football-betting-backend.onrender.com/api';
 
 function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user }) {
   const [weeks, setWeeks] = useState([]);
