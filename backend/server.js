@@ -308,17 +308,39 @@ app.get('/', (req, res) => {
   });
 });
 
-// 🕐 Cron - סנכרון תוצאות אוטומטי כל שעה לשבועות לא נעולים
+// 🕐 Cron - סנכרון תוצאות אוטומטי כל שעה
+// סורק רק שבועות שבאמת יכול להיות בהם משהו לעדכן. בעבר זה סרק כל שבוע לא
+// נעול (עשרות שבועות ישנים שכבר מזמן סגורים) והפציץ את 365 בקריאות מיותרות.
 const cron = require('node-cron');
 const Week = require('./models/Week');
+const Match = require('./models/Match');
+
+const RECENT_DAYS = 14;
+
+const findWeeksToSync = async () => {
+  const now = new Date();
+  const recentFrom = new Date(now.getTime() - RECENT_DAYS * 24 * 60 * 60 * 1000);
+
+  const [recentIds, pendingIds] = await Promise.all([
+    // משחקים שהתחילו לאחרונה - התוצאות הטריות וגם תיקונים מאוחרים
+    Match.find({ fullDate: { $gte: recentFrom, $lte: now } }).distinct('weekId'),
+    // משחקים שכבר התחילו ועדיין אין להם תוצאה - נדחים או כאלה שלא נתפסו
+    Match.find({ fullDate: { $lt: now }, 'result.team1Goals': { $exists: false } }).distinct('weekId')
+  ]);
+
+  const candidateIds = [...new Set([...recentIds, ...pendingIds].map(String))];
+  if (candidateIds.length === 0) return [];
+  return Week.find({ _id: { $in: candidateIds }, locked: false });
+};
+
 const runResultsSync = async () => {
   try {
     const RENDER_URL = process.env.NODE_ENV === 'development'
       ? `http://localhost:${process.env.PORT || 5000}`
       : 'https://football-betting-backend.onrender.com';
-    const weeks = await Week.find({ locked: false });
+    const weeks = await findWeeksToSync();
     if (weeks.length === 0) return;
-    console.log(`🕐 [CRON] sync-results: scanning ${weeks.length} unlocked weeks`);
+    console.log(`🕐 [CRON] sync-results: scanning ${weeks.length} relevant week(s)`);
     for (const w of weeks) {
       try {
         const r = await fetch(`${RENDER_URL}/api/external/sync-results/${w._id}`, { method: 'POST' });
