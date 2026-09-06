@@ -21,131 +21,118 @@ router.post('/calculate/:weekId', async (req, res) => {
       [...(Array.isArray(matchIds) ? matchIds : []), ...(matchId ? [matchId] : [])].map(String)
     );
 
-    // Get week info for month exclusion check
     const week = await Week.findById(weekId);
 
-    // Get all matches with results for this week
-    const matches = await Match.find({
-      weekId,
-      'result.team1Goals': { $exists: true },
-      'result.team2Goals': { $exists: true }
-    });
+    // הכל נשלף בשלוש שאילתות ומחושב בזיכרון. הגרסה הקודמת שלפה הימור אחד
+    // בכל פעם בתוך לולאה כפולה (משתמשים x משחקים) והגיעה ל-~240 סיבובים
+    // למסד, כ-30 שניות לשבוע אחד - מספיק קרוב ל-timeout כדי להיכשל.
+    const [allWeekMatches, users] = await Promise.all([
+      Match.find({ weekId }),
+      User.find()
+    ]);
 
-    // Get all users
-    const users = await User.find();
-    const exactScoreUsers = []; // Users who got exact scores on the specific match
+    const hasResult = (m) => m.result && m.result.team1Goals != null && m.result.team2Goals != null;
+    const playedMatches = allWeekMatches.filter(hasResult);
+    const matchById = new Map(allWeekMatches.map((m) => [m._id.toString(), m]));
 
-    if (matches.length === 0) {
-      // אין משחקים עם תוצאות - אפס ניקוד לשבוע הזה
-      for (const user of users) {
-        // אפס נקודות בהימורים של השבוע
-        const weekMatches = await Match.find({ weekId });
-        for (const match of weekMatches) {
-          await Bet.updateMany({ userId: user._id, matchId: match._id }, { points: 0 });
-        }
+    const bets = await Bet.find({ matchId: { $in: allWeekMatches.map((m) => m._id) } });
 
-        // אפס ניקוד שבועי
-        await Score.findOneAndUpdate(
-          { userId: user._id, weekId },
-          { weeklyScore: 0, updatedAt: new Date() },
-          { upsert: false }
-        );
+    const betOps = [];
+    const weeklyByUser = new Map();
+    const exactByUser = new Map();
+    const userById = new Map(users.map((u) => [u._id.toString(), u]));
 
-        // חשב מחדש סה"כ
-        const userScores = await Score.find({ userId: user._id });
-        const totalScore = userScores.reduce((sum, score) => sum + score.weeklyScore, 0);
-        await Score.updateMany({ userId: user._id }, { totalScore });
+    for (const bet of bets) {
+      const match = matchById.get(bet.matchId.toString());
+      if (!match) continue;
+
+      // משחק בלי תוצאה מאפס את הנקודות, כמו קודם
+      const points = hasResult(match)
+        ? calculateMatchPoints(bet.prediction, match.result, match.odds)
+        : 0;
+
+      if (bet.points !== points) {
+        betOps.push({ updateOne: { filter: { _id: bet._id }, update: { $set: { points } } } });
       }
 
+      const userId = bet.userId.toString();
+      weeklyByUser.set(userId, (weeklyByUser.get(userId) || 0) + points);
+
+      const isExact =
+        hasResult(match) &&
+        notifyMatchIds.has(match._id.toString()) &&
+        bet.prediction.team1Goals === match.result.team1Goals &&
+        bet.prediction.team2Goals === match.result.team2Goals;
+
+      if (isExact) {
+        const user = userById.get(userId);
+        if (user && user.role !== 'admin') {
+          if (!exactByUser.has(userId)) {
+            exactByUser.set(userId, { userId: user._id, name: user.name, exactCount: 0, exactMatches: [] });
+          }
+          const entry = exactByUser.get(userId);
+          entry.exactCount++;
+          entry.exactMatches.push({
+            team1: match.team1,
+            team2: match.team2,
+            // סדר טבעי team1-team2, כמו בכל מסכי האפליקציה
+            score: `${match.result.team1Goals}-${match.result.team2Goals}`
+          });
+        }
+      }
+    }
+
+    if (betOps.length > 0) await Bet.bulkWrite(betOps);
+
+    // ניקוד שבועי. כשאין בכלל תוצאות לא יוצרים רשומות חדשות - רק מאפסים קיימות
+    const now = new Date();
+    const scoreOps = users.map((u) => ({
+      updateOne: {
+        filter: { userId: u._id, weekId },
+        update: { $set: { weeklyScore: weeklyByUser.get(u._id.toString()) || 0, updatedAt: now } },
+        upsert: playedMatches.length > 0
+      }
+    }));
+    if (scoreOps.length > 0) await Score.bulkWrite(scoreOps);
+
+    // סכום מצטבר לכל משתמש - אגרגציה אחת במקום שאילתה לכל משתמש
+    const totals = await Score.aggregate([
+      { $group: { _id: '$userId', total: { $sum: '$weeklyScore' } } }
+    ]);
+    if (totals.length > 0) {
+      await Score.bulkWrite(
+        totals.map((t) => ({
+          updateMany: { filter: { userId: t._id }, update: { $set: { totalScore: t.total } } }
+        }))
+      );
+    }
+
+    if (playedMatches.length === 0) {
+      await Week.findByIdAndUpdate(weekId, { scoresCalculatedAt: now });
       return res.json({ message: 'Scores reset successfully (no results found)' });
     }
 
-    for (const user of users) {
-      let totalPoints = 0;
-      let exactCount = 0;
-      const exactMatches = [];
-
-      for (const match of matches) {
-        const bet = await Bet.findOne({ userId: user._id, matchId: match._id });
-
-        if (bet) {
-          const points = calculateMatchPoints(bet.prediction, match.result, match.odds);
-          await Bet.findByIdAndUpdate(bet._id, { points });
-          totalPoints += points;
-
-          // Track exact scores only for the specific match that was just updated
-          if (notifyMatchIds.has(match._id.toString()) &&
-              bet.prediction.team1Goals === match.result.team1Goals &&
-              bet.prediction.team2Goals === match.result.team2Goals) {
-            exactCount++;
-            exactMatches.push({
-              team1: match.team1,
-              team2: match.team2,
-              // סדר טבעי team1-team2, כמו בכל מסכי האפליקציה
-              score: `${match.result.team1Goals}-${match.result.team2Goals}`
-            });
-          }
-        }
-      }
-
-      // אפס נקודות בהימורים על משחקים שאין להם תוצאה עדיין
-      const allWeekMatches = await Match.find({ weekId });
-      const matchesWithResults = matches.map(m => m._id.toString());
-      for (const match of allWeekMatches) {
-        if (!matchesWithResults.includes(match._id.toString())) {
-          await Bet.updateMany({ userId: user._id, matchId: match._id }, { points: 0 });
-        }
-      }
-
-      // Track users with exact scores for push notification
-      if (exactCount > 0 && user.role !== 'admin') {
-        exactScoreUsers.push({ userId: user._id, name: user.name, exactCount, exactMatches });
-      }
-
-      // Update user's score for this week
-      await Score.findOneAndUpdate(
-        { userId: user._id, weekId },
-        {
-          weeklyScore: totalPoints,
-          updatedAt: new Date()
-        },
-        { upsert: true }
-      );
-
-      // Calculate total score across all weeks
-      const userScores = await Score.find({ userId: user._id });
-      const totalScore = userScores.reduce((sum, score) => sum + score.weeklyScore, 0);
-
-      // Update all scores with new total
-      await Score.updateMany(
-        { userId: user._id },
-        { totalScore }
-      );
-    }
-
-    // Send push notifications to users who got exact scores on this specific match
+    // התראות "בול" למי שניחש במדויק את המשחקים שנכנסו עכשיו
+    const exactScoreUsers = [...exactByUser.values()];
     if (exactScoreUsers.length > 0) {
       try {
-        // Get excluded users for this month
-        const excludedIds = week ? (await MonthExclusion.find({ month: week.month, season: week.season }))
-          .map(e => e.userId.toString()) : [];
+        const excludedIds = week
+          ? (await MonthExclusion.find({ month: week.month, season: week.season })).map((e) => e.userId.toString())
+          : [];
 
-        const usersToNotify = [];
-        for (const eu of exactScoreUsers) {
-          if (excludedIds.includes(eu.userId.toString())) continue;
-          const u = await User.findById(eu.userId);
-          if (u && u.pushSettings?.enabled && u.pushSettings?.exactScoreAlerts !== false) {
-            usersToNotify.push(eu);
-          }
+        const usersToNotify = exactScoreUsers.filter((eu) => {
+          if (excludedIds.includes(eu.userId.toString())) return false;
+          const u = userById.get(eu.userId.toString());
+          return u && u.pushSettings?.enabled && u.pushSettings?.exactScoreAlerts !== false;
+        });
+
+        for (const eu of usersToNotify) {
+          const title = '🎯 דייקת!';
+          const matchLines = eu.exactMatches.map((m) => `⚽ ${m.team1} ${m.score} ${m.team2}`).join('\n');
+          const body = `ניחשת בול!\n${matchLines}\nכל הכבוד 🔥`;
+          await sendNotificationToUsers([eu.userId], title, body, { type: 'exact_score' });
         }
-
         if (usersToNotify.length > 0) {
-          for (const eu of usersToNotify) {
-            const title = '🎯 דייקת!';
-            const matchLines = eu.exactMatches.map(m => `⚽ ${m.team1} ${m.score} ${m.team2}`).join('\n');
-            const body = `ניחשת בול!\n${matchLines}\nכל הכבוד 🔥`;
-            await sendNotificationToUsers([eu.userId], title, body, { type: 'exact_score' });
-          }
           console.log(`🎯 Exact score notifications sent to ${usersToNotify.length} users`);
         }
       } catch (pushError) {
@@ -156,15 +143,16 @@ router.post('/calculate/:weekId', async (req, res) => {
     // Audit log
     if (adminId) {
       const weekName = week ? week.name : weekId;
-      logAdminAction(adminId, 'חישוב ניקוד', `שבוע: ${weekName} (${matches.length} משחקים)`, { weekId, matchId });
+      logAdminAction(adminId, 'חישוב ניקוד', `שבוע: ${weekName} (${playedMatches.length} משחקים)`, { weekId, matchId });
     }
 
     // מסמנים שהניקוד חושב על התוצאות הנוכחיות, כדי שה-cron יזהה שבוע
     // שנכנסו לו תוצאות אך הניקוד לא רץ עליהן
-    await Week.findByIdAndUpdate(weekId, { scoresCalculatedAt: new Date() });
+    await Week.findByIdAndUpdate(weekId, { scoresCalculatedAt: now });
 
     res.json({ message: 'Scores calculated successfully' });
   } catch (error) {
+    console.error('❌ [scores/calculate] error:', error);
     res.status(500).json({ message: error.message });
   }
 });
