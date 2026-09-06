@@ -27,8 +27,37 @@ function NotificationSettings({ user }) {
   const checkSubscription = async () => {
     try {
       const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
+      let subscription = await registration.pushManager.getSubscription();
+
+      // הדפדפן יכול לבטל מנוי בלי להודיע. אם ההרשאה כבר ניתנה, נרשמים מחדש
+      // בשקט במקום להשאיר את המשתמש בלי התראות בלי שידע.
+      if (!subscription && Notification.permission === 'granted') {
+        try {
+          const keyRes = await fetch(`${API_URL}/notifications/vapid-public-key`);
+          const keyData = await keyRes.json();
+          if (keyData.publicKey) {
+            subscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(keyData.publicKey)
+            });
+          }
+        } catch (resubError) {
+          console.warn('Silent re-subscribe failed:', resubError);
+        }
+      }
+
       setIsSubscribed(!!subscription);
+
+      // תמיד מסנכרנים לשרת. המנוי בדפדפן מתחלף מדי פעם, והשרת נשאר עם
+      // endpoint ישן שנכשל ב-410 בשקט - וכך כל ההתראות מפסיקות להגיע.
+      const userIdForSync = getUserId();
+      if (subscription && userIdForSync) {
+        fetch(`${API_URL}/notifications/subscribe`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: userIdForSync, subscription, hoursBeforeLock, silent: true })
+        }).catch((syncError) => console.warn('Subscription sync failed:', syncError));
+      }
 
       if (subscription && user) {
         const response = await fetch(`${API_URL}/auth/users`);

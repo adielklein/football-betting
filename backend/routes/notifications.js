@@ -112,9 +112,11 @@ router.get('/all-users', async (req, res) => {
 // 🔧 שמור subscription - תמיכה בשני המבנים
 router.post('/subscribe', async (req, res) => {
   try {
-    const { userId, subscription, hoursBeforeLock } = req.body;
-    
-    console.log(`📥 Saving subscription for user ${userId}`);
+    // silent - סנכרון רקע של מנוי קיים. בלעדיו כל פתיחה של האפליקציה
+    // הייתה שולחת התראת "התראות הופעלו".
+    const { userId, subscription, hoursBeforeLock, silent } = req.body;
+
+    console.log(`📥 Saving subscription for user ${userId}${silent ? ' (silent sync)' : ''}`);
     
     const user = await User.findById(userId);
     if (!user) {
@@ -150,6 +152,13 @@ router.post('/subscribe', async (req, res) => {
     
     console.log(`✅ Subscription saved for ${user.name} (${user.pushSettings.subscriptions.length} devices)`);
     
+    if (silent) {
+      return res.json({
+        message: 'Subscription synced',
+        deviceCount: user.pushSettings.subscriptions.length
+      });
+    }
+
     // שלח התראת בדיקה
     const payload = {
       title: '✅ התראות הופעלו',
@@ -157,11 +166,11 @@ router.post('/subscribe', async (req, res) => {
       icon: '/logo192.png',
       badge: '/logo192.png'
     };
-    
+
     const sent = await sendNotification(subscription, payload);
-    
+
     if (sent) {
-      res.json({ 
+      res.json({
         message: 'Subscription saved successfully',
         deviceCount: user.pushSettings.subscriptions.length
       });

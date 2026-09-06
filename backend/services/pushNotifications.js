@@ -47,6 +47,36 @@ function getUserSubscriptions(user) {
   return [];
 }
 
+// 404/410 משירות ה-push אומרים שהמנוי מת סופית ולא יחזור. אם לא מוחקים אותו,
+// המשתמש נשאר מסומן "רשום להתראות" לנצח בזמן שכלום לא מגיע אליו - וזה בדיוק
+// מה שהסתיר תקלה שבה כל ההתראות נכשלו בלי שאיש שם לב.
+async function removeDeadSubscriptions(user, deadEndpoints) {
+  if (!deadEndpoints || deadEndpoints.length === 0) return 0;
+
+  const before = getUserSubscriptions(user).length;
+
+  if (Array.isArray(user.pushSettings?.subscriptions)) {
+    user.pushSettings.subscriptions = user.pushSettings.subscriptions.filter(
+      (s) => !deadEndpoints.includes(s?.endpoint)
+    );
+  }
+  if (user.pushSettings?.subscription && deadEndpoints.includes(user.pushSettings.subscription.endpoint)) {
+    user.pushSettings.subscription = null;
+  }
+
+  const remaining = getUserSubscriptions(user).length;
+  // בלי מכשירים פעילים ההגדרה צריכה לשקף את המציאות, כדי שהמשתמש יראה
+  // שההתראות כבויות ויוכל להירשם מחדש
+  if (remaining === 0) user.pushSettings.enabled = false;
+
+  await user.save();
+  console.log(`🗑️ [PUSH] ${user.name}: removed ${before - remaining} dead subscription(s), ${remaining} left`);
+  return before - remaining;
+}
+
+const deadEndpointsFrom = (errors) =>
+  errors.filter((e) => e.statusCode === 404 || e.statusCode === 410).map((e) => e.endpoint).filter(Boolean);
+
 /**
  * ✅ NEW: העלאת תמונה ל-ImgBB
  */
@@ -108,6 +138,7 @@ async function sendNotification(subscription, payload, errorSink = null) {
       errorSink.push({
         statusCode,
         detail,
+        endpoint: subscription?.endpoint || null,
         endpointHost: (subscription?.endpoint || '').replace(/^https?:\/\//, '').split('/')[0] || null
       });
     }
@@ -194,9 +225,10 @@ async function sendNotificationToAll(title, body, data = {}, imageUrl = null) {
       
       let userSent = 0;
       let userFailedCount = 0;
-      
+      const errors = [];
+
       for (const subscription of subscriptions) {
-        const success = await sendNotification(subscription, payload);
+        const success = await sendNotification(subscription, payload, errors);
         if (success) {
           userSent++;
           totalSent++;
@@ -205,7 +237,9 @@ async function sendNotificationToAll(title, body, data = {}, imageUrl = null) {
           totalFailed++;
         }
       }
-      
+
+      await removeDeadSubscriptions(user, deadEndpointsFrom(errors));
+
       if (userSent > 0) {
         usersReached++;
         console.log(`  ✅ ${user.name}: ${userSent} device(s)`);
@@ -299,13 +333,16 @@ async function sendNotificationToUsers(userIds, title, body, data = {}, imageUrl
     let usersReached = 0;
     let usersFailed = 0;
 
+    let totalPurged = 0;
+
     for (const user of users) {
       const subscriptions = getUserSubscriptions(user);
+      const errors = [];
       let userSent = 0;
       let userFailedCount = 0;
-      
+
       for (const subscription of subscriptions) {
-        const success = await sendNotification(subscription, payload);
+        const success = await sendNotification(subscription, payload, errors);
         if (success) {
           userSent++;
           totalSent++;
@@ -314,7 +351,9 @@ async function sendNotificationToUsers(userIds, title, body, data = {}, imageUrl
           totalFailed++;
         }
       }
-      
+
+      totalPurged += await removeDeadSubscriptions(user, deadEndpointsFrom(errors));
+
       if (userSent > 0) {
         usersReached++;
         console.log(`  ✅ ${user.name}: ${userSent} device(s)`);
@@ -333,6 +372,7 @@ async function sendNotificationToUsers(userIds, title, body, data = {}, imageUrl
       success: true,
       sent: totalSent,
       failed: totalFailed,
+      purged: totalPurged,
       users: usersReached,
       usersFailed: usersFailed,
       total: users.length
@@ -420,15 +460,18 @@ async function sendWeekActivationNotification(week, options = {}) {
 
     for (const user of users) {
       const subscriptions = getUserSubscriptions(user);
+      const errors = [];
       let userSent = 0;
       
       for (const subscription of subscriptions) {
-        if (await sendNotification(subscription, payload)) {
+        if (await sendNotification(subscription, payload, errors)) {
           userSent++;
           totalSent++;
         }
       }
       
+      await removeDeadSubscriptions(user, deadEndpointsFrom(errors));
+
       if (userSent > 0) usersReached++;
     }
 
