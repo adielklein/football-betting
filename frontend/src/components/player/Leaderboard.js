@@ -206,7 +206,7 @@ function Leaderboard({ leaderboard, user }) {
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
-            color: '#333'
+            color: 'var(--text, #333)'
           }}>
             {player.name}
             {isMe && (
@@ -246,7 +246,7 @@ function Leaderboard({ leaderboard, user }) {
         gap: '3px',
         marginBottom: '0.75rem',
         padding: '3px',
-        backgroundColor: '#f0f2f5',
+        backgroundColor: 'var(--surface-3, #f0f2f5)',
         borderRadius: '14px',
         boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)'
       }}>
@@ -315,10 +315,10 @@ function Leaderboard({ leaderboard, user }) {
       )}
 
       {loading && (
-        <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
+        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-4, #999)' }}>
           <div style={{
             width: '36px', height: '36px',
-            border: '3px solid #f0f0f0', borderTop: '3px solid var(--theme-primary, #007bff)',
+            border: '3px solid var(--border, #f0f0f0)', borderTop: '3px solid var(--theme-primary, #007bff)',
             borderRadius: '50%', animation: 'spin 0.8s linear infinite',
             margin: '0 auto 0.5rem'
           }}></div>
@@ -341,7 +341,7 @@ function Leaderboard({ leaderboard, user }) {
               </div>
             )}
             {monthlyScores.length === 0 && !loading && (
-              <div style={{ textAlign: 'center', color: '#999', padding: '1.5rem', fontSize: '14px' }}>
+              <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1.5rem', fontSize: '14px' }}>
                 אין נתונים לחודש {months.find(m => m.value === selectedMonth)?.label}
               </div>
             )}
@@ -378,13 +378,13 @@ function Leaderboard({ leaderboard, user }) {
                   </div>
                 )}
                 {selectedWeekScores.length === 0 && selectedWeekId && (
-                  <div style={{ textAlign: 'center', color: '#999', padding: '0.75rem', fontSize: '13px' }}>
+                  <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '0.75rem', fontSize: '13px' }}>
                     אין נתוני ניקוד לשבוע זה
                   </div>
                 )}
               </>
             ) : (
-              <div style={{ textAlign: 'center', color: '#999', padding: '1.5rem', fontSize: '14px' }}>
+              <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1.5rem', fontSize: '14px' }}>
                 אין שבועות בחודש {months.find(m => m.value === selectedMonth)?.label}
               </div>
             )}
@@ -420,7 +420,7 @@ function Leaderboard({ leaderboard, user }) {
                 )}
               </div>
             ) : (
-              <div style={{ textAlign: 'center', color: '#999', padding: '1.5rem', fontSize: '14px' }}>
+              <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1.5rem', fontSize: '14px' }}>
                 אין נתוני דירוג עדיין
               </div>
             )}

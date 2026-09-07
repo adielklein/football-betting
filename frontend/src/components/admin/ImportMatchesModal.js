@@ -228,9 +228,9 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
         )}
 
         <div style={{ overflowY: 'auto', flex: 1, paddingLeft: '0.25rem', paddingRight: '0.25rem' }}>
-          {loading && <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>⏳ טוען משחקים...</div>}
+          {loading && <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-3, #666)' }}>⏳ טוען משחקים...</div>}
           {!loading && fixtures.length === 0 && !error && (
-            <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-3, #666)' }}>
               אין משחקים זמינים בטווח הנבחר
             </div>
           )}
@@ -241,7 +241,7 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
                 <button onClick={handleSelectAll} className="btn" style={{ fontSize: '13px' }}>
                   {fixtures.every((f) => f.selected) ? 'נקה הכל' : 'בחר הכל'}
                 </button>
-                <span style={{ fontSize: '13px', color: '#666' }}>
+                <span style={{ fontSize: '13px', color: 'var(--text-3, #666)' }}>
                   {selectedCount} מתוך {fixtures.length} נבחרו
                 </span>
               </div>
@@ -274,7 +274,7 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
                         style={{ flex: 1 }}
                       />
                     </div>
-                    <span style={{ color: '#888', fontWeight: 'bold' }}>vs</span>
+                    <span style={{ color: 'var(--text-3, #888)', fontWeight: 'bold' }}>vs</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flex: '1 1 200px', minWidth: '180px' }}>
                       <TeamLogo name={f.team2} size={20} />
                       <input
@@ -285,13 +285,13 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
                         style={{ flex: 1 }}
                       />
                     </div>
-                    <div style={{ fontSize: '14px', color: '#444', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: '14px', color: 'var(--text-2, #444)', whiteSpace: 'nowrap' }}>
                       📅 {f.date} | 🕒 {f.time}
                     </div>
                   </div>
                   {includeOdds && (
                     <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', alignItems: 'center', paddingRight: '30px' }}>
-                      <span style={{ fontSize: '12px', color: '#888' }}>יחסים:</span>
+                      <span style={{ fontSize: '12px', color: 'var(--text-3, #888)' }}>יחסים:</span>
                       <label style={{ fontSize: '12px' }}>1:</label>
                       <input
                         type="number"

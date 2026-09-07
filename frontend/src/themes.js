@@ -1,3 +1,5 @@
+import { isDark } from './services/colorScheme';
+
 // src/themes.js - קובץ ערכות נושא עם תאימות מלאה ל-iOS Safari
 
 export const THEMES = {
@@ -402,10 +404,24 @@ export const applyTheme = (user) => {
   root.style.setProperty('--theme-primary', theme.colors.primary);
   root.style.setProperty('--theme-secondary', theme.colors.secondary);
   root.style.setProperty('--theme-accent', theme.colors.accent);
-  root.style.setProperty('--theme-background', theme.colors.background);
   root.style.setProperty('--theme-header-bg', theme.colors.headerBg);
-  root.style.setProperty('--theme-text', theme.colors.primary === '#ffffff' ? '#000000' : '#333333');
-  root.style.setProperty('--theme-text-light', '#666666');
+
+  // הרקע והטקסט נקבעים לפי מצב התצוגה ולא רק לפי הערכה. הכתיבה כאן היא
+  // סגנון מוטבע, שגובר על כל CSS - ולכן מצב כהה שהיה מוגדר רק בגיליון
+  // הסגנונות היה מפסיד לשורות האלה תמיד.
+  //
+  // הערכים במצב כהה נקראים מהטוקנים עצמם ולא נכתבים כאן שוב, כדי שתהיה
+  // מקור אמת אחד לפלטה.
+  const dark = isDark();
+  const cs = getComputedStyle(root);
+  const token = (name, fallback) => cs.getPropertyValue(name).trim() || fallback;
+
+  root.style.setProperty('--theme-background', dark ? token('--surface', '#1b1f26') : theme.colors.background);
+  root.style.setProperty(
+    '--theme-text',
+    dark ? token('--text', '#e8eaed') : (theme.colors.primary === '#ffffff' ? '#000000' : '#333333')
+  );
+  root.style.setProperty('--theme-text-light', dark ? token('--text-3', '#98a0ac') : '#666666');
   
   // 🍎 הוסף קלאס iOS לbody אם צריך
   if (isIOSDevice) {

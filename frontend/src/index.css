@@ -11,6 +11,69 @@
   --theme-icon-image: none;
 }
 
+/*
+ * שכבת צבעים ניטרלית, נפרדת מערכות הקבוצות.
+ *
+ * ערכות הקבוצות שולטות בצבעי המותג (primary/accent/header) ונכתבות
+ * ישירות על אלמנט השורש מ-applyTheme. הטוקנים כאן שולטים בשלד: משטחים,
+ * טקסט וגבולות - ולכן הם היחידים שמתהפכים במצב כהה.
+ *
+ * הפרדה זו נחוצה: סגנון מוטבע גובר על כל CSS, ולכן מצב כהה שהיה מנסה
+ * לשנות את אותם משתנים שהערכות כותבות היה מפסיד להן תמיד.
+ */
+:root {
+  --surface: #ffffff;      /* כרטיסים */
+  --surface-2: #f8f9fc;    /* מילוי עדין בתוך כרטיס */
+  --surface-3: #f0f2f5;    /* פסי לשוניות, צ'יפים */
+  --app-bg: #f5f6f8;
+  --text: #333333;
+  --text-2: #555555;
+  --text-3: #888888;
+  --text-4: #aaaaaa;
+  --border: #eeeeee;
+  --border-2: #dde1e7;
+}
+
+/* העדפת המערכת. מסויג ב-not([data-theme="light"]) כדי שבחירה מפורשת
+   בבהיר תגבור על מערכת כהה. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface: #1b1f26;
+    --surface-2: #232830;
+    --surface-3: #2b313b;
+    --app-bg: #12151a;
+    --text: #e8eaed;
+    --text-2: #c5cad3;
+    --text-3: #98a0ac;
+    --text-4: #737b87;
+    --border: #2f3540;
+    --border-2: #3a414d;
+
+    /* גם משתני הערכה, כדי שמסך ההתחברות ייראה נכון עוד לפני שהערכה הוחלה */
+    --theme-background: #1b1f26;
+    --theme-text: #e8eaed;
+    --theme-text-light: #98a0ac;
+  }
+}
+
+/* בחירה מפורשת בכהה, שגוברת גם על מערכת בהירה */
+:root[data-theme="dark"] {
+  --surface: #1b1f26;
+  --surface-2: #232830;
+  --surface-3: #2b313b;
+  --app-bg: #12151a;
+  --text: #e8eaed;
+  --text-2: #c5cad3;
+  --text-3: #98a0ac;
+  --text-4: #737b87;
+  --border: #2f3540;
+  --border-2: #3a414d;
+
+  --theme-background: #1b1f26;
+  --theme-text: #e8eaed;
+  --theme-text-light: #98a0ac;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -23,7 +86,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f0f2f5;
+  background-color: var(--app-bg, #f0f2f5);
   color: var(--theme-text);
   direction: rtl;
   position: relative;
@@ -575,14 +638,8 @@ tr:hover {
   }
 }
 
-/* מצב כהה */
-@media (prefers-color-scheme: dark) {
-  .auto-dark-mode {
-    --theme-background: #1a1a1a;
-    --theme-text: #ffffff;
-    --theme-text-light: #cccccc;
-  }
-}
+/* הבלוק שהיה כאן חל על מחלקה auto-dark-mode שלא הופיעה בשום מקום בקוד,
+   כלומר מעולם לא פעל. מצב כהה מנוהל עכשיו בשכבת הטוקנים למעלה. */
 
 /* iOS landscape */
 @media screen and (orientation: landscape) and (max-height: 500px) {

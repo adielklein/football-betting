@@ -231,7 +231,7 @@ function NotificationSettings({ user }) {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           <span style={{ fontSize: '16px' }}>🔔</span>
-          <span style={{ fontWeight: '600', fontSize: '13px', color: '#333' }}>התראות תזכורת</span>
+          <span style={{ fontWeight: '600', fontSize: '13px', color: 'var(--text, #333)' }}>התראות תזכורת</span>
           {isSubscribed && (
             <span style={{
               padding: '1px 8px', borderRadius: '20px',
@@ -244,7 +244,7 @@ function NotificationSettings({ user }) {
           )}
         </div>
         <span style={{
-          fontSize: '12px', color: '#aaa',
+          fontSize: '12px', color: 'var(--text-4, #aaa)',
           transition: 'transform 0.3s ease',
           transform: showSettings ? 'rotate(180deg)' : 'rotate(0deg)',
           display: 'inline-block'
@@ -261,16 +261,16 @@ function NotificationSettings({ user }) {
         }}>
           <div style={{
             padding: '0.6rem',
-            backgroundColor: '#f8f9fc',
+            backgroundColor: 'var(--surface-2, #f8f9fc)',
             borderRadius: '10px',
             marginBottom: '0.5rem'
           }}>
-            <p style={{ fontSize: '12px', color: '#888', marginBottom: '0.5rem' }}>
+            <p style={{ fontSize: '12px', color: 'var(--text-3, #888)', marginBottom: '0.5rem' }}>
               קבל התראה לנייד לפני שההימורים נסגרים
             </p>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <label style={{ fontSize: '12px', fontWeight: '600', color: '#555', flexShrink: 0 }}>
+              <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-2, #555)', flexShrink: 0 }}>
                 התראה לפני:
               </label>
               <select
@@ -302,7 +302,7 @@ function NotificationSettings({ user }) {
                 WebkitTapHighlightColor: 'transparent'
               }}
             >
-              <label style={{ fontSize: '12px', fontWeight: '600', color: '#555', cursor: 'pointer' }}>
+              <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-2, #555)', cursor: 'pointer' }}>
                 🎯 התראה על ניחוש מדויק
               </label>
               <div style={{
@@ -313,7 +313,7 @@ function NotificationSettings({ user }) {
               }}>
                 <div style={{
                   width: '18px', height: '18px', borderRadius: '50%',
-                  background: '#fff', position: 'absolute', top: '2px',
+                  background: 'var(--surface, #fff)', position: 'absolute', top: '2px',
                   left: exactScoreAlerts ? '20px' : '2px',
                   transition: 'left 0.3s ease',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.2)'

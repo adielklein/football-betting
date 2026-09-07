@@ -164,7 +164,7 @@ function PlayerView({ user, onLogout }) {
           animation: 'spin 1s linear infinite',
           marginBottom: '1rem'
         }}></div>
-        <h2 style={{ color: '#666', fontSize: '1.2rem' }}>טוען נתונים...</h2>
+        <h2 style={{ color: 'var(--text-3, #666)', fontSize: '1.2rem' }}>טוען נתונים...</h2>
         
         <style>{`
           @keyframes spin {
@@ -192,7 +192,7 @@ function PlayerView({ user, onLogout }) {
           display: 'flex', 
           gap: '1rem', 
           marginBottom: '2rem',
-          borderBottom: '1px solid #ddd',
+          borderBottom: '1px solid var(--border-2, #ddd)',
           paddingBottom: '1rem',
           overflowX: 'auto',
           flexWrap: 'nowrap',

@@ -33,11 +33,11 @@ function PlayerStats({ user }) {
       <div style={{ padding: '2rem', textAlign: 'center' }}>
         <div style={{
           width: '40px', height: '40px', margin: '0 auto 1rem',
-          border: '3px solid #f0f0f0',
+          border: '3px solid var(--border, #f0f0f0)',
           borderTop: '3px solid var(--theme-primary, #007bff)',
           borderRadius: '50%', animation: 'spin 0.8s linear infinite'
         }} />
-        <p style={{ color: '#888', fontSize: '14px' }}>טוען סטטיסטיקות...</p>
+        <p style={{ color: 'var(--text-3, #888)', fontSize: '14px' }}>טוען סטטיסטיקות...</p>
       </div>
     );
   }
@@ -50,8 +50,8 @@ function PlayerStats({ user }) {
         borderRadius: '16px', margin: '0.5rem 0'
       }}>
         <div style={{ fontSize: '48px', marginBottom: '0.5rem' }}>📊</div>
-        <p style={{ color: '#666', fontSize: '15px', fontWeight: '600' }}>אין עדיין סטטיסטיקות</p>
-        <p style={{ color: '#999', fontSize: '13px' }}>התחל להמר כדי לראות את הנתונים שלך!</p>
+        <p style={{ color: 'var(--text-3, #666)', fontSize: '15px', fontWeight: '600' }}>אין עדיין סטטיסטיקות</p>
+        <p style={{ color: 'var(--text-4, #999)', fontSize: '13px' }}>התחל להמר כדי לראות את הנתונים שלך!</p>
       </div>
     );
   }
@@ -114,11 +114,11 @@ function PlayerStats({ user }) {
     return (
       <div style={{ marginBottom: '8px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-          <span style={{ fontSize: '12px', fontWeight: '600', color: '#555' }}>{label}</span>
-          <span style={{ fontSize: '12px', color: '#888' }}>{count != null ? count : value}</span>
+          <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-2, #555)' }}>{label}</span>
+          <span style={{ fontSize: '12px', color: 'var(--text-3, #888)' }}>{count != null ? count : value}</span>
         </div>
         <div style={{
-          height: '8px', borderRadius: '4px', background: '#f0f2f5', overflow: 'hidden'
+          height: '8px', borderRadius: '4px', background: 'var(--surface-3, #f0f2f5)', overflow: 'hidden'
         }}>
           <div style={{
             height: '100%', borderRadius: '4px', width: `${pct}%`,
@@ -133,7 +133,7 @@ function PlayerStats({ user }) {
   // === Card Wrapper ===
   const Card = ({ children, title, icon, style = {} }) => (
     <div style={{
-      background: '#fff', borderRadius: '16px',
+      background: 'var(--surface, #fff)', borderRadius: '16px',
       padding: '0.85rem', marginBottom: '0.6rem',
       boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)',
       border: '1px solid rgba(0,0,0,0.05)',
@@ -142,7 +142,7 @@ function PlayerStats({ user }) {
       {title && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.7rem' }}>
           {icon && <span style={{ fontSize: '16px' }}>{icon}</span>}
-          <span style={{ fontWeight: '700', fontSize: '14px', color: '#333' }}>{title}</span>
+          <span style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text, #333)' }}>{title}</span>
         </div>
       )}
       {children}
@@ -158,7 +158,7 @@ function PlayerStats({ user }) {
       <div style={{ fontSize: '22px', fontWeight: '800', color: color || '#333', lineHeight: 1.2 }}>
         {value}
       </div>
-      <div style={{ fontSize: '10px', color: '#888', fontWeight: '600', marginTop: '2px' }}>
+      <div style={{ fontSize: '10px', color: 'var(--text-3, #888)', fontWeight: '600', marginTop: '2px' }}>
         {label}
       </div>
     </div>
@@ -167,7 +167,7 @@ function PlayerStats({ user }) {
   // === Timeline Bar Chart ===
   const TimelineChart = () => {
     if (!weeklyTimeline || weeklyTimeline.length === 0) {
-      return <p style={{ color: '#999', fontSize: '13px', textAlign: 'center' }}>אין נתונים עדיין</p>;
+      return <p style={{ color: 'var(--text-4, #999)', fontSize: '13px', textAlign: 'center' }}>אין נתונים עדיין</p>;
     }
 
     const maxScore = Math.max(...weeklyTimeline.map(w => w.weeklyScore), 1);
@@ -202,7 +202,7 @@ function PlayerStats({ user }) {
                   transitionDelay: (i * 50) + 'ms'
                 }} />
                 <span style={{
-                  fontSize: '9px', color: '#aaa', marginTop: '4px',
+                  fontSize: '9px', color: 'var(--text-4, #aaa)', marginTop: '4px',
                   writingMode: weeklyTimeline.length > 15 ? 'vertical-rl' : 'horizontal-tb',
                   textOrientation: 'mixed',
                   whiteSpace: 'nowrap', fontWeight: '500'
@@ -290,12 +290,12 @@ function PlayerStats({ user }) {
         }}>
           {rank + 1}
         </span>
-        <span style={{ flex: 1, fontSize: '13px', fontWeight: '700', color: '#333' }}>
+        <span style={{ flex: 1, fontSize: '13px', fontWeight: '700', color: 'var(--text, #333)' }}>
           {team.name}
         </span>
         <div style={{ textAlign: 'left', display: 'flex', gap: '8px', alignItems: 'center' }}>
           <span style={{
-            fontSize: '11px', color: '#888',
+            fontSize: '11px', color: 'var(--text-3, #888)',
           }}>
             {team.bets} משחקים
           </span>
@@ -317,7 +317,7 @@ function PlayerStats({ user }) {
       <div style={{
         display: 'grid', gridTemplateColumns: `repeat(${sections.length}, 1fr)`,
         gap: '4px', marginBottom: '0.6rem', padding: '3px',
-        backgroundColor: '#f0f2f5', borderRadius: '12px',
+        backgroundColor: 'var(--surface-3, #f0f2f5)', borderRadius: '12px',
         boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)'
       }}>
         {sections.map(s => {
@@ -400,8 +400,8 @@ function PlayerStats({ user }) {
                     background: item.bg, borderRadius: '10px'
                   }}>
                     <div style={{ fontSize: '20px', fontWeight: '800', color: item.color }}>{pct}%</div>
-                    <div style={{ fontSize: '10px', color: '#666', fontWeight: '600' }}>{item.label}</div>
-                    <div style={{ fontSize: '10px', color: '#aaa' }}>{predictionDistribution[item.key]}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-3, #666)', fontWeight: '600' }}>{item.label}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)' }}>{predictionDistribution[item.key]}</div>
                   </div>
                 );
               })}
@@ -447,7 +447,7 @@ function PlayerStats({ user }) {
                   padding: '8px 10px', borderRadius: '8px',
                   background: i % 2 === 0 ? '#fafbfc' : 'transparent',
                 }}>
-                  <span style={{ fontSize: '12px', color: '#555', fontWeight: '600' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-2, #555)', fontWeight: '600' }}>
                     {week.weekName}
                   </span>
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -458,7 +458,7 @@ function PlayerStats({ user }) {
                       {week.weeklyScore} נק׳
                     </span>
                     <span style={{
-                      fontSize: '11px', color: '#aaa', fontWeight: '500',
+                      fontSize: '11px', color: 'var(--text-4, #aaa)', fontWeight: '500',
                       minWidth: '50px', textAlign: 'left'
                     }}>
                       סה״כ {week.totalScore}
@@ -484,7 +484,7 @@ function PlayerStats({ user }) {
                 <TeamRow key={team.name} team={team} rank={i} isBest={true} />
               ))
             ) : (
-              <p style={{ color: '#999', fontSize: '13px', textAlign: 'center' }}>צריך לפחות 3 הימורים לקבוצה</p>
+              <p style={{ color: 'var(--text-4, #999)', fontSize: '13px', textAlign: 'center' }}>צריך לפחות 3 הימורים לקבוצה</p>
             )}
           </Card>
 
@@ -495,7 +495,7 @@ function PlayerStats({ user }) {
                 <TeamRow key={team.name} team={team} rank={i} isBest={false} />
               ))
             ) : (
-              <p style={{ color: '#999', fontSize: '13px', textAlign: 'center' }}>צריך לפחות 3 הימורים לקבוצה</p>
+              <p style={{ color: 'var(--text-4, #999)', fontSize: '13px', textAlign: 'center' }}>צריך לפחות 3 הימורים לקבוצה</p>
             )}
           </Card>
 
@@ -508,13 +508,13 @@ function PlayerStats({ user }) {
                   padding: '6px 8px', borderRadius: '8px',
                   background: i % 2 === 0 ? '#fafbfc' : 'transparent',
                 }}>
-                  <span style={{ flex: 1, fontSize: '12px', fontWeight: '600', color: '#444' }}>
+                  <span style={{ flex: 1, fontSize: '12px', fontWeight: '600', color: 'var(--text-2, #444)' }}>
                     {team.name}
                   </span>
-                  <span style={{ fontSize: '10px', color: '#aaa' }}>{team.bets}</span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-4, #aaa)' }}>{team.bets}</span>
                   <div style={{
                     width: '50px', height: '6px', borderRadius: '3px',
-                    background: '#f0f2f5', overflow: 'hidden'
+                    background: 'var(--surface-3, #f0f2f5)', overflow: 'hidden'
                   }}>
                     <div style={{
                       height: '100%', borderRadius: '3px',

@@ -936,7 +936,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                 >
                   <div style={{
                     padding: '0.75rem',
-                    borderBottom: '1px solid #f0f0f0',
+                    borderBottom: '1px solid var(--border, #f0f0f0)',
                     backgroundColor: hoveredSeason === season ? '#f8f9fa' : 'white',
                     cursor: 'pointer',
                     fontWeight: '500',
@@ -981,7 +981,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                             >
                               <div style={{
                                 padding: '0.65rem 0.75rem',
-                                borderBottom: '1px solid #f0f0f0',
+                                borderBottom: '1px solid var(--border, #f0f0f0)',
                                 backgroundColor: hoveredMonth === monthKey ? '#f8f9fa' : 'white',
                                 cursor: 'pointer',
                                 fontSize: '14px',
@@ -1017,7 +1017,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                                       onClick={() => handleSelectWeek(week)}
                                       style={{
                                         padding: '0.65rem 0.75rem',
-                                        borderBottom: '1px solid #f0f0f0',
+                                        borderBottom: '1px solid var(--border, #f0f0f0)',
                                         backgroundColor: selectedWeek?._id === week._id ? 'var(--accent-color)' : 'white',
                                         color: selectedWeek?._id === week._id ? 'white' : '#495057',
                                         cursor: 'pointer',
@@ -1061,7 +1061,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
         {selectedWeek && (
           <div style={{ 
             padding: '1rem', 
-            backgroundColor: '#f8f9fa', 
+            backgroundColor: 'var(--surface-2, #f8f9fa)', 
             borderRadius: '6px',
             marginTop: '1rem'
           }}>
@@ -1268,9 +1268,9 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
           </div>
           {/* 🆕 יחסים (אופציונלי) */}
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '13px', color: '#666', fontWeight: 'bold' }}>📊 יחסים (אופציונלי):</span>
+            <span style={{ fontSize: '13px', color: 'var(--text-3, #666)', fontWeight: 'bold' }}>📊 יחסים (אופציונלי):</span>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <label style={{ fontSize: '12px', color: '#888' }}>1:</label>
+              <label style={{ fontSize: '12px', color: 'var(--text-3, #888)' }}>1:</label>
               <input
                 type="number"
                 step="0.1"
@@ -1281,7 +1281,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                 className="input"
                 style={{ width: '70px', textAlign: 'center' }}
               />
-              <label style={{ fontSize: '12px', color: '#888' }}>X:</label>
+              <label style={{ fontSize: '12px', color: 'var(--text-3, #888)' }}>X:</label>
               <input
                 type="number"
                 step="0.1"
@@ -1292,7 +1292,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                 className="input"
                 style={{ width: '70px', textAlign: 'center' }}
               />
-              <label style={{ fontSize: '12px', color: '#888' }}>2:</label>
+              <label style={{ fontSize: '12px', color: 'var(--text-3, #888)' }}>2:</label>
               <input
                 type="number"
                 step="0.1"
@@ -1419,7 +1419,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                   key={match._id}
                   style={{
                     padding: '1rem',
-                    border: '1px solid #ddd',
+                    border: '1px solid var(--border-2, #ddd)',
                     borderRadius: '8px',
                     backgroundColor: isEditingThis ? '#f0f8ff' : '#f8f9fa'
                   }}
@@ -1443,7 +1443,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                       >
                         {match.leagueId?.name || match.league || 'לא מוגדר'}
                       </span>
-                      <span style={{ fontSize: '14px', color: '#666' }}>
+                      <span style={{ fontSize: '14px', color: 'var(--text-3, #666)' }}>
                         📅 {match.date} ⏰ {match.time}
                       </span>
                       {match.odds && (match.odds.homeWin || match.odds.draw || match.odds.awayWin) && (
@@ -1534,7 +1534,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                         marginBottom: '1rem'
                       }}>
                         <div>
-                          <label style={{ fontSize: '12px', color: '#666' }}>ליגה:</label>
+                          <label style={{ fontSize: '12px', color: 'var(--text-3, #666)' }}>ליגה:</label>
                           <select
                             value={editingMatchDetails.leagueId}
                             onChange={(e) => setEditingMatchDetails({
@@ -1554,7 +1554,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                         
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           <div style={{ flex: 1 }}>
-                            <label style={{ fontSize: '12px', color: '#666' }}>תאריך:</label>
+                            <label style={{ fontSize: '12px', color: 'var(--text-3, #666)' }}>תאריך:</label>
                             <input
                               type="text"
                               value={editingMatchDetails.date}
@@ -1571,7 +1571,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                             />
                           </div>
                           <div style={{ flex: 1 }}>
-                            <label style={{ fontSize: '12px', color: '#666' }}>שעה:</label>
+                            <label style={{ fontSize: '12px', color: 'var(--text-3, #666)' }}>שעה:</label>
                             <input
                               type="text"
                               value={editingMatchDetails.time}
@@ -1590,7 +1590,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                         </div>
                         
                         <div>
-                          <label style={{ fontSize: '12px', color: '#666' }}>קבוצה ביתית:</label>
+                          <label style={{ fontSize: '12px', color: 'var(--text-3, #666)' }}>קבוצה ביתית:</label>
                           <input
                             type="text"
                             value={editingMatchDetails.team1}
@@ -1603,7 +1603,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                         </div>
                         
                         <div>
-                          <label style={{ fontSize: '12px', color: '#666' }}>קבוצה אורחת:</label>
+                          <label style={{ fontSize: '12px', color: 'var(--text-3, #666)' }}>קבוצה אורחת:</label>
                           <input
                             type="text"
                             value={editingMatchDetails.team2}
@@ -1623,11 +1623,11 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                         alignItems: 'center', 
                         marginBottom: '1rem',
                         padding: '0.5rem',
-                        backgroundColor: '#f8f9fa',
+                        backgroundColor: 'var(--surface-2, #f8f9fa)',
                         borderRadius: '4px'
                       }}>
-                        <span style={{ fontSize: '13px', color: '#666', fontWeight: 'bold', whiteSpace: 'nowrap' }}>📊 יחסים:</span>
-                        <label style={{ fontSize: '12px', color: '#888' }}>1:</label>
+                        <span style={{ fontSize: '13px', color: 'var(--text-3, #666)', fontWeight: 'bold', whiteSpace: 'nowrap' }}>📊 יחסים:</span>
+                        <label style={{ fontSize: '12px', color: 'var(--text-3, #888)' }}>1:</label>
                         <input
                           type="number"
                           step="0.1"
@@ -1641,7 +1641,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                           className="input"
                           style={{ width: '70px', textAlign: 'center' }}
                         />
-                        <label style={{ fontSize: '12px', color: '#888' }}>X:</label>
+                        <label style={{ fontSize: '12px', color: 'var(--text-3, #888)' }}>X:</label>
                         <input
                           type="number"
                           step="0.1"
@@ -1655,7 +1655,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                           className="input"
                           style={{ width: '70px', textAlign: 'center' }}
                         />
-                        <label style={{ fontSize: '12px', color: '#888' }}>2:</label>
+                        <label style={{ fontSize: '12px', color: 'var(--text-3, #888)' }}>2:</label>
                         <input
                           type="number"
                           step="0.1"
@@ -1849,7 +1849,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
             )}
 
             <div style={{
-              backgroundColor: '#f8f9fa',
+              backgroundColor: 'var(--surface-2, #f8f9fa)',
               padding: '1rem',
               borderRadius: '8px',
               marginBottom: '1.5rem'
@@ -1874,7 +1874,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                 />
                 <span style={{ flex: 1 }}>
                   <strong>📢 שלח התראות Push לכל המשתמשים</strong>
-                  <div style={{ fontSize: '12px', color: '#666', marginTop: '0.25rem' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-3, #666)', marginTop: '0.25rem' }}>
                     ההתראה תכלול את שם השבוע ושעת הנעילה
                   </div>
                 </span>
@@ -1906,7 +1906,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                     style={{ width: '100%', padding: '0.5rem' }}
                     disabled={uploadingImage}
                   />
-                  <div style={{ fontSize: '11px', color: '#666', marginTop: '0.25rem' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-3, #666)', marginTop: '0.25rem' }}>
                     מקסימום 10MB • JPG, PNG, GIF • יועלה אוטומטית ל-ImgBB
                   </div>
                   {notificationImage && (
@@ -1947,15 +1947,15 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                 <div style={{
                   marginTop: '1rem',
                   padding: '0.75rem',
-                  backgroundColor: '#fff',
+                  backgroundColor: 'var(--surface, #fff)',
                   border: '1px solid #dee2e6',
                   borderRadius: '6px'
                 }}>
-                  <div style={{ fontSize: '12px', color: '#666', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-3, #666)', marginBottom: '0.5rem', fontWeight: 'bold' }}>
                     ✏️ עריכת הודעה:
                   </div>
                   <div style={{ marginBottom: '0.5rem' }}>
-                    <label style={{ fontSize: '12px', color: '#666' }}>כותרת:</label>
+                    <label style={{ fontSize: '12px', color: 'var(--text-3, #666)' }}>כותרת:</label>
                     <input
                       type="text"
                       value={customNotificationTitle}
@@ -1967,7 +1967,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '12px', color: '#666' }}>תוכן:</label>
+                    <label style={{ fontSize: '12px', color: 'var(--text-3, #666)' }}>תוכן:</label>
                     <textarea
                       value={customNotificationBody}
                       onChange={(e) => setCustomNotificationBody(e.target.value)}
@@ -1980,10 +1980,10 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                   <div style={{
                     marginTop: '0.5rem',
                     padding: '0.5rem',
-                    backgroundColor: '#f8f9fa',
+                    backgroundColor: 'var(--surface-2, #f8f9fa)',
                     borderRadius: '4px',
                     fontSize: '12px',
-                    color: '#666'
+                    color: 'var(--text-3, #666)'
                   }}>
                     💡 תצוגה מקדימה:{' '}
                     <div style={{ whiteSpace: 'pre-line', color: '#212529', marginTop: '0.25rem', fontWeight: '500' }}>

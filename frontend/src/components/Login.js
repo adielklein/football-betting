@@ -85,7 +85,7 @@ function Login({ onLogin }) {
               borderRadius: '12px'
             }}
           />
-          <p style={{ color: '#888', fontSize: '0.85rem', fontWeight: '500' }}>
+          <p style={{ color: 'var(--text-3, #888)', fontSize: '0.85rem', fontWeight: '500' }}>
             פרמיירליג • לה ליגה • ליגת העל
           </p>
         </div>
@@ -94,7 +94,7 @@ function Login({ onLogin }) {
           <div style={{ marginBottom: '0.75rem' }}>
             <label style={{
               display: 'block', marginBottom: '0.35rem',
-              fontWeight: '600', fontSize: '13px', color: '#555'
+              fontWeight: '600', fontSize: '13px', color: 'var(--text-2, #555)'
             }}>
               שם משתמש
             </label>
@@ -109,7 +109,7 @@ function Login({ onLogin }) {
                 borderRadius: '12px',
                 border: '1.5px solid #e5e7eb',
                 fontSize: '16px',
-                backgroundColor: '#f8f9fc',
+                backgroundColor: 'var(--surface-2, #f8f9fc)',
                 transition: 'all 0.25s ease'
               }}
               placeholder="הכנס שם משתמש"
@@ -120,7 +120,7 @@ function Login({ onLogin }) {
           <div style={{ marginBottom: '1.25rem' }}>
             <label style={{
               display: 'block', marginBottom: '0.35rem',
-              fontWeight: '600', fontSize: '13px', color: '#555'
+              fontWeight: '600', fontSize: '13px', color: 'var(--text-2, #555)'
             }}>
               סיסמה
             </label>
@@ -135,7 +135,7 @@ function Login({ onLogin }) {
                 borderRadius: '12px',
                 border: '1.5px solid #e5e7eb',
                 fontSize: '16px',
-                backgroundColor: '#f8f9fc',
+                backgroundColor: 'var(--surface-2, #f8f9fc)',
                 transition: 'all 0.25s ease'
               }}
               placeholder="הכנס סיסמה"
@@ -198,7 +198,7 @@ function Login({ onLogin }) {
 
         <div style={{
           textAlign: 'center', marginTop: '1.25rem',
-          color: '#aaa', fontSize: '12px', lineHeight: 1.6
+          color: 'var(--text-4, #aaa)', fontSize: '12px', lineHeight: 1.6
         }}>
           <p>פנה למנהל המערכת לקבלת פרטי התחברות</p>
           <p style={{ marginTop: '0.25rem' }}>📱 מכל מכשיר • 💻 כל דפדפן</p>

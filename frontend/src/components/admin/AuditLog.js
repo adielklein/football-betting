@@ -130,7 +130,7 @@ function AuditLog() {
   };
 
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>טוען...</div>;
+    return <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-3, #888)' }}>טוען...</div>;
   }
 
   return (
@@ -147,10 +147,10 @@ function AuditLog() {
         alignItems: 'center'
       }}>
         <div>
-          <div style={{ fontSize: '13px', fontWeight: '700', color: '#333' }}>
+          <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text, #333)' }}>
             {pushStatus === 'on' ? '🟢 התראות פעילות' : pushStatus === 'unsupported' ? '⚠️ הדפדפן לא תומך בהתראות' : '🔴 התראות כבויות'}
           </div>
-          <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>
+          <div style={{ fontSize: '11px', color: 'var(--text-3, #666)', marginTop: '2px' }}>
             {pushStatus === 'on' ? 'תקבל push כשאדמין אחר יבצע פעולה' : pushStatus === 'unsupported' ? 'השתמש בטאב הפעולות לצפייה' : 'הפעל כדי לקבל עדכונים מיידיים'}
           </div>
         </div>
@@ -205,7 +205,7 @@ function AuditLog() {
             {refreshing ? 'טוען...' : 'רענן'}
           </button>
           {lastRefreshed && (
-            <span style={{ fontSize: '10px', color: '#aaa' }}>
+            <span style={{ fontSize: '10px', color: 'var(--text-4, #aaa)' }}>
               עודכן {lastRefreshed.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
@@ -221,38 +221,38 @@ function AuditLog() {
         flexWrap: 'wrap'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <label style={{ fontSize: '12px', color: '#666', fontWeight: '600' }}>מ:</label>
+          <label style={{ fontSize: '12px', color: 'var(--text-3, #666)', fontWeight: '600' }}>מ:</label>
           <input
             type="date"
             value={dateRange.from}
             onChange={e => setDateRange(prev => ({ ...prev, from: e.target.value }))}
             style={{
               padding: '0.3rem 0.5rem',
-              border: '1px solid #ddd',
+              border: '1px solid var(--border-2, #ddd)',
               borderRadius: '8px',
               fontSize: '12px',
-              color: '#333',
-              backgroundColor: '#fff'
+              color: 'var(--text, #333)',
+              backgroundColor: 'var(--surface, #fff)'
             }}
           />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <label style={{ fontSize: '12px', color: '#666', fontWeight: '600' }}>עד:</label>
+          <label style={{ fontSize: '12px', color: 'var(--text-3, #666)', fontWeight: '600' }}>עד:</label>
           <input
             type="date"
             value={dateRange.to}
             onChange={e => setDateRange(prev => ({ ...prev, to: e.target.value }))}
             style={{
               padding: '0.3rem 0.5rem',
-              border: '1px solid #ddd',
+              border: '1px solid var(--border-2, #ddd)',
               borderRadius: '8px',
               fontSize: '12px',
-              color: '#333',
-              backgroundColor: '#fff'
+              color: 'var(--text, #333)',
+              backgroundColor: 'var(--surface, #fff)'
             }}
           />
         </div>
-        <span style={{ fontSize: '11px', color: '#999' }}>
+        <span style={{ fontSize: '11px', color: 'var(--text-4, #999)' }}>
           {logs.length} פעולות
         </span>
       </div>
@@ -261,7 +261,7 @@ function AuditLog() {
 
       {logs.length === 0 ? (
         <div style={{
-          textAlign: 'center', padding: '2rem', color: '#888',
+          textAlign: 'center', padding: '2rem', color: 'var(--text-3, #888)',
           backgroundColor: '#f9f9f9', borderRadius: '12px'
         }}>
           אין פעולות בטווח התאריכים שנבחר
@@ -270,7 +270,7 @@ function AuditLog() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {logs.map(log => (
             <div key={log._id} style={{
-              backgroundColor: '#fff',
+              backgroundColor: 'var(--surface, #fff)',
               border: '1px solid #e8e8e8',
               borderRadius: '10px',
               padding: '0.6rem 0.8rem',
@@ -286,15 +286,15 @@ function AuditLog() {
                 }}>
                   {log.adminName}
                 </span>
-                <span style={{ fontSize: '11px', color: '#999' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-4, #999)' }}>
                   {formatDate(log.createdAt)}
                 </span>
               </div>
-              <div style={{ fontSize: '13px', fontWeight: '600', color: '#333' }}>
+              <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text, #333)' }}>
                 {log.action}
               </div>
               {log.details && (
-                <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-3, #666)', marginTop: '2px' }}>
                   {log.details}
                 </div>
               )}

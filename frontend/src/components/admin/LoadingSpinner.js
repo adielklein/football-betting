@@ -14,13 +14,13 @@ function LoadingSpinner({ message = "טוען..." }) {
       <div style={{
         width: '44px',
         height: '44px',
-        border: '3px solid #f0f0f0',
+        border: '3px solid var(--border, #f0f0f0)',
         borderTop: '3px solid var(--theme-primary, #007bff)',
         borderRadius: '50%',
         animation: 'spin 0.8s linear infinite',
         marginBottom: '1rem'
       }}></div>
-      <h2 style={{ color: '#888', fontSize: '1rem', fontWeight: '500' }}>{message}</h2>
+      <h2 style={{ color: 'var(--text-3, #888)', fontSize: '1rem', fontWeight: '500' }}>{message}</h2>
     </div>
   );
 }

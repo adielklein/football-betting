@@ -114,8 +114,8 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
     return (
       <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
         <div style={{ fontSize: '40px', marginBottom: '0.5rem' }}>🎯</div>
-        <h2 style={{ fontSize: '1rem', fontWeight: '600', color: '#666' }}>יש לבחור שבוע לעריכת הימורים</h2>
-        <p style={{ color: '#999', fontSize: '13px' }}>בחר שבוע מהרשימה למעלה</p>
+        <h2 style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-3, #666)' }}>יש לבחור שבוע לעריכת הימורים</h2>
+        <p style={{ color: 'var(--text-4, #999)', fontSize: '13px' }}>בחר שבוע מהרשימה למעלה</p>
       </div>
     );
   }
@@ -205,7 +205,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
 
       {/* Bets - Card per match */}
       {matches.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '2rem', color: '#999', fontSize: '14px' }}>
+        <div className="card" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-4, #999)', fontSize: '14px' }}>
           אין משחקים בשבוע זה. יש להוסיף משחקים תחילה.
         </div>
       ) : (
@@ -231,12 +231,12 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <div style={{ fontWeight: '700', fontSize: '14px', color: '#333', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                      <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text, #333)', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
                         <TeamLogo name={match.team1} />
                         {match.team1} נגד {match.team2}
                         <TeamLogo name={match.team2} />
                       </div>
-                      <div style={{ fontSize: '11px', color: '#888', marginTop: '1px' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--text-3, #888)', marginTop: '1px' }}>
                         <span style={{
                           display: 'inline-block', width: '8px', height: '8px',
                           backgroundColor: leagueColor, borderRadius: '50%',
@@ -259,7 +259,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                       <span style={{
                         fontSize: '14px', transition: 'transform 0.2s ease',
                         transform: expandedMatches[match._id] ? 'rotate(180deg)' : 'rotate(0deg)',
-                        color: '#999'
+                        color: 'var(--text-4, #999)'
                       }}>▼</span>
                     </div>
                   </div>
@@ -284,7 +284,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                         marginBottom: '2px'
                       }}>
                         <span style={{
-                          fontWeight: '600', fontSize: '13px', color: '#444',
+                          fontWeight: '600', fontSize: '13px', color: 'var(--text-2, #444)',
                           minWidth: '70px', flexShrink: 0
                         }}>
                           {player.name}
@@ -300,12 +300,12 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                               width: '34px', textAlign: 'center', padding: '4px 2px',
                               fontSize: '13px', borderRadius: '8px',
                               border: '1.5px solid #e0e0e0',
-                              fontWeight: '700', color: '#333',
+                              fontWeight: '700', color: 'var(--text, #333)',
                               backgroundColor: !canEdit ? '#f5f5f5' : '#fff'
                             }}
                             placeholder="-"
                           />
-                          <span style={{ fontSize: '12px', color: '#ccc', fontWeight: '700' }}>-</span>
+                          <span style={{ fontSize: '12px', color: 'var(--text-4, #ccc)', fontWeight: '700' }}>-</span>
                           <input
                             id={`bet-${player._id}-${match._id}-team2`}
                             type="number" min="0" max="20"
@@ -315,7 +315,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                               width: '34px', textAlign: 'center', padding: '4px 2px',
                               fontSize: '13px', borderRadius: '8px',
                               border: '1.5px solid #e0e0e0',
-                              fontWeight: '700', color: '#333',
+                              fontWeight: '700', color: 'var(--text, #333)',
                               backgroundColor: !canEdit ? '#f5f5f5' : '#fff'
                             }}
                             placeholder="-"

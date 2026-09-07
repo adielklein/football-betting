@@ -164,8 +164,8 @@ function HistoryViewer({ weeks, user }) {
       </div>
 
       {loading && (
-        <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
-          <div style={{ width: '36px', height: '36px', border: '3px solid #f0f0f0', borderTop: '3px solid var(--theme-primary, #007bff)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 0.5rem' }}></div>
+        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-4, #999)' }}>
+          <div style={{ width: '36px', height: '36px', border: '3px solid var(--border, #f0f0f0)', borderTop: '3px solid var(--theme-primary, #007bff)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 0.5rem' }}></div>
           <span style={{ fontSize: '13px' }}>טוען היסטוריה...</span>
           <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
         </div>
@@ -174,7 +174,7 @@ function HistoryViewer({ weeks, user }) {
       {!selectedHistoryWeek && !loading && filteredWeeks.length === 0 && (
         <div className="card" style={{ textAlign: 'center', padding: '2rem', background: 'linear-gradient(135deg, #f8f9ff, #f0f4ff)' }}>
           <div style={{ fontSize: '40px', marginBottom: '0.5rem' }}>📭</div>
-          <p style={{ color: '#888', fontSize: '14px', margin: 0 }}>אין שבועות מסוננים. נסה לשנות את הסינון.</p>
+          <p style={{ color: 'var(--text-3, #888)', fontSize: '14px', margin: 0 }}>אין שבועות מסוננים. נסה לשנות את הסינון.</p>
         </div>
       )}
 
@@ -189,8 +189,8 @@ function HistoryViewer({ weeks, user }) {
             animation: 'scaleIn 0.25s ease'
           }}>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontWeight: '700', fontSize: '14px', color: '#333' }}>{selectedHistoryWeek.name}</div>
-              <div style={{ color: '#888', fontSize: '12px' }}>
+              <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text, #333)' }}>{selectedHistoryWeek.name}</div>
+              <div style={{ color: 'var(--text-3, #888)', fontSize: '12px' }}>
                 {months.find(m => m.value === selectedHistoryWeek.month)?.label} {selectedHistoryWeek.season}
               </div>
             </div>
@@ -207,9 +207,9 @@ function HistoryViewer({ weeks, user }) {
 
           {/* ההימורים שלך */}
           <div style={{ marginBottom: '0.75rem' }}>
-            <h3 style={{ fontSize: '0.9rem', margin: '0 0 0.5rem 0', fontWeight: '700', color: '#555' }}>ההימורים שלך</h3>
+            <h3 style={{ fontSize: '0.9rem', margin: '0 0 0.5rem 0', fontWeight: '700', color: 'var(--text-2, #555)' }}>ההימורים שלך</h3>
             {historyData.matches.length === 0 ? (
-              <p style={{ color: '#888', fontSize: '14px' }}>אין משחקים בשבוע זה</p>
+              <p style={{ color: 'var(--text-3, #888)', fontSize: '14px' }}>אין משחקים בשבוע זה</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {historyData.matches.map((match, index) => {
@@ -246,8 +246,8 @@ function HistoryViewer({ weeks, user }) {
 
                   return (
                     <div key={match._id} style={{
-                      padding: '0.65rem', border: '1px solid #eee', borderRadius: '14px',
-                      backgroundColor: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                      padding: '0.65rem', border: '1px solid var(--border, #eee)', borderRadius: '14px',
+                      backgroundColor: 'var(--surface, #fff)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
                       animation: `slideUp 0.25s ease ${index * 0.04}s both`
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
@@ -256,7 +256,7 @@ function HistoryViewer({ weeks, user }) {
                           borderRadius: '6px', fontSize: '10px', fontWeight: '700',
                           boxShadow: `0 2px 4px ${getLeagueColor(match)}33`
                         }}>{getLeagueName(match)}</span>
-                        <span style={{ fontSize: '11px', color: '#aaa', fontWeight: '500' }}>{match.date} • {match.time}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-4, #aaa)', fontWeight: '500' }}>{match.date} • {match.time}</span>
                       </div>
 
                       {match.odds && (match.odds.homeWin || match.odds.draw || match.odds.awayWin) && (
@@ -274,7 +274,7 @@ function HistoryViewer({ weeks, user }) {
                       )}
 
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginBottom: '0.35rem' }}>
-                        <span style={{ flex: '1 1 0', textAlign: 'center', fontWeight: '700', fontSize: '13px', lineHeight: 1.2, minWidth: 0, color: '#333', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                        <span style={{ flex: '1 1 0', textAlign: 'center', fontWeight: '700', fontSize: '13px', lineHeight: 1.2, minWidth: 0, color: 'var(--text, #333)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                           <TeamLogo name={match.team1} />
                           {match.team1}
                         </span>
@@ -283,10 +283,10 @@ function HistoryViewer({ weeks, user }) {
                             {bet ? `${bet.team1Goals} - ${bet.team2Goals}` : '-'}
                           </div>
                           {hasResult && (
-                            <div style={{ fontSize: '12px', color: '#888', marginTop: '2px', fontWeight: '600' }}>
+                            <div style={{ fontSize: '12px', color: 'var(--text-3, #888)', marginTop: '2px', fontWeight: '600' }}>
                               {match.result.team1Goals} - {match.result.team2Goals}
                               {match.result.finalScore && (
-                                <span style={{ fontSize: '10px', color: '#aaa', marginRight: '4px', fontWeight: 'normal' }}>
+                                <span style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', marginRight: '4px', fontWeight: 'normal' }}>
                                   ({match.result.finalScore.team1Goals}-{match.result.finalScore.team2Goals}
                                   {match.result.finalScore.penalties && `, פנדלים ${match.result.finalScore.penalties.team1}-${match.result.finalScore.penalties.team2}`})
                                 </span>
@@ -294,7 +294,7 @@ function HistoryViewer({ weeks, user }) {
                             </div>
                           )}
                         </div>
-                        <span style={{ flex: '1 1 0', textAlign: 'center', fontWeight: '700', fontSize: '13px', lineHeight: 1.2, minWidth: 0, color: '#333', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                        <span style={{ flex: '1 1 0', textAlign: 'center', fontWeight: '700', fontSize: '13px', lineHeight: 1.2, minWidth: 0, color: 'var(--text, #333)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                           <TeamLogo name={match.team2} />
                           {match.team2}
                         </span>
@@ -308,8 +308,8 @@ function HistoryViewer({ weeks, user }) {
                             display: 'inline-block'
                           }}>{badge.text}</span>
                         )}
-                        {hasResult && !bet && <span style={{ color: '#ccc', fontSize: '12px' }}>לא הימרת</span>}
-                        {!hasResult && <span style={{ color: '#aaa', fontSize: '12px', fontStyle: 'italic' }}>ממתין לתוצאה</span>}
+                        {hasResult && !bet && <span style={{ color: 'var(--text-4, #ccc)', fontSize: '12px' }}>לא הימרת</span>}
+                        {!hasResult && <span style={{ color: 'var(--text-4, #aaa)', fontSize: '12px', fontStyle: 'italic' }}>ממתין לתוצאה</span>}
                       </div>
                     </div>
                   );
@@ -321,7 +321,7 @@ function HistoryViewer({ weeks, user }) {
           {/* לוח תוצאות */}
           {historyData.allBets.length > 0 && (
             <div className="card">
-              <h3 style={{ fontSize: '0.9rem', margin: '0 0 0.5rem 0', fontWeight: '700', color: '#555' }}>🏆 לוח תוצאות השבוע</h3>
+              <h3 style={{ fontSize: '0.9rem', margin: '0 0 0.5rem 0', fontWeight: '700', color: 'var(--text-2, #555)' }}>🏆 לוח תוצאות השבוע</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                 {getScoreboardData().map((player, index) => {
                   const rank = getRankStyle(index);
@@ -341,7 +341,7 @@ function HistoryViewer({ weeks, user }) {
                         <span style={{ fontSize: isTop3 ? '18px' : '12px', fontWeight: '800', minWidth: '24px', textAlign: 'center', color: !isTop3 ? '#bbb' : undefined }}>
                           {rank.icon || (index + 1)}
                         </span>
-                        <span style={{ fontWeight: isMe ? '700' : '500', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#333' }}>
+                        <span style={{ fontWeight: isMe ? '700' : '500', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text, #333)' }}>
                           {player.name}
                           {isMe && <span style={{ color: '#1976d2', fontSize: '10px' }}> (אתה)</span>}
                         </span>
@@ -349,7 +349,7 @@ function HistoryViewer({ weeks, user }) {
                       <span style={{
                         fontWeight: '800', fontSize: isTop3 ? '16px' : '14px', flexShrink: 0,
                         padding: '2px 10px', background: isTop3 ? 'rgba(255,255,255,0.7)' : '#f5f5f5',
-                        borderRadius: '10px', color: '#333'
+                        borderRadius: '10px', color: 'var(--text, #333)'
                       }}>{player.score}</span>
                     </div>
                   );
@@ -362,7 +362,7 @@ function HistoryViewer({ weeks, user }) {
 
       {!selectedHistoryWeek && !loading && filteredWeeks.length > 0 && (
         <div className="card" style={{ textAlign: 'center', padding: '1.5rem' }}>
-          <p style={{ color: '#888', fontSize: '14px', margin: 0 }}>בחר שבוע מהרשימה למעלה</p>
+          <p style={{ color: 'var(--text-3, #888)', fontSize: '14px', margin: 0 }}>בחר שבוע מהרשימה למעלה</p>
         </div>
       )}
     </div>

@@ -6,6 +6,7 @@ import { applyTheme } from './themes'; // 🎨 יבוא פונקציית ערכ�
 import UpdateBanner from './components/UpdateBanner';
 import ToastHost from './components/ToastHost';
 import { HashRouter } from 'react-router-dom';
+import { onSchemeChange } from './services/colorScheme';
 import './index.css';
 
 function App() {
@@ -170,6 +171,10 @@ function App() {
     }
   };
 
+  // הערכה כותבת רקע וטקסט בסגנון מוטבע, ולכן מעבר בהיר/כהה מחייב
+  // להחיל אותה מחדש - אחרת הרקע נשאר של המצב הקודם.
+  useEffect(() => onSchemeChange(() => applyTheme(currentUser)), [currentUser]);
+
   if (loading) {
     return (
       <div style={{ 
@@ -227,7 +232,7 @@ function App() {
           padding: '1rem'
         }} onClick={dismissNotification}>
           <div style={{
-            backgroundColor: '#fff', borderRadius: '16px', maxWidth: '400px', width: '100%',
+            backgroundColor: 'var(--surface, #fff)', borderRadius: '16px', maxWidth: '400px', width: '100%',
             maxHeight: '85vh', overflow: 'auto',
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
             animation: 'slideUp 0.3s ease-out'
@@ -240,10 +245,10 @@ function App() {
               />
             )}
             <div style={{ padding: '1.2rem 1.5rem' }}>
-              <h3 style={{ margin: '0 0 0.5rem', fontSize: '18px', color: '#333', textAlign: 'right' }}>
+              <h3 style={{ margin: '0 0 0.5rem', fontSize: '18px', color: 'var(--text, #333)', textAlign: 'right' }}>
                 {inAppNotification.title}
               </h3>
-              <p style={{ margin: '0 0 1rem', fontSize: '15px', color: '#555', lineHeight: 1.5, textAlign: 'right', whiteSpace: 'pre-line' }}>
+              <p style={{ margin: '0 0 1rem', fontSize: '15px', color: 'var(--text-2, #555)', lineHeight: 1.5, textAlign: 'right', whiteSpace: 'pre-line' }}>
                 {inAppNotification.body}
               </p>
               <button

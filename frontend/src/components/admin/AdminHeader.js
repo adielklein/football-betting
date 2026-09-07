@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { applyTheme } from '../../themes';
 import { toast } from '../../services/toast';
+import ColorSchemeToggle from '../ColorSchemeToggle';
 
 const API_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:5000/api'
@@ -180,6 +181,7 @@ function AdminHeader({ user, onLogout }) {
               )}
             </div>
           </div>
+          <ColorSchemeToggle />
           <button
             onClick={onLogout}
             style={{

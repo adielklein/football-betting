@@ -139,7 +139,7 @@ function PushManagement() {
   const getSubscribedUsers = () => users.filter(isUserSubscribed);
   const getUnsubscribedUsers = () => users.filter(u => !isUserSubscribed(u));
 
-  const labelStyle = { display: 'block', marginBottom: '4px', fontWeight: '700', fontSize: '12px', color: '#555' };
+  const labelStyle = { display: 'block', marginBottom: '4px', fontWeight: '700', fontSize: '12px', color: 'var(--text-2, #555)' };
   const inputStyle = { borderRadius: '10px', fontSize: '13px', padding: '0.5rem 0.6rem' };
 
   const subTabs = [
@@ -168,7 +168,7 @@ function PushManagement() {
         <label style={labelStyle}>תמונה (אופציונלי - אנדרואיד בלבד)</label>
         <input type="file" accept="image/*" onChange={handleImageSelect}
           className="input" style={{ ...inputStyle, width: '100%' }} />
-        <div style={{ fontSize: '10px', color: '#aaa', marginTop: '2px' }}>מקסימום 10MB • אייפון לא תומך בתמונות בהתראות</div>
+        <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', marginTop: '2px' }}>מקסימום 10MB • אייפון לא תומך בתמונות בהתראות</div>
         {notificationImage && (
           <div style={{ marginTop: '0.4rem' }}>
             <img src={notificationImage} alt="תצוגה מקדימה" style={{
@@ -227,7 +227,7 @@ function PushManagement() {
       <div style={{
         display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
         gap: '3px', marginBottom: '0.6rem', padding: '3px',
-        backgroundColor: '#f0f2f5', borderRadius: '12px',
+        backgroundColor: 'var(--surface-3, #f0f2f5)', borderRadius: '12px',
         boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)'
       }}>
         {subTabs.map(tab => {
@@ -285,7 +285,7 @@ function PushManagement() {
               <label style={labelStyle}>בחר משתמשים ({selectedUsers.length} נבחרו)</label>
               <button onClick={handleSelectAll} style={{
                 padding: '3px 10px', borderRadius: '20px', fontSize: '10px', fontWeight: '700',
-                background: '#f0f2f5', color: '#666', border: '1px solid #e0e0e0', cursor: 'pointer'
+                background: 'var(--surface-3, #f0f2f5)', color: 'var(--text-3, #666)', border: '1px solid #e0e0e0', cursor: 'pointer'
               }}>
                 {selectedUsers.length === getSubscribedUsers().length ? 'בטל הכל' : 'בחר הכל'}
               </button>
@@ -293,10 +293,10 @@ function PushManagement() {
 
             <div style={{
               maxHeight: '200px', overflowY: 'auto',
-              borderRadius: '10px', border: '1px solid #f0f0f0'
+              borderRadius: '10px', border: '1px solid var(--border, #f0f0f0)'
             }}>
               {getSubscribedUsers().length === 0 ? (
-                <p style={{ textAlign: 'center', color: '#999', padding: '1rem', fontSize: '13px' }}>
+                <p style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1rem', fontSize: '13px' }}>
                   אין משתמשים מנויים
                 </p>
               ) : (
@@ -313,11 +313,11 @@ function PushManagement() {
                       style={{ marginLeft: '0.4rem', accentColor: 'var(--theme-primary, #007bff)' }} />
                     <span style={{
                       flex: 1, fontWeight: selectedUsers.includes(u._id) ? '700' : '500',
-                      fontSize: '13px', color: '#333'
+                      fontSize: '13px', color: 'var(--text, #333)'
                     }}>
                       {u.name}
                     </span>
-                    <span style={{ fontSize: '10px', color: '#aaa' }}>@{u.username}</span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-4, #aaa)' }}>@{u.username}</span>
                   </div>
                 ))
               )}
@@ -348,7 +348,7 @@ function PushManagement() {
               ✅ מנויים ({getSubscribedUsers().length})
             </h3>
             {getSubscribedUsers().length === 0 ? (
-              <p style={{ textAlign: 'center', color: '#999', padding: '1rem', fontSize: '13px' }}>אין משתמשים מנויים</p>
+              <p style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1rem', fontSize: '13px' }}>אין משתמשים מנויים</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                 {getSubscribedUsers().map((u, i) => (
@@ -359,8 +359,8 @@ function PushManagement() {
                     animation: `slideUp 0.2s ease ${i * 0.03}s both`
                   }}>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontWeight: '600', fontSize: '13px', color: '#333' }}>{u.name}</div>
-                      <div style={{ fontSize: '10px', color: '#aaa' }}>
+                      <div style={{ fontWeight: '600', fontSize: '13px', color: 'var(--text, #333)' }}>{u.name}</div>
+                      <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)' }}>
                         @{u.username} • {u.pushSettings?.subscriptions?.length || 0} מכשירים • {u.pushSettings?.hoursBeforeLock || 2}שע לפני נעילה
                       </div>
                     </div>
@@ -384,7 +384,7 @@ function PushManagement() {
               ❌ לא מנויים ({getUnsubscribedUsers().length})
             </h3>
             {getUnsubscribedUsers().length === 0 ? (
-              <p style={{ textAlign: 'center', color: '#999', padding: '1rem', fontSize: '13px' }}>
+              <p style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1rem', fontSize: '13px' }}>
                 כל המשתמשים מנויים! 🎉
               </p>
             ) : (
@@ -399,7 +399,7 @@ function PushManagement() {
                   }}>
                     <div>
                       <div style={{ fontWeight: '600', fontSize: '13px' }}>{u.name}</div>
-                      <div style={{ fontSize: '10px', color: '#aaa' }}>@{u.username}</div>
+                      <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)' }}>@{u.username}</div>
                     </div>
                     <span style={{
                       padding: '2px 8px', borderRadius: '20px',

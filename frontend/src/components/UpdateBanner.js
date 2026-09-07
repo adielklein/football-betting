@@ -56,7 +56,7 @@ function UpdateBanner() {
           padding: '8px 16px',
           borderRadius: '10px',
           border: 'none',
-          background: '#ffffff',
+          background: 'var(--surface, #ffffff)',
           color: 'var(--theme-primary, #007bff)',
           fontWeight: 700,
           fontSize: '14px',

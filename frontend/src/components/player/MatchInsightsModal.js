@@ -40,7 +40,7 @@ function PairScore({ a, b, colored = true, colorA, colorB, style }) {
       }}
     >
       <span style={{ color: cA }}>{val(a)}</span>
-      <span style={{ color: '#c3c8d0', fontWeight: 600 }}>-</span>
+      <span style={{ color: 'var(--text-4, #c3c8d0)', fontWeight: 600 }}>-</span>
       <span style={{ color: cB }}>{val(b)}</span>
     </span>
   );
@@ -50,8 +50,8 @@ function Section({ title, hint, children }) {
   return (
     <div style={{ marginBottom: '0.9rem' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginBottom: '0.45rem' }}>
-        <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#333' }}>{title}</h4>
-        {hint && <span style={{ fontSize: '10px', color: '#aaa', fontWeight: 600 }}>{hint}</span>}
+        <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: 'var(--text, #333)' }}>{title}</h4>
+        {hint && <span style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', fontWeight: 600 }}>{hint}</span>}
       </div>
       {children}
     </div>
@@ -72,12 +72,12 @@ function CompareRow({ label, a, b, lowerIsBetter = false }) {
         <span style={{ fontSize: '13px', fontWeight: 800, color: aBetter ? '#1e7a3c' : '#666', minWidth: '34px' }}>
           {a == null ? '—' : a}
         </span>
-        <span style={{ fontSize: '10.5px', color: '#999', fontWeight: 700 }}>{label}</span>
+        <span style={{ fontSize: '10.5px', color: 'var(--text-4, #999)', fontWeight: 700 }}>{label}</span>
         <span style={{ fontSize: '13px', fontWeight: 800, color: bBetter ? '#1e7a3c' : '#666', minWidth: '34px', textAlign: 'left' }}>
           {b == null ? '—' : b}
         </span>
       </div>
-      <div style={{ display: 'flex', height: '5px', borderRadius: '3px', overflow: 'hidden', background: '#eef1f5' }}>
+      <div style={{ display: 'flex', height: '5px', borderRadius: '3px', overflow: 'hidden', background: 'var(--surface-3, #eef1f5)' }}>
         <div style={{ width: `${aPct}%`, background: aBetter ? '#4caf7d' : ACCENT_1, transition: 'width .4s ease' }} />
         <div style={{ width: `${100 - aPct}%`, background: bBetter ? '#4caf7d' : '#d8dee8', transition: 'width .4s ease' }} />
       </div>
@@ -94,8 +94,8 @@ function FormRow({ team, accent, expanded, onToggle }) {
     <div style={{
       padding: '0.5rem 0.55rem',
       borderRadius: '10px',
-      background: '#fafbfc',
-      border: '1px solid #eef1f4',
+      background: 'var(--surface-2, #fafbfc)',
+      border: '1px solid var(--border, #eef1f4)',
       marginBottom: '0.35rem'
     }}>
       <div
@@ -104,13 +104,13 @@ function FormRow({ team, accent, expanded, onToggle }) {
       >
         <span style={{ width: '6px', height: '20px', borderRadius: '3px', background: accent, flexShrink: 0 }} />
         <span style={{
-          fontSize: '12px', fontWeight: 700, color: '#333', flex: 1, minWidth: 0,
+          fontSize: '12px', fontWeight: 700, color: 'var(--text, #333)', flex: 1, minWidth: 0,
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
         }}>
           {team.name}
         </span>
         <div style={{ display: 'flex', gap: '3px', flexShrink: 0 }}>
-          {!hasForm && <span style={{ fontSize: '11px', color: '#bbb' }}>אין נתונים</span>}
+          {!hasForm && <span style={{ fontSize: '11px', color: 'var(--text-4, #bbb)' }}>אין נתונים</span>}
           {form.map((f, i) => {
             const s = OUTCOME_STYLE[f.outcome];
             return (
@@ -125,26 +125,26 @@ function FormRow({ team, accent, expanded, onToggle }) {
         </div>
         {hasForm && (
           <span style={{
-            fontSize: '11px', fontWeight: 800, color: '#555',
-            background: '#eef1f5', borderRadius: '6px', padding: '1px 6px', flexShrink: 0
+            fontSize: '11px', fontWeight: 800, color: 'var(--text-2, #555)',
+            background: 'var(--surface-3, #eef1f5)', borderRadius: '6px', padding: '1px 6px', flexShrink: 0
           }}>{team.formPoints}/{team.formMax}</span>
         )}
-        {hasForm && <span style={{ fontSize: '9px', color: '#bbb', flexShrink: 0 }}>{expanded ? '▲' : '▼'}</span>}
+        {hasForm && <span style={{ fontSize: '9px', color: 'var(--text-4, #bbb)', flexShrink: 0 }}>{expanded ? '▲' : '▼'}</span>}
       </div>
 
       {expanded && hasForm && (
-        <div style={{ marginTop: '0.45rem', paddingTop: '0.4rem', borderTop: '1px dashed #e5e9ee' }}>
+        <div style={{ marginTop: '0.45rem', paddingTop: '0.4rem', borderTop: '1px dashed var(--border, #e5e9ee)' }}>
           {form.map((f, i) => {
             const s = OUTCOME_STYLE[f.outcome];
             return (
               <div key={i} style={{
                 display: 'flex', alignItems: 'center', gap: '0.4rem',
-                fontSize: '11px', padding: '2.5px 0', color: '#666'
+                fontSize: '11px', padding: '2.5px 0', color: 'var(--text-3, #666)'
               }}>
-                <span style={{ color: '#bbb', fontSize: '10px', minWidth: '34px' }}>{shortDate(f.date)}</span>
+                <span style={{ color: 'var(--text-4, #bbb)', fontSize: '10px', minWidth: '34px' }}>{shortDate(f.date)}</span>
                 <span style={{
-                  fontSize: '9px', fontWeight: 700, color: '#999',
-                  background: '#f0f2f5', borderRadius: '4px', padding: '1px 4px', flexShrink: 0
+                  fontSize: '9px', fontWeight: 700, color: 'var(--text-4, #999)',
+                  background: 'var(--surface-3, #f0f2f5)', borderRadius: '4px', padding: '1px 4px', flexShrink: 0
                 }}>{f.isHome ? 'בית' : 'חוץ'}</span>
                 <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {f.opponent}
@@ -191,15 +191,15 @@ function TeamHeader({ team, accent, focused, onSelect }) {
           onError={(e) => { e.target.style.display = 'none'; }}
         />
       )}
-      <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#2c3038', lineHeight: 1.2, marginTop: '2px' }}>
+      <div style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--text, #2c3038)', lineHeight: 1.2, marginTop: '2px' }}>
         {team.name}
       </div>
       {team.table ? (
-        <div style={{ fontSize: '10.5px', color: '#8b93a1', fontWeight: 600, marginTop: '2px' }}>
+        <div style={{ fontSize: '10.5px', color: 'var(--text-3, #8b93a1)', fontWeight: 600, marginTop: '2px' }}>
           מקום {team.table.position} · {team.table.points} נק'
         </div>
       ) : (
-        <div style={{ fontSize: '10.5px', color: '#c3c8d0', marginTop: '2px' }}>אין טבלה</div>
+        <div style={{ fontSize: '10.5px', color: 'var(--text-4, #c3c8d0)', marginTop: '2px' }}>אין טבלה</div>
       )}
     </button>
   );
@@ -289,7 +289,7 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
         onClick={(e) => e.stopPropagation()}
         style={{
           width: '100%', maxWidth: '460px', maxHeight: '92vh',
-          background: '#fff', borderRadius: '20px 20px 0 0',
+          background: 'var(--surface, #fff)', borderRadius: '20px 20px 0 0',
           boxShadow: '0 -8px 40px rgba(0,0,0,0.25)',
           display: 'flex', flexDirection: 'column',
           animation: 'sheetUp .28s cubic-bezier(0.2,0.9,0.3,1)'
@@ -298,14 +298,14 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
         <div style={{ padding: '0.5rem 0.9rem 0.3rem', flexShrink: 0 }}>
           <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#dde1e7', margin: '0 auto 0.5rem' }} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '11px', color: '#9aa2ae', fontWeight: 700 }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-3, #9aa2ae)', fontWeight: 700 }}>
               {data?.competition || 'נתוני משחק'}
             </span>
             <button
               onClick={onClose}
               aria-label="סגור"
               style={{
-                border: 'none', background: '#f2f4f7', color: '#6b7280',
+                border: 'none', background: 'var(--surface-3, #f2f4f7)', color: 'var(--text-3, #6b7280)',
                 width: '26px', height: '26px', borderRadius: '50%',
                 fontSize: '15px', lineHeight: 1, cursor: 'pointer', fontWeight: 700
               }}
@@ -317,19 +317,19 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
           {loading && (
             <div style={{ padding: '2.5rem 1rem', textAlign: 'center' }}>
               <div style={{ fontSize: '26px', marginBottom: '0.5rem', animation: 'pulse 1s ease infinite' }}>📊</div>
-              <div style={{ color: '#9aa2ae', fontSize: '13px' }}>טוען נתונים מ-365scores...</div>
+              <div style={{ color: 'var(--text-3, #9aa2ae)', fontSize: '13px' }}>טוען נתונים מ-365scores...</div>
             </div>
           )}
 
           {error && !loading && (
             <div style={{ padding: '2rem 1rem', textAlign: 'center' }}>
               <div style={{ fontSize: '26px', marginBottom: '0.5rem' }}>🔍</div>
-              <div style={{ color: '#6b7280', fontSize: '13px', marginBottom: '0.9rem' }}>{error}</div>
+              <div style={{ color: 'var(--text-3, #6b7280)', fontSize: '13px', marginBottom: '0.9rem' }}>{error}</div>
               <button
                 onClick={load}
                 style={{
                   border: 'none', borderRadius: '10px', padding: '0.5rem 1.1rem',
-                  background: '#eef2f8', color: '#3b6fd4', fontWeight: 700, fontSize: '13px', cursor: 'pointer'
+                  background: 'var(--surface-3, #eef2f8)', color: '#3b6fd4', fontWeight: 700, fontSize: '13px', cursor: 'pointer'
                 }}
               >נסה שוב</button>
             </div>
@@ -339,11 +339,11 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
             <>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginBottom: '0.7rem' }}>
                 <TeamHeader team={t1} accent={ACCENT_1} focused={focus === 1} onSelect={() => selectTeam(1)} />
-                <div style={{ flexShrink: 0, color: '#c3c8d0', fontWeight: 800, fontSize: '12px' }}>VS</div>
+                <div style={{ flexShrink: 0, color: 'var(--text-4, #c3c8d0)', fontWeight: 800, fontSize: '12px' }}>VS</div>
                 <TeamHeader team={t2} accent={ACCENT_2} focused={focus === 2} onSelect={() => selectTeam(2)} />
               </div>
 
-              <div style={{ textAlign: 'center', fontSize: '9.5px', color: '#b6bcc6', marginBottom: '0.7rem' }}>
+              <div style={{ textAlign: 'center', fontSize: '9.5px', color: 'var(--text-4, #b6bcc6)', marginBottom: '0.7rem' }}>
                 לחצו על קבוצה כדי לפתוח את המשחקים שלה
               </div>
 
@@ -356,13 +356,13 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
                 }}>
                   <span style={{ fontSize: '15px' }}>⚡</span>
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#8b93a1' }}>תחזית לפי כושר</div>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-3, #8b93a1)' }}>תחזית לפי כושר</div>
                     <PairScore
                       a={predT1}
                       b={predT2}
                       style={{ fontSize: '19px', fontWeight: 900, lineHeight: 1.15, gap: '5px' }}
                     />
-                    <div style={{ fontSize: '9.5px', color: '#9aa2ae', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                    <div style={{ fontSize: '9.5px', color: 'var(--text-3, #9aa2ae)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
                       <span>צפי שערים</span>
                       <PairScore a={expT1} b={expT2} colored={false} />
                     </div>
@@ -381,11 +381,11 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
                       ].map((o) => (
                         <div key={o.k} style={{
                           flex: 1, textAlign: 'center', padding: '0.4rem 0.2rem',
-                          borderRadius: '10px', background: '#f7f9fc', border: '1px solid #e8edf4'
+                          borderRadius: '10px', background: 'var(--surface-2, #f7f9fc)', border: '1px solid var(--border, #e8edf4)'
                         }}>
-                          <div style={{ fontSize: '10px', color: '#9aa2ae', fontWeight: 700 }}>{o.k}</div>
+                          <div style={{ fontSize: '10px', color: 'var(--text-3, #9aa2ae)', fontWeight: 700 }}>{o.k}</div>
                           <div style={{ fontSize: '15px', fontWeight: 800, color: o.c }}>{o.v ?? '—'}</div>
-                          {o.p != null && <div style={{ fontSize: '10px', color: '#8b93a1', fontWeight: 600 }}>{o.p}%</div>}
+                          {o.p != null && <div style={{ fontSize: '10px', color: 'var(--text-3, #8b93a1)', fontWeight: 600 }}>{o.p}%</div>}
                         </div>
                       ))}
                     </div>
@@ -462,20 +462,20 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
                     ].map((x, i) => (
                       <div key={i} style={{
                         flex: 1, textAlign: 'center', padding: '0.35rem',
-                        borderRadius: '10px', background: '#f7f9fc', border: '1px solid #e8edf4'
+                        borderRadius: '10px', background: 'var(--surface-2, #f7f9fc)', border: '1px solid var(--border, #e8edf4)'
                       }}>
                         <div style={{ fontSize: '16px', fontWeight: 900, color: x.c }}>{x.n ?? 0}</div>
-                        <div style={{ fontSize: '9.5px', color: '#9aa2ae', fontWeight: 600 }}>{x.l}</div>
+                        <div style={{ fontSize: '9.5px', color: 'var(--text-3, #9aa2ae)', fontWeight: 600 }}>{x.l}</div>
                       </div>
                     ))}
                   </div>
                   {data.h2h.map((m, i) => (
                     <div key={i} style={{
                       display: 'flex', alignItems: 'center', gap: '0.4rem',
-                      fontSize: '11px', color: '#666', padding: '3px 0.3rem',
+                      fontSize: '11px', color: 'var(--text-3, #666)', padding: '3px 0.3rem',
                       borderBottom: i < data.h2h.length - 1 ? '1px dashed #eef1f4' : 'none'
                     }}>
-                      <span style={{ color: '#bbb', minWidth: '48px', fontSize: '10px' }}>{shortDate(m.date)}</span>
+                      <span style={{ color: 'var(--text-4, #bbb)', minWidth: '48px', fontSize: '10px' }}>{shortDate(m.date)}</span>
                       <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {m.competition}
                       </span>
@@ -484,7 +484,7 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
                         b={flipped ? m.homeGoals : m.awayGoals}
                         style={{ fontWeight: 800 }}
                       />
-                      <span style={{ fontSize: '9px', color: '#b6bcc6', minWidth: '26px', textAlign: 'center' }}>
+                      <span style={{ fontSize: '9px', color: 'var(--text-4, #b6bcc6)', minWidth: '26px', textAlign: 'center' }}>
                         {(flipped ? !m.homeTeamWasHome : m.homeTeamWasHome) ? 'בית' : 'חוץ'}
                       </span>
                     </div>
@@ -493,7 +493,7 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
                   {data.h2h.length < 3 && (
                     <div style={{
                       marginTop: '0.4rem', padding: '0.4rem 0.5rem', borderRadius: '8px',
-                      background: '#fafbfc', border: '1px dashed #e5e9ee',
+                      background: 'var(--surface-2, #fafbfc)', border: '1px dashed var(--border, #e5e9ee)',
                       fontSize: '9.5px', color: '#a6adb8', textAlign: 'center'
                     }}>
                       אלה כל המפגשים ש-365scores שומרים לזוג הזה
@@ -502,7 +502,7 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
                 </Section>
               )}
 
-              <div style={{ textAlign: 'center', fontSize: '9.5px', color: '#c3c8d0', marginTop: '0.6rem' }}>
+              <div style={{ textAlign: 'center', fontSize: '9.5px', color: 'var(--text-4, #c3c8d0)', marginTop: '0.6rem' }}>
                 נתונים: 365scores{data.venue ? ` · ${data.venue}` : ''}
               </div>
             </>

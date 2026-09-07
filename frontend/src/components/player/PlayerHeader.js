@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { applyTheme } from '../../themes';
+import ColorSchemeToggle from '../ColorSchemeToggle';
 
 function PlayerHeader({ user, selectedWeek, userScore, onLogout }) {
 
@@ -62,6 +63,7 @@ function PlayerHeader({ user, selectedWeek, userScore, onLogout }) {
                 {userScore || 0}
               </div>
             </div>
+            <ColorSchemeToggle />
             <button onClick={onLogout} className="btn" style={{
               background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.08) 100%)',
               color: 'white',

@@ -156,13 +156,13 @@ function PlayerView({ user, onLogout }) {
         <div style={{
           width: '44px',
           height: '44px',
-          border: '3px solid #f0f0f0',
+          border: '3px solid var(--border, #f0f0f0)',
           borderTop: '3px solid var(--theme-primary, #007bff)',
           borderRadius: '50%',
           animation: 'spin 0.8s linear infinite',
           marginBottom: '1rem'
         }}></div>
-        <h2 style={{ color: '#888', fontSize: '1rem', fontWeight: '500' }}>טוען נתונים...</h2>
+        <h2 style={{ color: 'var(--text-3, #888)', fontSize: '1rem', fontWeight: '500' }}>טוען נתונים...</h2>
 
         <style>{`
           @keyframes spin {
@@ -193,7 +193,7 @@ function PlayerView({ user, onLogout }) {
           gap: '4px',
           marginBottom: '0.75rem',
           padding: '4px',
-          backgroundColor: '#f0f2f5',
+          backgroundColor: 'var(--surface-3, #f0f2f5)',
           borderRadius: '14px',
           boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)'
         }}>

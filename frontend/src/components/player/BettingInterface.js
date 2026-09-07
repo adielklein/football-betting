@@ -24,7 +24,7 @@ function TeamPicker({ name, onClick }) {
         fontSize: '13px',
         lineHeight: '1.2',
         minWidth: 0,
-        color: '#333',
+        color: 'var(--text, #333)',
         background: 'transparent',
         border: 'none',
         padding: '4px 2px',
@@ -46,7 +46,7 @@ function TeamPicker({ name, onClick }) {
         <span style={{
           position: 'absolute', top: '-3px', insetInlineStart: '-5px',
           width: '15px', height: '15px', borderRadius: '50%',
-          background: '#fff', border: '1px solid #dbe4f0',
+          background: 'var(--surface, #fff)', border: '1px solid #dbe4f0',
           fontSize: '8px', lineHeight: '13px', textAlign: 'center',
           boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
         }}>📊</span>
@@ -238,8 +238,8 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
         background: 'linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%)'
       }}>
         <div style={{ fontSize: '40px', marginBottom: '0.75rem' }}>⏳</div>
-        <h2 style={{ fontSize: '1.1rem', color: '#444', marginBottom: '0.3rem' }}>ממתינים לשבוע החדש</h2>
-        <p style={{ color: '#888', fontSize: '0.85rem' }}>השבוע עדיין לא הופעל על ידי המנהל</p>
+        <h2 style={{ fontSize: '1.1rem', color: 'var(--text-2, #444)', marginBottom: '0.3rem' }}>ממתינים לשבוע החדש</h2>
+        <p style={{ color: 'var(--text-3, #888)', fontSize: '0.85rem' }}>השבוע עדיין לא הופעל על ידי המנהל</p>
       </div>
     );
   }
@@ -252,8 +252,8 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
         background: 'linear-gradient(135deg, #fff8f0 0%, #fff3e0 100%)'
       }}>
         <div style={{ fontSize: '40px', marginBottom: '0.75rem' }}>🔒</div>
-        <h2 style={{ fontSize: '1.1rem', color: '#444', marginBottom: '0.3rem' }}>השבוע הסתיים</h2>
-        <p style={{ color: '#888', fontSize: '0.85rem' }}>שבוע {selectedWeek.name} הסתיים. עבור להיסטוריה לצפייה בתוצאות.</p>
+        <h2 style={{ fontSize: '1.1rem', color: 'var(--text-2, #444)', marginBottom: '0.3rem' }}>השבוע הסתיים</h2>
+        <p style={{ color: 'var(--text-3, #888)', fontSize: '0.85rem' }}>שבוע {selectedWeek.name} הסתיים. עבור להיסטוריה לצפייה בתוצאות.</p>
       </div>
     );
   }
@@ -274,7 +274,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
           alignItems: 'center',
           marginBottom: '0.4rem'
         }}>
-          <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '700', color: '#333' }}>{selectedWeek.name}</h2>
+          <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '700', color: 'var(--text, #333)' }}>{selectedWeek.name}</h2>
           <span style={{
             fontSize: '12px',
             color: savedCount === matches.length ? '#fff' : '#28a745',
@@ -383,7 +383,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   <span style={{
                     fontSize: '10px',
-                    color: '#bbb',
+                    color: 'var(--text-4, #bbb)',
                     fontWeight: '700',
                     minWidth: '18px'
                   }}>
@@ -405,7 +405,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                 {live && live.status !== 'scheduled' ? (
                   <LiveScore live={live} />
                 ) : (
-                  <span style={{ color: '#aaa', fontSize: '11px', fontWeight: '500' }}>
+                  <span style={{ color: 'var(--text-4, #aaa)', fontSize: '11px', fontWeight: '500' }}>
                     {match.date} • {match.time}
                   </span>
                 )}
@@ -475,8 +475,8 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                       borderRadius: '10px',
                       fontSize: '20px',
                       fontWeight: '800',
-                      backgroundColor: '#fff',
-                      color: '#333',
+                      backgroundColor: 'var(--surface, #fff)',
+                      color: 'var(--text, #333)',
                       boxShadow: currentBet.team1Goals !== '' && currentBet.team1Goals !== undefined
                         ? '0 0 0 3px rgba(40,167,69,0.1)' : 'inset 0 1px 3px rgba(0,0,0,0.06)',
                       transition: 'all 0.2s ease',
@@ -489,7 +489,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   <span style={{
                     fontSize: '18px',
                     fontWeight: '800',
-                    color: '#ccc',
+                    color: 'var(--text-4, #ccc)',
                     lineHeight: 1
                   }}>:</span>
                   <input
@@ -508,8 +508,8 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                       borderRadius: '10px',
                       fontSize: '20px',
                       fontWeight: '800',
-                      backgroundColor: '#fff',
-                      color: '#333',
+                      backgroundColor: 'var(--surface, #fff)',
+                      color: 'var(--text, #333)',
                       boxShadow: currentBet.team2Goals !== '' && currentBet.team2Goals !== undefined
                         ? '0 0 0 3px rgba(40,167,69,0.1)' : 'inset 0 1px 3px rgba(0,0,0,0.06)',
                       transition: 'all 0.2s ease',
@@ -575,7 +575,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                 <div style={{
                   marginTop: '0.4rem',
                   paddingTop: '0.4rem',
-                  borderTop: '1px solid #f0f0f0',
+                  borderTop: '1px solid var(--border, #f0f0f0)',
                   textAlign: 'center',
                   fontSize: '13px',
                   display: 'flex',
@@ -584,12 +584,12 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   gap: '0.5rem',
                   flexWrap: 'wrap'
                 }}>
-                  <span style={{ color: '#999', fontSize: '12px' }}>תוצאה:</span>
-                  <span style={{ fontWeight: '800', fontSize: '15px', color: '#333' }}>
+                  <span style={{ color: 'var(--text-4, #999)', fontSize: '12px' }}>תוצאה:</span>
+                  <span style={{ fontWeight: '800', fontSize: '15px', color: 'var(--text, #333)' }}>
                     {match.result.team1Goals}-{match.result.team2Goals}
                   </span>
                   {match.result.finalScore && (
-                    <span style={{ fontSize: '11px', color: '#888', fontWeight: 'normal' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--text-3, #888)', fontWeight: 'normal' }}>
                       ({match.result.finalScore.team1Goals}-{match.result.finalScore.team2Goals}
                       {match.result.finalScore.penalties && `, פנדלים ${match.result.finalScore.penalties.team1}-${match.result.finalScore.penalties.team2}`} לאחר הארכה)
                     </span>

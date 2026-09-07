@@ -250,7 +250,7 @@ function UsersManagement({ users, loadData, user }) {
 
   const labelStyle = {
     fontSize: '11px',
-    color: '#888',
+    color: 'var(--text-3, #888)',
     display: 'block',
     marginBottom: '3px',
     fontWeight: '600'
@@ -407,7 +407,7 @@ function UsersManagement({ users, loadData, user }) {
           </select>
         </div>
         {loadingExclusions ? (
-          <div style={{ textAlign: 'center', padding: '1rem', color: '#888', fontSize: '13px' }}>טוען...</div>
+          <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-3, #888)', fontSize: '13px' }}>טוען...</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
             {users.filter(u => u.role !== 'admin').map(userItem => {
@@ -439,7 +439,7 @@ function UsersManagement({ users, loadData, user }) {
                   >
                     <div style={{
                       width: '20px', height: '20px', borderRadius: '50%',
-                      background: '#fff', position: 'absolute', top: '2px',
+                      background: 'var(--surface, #fff)', position: 'absolute', top: '2px',
                       transition: 'right 0.2s ease, left 0.2s ease',
                       boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
                       ...(isExcluded ? { left: '2px' } : { right: '2px' })
@@ -450,7 +450,7 @@ function UsersManagement({ users, loadData, user }) {
             })}
           </div>
         )}
-        <div style={{ marginTop: '0.5rem', fontSize: '11px', color: '#888', textAlign: 'center' }}>
+        <div style={{ marginTop: '0.5rem', fontSize: '11px', color: 'var(--text-3, #888)', textAlign: 'center' }}>
           ירוק = משתתף | אדום = לא משתתף בחודש זה
         </div>
         </div>)}
@@ -476,7 +476,7 @@ function UsersManagement({ users, loadData, user }) {
         {!userListOpen ? null : (<div style={{ marginTop: '0.5rem' }}>
 
         {users.length === 0 ? (
-          <div style={{ textAlign: 'center', color: '#999', padding: '2rem', fontSize: '14px' }}>
+          <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '2rem', fontSize: '14px' }}>
             <div style={{ fontSize: '40px', marginBottom: '0.5rem' }}>👥</div>
             אין משתמשים במערכת עדיין
           </div>
@@ -612,7 +612,7 @@ function UsersManagement({ users, loadData, user }) {
                 }}>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      <span style={{ fontWeight: '600', fontSize: '14px', color: '#333' }}>
+                      <span style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text, #333)' }}>
                         {userItem.name}
                       </span>
                       <span style={{
@@ -630,7 +630,7 @@ function UsersManagement({ users, loadData, user }) {
                       )}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '2px', flexWrap: 'wrap' }}>
-                      <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#888' }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--text-3, #888)' }}>
                         @{userItem.username}
                       </span>
                       <ThemeDisplay themeName={userItem.theme || 'default'} />

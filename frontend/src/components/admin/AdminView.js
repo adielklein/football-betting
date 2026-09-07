@@ -169,7 +169,7 @@ function AdminView({ user, onLogout }) {
           gap: '3px',
           marginBottom: '0.75rem',
           padding: '3px',
-          backgroundColor: '#f0f2f5',
+          backgroundColor: 'var(--surface-3, #f0f2f5)',
           borderRadius: '14px',
           boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)'
         }}>

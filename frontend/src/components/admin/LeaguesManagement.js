@@ -135,7 +135,7 @@ function LeaguesManagement() {
   };
 
   const labelStyle = {
-    fontSize: '11px', color: '#888', display: 'block', marginBottom: '3px', fontWeight: '600'
+    fontSize: '11px', color: 'var(--text-3, #888)', display: 'block', marginBottom: '3px', fontWeight: '600'
   };
 
   const inputStyle = {
@@ -147,11 +147,11 @@ function LeaguesManagement() {
       <div style={{ textAlign: 'center', padding: '2rem' }}>
         <div style={{
           width: '44px', height: '44px',
-          border: '3px solid #f0f0f0', borderTop: '3px solid var(--theme-primary, #007bff)',
+          border: '3px solid var(--border, #f0f0f0)', borderTop: '3px solid var(--theme-primary, #007bff)',
           borderRadius: '50%', animation: 'spin 0.8s linear infinite',
           margin: '0 auto 0.5rem'
         }}></div>
-        <span style={{ fontSize: '13px', color: '#888' }}>טוען ליגות...</span>
+        <span style={{ fontSize: '13px', color: 'var(--text-3, #888)' }}>טוען ליגות...</span>
       </div>
     );
   }
@@ -263,7 +263,7 @@ function LeaguesManagement() {
         </h2>
 
         {leagues.length === 0 ? (
-          <div style={{ textAlign: 'center', color: '#999', padding: '2rem', fontSize: '14px' }}>
+          <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '2rem', fontSize: '14px' }}>
             <div style={{ fontSize: '40px', marginBottom: '0.5rem' }}>🏆</div>
             אין ליגות במערכת עדיין
           </div>
@@ -277,7 +277,7 @@ function LeaguesManagement() {
                 padding: '0.5rem 0.6rem',
                 background: index % 2 === 0 ? '#fafafa' : '#fff',
                 borderRadius: '10px',
-                border: '1px solid #f0f0f0',
+                border: '1px solid var(--border, #f0f0f0)',
                 animation: `slideUp 0.25s ease ${index * 0.03}s both`,
                 transition: 'all 0.2s ease'
               }}>
@@ -290,11 +290,11 @@ function LeaguesManagement() {
                     boxShadow: `0 2px 6px ${league.color}44`
                   }}></div>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: '600', fontSize: '14px', color: '#333' }}>
+                    <div style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text, #333)' }}>
                       {league.name}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      <span style={{ fontFamily: 'monospace', fontSize: '10px', color: '#aaa' }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: '10px', color: 'var(--text-4, #aaa)' }}>
                         {league.key}
                       </span>
                       <span style={{
@@ -306,10 +306,10 @@ function LeaguesManagement() {
                         {league.type === 'club' ? '🏢 מועדון' : league.type === 'national' ? '🌍 נבחרות' : '📌 אחר'}
                       </span>
                       {league.region && (
-                        <span style={{ fontSize: '10px', color: '#999' }}>{league.region}</span>
+                        <span style={{ fontSize: '10px', color: 'var(--text-4, #999)' }}>{league.region}</span>
                       )}
                       <span style={{
-                        fontSize: '10px', color: '#bbb', fontWeight: '600'
+                        fontSize: '10px', color: 'var(--text-4, #bbb)', fontWeight: '600'
                       }}>
                         #{league.order}
                       </span>
@@ -351,14 +351,14 @@ function LeaguesManagement() {
         }}>
           <div style={{
             width: '100%', maxWidth: '500px',
-            background: '#fff', borderRadius: '16px',
+            background: 'var(--surface, #fff)', borderRadius: '16px',
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
             maxHeight: '85vh', display: 'flex', flexDirection: 'column',
             overflow: 'hidden'
           }}>
             <div style={{
               padding: '0.75rem 1rem',
-              borderBottom: '1px solid #f0f0f0',
+              borderBottom: '1px solid var(--border, #f0f0f0)',
               background: 'linear-gradient(135deg, #f8f9fa, #fff)'
             }}>
               <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '700' }}>
@@ -420,9 +420,9 @@ function LeaguesManagement() {
 
             <div style={{
               padding: '0.75rem 1rem',
-              borderTop: '1px solid #f0f0f0',
+              borderTop: '1px solid var(--border, #f0f0f0)',
               display: 'flex', gap: '0.5rem',
-              background: '#fafafa'
+              background: 'var(--surface-2, #fafafa)'
             }}>
               <button onClick={handleUpdateLeague} style={{
                 flex: 1, padding: '0.55rem',
