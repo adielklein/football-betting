@@ -9,6 +9,7 @@ import PushManagement from './PushManagement';
 import AdminStats from './AdminStats';
 import AuditLog from './AuditLog';
 import LoadingSpinner from './LoadingSpinner';
+import useTabRoute from '../../services/useTabRoute';
 
 function AdminView({ user, onLogout }) {
   const [weeks, setWeeks] = useState([]);
@@ -16,7 +17,12 @@ function AdminView({ user, onLogout }) {
   const [matches, setMatches] = useState([]);
   const [allBets, setAllBets] = useState([]);
   const [users, setUsers] = useState([]);
-  const [activeTab, setActiveTab] = useState('weeks');
+  // בקידומת admin כדי שלשוניות הניהול לא יתנגשו באלה של השחקן
+  const [activeTab, setActiveTab] = useTabRoute(
+    ['weeks', 'leagues', 'users', 'bets', 'push', 'stats', 'audit'],
+    'weeks',
+    { prefix: 'admin' }
+  );
   const [loading, setLoading] = useState(true);
   const [auditCount, setAuditCount] = useState(0);
 

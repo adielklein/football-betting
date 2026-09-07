@@ -3,6 +3,7 @@ import TeamLogo from '../TeamLogo';
 import MatchInsightsModal from './MatchInsightsModal';
 import LiveScore from './LiveScore';
 import useLiveScores from '../../services/useLiveScores';
+import { setUnsavedChecker } from '../../services/unsavedGuard';
 import { toast } from '../../services/toast';
 
 // שם קבוצה לחיץ - פותח את חלון הנתונים. התג על הלוגו מסמן שאפשר ללחוץ
@@ -214,6 +215,13 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
     const bet = localBets[matchId];
     return bet && bet.team1Goals !== '' && bet.team2Goals !== '';
   };
+
+  // ההימורים לא נשמרים אוטומטית, ולכן מעבר לשונית או סגירת הדף עלולים
+  // לאבד תוצאה שהוקלדה. הבודק נרשם גלובלית כי הוא נדרש גם מחוץ למסך הזה.
+  useEffect(
+    () => setUnsavedChecker(() => matches.some((m) => isBetChanged(m._id))),
+    [matches, localBets, bets]
+  );
 
   const countdownBoxStyle = (total) => ({
     padding: '2px 5px', borderRadius: '6px', fontSize: '13px', fontWeight: '800',

@@ -8,6 +8,8 @@ import HistoryViewer from './HistoryViewer';
 import AllBetsViewer from './AllBetsViewer';
 import PlayerStats from './PlayerStats';
 import NotificationSettings from '../NotificationSettings';
+import { confirmLeave } from '../../services/unsavedGuard';
+import useTabRoute from '../../services/useTabRoute';
 
 function PlayerView({ user, onLogout }) {
   const [weeks, setWeeks] = useState([]);
@@ -15,7 +17,13 @@ function PlayerView({ user, onLogout }) {
   const [matches, setMatches] = useState([]);
   const [bets, setBets] = useState({});
   const [leaderboard, setLeaderboard] = useState([]);
-  const [activeTab, setActiveTab] = useState('betting');
+  // הלשונית נגזרת מהכתובת, כדי שכפתור "חזור" יחזור ללשונית הקודמת
+  // במקום לצאת מהאפליקציה, ושרענון או קישור ינחתו במקום הנכון.
+  const [activeTab, setActiveTab] = useTabRoute(
+    ['betting', 'allbets', 'leaderboard', 'history', 'stats'],
+    'betting',
+    { onBeforeChange: () => confirmLeave() }
+  );
   const [loading, setLoading] = useState(true);
 
   const API_URL = window.location.hostname === 'localhost'

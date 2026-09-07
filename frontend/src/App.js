@@ -5,6 +5,7 @@ import PlayerView from './components/player/PlayerView';
 import { applyTheme } from './themes'; // 🎨 יבוא פונקציית ערכות הנושא
 import UpdateBanner from './components/UpdateBanner';
 import ToastHost from './components/ToastHost';
+import { HashRouter } from 'react-router-dom';
 import './index.css';
 
 function App() {
@@ -202,7 +203,11 @@ function App() {
   }
 
   return (
-    <div className="App">
+    // כתובת מסוג hash ולא נתיב רגיל: השרת הסטטי של Render לא מפנה
+    // נתיבים עמוקים אל index.html, ולכן ‎/leaderboard היה מחזיר 404
+    // ברענון או בפתיחת קישור. עם hash הכל עובד בלי הגדרות בשרת.
+    <HashRouter>
+      <div className="App">
       {!currentUser ? (
         <Login onLogin={handleLogin} />
       ) : currentUser.role === 'admin' ? (
@@ -261,7 +266,8 @@ function App() {
           `}</style>
         </div>
       )}
-    </div>
+      </div>
+    </HashRouter>
   );
 }
 
