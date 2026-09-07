@@ -1110,7 +1110,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
         )}
 
         {editingWeek === selectedWeek?._id && (
-          <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#e9ecef', borderRadius: '4px' }}>
+          <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'var(--surface-2, #e9ecef)', borderRadius: '4px' }}>
             <h4>עריכת שבוע</h4>
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
               <div>

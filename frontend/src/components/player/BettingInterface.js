@@ -41,17 +41,17 @@ function TeamPicker({ name, onClick }) {
       onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
       aria-label={`נתונים על ${name}`}
     >
-      <span style={{ position: 'relative', display: 'inline-flex' }}>
-        <TeamLogo name={name} />
-        <span style={{
-          position: 'absolute', top: '-3px', insetInlineStart: '-5px',
-          width: '15px', height: '15px', borderRadius: '50%',
-          background: 'var(--surface, #fff)', border: '1px solid #dbe4f0',
-          fontSize: '8px', lineHeight: '13px', textAlign: 'center',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
-        }}>📊</span>
+      {/* הסימון יושב ליד השם ולא על הלוגו. כשהוא היה מוצמד לפינת הלוגו הוא
+          כיסה חלק ממנו, והסמל של הקבוצה הוא בדיוק מה שמזהים לפיו בסריקה
+          מהירה של שלושה-עשר משחקים. */}
+      <TeamLogo name={name} />
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: '3px',
+        fontWeight: 700, maxWidth: '100%'
+      }}>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+        <span style={{ fontSize: '9px', opacity: 0.5, flexShrink: 0 }} aria-hidden="true">📊</span>
       </span>
-      <span style={{ fontWeight: 700 }}>{name}</span>
     </button>
   );
 }
@@ -290,7 +290,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
         {/* Progress bar */}
         <div style={{
           height: '3px',
-          backgroundColor: '#e8e8e8',
+          backgroundColor: 'var(--surface-3, #e8e8e8)',
           borderRadius: '2px',
           overflow: 'hidden'
         }}>

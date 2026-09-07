@@ -29,7 +29,7 @@
   --text: #333333;
   --text-2: #555555;
   --text-3: #888888;
-  --text-4: #aaaaaa;
+  --text-4: #868c96;   /* 3.0 ניגודיות על המשטח החלש ביותר */
   --border: #eeeeee;
   --border-2: #dde1e7;
 }
@@ -255,8 +255,8 @@ body.has-image-logo::after {
 }
 
 .btn:disabled {
-  background-color: #d1d5db;
-  color: #9ca3af;
+  background-color: var(--surface-3, #d1d5db);
+  color: var(--text-4, #6b7280);
   cursor: not-allowed;
   -webkit-transform: none;
   transform: none;
@@ -319,12 +319,12 @@ body.has-image-logo::after {
 .input {
   width: 100%;
   padding: 0.65rem 0.75rem;
-  border: 1.5px solid #e5e7eb;
+  border: 1.5px solid var(--border-2, #e5e7eb);
   border-radius: 10px;
   font-size: 14px;
   transition: all 0.25s ease;
-  background-color: #fafbfc;
-  color: var(--theme-text);
+  background-color: var(--surface-2, #fafbfc);
+  color: var(--text, #333);
   position: relative;
   z-index: 2;
   -webkit-appearance: none;
@@ -341,7 +341,7 @@ body.has-image-logo::after {
 }
 
 .input::placeholder {
-  color: #b0b8c4;
+  color: var(--text-4, #b0b8c4);
 }
 
 /* טבלאות */
@@ -355,8 +355,8 @@ table {
 }
 
 th {
-  background-color: #f8f9fa;
-  color: var(--theme-text);
+  background-color: var(--surface-3, #f8f9fa);
+  color: var(--text, #333);
   font-weight: 600;
   padding: 1rem;
   text-align: right;
@@ -365,13 +365,13 @@ th {
 
 td {
   padding: 0.75rem;
-  border-bottom: 1px solid #e0e0e0;
-  color: var(--theme-text);
+  border-bottom: 1px solid var(--border, #e0e0e0);
+  color: var(--text, #333);
   background: var(--theme-background);
 }
 
 tr:hover {
-  background-color: #f8f9fa;
+  background-color: var(--surface-2, #f8f9fa);
 }
 
 /* התראות */

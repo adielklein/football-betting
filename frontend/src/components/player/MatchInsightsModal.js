@@ -296,7 +296,7 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
         }}
       >
         <div style={{ padding: '0.5rem 0.9rem 0.3rem', flexShrink: 0 }}>
-          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#dde1e7', margin: '0 auto 0.5rem' }} />
+          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'var(--border-2, #dde1e7)', margin: '0 auto 0.5rem' }} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '11px', color: 'var(--text-3, #9aa2ae)', fontWeight: 700 }}>
               {data?.competition || 'נתוני משחק'}
@@ -329,7 +329,7 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
                 onClick={load}
                 style={{
                   border: 'none', borderRadius: '10px', padding: '0.5rem 1.1rem',
-                  background: 'var(--surface-3, #eef2f8)', color: '#3b6fd4', fontWeight: 700, fontSize: '13px', cursor: 'pointer'
+                  background: 'var(--surface-3, #eef2f8)', color: 'var(--theme-primary, #3b6fd4)', fontWeight: 700, fontSize: '13px', cursor: 'pointer'
                 }}
               >נסה שוב</button>
             </div>

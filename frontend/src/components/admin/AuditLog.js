@@ -262,7 +262,7 @@ function AuditLog() {
       {logs.length === 0 ? (
         <div style={{
           textAlign: 'center', padding: '2rem', color: 'var(--text-3, #888)',
-          backgroundColor: '#f9f9f9', borderRadius: '12px'
+          backgroundColor: 'var(--surface-2, #f9f9f9)', borderRadius: '12px'
         }}>
           אין פעולות בטווח התאריכים שנבחר
         </div>
