@@ -245,6 +245,10 @@ const sameTeam = (a, b) => {
   return eq(normalizeTeamName(hebrewToEnglish(a)), B) || eq(A, normalizeTeamName(hebrewToEnglish(b)));
 };
 
+// זיהוי הכיוון יושב במודול נפרד כדי שאפשר יהיה לבדוק אותו ישירות
+// (ראה services/orientation.test.js). ההשוואה בין שמות מוזרקת אליו.
+const detectOrientation = require('../services/orientation').buildDetector(sameTeam);
+
 const { sameResult } = require('../services/resultCompare');
 
 // 🔎 גילוי externalId למשחק שלא יובא ממאגר
@@ -626,13 +630,22 @@ router.get('/insights/:matchId', async (req, res) => {
     if (!insights) return res.status(404).json({ message: 'לא הוחזרו נתונים מ-365scores' });
 
     // סדר הקבוצות אצלנו מול 365 - במשחקים שנוספו ידנית הוא עלול להיות הפוך
-    const flipped = !sameTeam(match.team1, insights.home?.name) && sameTeam(match.team1, insights.away?.name);
+    const orientation = detectOrientation(
+      match.team1, match.team2, insights.home?.name, insights.away?.name
+    );
+    if (!orientation.confident) {
+      console.warn(
+        `⚠️ [insights] לא ניתן לקבוע כיוון: "${match.team1}"/"${match.team2}" ` +
+        `מול "${insights.home?.name}"/"${insights.away?.name}" - מוצג בסדר הטבעי`
+      );
+    }
 
     res.json({
       matchId: match._id,
       team1: match.team1,
       team2: match.team2,
-      flipped,
+      flipped: orientation.flipped,
+      orientationConfident: orientation.confident,
       ...insights
     });
   } catch (err) {

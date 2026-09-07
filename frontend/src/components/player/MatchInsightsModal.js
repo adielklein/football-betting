@@ -371,12 +371,15 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
               </Section>
 
               {data.h2h?.length > 0 && (
-                <Section title="ראש בראש" hint={`${data.h2h.length} מפגשים אחרונים`}>
+                <Section
+                  title="ראש בראש"
+                  hint={`${data.h2h.length} מפגשים אחרונים · בית/חוץ לפי ${t1?.name || 'הקבוצה הראשונה'}`}
+                >
                   <div style={{ display: 'flex', gap: '0.3rem', marginBottom: '0.45rem' }}>
                     {[
-                      { n: h2hT1Wins, l: 'נצחונות', c: ACCENT_1 },
+                      { n: h2hT1Wins, l: t1?.name || 'נצחונות', c: ACCENT_1 },
                       { n: h2hSum?.draws, l: 'תיקו', c: '#c67e00' },
-                      { n: h2hT2Wins, l: 'נצחונות', c: ACCENT_2 }
+                      { n: h2hT2Wins, l: t2?.name || 'נצחונות', c: ACCENT_2 }
                     ].map((x, i) => (
                       <div key={i} style={{
                         flex: 1, textAlign: 'center', padding: '0.35rem',
@@ -397,8 +400,16 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
                       <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {m.competition}
                       </span>
-                      <span style={{ fontWeight: 800, color: '#333', fontVariantNumeric: 'tabular-nums' }}>
-                        {flipped ? `${m.awayGoals}-${m.homeGoals}` : `${m.homeGoals}-${m.awayGoals}`}
+                      {/* המספרים נצבעים בצבע הקבוצה שלהם, באותם צבעים שבהם
+                          מסומנות הקבוצות לאורך כל החלון. כך אי אפשר לקרוא
+                          תוצאה לצד הלא נכון גם בלי לספור מי רשום ראשון. */}
+                      <span style={{ fontWeight: 800, fontVariantNumeric: 'tabular-nums', direction: 'ltr', unicodeBidi: 'isolate' }}>
+                        <span style={{ color: ACCENT_1 }}>{flipped ? m.awayGoals : m.homeGoals}</span>
+                        <span style={{ color: '#bbb' }}>-</span>
+                        <span style={{ color: ACCENT_2 }}>{flipped ? m.homeGoals : m.awayGoals}</span>
+                      </span>
+                      <span style={{ fontSize: '9px', color: '#b6bcc6', minWidth: '26px', textAlign: 'center' }}>
+                        {(flipped ? !m.homeTeamWasHome : m.homeTeamWasHome) ? 'בית' : 'חוץ'}
                       </span>
                     </div>
                   ))}
