@@ -121,11 +121,25 @@ async function uploadImageToImgBB(base64Image) {
  */
 // errorSink - מערך אופציונלי שאליו נאספות שגיאות השליחה. בלעדיו השגיאה
 // נבלעת בלוג בלבד, וזו הסיבה שכשל מתמשך בשליחה יכול לעבור מתחת לרדאר.
+// WebKit לא מממש את image בהתראות. סאפרי תומך ב-body, tag, icon, data
+// ו-silent בלבד - לא ב-image, לא ב-badge, לא ב-vibrate ולא ב-actions.
+//
+// לכן שליחת תמונה למכשיר אפל היא סתם משקל: היא לעולם לא תוצג. היא
+// נשארת ב-data, שם היא כן משמשת - האפליקציה מציגה אותה בפתיחה.
+const APPLE_PUSH_HOST = 'web.push.apple.com';
+
+const payloadFor = (subscription, payload) => {
+  const endpoint = subscription?.endpoint || '';
+  if (!endpoint.includes(APPLE_PUSH_HOST) || payload.image === undefined) return payload;
+  const { image, ...rest } = payload;
+  return rest;
+};
+
 async function sendNotification(subscription, payload, errorSink = null) {
   try {
     console.log('📤 [PUSH] Sending notification...');
 
-    await webpush.sendNotification(subscription, JSON.stringify(payload));
+    await webpush.sendNotification(subscription, JSON.stringify(payloadFor(subscription, payload)));
 
     console.log('✅ [PUSH] Sent successfully');
     return true;
@@ -444,7 +458,7 @@ async function sendWeekActivationNotification(week, options = {}) {
       data: {
         type: 'week_activated',
         weekId: week._id,
-        url: '/betting'
+        url: '/#/betting'
       }
     };
 

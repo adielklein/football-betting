@@ -138,6 +138,20 @@ router.patch('/:id/activate', requireAdmin, async (req, res) => {
         imageUrl: imageUrl ? 'present' : 'none'
       });
       
+      // נשמרת גם כהתראה בתוך האפליקציה. באייפון התמונה לא מוצגת בהתראה
+      // עצמה - WebKit לא מממש את image - ולכן זו הדרך היחידה שבה מי שעל
+      // אייפון בכלל רואה אותה.
+      try {
+        const InAppNotification = require('../models/InAppNotification');
+        await InAppNotification.create({
+          title: notificationTitle || '🏆 שבוע חדש הופעל!',
+          body: notificationBody || `${week.name} נפתח להימורים!`,
+          imageUrl: imageUrl || undefined
+        });
+      } catch (e) {
+        console.warn('שמירת התראה בתוך האפליקציה נכשלה:', e.message);
+      }
+
       notificationResult = await sendWeekActivationNotification(week, {
         customTitle: notificationTitle,
         customBody: notificationBody,

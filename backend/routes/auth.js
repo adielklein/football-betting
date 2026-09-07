@@ -87,11 +87,30 @@ router.post('/login', async (req, res) => {
 // Get all users (for admin)
 router.get('/users', async (req, res) => {
   try {
-    console.log('Getting all users...');
-    // 🔧 FIX: הוסף pushSettings לתגובה!
-    const users = await User.find().select('name username role theme pushSettings');
-    console.log('Found users:', users.length);
-    res.json(users);
+    const users = await User.find().select('name username role theme pushSettings').lean();
+
+    // הנתיב הזה פתוח - האפליקציה צריכה את שמות השחקנים כדי להציג טבלאות.
+    // עד עכשיו הוא החזיר גם את אובייקטי המנוי המלאים של כולם, כולל
+    // כתובת הדחיפה ומפתחות ההצפנה של כל מכשיר. אי אפשר לשלוח התראה בלי
+    // מפתח ה-VAPID הפרטי, אבל כתובות הדחיפה הן מזהי מכשיר ואין שום סיבה
+    // שהן יהיו גלויות. מוחזר סיכום בלבד.
+    const summarize = (ps) => {
+      const subs = [
+        ...(Array.isArray(ps?.subscriptions) ? ps.subscriptions : []),
+        ...(ps?.subscription ? [ps.subscription] : [])
+      ];
+      return {
+        enabled: !!ps?.enabled,
+        hoursBeforeLock: ps?.hoursBeforeLock ?? 2,
+        exactScoreAlerts: ps?.exactScoreAlerts !== false,
+        deviceCount: subs.length,
+        // כמה מהמכשירים הם של אפל. מסך שליחת ההתראות משתמש בזה כדי
+        // להזהיר שהתמונה לא תוצג להם - WebKit לא מממש את image.
+        appleDevices: subs.filter((x) => String(x?.endpoint || '').includes('web.push.apple.com')).length
+      };
+    };
+
+    res.json(users.map((u) => ({ ...u, pushSettings: summarize(u.pushSettings) })));
   } catch (error) {
     console.error('Error getting users:', error);
     res.status(500).json({ message: error.message });

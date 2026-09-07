@@ -69,9 +69,14 @@ function PushManagement() {
   };
 
   const isUserSubscribed = (user) => {
-    return !!(user.pushSettings?.enabled && user.pushSettings?.subscriptions &&
-      Array.isArray(user.pushSettings.subscriptions) && user.pushSettings.subscriptions.length > 0);
+    return !!(user.pushSettings?.enabled && (user.pushSettings?.deviceCount || 0) > 0);
   };
+
+  // כמה שחקנים רשומים ממכשיר של אפל. משמש להזהיר לפני שליחת תמונה,
+  // כי WebKit לא מממש את image בהתראות והם יקבלו טקסט בלבד.
+  const appleDeviceUsers = users.filter(
+    (u) => isUserSubscribed(u) && (u.pushSettings?.appleDevices || 0) > 0
+  ).length;
 
   const handleSelectAll = () => {
     const subscribed = users.filter(isUserSubscribed);
@@ -168,9 +173,26 @@ function PushManagement() {
         <label style={labelStyle}>תמונה (אופציונלי - אנדרואיד בלבד)</label>
         <input type="file" accept="image/*" onChange={handleImageSelect}
           className="input" style={{ ...inputStyle, width: '100%' }} />
-        <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', marginTop: '2px' }}>מקסימום 10MB • אייפון לא תומך בתמונות בהתראות</div>
+        <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', marginTop: '2px' }}>מקסימום 10MB</div>
         {notificationImage && (
           <div style={{ marginTop: '0.4rem' }}>
+            {/* המספר לא סתם הערה כללית: הוא נספר מהמכשירים הרשומים בפועל,
+                כדי שיהיה ברור כמה אנשים באמת יקבלו את ההודעה בלי התמונה. */}
+            {appleDeviceUsers > 0 && (
+              <div style={{
+                display: 'flex', gap: '6px', alignItems: 'flex-start',
+                padding: '0.5rem 0.6rem', marginBottom: '0.4rem',
+                background: '#fff8e1', border: '1px solid #ffe0a3',
+                borderRadius: '10px', fontSize: '11px', color: '#7a5c17', lineHeight: 1.5
+              }}>
+                <span style={{ fontSize: '13px', flexShrink: 0 }}>🍎</span>
+                <span>
+                  <b>{appleDeviceUsers} שחקנים על אייפון</b> לא יראו את התמונה בהתראה עצמה —
+                  אפל לא תומכת בזה. הם כן יראו אותה כשיפתחו את האפליקציה,
+                  אז כדאי שהטקסט יעמוד בפני עצמו.
+                </span>
+              </div>
+            )}
             <img src={notificationImage} alt="תצוגה מקדימה" style={{
               width: '100%', maxHeight: '150px', objectFit: 'cover',
               borderRadius: '10px', border: '2px solid #86efac'
@@ -361,7 +383,7 @@ function PushManagement() {
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontWeight: '600', fontSize: '13px', color: 'var(--text, #333)' }}>{u.name}</div>
                       <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)' }}>
-                        @{u.username} • {u.pushSettings?.subscriptions?.length || 0} מכשירים • {u.pushSettings?.hoursBeforeLock || 2}שע לפני נעילה
+                        @{u.username} • {u.pushSettings?.deviceCount || 0} מכשירים • {u.pushSettings?.hoursBeforeLock || 2}שע לפני נעילה
                       </div>
                     </div>
                     <button onClick={() => sendTestToUser(u._id)} style={{
