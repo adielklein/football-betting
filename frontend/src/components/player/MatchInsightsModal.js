@@ -13,7 +13,38 @@ const OUTCOME_STYLE = {
 const ACCENT_1 = '#2f6fd0';
 const ACCENT_2 = '#d06a2f';
 
-const shortDate = (iso) => (iso ? `${iso.slice(8, 10)}.${iso.slice(5, 7)}` : '');
+// כולל שנה בכוונה: מפגשים קודמים נפרסים על פני יותר מעונה אחת, ובלי השנה
+// אי אפשר להבדיל בין מפגש מהחודש שעבר לבין אחד מלפני שנתיים.
+const shortDate = (iso) => (iso ? `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(2, 4)}` : '');
+
+// תוצאה דו-צדדית. הסדר החזותי נכפה מפורשות ותמיד זהה לסדר של כותרות
+// הקבוצות למעלה: הקבוצה הראשונה מימין.
+//
+// זה לא פרט אסתטי. במסמך RTL, "2 - 1" (עם רווחים) ו-"2-1" (בלי) מסודרים
+// הפוך זה מזה - אלגוריתם הדו-כיווניות מצרף מקף בין ספרות למספר אחד, אבל
+// מקף מוקף רווחים נשאר ניטרלי ומקבל את כיוון הפסקה. הישענות על ההתנהגות
+// הזו נותנת תוצאה שמתהפכת לפי רווח, ובלי שמות ליד המספרים אף אחד לא שם לב.
+function PairScore({ a, b, colored = true, colorA, colorB, style }) {
+  const val = (v) => (v == null ? '—' : v);
+  const cA = colorA || (colored ? ACCENT_1 : 'inherit');
+  const cB = colorB || (colored ? ACCENT_2 : 'inherit');
+  return (
+    <span
+      style={{
+        direction: 'rtl',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '3px',
+        fontVariantNumeric: 'tabular-nums',
+        ...style
+      }}
+    >
+      <span style={{ color: cA }}>{val(a)}</span>
+      <span style={{ color: '#c3c8d0', fontWeight: 600 }}>-</span>
+      <span style={{ color: cB }}>{val(b)}</span>
+    </span>
+  );
+}
 
 function Section({ title, hint, children }) {
   return (
@@ -118,9 +149,15 @@ function FormRow({ team, accent, expanded, onToggle }) {
                 <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {f.opponent}
                 </span>
-                <span style={{ fontWeight: 800, color: s.color, fontVariantNumeric: 'tabular-nums' }}>
-                  {f.goalsFor}-{f.goalsAgainst}
-                </span>
+                {/* שערי הקבוצה הזו מימין בצבע שלה, של היריבה משמאל באפור -
+                    אחרת "1-0" לא מגלה מי כבש ומי ספג */}
+                <PairScore
+                  a={f.goalsFor}
+                  b={f.goalsAgainst}
+                  colorA={s.color}
+                  colorB="#aab1bb"
+                  style={{ fontWeight: 800 }}
+                />
               </div>
             );
           })}
@@ -130,14 +167,21 @@ function FormRow({ team, accent, expanded, onToggle }) {
   );
 }
 
-function TeamHeader({ team, accent, focused }) {
+function TeamHeader({ team, accent, focused, onSelect }) {
   return (
-    <div style={{
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={focused}
+      aria-label={`הצג את ${team.name}`}
+      style={{
       flex: '1 1 0', minWidth: 0, textAlign: 'center',
       padding: '0.5rem 0.3rem', borderRadius: '12px',
       background: focused ? `${accent}14` : 'transparent',
       border: `2px solid ${focused ? accent : 'transparent'}`,
-      transition: 'all .25s ease'
+      transition: 'all .25s ease',
+      font: 'inherit', cursor: 'pointer',
+      WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation'
     }}>
       {team.logo && (
         <img
@@ -157,7 +201,7 @@ function TeamHeader({ team, accent, focused }) {
       ) : (
         <div style={{ fontSize: '10.5px', color: '#c3c8d0', marginTop: '2px' }}>אין טבלה</div>
       )}
-    </div>
+    </button>
   );
 }
 
@@ -165,7 +209,21 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [expandedForm, setExpandedForm] = useState(null);
+
+  // הקבוצה שבמוקד. נפתחת על זו שנלחצה בשורת ההימור, ואפשר להחליף ביניהן
+  // בלחיצה על הכותרת - בלי לסגור את החלון ולפתוח אותו מחדש על הקבוצה השנייה.
+  const [focus, setFocus] = useState(focusTeam || 1);
+  const [expandedForm, setExpandedForm] = useState(focusTeam || 1);
+
+  useEffect(() => {
+    setFocus(focusTeam || 1);
+    setExpandedForm(focusTeam || 1);
+  }, [focusTeam, match._id]);
+
+  const selectTeam = (n) => {
+    setFocus(n);
+    setExpandedForm(n);
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -280,9 +338,13 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
           {data && !loading && (
             <>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginBottom: '0.7rem' }}>
-                <TeamHeader team={t1} accent={ACCENT_1} focused={focusTeam === 1} />
+                <TeamHeader team={t1} accent={ACCENT_1} focused={focus === 1} onSelect={() => selectTeam(1)} />
                 <div style={{ flexShrink: 0, color: '#c3c8d0', fontWeight: 800, fontSize: '12px' }}>VS</div>
-                <TeamHeader team={t2} accent={ACCENT_2} focused={focusTeam === 2} />
+                <TeamHeader team={t2} accent={ACCENT_2} focused={focus === 2} onSelect={() => selectTeam(2)} />
+              </div>
+
+              <div style={{ textAlign: 'center', fontSize: '9.5px', color: '#b6bcc6', marginBottom: '0.7rem' }}>
+                לחצו על קבוצה כדי לפתוח את המשחקים שלה
               </div>
 
               {pred && (
@@ -295,13 +357,15 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
                   <span style={{ fontSize: '15px' }}>⚡</span>
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: '10px', fontWeight: 700, color: '#8b93a1' }}>תחזית לפי כושר</div>
-                    <div style={{
-                      fontSize: '19px', fontWeight: 900, color: '#2f4f86',
-                      fontVariantNumeric: 'tabular-nums', lineHeight: 1.15
-                    }}>
-                      {predT1} - {predT2}
+                    <PairScore
+                      a={predT1}
+                      b={predT2}
+                      style={{ fontSize: '19px', fontWeight: 900, lineHeight: 1.15, gap: '5px' }}
+                    />
+                    <div style={{ fontSize: '9.5px', color: '#9aa2ae', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                      <span>צפי שערים</span>
+                      <PairScore a={expT1} b={expT2} colored={false} />
                     </div>
-                    <div style={{ fontSize: '9.5px', color: '#9aa2ae' }}>צפי שערים {expT1} - {expT2}</div>
                   </div>
                 </div>
               )}
@@ -359,6 +423,21 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
               </Section>
 
               <Section title="השוואה" hint="ירוק = טוב יותר">
+                {/* שמות מפורשים מעל העמודות. בלעדיהם שני מספרים משני צדי
+                    התווית נראים זהים לחלוטין, ואין שום דרך לדעת של מי מה. */}
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  marginBottom: '0.4rem', fontSize: '10px', fontWeight: 800
+                }}>
+                  <span style={{
+                    color: ACCENT_1, maxWidth: '42%',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                  }}>{t1.name}</span>
+                  <span style={{
+                    color: ACCENT_2, maxWidth: '42%', textAlign: 'left',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                  }}>{t2.name}</span>
+                </div>
                 <CompareRow label="ממוצע כבישה" a={t1.avgScored} b={t2.avgScored} />
                 <CompareRow label="ממוצע ספיגה" a={t1.avgConceded} b={t2.avgConceded} lowerIsBetter />
                 <CompareRow label="שער נקי" a={t1.cleanSheets} b={t2.cleanSheets} />
@@ -396,23 +475,30 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
                       fontSize: '11px', color: '#666', padding: '3px 0.3rem',
                       borderBottom: i < data.h2h.length - 1 ? '1px dashed #eef1f4' : 'none'
                     }}>
-                      <span style={{ color: '#bbb', minWidth: '34px', fontSize: '10px' }}>{shortDate(m.date)}</span>
+                      <span style={{ color: '#bbb', minWidth: '48px', fontSize: '10px' }}>{shortDate(m.date)}</span>
                       <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {m.competition}
                       </span>
-                      {/* המספרים נצבעים בצבע הקבוצה שלהם, באותם צבעים שבהם
-                          מסומנות הקבוצות לאורך כל החלון. כך אי אפשר לקרוא
-                          תוצאה לצד הלא נכון גם בלי לספור מי רשום ראשון. */}
-                      <span style={{ fontWeight: 800, fontVariantNumeric: 'tabular-nums', direction: 'ltr', unicodeBidi: 'isolate' }}>
-                        <span style={{ color: ACCENT_1 }}>{flipped ? m.awayGoals : m.homeGoals}</span>
-                        <span style={{ color: '#bbb' }}>-</span>
-                        <span style={{ color: ACCENT_2 }}>{flipped ? m.homeGoals : m.awayGoals}</span>
-                      </span>
+                      <PairScore
+                        a={flipped ? m.awayGoals : m.homeGoals}
+                        b={flipped ? m.homeGoals : m.awayGoals}
+                        style={{ fontWeight: 800 }}
+                      />
                       <span style={{ fontSize: '9px', color: '#b6bcc6', minWidth: '26px', textAlign: 'center' }}>
                         {(flipped ? !m.homeTeamWasHome : m.homeTeamWasHome) ? 'בית' : 'חוץ'}
                       </span>
                     </div>
                   ))}
+
+                  {data.h2h.length < 3 && (
+                    <div style={{
+                      marginTop: '0.4rem', padding: '0.4rem 0.5rem', borderRadius: '8px',
+                      background: '#fafbfc', border: '1px dashed #e5e9ee',
+                      fontSize: '9.5px', color: '#a6adb8', textAlign: 'center'
+                    }}>
+                      אלה כל המפגשים ש-365scores שומרים לזוג הזה
+                    </div>
+                  )}
                 </Section>
               )}
 

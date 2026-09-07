@@ -263,34 +263,61 @@ const fetchTeamGames = async (competitorId) => (await fetchTeamGamesPage(competi
 // עמוד אחד מכסה חצי עונה בערך, ולכן בלי דפדוף כמעט תמיד יוצא ריק - וזו
 // הסיבה שהחלון הציג "אין מפגשים" גם לזוגות שנפגשים כל שנה.
 //
-// 365 מאט מאוד תחת בקשות רצופות (עמוד בודד יכול לקחת 4 שניות), ולכן:
-// העמוד הראשון מגיע מהשליפה שכבר נעשתה עבור הכושר, הדפדוף מוגבל בכמות
-// עמודים וגם בתקציב זמן, ומפסיקים ברגע שנאספו מספיק מפגשים.
-const MAX_H2H_PAGES = 3;
+// שני ספים ולא אחד: מתאמצים באמת עד MIN_H2H מפגשים, כי סעיף שמראה מפגש
+// אחד לא שווה יותר מסעיף ריק; ומעבר לזה מפסיקים מהר. 365 מאט מאוד תחת
+// בקשות רצופות (עמוד בודד יכול לקחת 4 שניות), ולכן יש גם תקציב זמן רך
+// שנכנס לתוקף רק אחרי שהמינימום הושג, וגם גבול עליון מוחלט.
+//
+// התוצאה נשמרת ב-cache של החלון כולו לשש שעות, כך שרק הצופה הראשון משלם.
+const MIN_H2H = 3;
 const WANTED_H2H = 5;
-const H2H_TIME_BUDGET_MS = 6000;
+const MAX_H2H_PAGES = 10;
+const H2H_SOFT_BUDGET_MS = 6000;
+const H2H_HARD_BUDGET_MS = 20000;
 
-const fetchHeadToHead = async (teamId, opponentId, { seedGames = [], seedNextPath = null } = {}) => {
+const fetchHeadToHead = async (
+  teamId,
+  opponentId,
+  { seedGames = [], seedNextPath = null, excludeGameId = null } = {}
+) => {
   if (!teamId || !opponentId) return [];
 
+  // המשחק הנוכחי עצמו מסונן כאן ולא אצל הקורא, כדי שספירת המפגשים
+  // תתייחס למה שבאמת יוצג ולא תיעצר על מפגש שממילא יורד
   const isMeeting = (g) => {
+    if (excludeGameId != null && g.id === excludeGameId) return false;
     const ids = [g.homeCompetitor?.id, g.awayCompetitor?.id];
     return ids.includes(teamId) && ids.includes(opponentId);
   };
 
   const meetings = seedGames.filter(isMeeting);
   let path = seedNextPath;
-  const deadline = Date.now() + H2H_TIME_BUDGET_MS;
+  const started = Date.now();
+  let pagesFetched = 0;
 
   try {
     for (let page = 0; page < MAX_H2H_PAGES; page++) {
-      if (!path || meetings.length >= WANTED_H2H || Date.now() > deadline) break;
+      if (!path) break;                                    // נגמרה ההיסטוריה
+      if (meetings.length >= WANTED_H2H) break;             // יותר מספיק
+      const elapsed = Date.now() - started;
+      if (elapsed > H2H_HARD_BUDGET_MS) break;
+      if (meetings.length >= MIN_H2H && elapsed > H2H_SOFT_BUDGET_MS) break;
+
       const json = await apiGet(path);
+      pagesFetched++;
       meetings.push(...finishedNewestFirst(json.games).filter(isMeeting));
       path = olderPagePath(json);
     }
   } catch (err) {
     console.warn(`⚠️ [365] fetchHeadToHead ${teamId} vs ${opponentId} failed:`, err.message);
+  }
+
+  if (meetings.length < MIN_H2H) {
+    console.log(
+      `ℹ️ [365] h2h ${teamId} vs ${opponentId}: ${meetings.length} מפגשים ` +
+      `אחרי ${pagesFetched} עמודים (${Date.now() - started}ms)` +
+      `${path ? '' : ' - נגמרה ההיסטוריה'}`
+    );
   }
 
   return meetings.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
@@ -405,10 +432,11 @@ const fetchTeamInsights = async (externalId, { refresh = false, formSize = 5 } =
 
   // ראש בראש. המשחק הנוכחי עצמו מסונן החוצה - כשהוא כבר הסתיים הוא חוזר
   // בתוצאות של הקבוצה, ואין טעם להציג אותו כ"מפגש קודם" של עצמו.
-  const h2hGames = (await fetchHeadToHead(homeC?.id, awayC?.id, {
+  const h2hGames = await fetchHeadToHead(homeC?.id, awayC?.id, {
     seedGames: homeGames,
-    seedNextPath: homePage.nextPath
-  })).filter((g) => g.id !== game.id);
+    seedNextPath: homePage.nextPath,
+    excludeGameId: game.id
+  });
 
   const h2h = h2hGames
     .map((g) => {
@@ -424,7 +452,7 @@ const fetchTeamInsights = async (externalId, { refresh = false, formSize = 5 } =
       };
     })
     .filter(Boolean)
-    .slice(0, 5);
+    .slice(0, WANTED_H2H);
 
   const odds = await fetchOddsForFixture(externalId, refresh);
 
