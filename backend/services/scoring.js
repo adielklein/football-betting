@@ -43,4 +43,28 @@ function calculateMatchPoints(prediction, result, odds) {
   return 0;
 }
 
-module.exports = { calculateMatchPoints, outcomeOf };
+// "כמה קרוב היית" - המרחק בשערים בין הניחוש לתוצאה שקרתה.
+//
+// מרחק 0 הוא בול. מרחק 1 אומר ששער אחד, לכאן או לכאן, היה הופך את הניחוש
+// לבול מדויק - וזה בדיוק הסיפור שמעניין את המהמר. המדד עובד גם כשהכיוון
+// היה שגוי: ניחוש 1-1 מול תוצאה 2-1 הוא מרחק 1, אף שלא זיכה בכלום.
+const goalDistance = (prediction, result) =>
+  Math.abs(prediction.team1Goals - result.team1Goals) +
+  Math.abs(prediction.team2Goals - result.team2Goals);
+
+// כמה נקודות עלה למהמר הפער הזה: מה שהיה מקבל על בול, פחות מה שקיבל בפועל.
+// מוחזר גם המרחק, כדי שאפשר יהיה לסנן "שער אחד" מ"שלושה שערים".
+const nearMiss = (prediction, result, odds) => {
+  const distance = goalDistance(prediction, result);
+  const actual = calculateMatchPoints(prediction, result, odds);
+  // הניקוד על בול תלוי בתוצאה שקרתה, ולכן מחושב מול התוצאה עצמה
+  const ifExact = calculateMatchPoints(result, result, odds);
+  return {
+    distance,
+    points: actual,
+    pointsIfExact: ifExact,
+    lost: roundToTenth(Math.max(0, ifExact - actual))
+  };
+};
+
+module.exports = { calculateMatchPoints, outcomeOf, goalDistance, nearMiss };

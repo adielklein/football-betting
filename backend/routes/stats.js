@@ -5,6 +5,7 @@ const Match = require('../models/Match');
 const Score = require('../models/Score');
 const Week = require('../models/Week');
 const { normalizeTeamName } = require('../utils/teamNormalizer');
+const { buildNearMissReport } = require('../services/nearMissReport');
 
 // GET /api/stats/user/:userId - סטטיסטיקות של שחקן
 router.get('/user/:userId', async (req, res) => {
@@ -157,6 +158,41 @@ router.get('/user/:userId', async (req, res) => {
       }
     }
 
+    // "כמה קרוב היית" - ניתוח ההחמצות. הניקודים של שאר השחקנים נדרשים
+    // כדי לענות על השאלה המעניינת באמת: איזה מקום בטבלה השבועית היה
+    // השער הזה נותן. נשלפים רק לשבועות שבהם המשתמש בכלל הימר.
+    const weekIds = [...new Set(completedBets.map((b) => String(b.weekId?._id || b.weekId || '')))].filter(Boolean);
+
+    // מנהלים מוחרגים בדיוק כמו בטבלה עצמה. בלי זה המקום שמוצג כאן היה
+    // נופל בדרגה אחת מהמקום שהשחקן רואה בטבלה, וזה בדיוק סוג הפער
+    // שגורם לאנשים לא להאמין למספר.
+    const User = require('../models/User');
+    const adminIds = (await User.find({ role: 'admin' }, '_id').lean()).map((u) => u._id);
+
+    const rivalScores = weekIds.length
+      ? await Score.find(
+          { weekId: { $in: weekIds }, userId: { $nin: [userId, ...adminIds] } },
+          'weekId weeklyScore'
+        ).lean()
+      : [];
+
+    const weeklyRivals = new Map();
+    for (const row of rivalScores) {
+      const key = String(row.weekId);
+      if (!weeklyRivals.has(key)) weeklyRivals.set(key, []);
+      weeklyRivals.get(key).push(row.weeklyScore || 0);
+    }
+
+    const nearMisses = buildNearMissReport(
+      completedBets.map((b) => ({
+        prediction: b.prediction,
+        match: b.matchId,
+        weekId: String(b.weekId?._id || b.weekId || ''),
+        weekName: b.weekId?.name || ''
+      })),
+      weeklyRivals
+    );
+
     res.json({
       overview: {
         totalBets: completedBets.length,
@@ -176,6 +212,7 @@ router.get('/user/:userId', async (req, res) => {
       teamStats: teamStatsArray.slice(0, 20),
       bestHitStreak,
       currentHitStreak,
+      nearMisses,
     });
 
   } catch (error) {

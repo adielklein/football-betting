@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import NearMissView from './NearMissView';
 
 function PlayerStats({ user }) {
   const [stats, setStats] = useState(null);
@@ -55,10 +56,11 @@ function PlayerStats({ user }) {
     );
   }
 
-  const { overview, weeklyTimeline, predictionDistribution, topPredictions, bestTeams, worstTeams, bestHitStreak, currentHitStreak } = stats;
+  const { overview, weeklyTimeline, predictionDistribution, topPredictions, bestTeams, worstTeams, bestHitStreak, currentHitStreak, nearMisses } = stats;
 
   const sections = [
     { key: 'overview', label: 'סקירה', icon: '📊' },
+    { key: 'nearmiss', label: 'כמה קרוב', icon: '🎯' },
     { key: 'timeline', label: 'ציר זמן', icon: '📈' },
     { key: 'teams', label: 'קבוצות', icon: '⚽' },
   ];
@@ -313,7 +315,7 @@ function PlayerStats({ user }) {
     <div style={{ animation: 'scaleIn 0.2s ease' }}>
       {/* Section Tabs */}
       <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+        display: 'grid', gridTemplateColumns: `repeat(${sections.length}, 1fr)`,
         gap: '4px', marginBottom: '0.6rem', padding: '3px',
         backgroundColor: '#f0f2f5', borderRadius: '12px',
         boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)'
@@ -468,6 +470,9 @@ function PlayerStats({ user }) {
           </Card>
         </div>
       )}
+
+      {/* === כמה קרוב היית === */}
+      {activeSection === 'nearmiss' && <NearMissView nearMisses={nearMisses} />}
 
       {/* === TEAMS === */}
       {activeSection === 'teams' && (
