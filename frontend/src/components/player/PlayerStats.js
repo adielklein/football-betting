@@ -472,7 +472,7 @@ function PlayerStats({ user }) {
       )}
 
       {/* === כמה קרוב היית === */}
-      {activeSection === 'nearmiss' && <NearMissView nearMisses={nearMisses} />}
+      {activeSection === 'nearmiss' && <NearMissView nearMisses={nearMisses} userId={user._id || user.id} />}
 
       {/* === TEAMS === */}
       {activeSection === 'teams' && (

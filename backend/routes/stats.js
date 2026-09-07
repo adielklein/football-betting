@@ -6,6 +6,8 @@ const Score = require('../models/Score');
 const Week = require('../models/Week');
 const { normalizeTeamName } = require('../utils/teamNormalizer');
 const { buildNearMissReport } = require('../services/nearMissReport');
+const { buildLuckTable } = require('../services/luckTable');
+const User = require('../models/User');
 
 // GET /api/stats/user/:userId - סטטיסטיקות של שחקן
 router.get('/user/:userId', async (req, res) => {
@@ -166,7 +168,6 @@ router.get('/user/:userId', async (req, res) => {
     // מנהלים מוחרגים בדיוק כמו בטבלה עצמה. בלי זה המקום שמוצג כאן היה
     // נופל בדרגה אחת מהמקום שהשחקן רואה בטבלה, וזה בדיוק סוג הפער
     // שגורם לאנשים לא להאמין למספר.
-    const User = require('../models/User');
     const adminIds = (await User.find({ role: 'admin' }, '_id').lean()).map((u) => u._id);
 
     const rivalScores = weekIds.length
@@ -217,6 +218,43 @@ router.get('/user/:userId', async (req, res) => {
 
   } catch (error) {
     console.error('Stats error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/stats/luck-table - מי הפסיד הכי הרבה נקודות לשער בודד
+//
+// טבלה אחת לכל הליגה, ולכן היא מחושבת פעם אחת ומוגשת מהזיכרון לכולם.
+// בלי הקאש כל שחקן שנכנס ללשונית היה גורר שליפה של כל ההימורים במסד.
+let luckCache = { at: 0, rows: null };
+const LUCK_TTL_MS = 5 * 60 * 1000;
+
+router.get('/luck-table', async (req, res) => {
+  try {
+    if (luckCache.rows && Date.now() - luckCache.at < LUCK_TTL_MS) {
+      return res.json(luckCache.rows);
+    }
+
+    const [players, bets, matches] = await Promise.all([
+      User.find({ role: { $ne: 'admin' } }, 'name').lean(),
+      Bet.find({}, 'userId matchId prediction').lean(),
+      Match.find({}, 'result odds').lean()
+    ]);
+
+    const matchById = new Map(matches.map((m) => [String(m._id), m]));
+    const rows = buildLuckTable(
+      bets.map((b) => ({
+        userId: b.userId,
+        prediction: b.prediction,
+        match: matchById.get(String(b.matchId))
+      })),
+      players
+    );
+
+    luckCache = { at: Date.now(), rows };
+    res.json(rows);
+  } catch (error) {
+    console.error('luck-table error:', error);
     res.status(500).json({ error: error.message });
   }
 });
