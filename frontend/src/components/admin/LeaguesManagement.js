@@ -275,7 +275,7 @@ function LeaguesManagement() {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '0.5rem 0.6rem',
-                background: index % 2 === 0 ? '#fafafa' : '#fff',
+                background: index % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)',
                 borderRadius: '10px',
                 border: '1px solid var(--border, #f0f0f0)',
                 animation: `slideUp 0.25s ease ${index * 0.03}s both`,
@@ -299,9 +299,9 @@ function LeaguesManagement() {
                       </span>
                       <span style={{
                         padding: '1px 6px',
-                        backgroundColor: league.type === 'club' ? '#e3f2fd' : league.type === 'national' ? '#fff3cd' : '#f8f9fa',
+                        backgroundColor: league.type === 'club' ? '#e3f2fd' : league.type === 'national' ? '#fff3cd' : 'var(--surface-2, #f8f9fa)',
                         borderRadius: '10px', fontSize: '10px', fontWeight: '600',
-                        color: league.type === 'club' ? '#1565c0' : league.type === 'national' ? '#f57f17' : '#666'
+                        color: league.type === 'club' ? '#1565c0' : league.type === 'national' ? '#f57f17' : 'var(--text-3, #666)'
                       }}>
                         {league.type === 'club' ? '🏢 מועדון' : league.type === 'national' ? '🌍 נבחרות' : '📌 אחר'}
                       </span>

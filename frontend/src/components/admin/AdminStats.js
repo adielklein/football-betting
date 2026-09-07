@@ -96,11 +96,11 @@ function AdminStats() {
   const StatBox = ({ value, label, color, bg, icon }) => (
     <div style={{
       textAlign: 'center', padding: '0.65rem 0.3rem',
-      background: bg || '#f8f9fc', borderRadius: '14px',
+      background: bg || 'var(--surface-2, #f8f9fc)', borderRadius: '14px',
       border: '1px solid rgba(0,0,0,0.04)'
     }}>
       {icon && <div style={{ fontSize: '18px', marginBottom: '2px' }}>{icon}</div>}
-      <div style={{ fontSize: '20px', fontWeight: '800', color: color || '#333', lineHeight: 1.2 }}>
+      <div style={{ fontSize: '20px', fontWeight: '800', color: color || 'var(--text, #333)', lineHeight: 1.2 }}>
         {value}
       </div>
       <div style={{ fontSize: '10px', color: 'var(--text-3, #888)', fontWeight: '600', marginTop: '3px' }}>
@@ -133,7 +133,7 @@ function AdminStats() {
     <div style={{
       display: 'flex', alignItems: 'center', gap: '8px',
       padding: '8px 10px', borderRadius: '10px',
-      background: rank < 3 ? 'linear-gradient(135deg, #fffbeb, #fef3c7)' : (rank % 2 === 0 ? '#fafbfc' : 'transparent'),
+      background: rank < 3 ? 'linear-gradient(135deg, #fffbeb, #fef3c7)' : (rank % 2 === 0 ? 'var(--surface-2, #fafbfc)' : 'transparent'),
       marginBottom: '4px',
       animation: 'slideUp 0.3s ease both',
       animationDelay: (rank * 40) + 'ms'
@@ -247,8 +247,8 @@ function AdminStats() {
           return (
             <button key={s.key} onClick={() => setActiveSection(s.key)} style={{
               padding: '0.4rem', border: 'none', borderRadius: '10px',
-              background: isActive ? '#fff' : 'transparent',
-              color: isActive ? 'var(--theme-primary, #007bff)' : '#888',
+              background: isActive ? 'var(--surface, #fff)' : 'transparent',
+              color: isActive ? 'var(--theme-primary, #007bff)' : 'var(--text-3, #888)',
               fontWeight: isActive ? '700' : '500', fontSize: '12px',
               cursor: 'pointer', display: 'flex', flexDirection: 'column',
               alignItems: 'center', gap: '1px',
@@ -405,7 +405,7 @@ function AdminStats() {
                   <div key={player.id} style={{
                     display: 'flex', alignItems: 'center', gap: '4px',
                     padding: '6px 8px', borderRadius: '8px',
-                    background: i % 2 === 0 ? '#fafbfc' : 'transparent',
+                    background: i % 2 === 0 ? 'var(--surface-2, #fafbfc)' : 'transparent',
                     fontSize: '12px'
                   }}>
                     <span style={{ width: '24px', fontWeight: '700', color: 'var(--text-3, #888)', textAlign: 'center' }}>{i + 1}</span>
@@ -583,7 +583,7 @@ function AdminStats() {
                 <div key={team.name} style={{
                   display: 'flex', alignItems: 'center', gap: '6px',
                   padding: '5px 8px', borderRadius: '8px',
-                  background: i % 2 === 0 ? '#fafbfc' : 'transparent',
+                  background: i % 2 === 0 ? 'var(--surface-2, #fafbfc)' : 'transparent',
                 }}>
                   <span style={{ flex: 1, fontSize: '12px', fontWeight: '600', color: 'var(--text-2, #444)' }}>
                     {team.name}

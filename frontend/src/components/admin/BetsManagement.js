@@ -280,7 +280,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                         justifyContent: 'space-between',
                         padding: '0.35rem 0.5rem',
                         borderRadius: '8px',
-                        background: playerIndex % 2 === 0 ? '#fafafa' : '#fff',
+                        background: playerIndex % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)',
                         marginBottom: '2px'
                       }}>
                         <span style={{
@@ -301,7 +301,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                               fontSize: '13px', borderRadius: '8px',
                               border: '1.5px solid #e0e0e0',
                               fontWeight: '700', color: 'var(--text, #333)',
-                              backgroundColor: !canEdit ? '#f5f5f5' : '#fff'
+                              backgroundColor: !canEdit ? 'var(--surface-3, #f5f5f5)' : 'var(--surface, #fff)'
                             }}
                             placeholder="-"
                           />
@@ -316,7 +316,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                               fontSize: '13px', borderRadius: '8px',
                               border: '1.5px solid #e0e0e0',
                               fontWeight: '700', color: 'var(--text, #333)',
-                              backgroundColor: !canEdit ? '#f5f5f5' : '#fff'
+                              backgroundColor: !canEdit ? 'var(--surface-3, #f5f5f5)' : 'var(--surface, #fff)'
                             }}
                             placeholder="-"
                           />

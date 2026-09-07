@@ -183,7 +183,7 @@ function Leaderboard({ leaderboard, user }) {
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: isTop3 ? '0.6rem 0.65rem' : '0.45rem 0.6rem',
-        background: isMe ? 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)' : (isTop3 ? rank.bg : (index % 2 === 0 ? '#fafafa' : '#fff')),
+        background: isMe ? 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)' : (isTop3 ? rank.bg : (index % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)')),
         borderRadius: isTop3 ? '12px' : '8px',
         border: isMe ? '2px solid #64b5f6' : (isTop3 ? `1px solid ${rank.border}` : '1px solid #f0f0f0'),
         boxShadow: isMe ? '0 2px 8px rgba(33,150,243,0.15)' : rank.shadow,
@@ -196,7 +196,7 @@ function Leaderboard({ leaderboard, user }) {
             fontWeight: '800',
             minWidth: '28px',
             textAlign: 'center',
-            color: !isTop3 ? '#bbb' : undefined
+            color: !isTop3 ? 'var(--text-4, #bbb)' : undefined
           }}>
             {rank.icon || (index + 1)}
           </span>
@@ -217,9 +217,9 @@ function Leaderboard({ leaderboard, user }) {
         <span style={{
           fontWeight: '800',
           fontSize: isTop3 ? '18px' : '15px',
-          color: isTop3 ? '#333' : '#555',
+          color: isTop3 ? 'var(--text, #333)' : 'var(--text-2, #555)',
           flexShrink: 0,
-          background: isTop3 ? 'rgba(255,255,255,0.7)' : '#f5f5f5',
+          background: isTop3 ? 'rgba(255,255,255,0.7)' : 'var(--surface-3, #f5f5f5)',
           padding: '2px 12px',
           borderRadius: '10px',
           minWidth: '40px',
@@ -260,8 +260,8 @@ function Leaderboard({ leaderboard, user }) {
                 padding: '0.5rem 0.2rem',
                 border: 'none',
                 borderRadius: '11px',
-                backgroundColor: isActive ? '#fff' : 'transparent',
-                color: isActive ? 'var(--theme-primary, #007bff)' : '#888',
+                backgroundColor: isActive ? 'var(--surface, #fff)' : 'transparent',
+                color: isActive ? 'var(--theme-primary, #007bff)' : 'var(--text-3, #888)',
                 fontWeight: isActive ? '700' : '500',
                 fontSize: '13px',
                 cursor: 'pointer',

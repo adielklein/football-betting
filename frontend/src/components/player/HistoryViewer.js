@@ -331,14 +331,14 @@ function HistoryViewer({ weeks, user }) {
                     <div key={player.name} style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: isTop3 ? '0.5rem 0.55rem' : '0.4rem 0.5rem',
-                      background: isMe ? 'linear-gradient(135deg, #e3f2fd, #bbdefb)' : (isTop3 ? rank.bg : (index % 2 === 0 ? '#fafafa' : '#fff')),
+                      background: isMe ? 'linear-gradient(135deg, #e3f2fd, #bbdefb)' : (isTop3 ? rank.bg : (index % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)')),
                       borderRadius: isTop3 ? '10px' : '6px',
                       border: isMe ? '2px solid #64b5f6' : (isTop3 ? `1px solid ${rank.border}` : 'none'),
                       boxShadow: isMe ? '0 2px 8px rgba(33,150,243,0.15)' : 'none',
                       animation: `slideUp 0.2s ease ${index * 0.03}s both`
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, flex: 1 }}>
-                        <span style={{ fontSize: isTop3 ? '18px' : '12px', fontWeight: '800', minWidth: '24px', textAlign: 'center', color: !isTop3 ? '#bbb' : undefined }}>
+                        <span style={{ fontSize: isTop3 ? '18px' : '12px', fontWeight: '800', minWidth: '24px', textAlign: 'center', color: !isTop3 ? 'var(--text-4, #bbb)' : undefined }}>
                           {rank.icon || (index + 1)}
                         </span>
                         <span style={{ fontWeight: isMe ? '700' : '500', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text, #333)' }}>
@@ -348,7 +348,7 @@ function HistoryViewer({ weeks, user }) {
                       </div>
                       <span style={{
                         fontWeight: '800', fontSize: isTop3 ? '16px' : '14px', flexShrink: 0,
-                        padding: '2px 10px', background: isTop3 ? 'rgba(255,255,255,0.7)' : '#f5f5f5',
+                        padding: '2px 10px', background: isTop3 ? 'rgba(255,255,255,0.7)' : 'var(--surface-3, #f5f5f5)',
                         borderRadius: '10px', color: 'var(--text, #333)'
                       }}>{player.score}</span>
                     </div>

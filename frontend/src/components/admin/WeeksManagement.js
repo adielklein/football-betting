@@ -937,7 +937,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                   <div style={{
                     padding: '0.75rem',
                     borderBottom: '1px solid var(--border, #f0f0f0)',
-                    backgroundColor: hoveredSeason === season ? '#f8f9fa' : 'white',
+                    backgroundColor: hoveredSeason === season ? 'var(--surface-2, #f8f9fa)' : 'white',
                     cursor: 'pointer',
                     fontWeight: '500',
                     display: 'flex',
@@ -982,7 +982,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                               <div style={{
                                 padding: '0.65rem 0.75rem',
                                 borderBottom: '1px solid var(--border, #f0f0f0)',
-                                backgroundColor: hoveredMonth === monthKey ? '#f8f9fa' : 'white',
+                                backgroundColor: hoveredMonth === monthKey ? 'var(--surface-2, #f8f9fa)' : 'white',
                                 cursor: 'pointer',
                                 fontSize: '14px',
                                 display: 'flex',
@@ -1029,7 +1029,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                                       }}
                                       onMouseEnter={(e) => {
                                         if (selectedWeek?._id !== week._id) {
-                                          e.currentTarget.style.backgroundColor = '#f8f9fa';
+                                          e.currentTarget.style.backgroundColor = 'var(--surface-2, #f8f9fa)';
                                         }
                                       }}
                                       onMouseLeave={(e) => {
@@ -1421,7 +1421,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                     padding: '1rem',
                     border: '1px solid var(--border-2, #ddd)',
                     borderRadius: '8px',
-                    backgroundColor: isEditingThis ? '#f0f8ff' : '#f8f9fa'
+                    backgroundColor: isEditingThis ? '#f0f8ff' : 'var(--surface-2, #f8f9fa)'
                   }}
                 >
                   <div style={{ 

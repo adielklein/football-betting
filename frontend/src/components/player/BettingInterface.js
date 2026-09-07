@@ -35,9 +35,9 @@ function TeamPicker({ name, onClick }) {
         touchAction: 'manipulation',
         transition: 'background 0.2s ease'
       }}
-      onTouchStart={(e) => { e.currentTarget.style.background = '#f2f6fc'; }}
+      onTouchStart={(e) => { e.currentTarget.style.background = 'var(--surface-3, #f2f6fc)'; }}
       onTouchEnd={(e) => { e.currentTarget.style.background = 'transparent'; }}
-      onMouseEnter={(e) => { e.currentTarget.style.background = '#f2f6fc'; }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-3, #f2f6fc)'; }}
       onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
       aria-label={`נתונים על ${name}`}
     >
@@ -364,9 +364,9 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
             <div key={match._id} style={{
               padding: '0.7rem',
               border: '2px solid',
-              borderColor: justSaved ? '#20c997' : (isSaved ? '#c3e6cb' : '#eee'),
+              borderColor: justSaved ? '#20c997' : (isSaved ? 'var(--border-2, #c3e6cb)' : 'var(--border, #eee)'),
               borderRadius: '14px',
-              backgroundColor: isSaved ? '#fbfefb' : '#fff',
+              backgroundColor: isSaved ? 'var(--surface-2, #fbfefb)' : 'var(--surface, #fff)',
               transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
               boxShadow: justSaved
                 ? '0 0 0 3px rgba(40,167,69,0.15), 0 4px 12px rgba(40,167,69,0.1)'
@@ -471,7 +471,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                       textAlign: 'center',
                       padding: '4px',
                       border: '2px solid',
-                      borderColor: currentBet.team1Goals !== '' && currentBet.team1Goals !== undefined ? '#28a745' : '#ddd',
+                      borderColor: currentBet.team1Goals !== '' && currentBet.team1Goals !== undefined ? '#28a745' : 'var(--border-2, #ddd)',
                       borderRadius: '10px',
                       fontSize: '20px',
                       fontWeight: '800',
@@ -504,7 +504,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                       textAlign: 'center',
                       padding: '4px',
                       border: '2px solid',
-                      borderColor: currentBet.team2Goals !== '' && currentBet.team2Goals !== undefined ? '#28a745' : '#ddd',
+                      borderColor: currentBet.team2Goals !== '' && currentBet.team2Goals !== undefined ? '#28a745' : 'var(--border-2, #ddd)',
                       borderRadius: '10px',
                       fontSize: '20px',
                       fontWeight: '800',
@@ -540,8 +540,8 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   fontWeight: '700',
                   background: hasChanges && isComplete
                     ? 'linear-gradient(135deg, #28a745, #20c997)'
-                    : (isSaved ? '#f0faf0' : '#f5f5f5'),
-                  color: hasChanges && isComplete ? 'white' : (isSaved ? '#2e7d32' : '#aaa'),
+                    : (isSaved ? '#f0faf0' : 'var(--surface-3, #f5f5f5)'),
+                  color: hasChanges && isComplete ? 'white' : (isSaved ? '#2e7d32' : 'var(--text-4, #aaa)'),
                   opacity: (!isComplete || !hasChanges) ? 0.85 : 1,
                   cursor: (!isComplete || !hasChanges) ? 'default' : 'pointer',
                   transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',

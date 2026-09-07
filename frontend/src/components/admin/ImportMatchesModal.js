@@ -254,7 +254,7 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
                     borderRadius: '8px',
                     padding: '0.6rem',
                     marginBottom: '0.5rem',
-                    background: f.selected ? '#f0fff7' : '#fff'
+                    background: f.selected ? '#f0fff7' : 'var(--surface, #fff)'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>

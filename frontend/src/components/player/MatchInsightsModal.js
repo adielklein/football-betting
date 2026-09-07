@@ -69,11 +69,11 @@ function CompareRow({ label, a, b, lowerIsBetter = false }) {
   return (
     <div style={{ marginBottom: '0.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
-        <span style={{ fontSize: '13px', fontWeight: 800, color: aBetter ? '#1e7a3c' : '#666', minWidth: '34px' }}>
+        <span style={{ fontSize: '13px', fontWeight: 800, color: aBetter ? '#1e7a3c' : 'var(--text-3, #666)', minWidth: '34px' }}>
           {a == null ? '—' : a}
         </span>
         <span style={{ fontSize: '10.5px', color: 'var(--text-4, #999)', fontWeight: 700 }}>{label}</span>
-        <span style={{ fontSize: '13px', fontWeight: 800, color: bBetter ? '#1e7a3c' : '#666', minWidth: '34px', textAlign: 'left' }}>
+        <span style={{ fontSize: '13px', fontWeight: 800, color: bBetter ? '#1e7a3c' : 'var(--text-3, #666)', minWidth: '34px', textAlign: 'left' }}>
           {b == null ? '—' : b}
         </span>
       </div>

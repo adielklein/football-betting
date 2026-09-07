@@ -282,7 +282,7 @@ function AuditLog() {
               }}>
                 <span style={{
                   fontWeight: '700', fontSize: '13px',
-                  color: log.adminName !== 'עדיאל קליין' ? '#ff3b30' : '#333'
+                  color: log.adminName !== 'עדיאל קליין' ? '#ff3b30' : 'var(--text, #333)'
                 }}>
                   {log.adminName}
                 </span>

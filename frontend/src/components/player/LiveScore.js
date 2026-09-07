@@ -9,7 +9,9 @@ function LiveScore({ live, compact = false }) {
   if (live.team1Goals == null || live.team2Goals == null) return null;
 
   const isLive = live.status === 'live';
-  const color = isLive ? '#dc3545' : '#6c757d';
+  // מצב "חי" שומר על אדום משלו; מצב "הסתיים" עובר לטוקנים, אחרת הוא
+  // אפור בהיר על אפור בהיר - קשה לקריאה על כרטיס כהה.
+  const color = isLive ? '#dc3545' : 'var(--text-3, #6c757d)';
 
   return (
     <span
@@ -19,8 +21,8 @@ function LiveScore({ live, compact = false }) {
         gap: '5px',
         padding: compact ? '1px 7px' : '2px 9px',
         borderRadius: '999px',
-        backgroundColor: isLive ? '#fff0f1' : '#f1f3f5',
-        border: `1px solid ${isLive ? '#f5c2c7' : '#e3e6ea'}`,
+        backgroundColor: isLive ? '#fff0f1' : 'var(--surface-3, #f1f3f5)',
+        border: `1px solid ${isLive ? '#f5c2c7' : 'var(--border-2, #e3e6ea)'}`,
         color,
         fontSize: compact ? '10px' : '11px',
         fontWeight: 700,

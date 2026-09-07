@@ -101,14 +101,14 @@ function LuckTable({ meUserId }) {
             >
               <span style={{
                 minWidth: '18px', fontSize: '11px', fontWeight: 800,
-                color: r.rank === 1 ? ACCENT : '#b6bcc6'
+                color: r.rank === 1 ? ACCENT : 'var(--text-4, #b6bcc6)'
               }}>
                 {r.rank ? <Num>{r.rank}</Num> : '–'}
               </span>
 
               <span style={{
                 flex: 1, minWidth: 0, fontSize: '12px',
-                fontWeight: me ? 800 : 600, color: me ? '#5a3722' : '#444',
+                fontWeight: me ? 800 : 600, color: me ? '#5a3722' : 'var(--text-2, #444)',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
               }}>
                 {r.name}
@@ -123,7 +123,7 @@ function LuckTable({ meUserId }) {
               </span>
 
               <span style={{
-                fontSize: '13px', fontWeight: 800, color: me ? ACCENT : '#5a6472',
+                fontSize: '13px', fontWeight: 800, color: me ? ACCENT : 'var(--text-2, #5a6472)',
                 minWidth: '34px', textAlign: 'left'
               }}>
                 <Num>{r.lostPerBet}</Num>

@@ -257,8 +257,8 @@ function PushManagement() {
           return (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
               padding: '0.4rem 0.1rem', border: 'none', borderRadius: '10px',
-              backgroundColor: isActive ? '#fff' : 'transparent',
-              color: isActive ? 'var(--theme-primary, #007bff)' : '#888',
+              backgroundColor: isActive ? 'var(--surface, #fff)' : 'transparent',
+              color: isActive ? 'var(--theme-primary, #007bff)' : 'var(--text-3, #888)',
               fontWeight: isActive ? '700' : '500', fontSize: '11px',
               cursor: 'pointer', transition: 'all 0.2s ease',
               boxShadow: isActive ? '0 2px 6px rgba(0,0,0,0.1)' : 'none',
@@ -326,7 +326,7 @@ function PushManagement() {
                   <div key={u._id} onClick={() => handleUserToggle(u._id)} style={{
                     display: 'flex', alignItems: 'center', padding: '0.4rem 0.5rem',
                     cursor: 'pointer',
-                    backgroundColor: selectedUsers.includes(u._id) ? '#e3f2fd' : (i % 2 === 0 ? '#fafafa' : '#fff'),
+                    backgroundColor: selectedUsers.includes(u._id) ? '#e3f2fd' : (i % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)'),
                     borderBottom: '1px solid #f5f5f5',
                     transition: 'background-color 0.15s ease'
                   }}>
@@ -377,7 +377,7 @@ function PushManagement() {
                   <div key={u._id} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '0.4rem 0.5rem', borderRadius: '8px',
-                    background: i % 2 === 0 ? '#fafafa' : '#fff',
+                    background: i % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)',
                     animation: `slideUp 0.2s ease ${i * 0.03}s both`
                   }}>
                     <div style={{ minWidth: 0 }}>
@@ -415,7 +415,7 @@ function PushManagement() {
                   <div key={u._id} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '0.4rem 0.5rem', borderRadius: '8px',
-                    background: i % 2 === 0 ? '#fafafa' : '#fff',
+                    background: i % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)',
                     opacity: 0.6,
                     animation: `slideUp 0.2s ease ${i * 0.03}s both`
                   }}>

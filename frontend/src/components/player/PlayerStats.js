@@ -153,9 +153,9 @@ function PlayerStats({ user }) {
   const StatPill = ({ value, label, color, bg }) => (
     <div style={{
       flex: 1, textAlign: 'center', padding: '0.6rem 0.3rem',
-      background: bg || '#f8f9fc', borderRadius: '12px',
+      background: bg || 'var(--surface-2, #f8f9fc)', borderRadius: '12px',
     }}>
-      <div style={{ fontSize: '22px', fontWeight: '800', color: color || '#333', lineHeight: 1.2 }}>
+      <div style={{ fontSize: '22px', fontWeight: '800', color: color || 'var(--text, #333)', lineHeight: 1.2 }}>
         {value}
       </div>
       <div style={{ fontSize: '10px', color: 'var(--text-3, #888)', fontWeight: '600', marginTop: '2px' }}>
@@ -325,8 +325,8 @@ function PlayerStats({ user }) {
           return (
             <button key={s.key} onClick={() => setActiveSection(s.key)} style={{
               padding: '0.4rem', border: 'none', borderRadius: '10px',
-              background: isActive ? '#fff' : 'transparent',
-              color: isActive ? 'var(--theme-primary, #007bff)' : '#888',
+              background: isActive ? 'var(--surface, #fff)' : 'transparent',
+              color: isActive ? 'var(--theme-primary, #007bff)' : 'var(--text-3, #888)',
               fontWeight: isActive ? '700' : '500', fontSize: '12px',
               cursor: 'pointer', display: 'flex', flexDirection: 'column',
               alignItems: 'center', gap: '1px',
@@ -414,8 +414,8 @@ function PlayerStats({ user }) {
               {topPredictions.map((pred, i) => (
                 <div key={i} style={{
                   padding: '6px 12px', borderRadius: '20px',
-                  background: i === 0 ? 'linear-gradient(135deg, var(--theme-primary, #007bff), var(--theme-secondary, #6c757d))' : '#f0f2f5',
-                  color: i === 0 ? '#fff' : '#555',
+                  background: i === 0 ? 'linear-gradient(135deg, var(--theme-primary, #007bff), var(--theme-secondary, #6c757d))' : 'var(--surface-3, #f0f2f5)',
+                  color: i === 0 ? '#fff' : 'var(--text-2, #555)',
                   fontSize: '13px', fontWeight: '700',
                   boxShadow: i === 0 ? '0 2px 8px rgba(0,0,0,0.15)' : 'none'
                 }}>
@@ -445,7 +445,7 @@ function PlayerStats({ user }) {
                 <div key={i} style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   padding: '8px 10px', borderRadius: '8px',
-                  background: i % 2 === 0 ? '#fafbfc' : 'transparent',
+                  background: i % 2 === 0 ? 'var(--surface-2, #fafbfc)' : 'transparent',
                 }}>
                   <span style={{ fontSize: '12px', color: 'var(--text-2, #555)', fontWeight: '600' }}>
                     {week.weekName}
@@ -453,7 +453,7 @@ function PlayerStats({ user }) {
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <span style={{
                       fontSize: '13px', fontWeight: '800',
-                      color: week.weeklyScore > 0 ? 'var(--theme-primary, #007bff)' : '#ccc'
+                      color: week.weeklyScore > 0 ? 'var(--theme-primary, #007bff)' : 'var(--text-4, #ccc)'
                     }}>
                       {week.weeklyScore} נק׳
                     </span>
@@ -506,7 +506,7 @@ function PlayerStats({ user }) {
                 <div key={team.name} style={{
                   display: 'flex', alignItems: 'center', gap: '8px',
                   padding: '6px 8px', borderRadius: '8px',
-                  background: i % 2 === 0 ? '#fafbfc' : 'transparent',
+                  background: i % 2 === 0 ? 'var(--surface-2, #fafbfc)' : 'transparent',
                 }}>
                   <span style={{ flex: 1, fontSize: '12px', fontWeight: '600', color: 'var(--text-2, #444)' }}>
                     {team.name}

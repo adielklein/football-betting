@@ -202,8 +202,8 @@ function PlayerView({ user, onLogout }) {
             onClick={() => setActiveTab('betting')}
             className="btn"
             style={{ 
-              backgroundColor: activeTab === 'betting' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'betting' ? 'white' : '#333',
+              backgroundColor: activeTab === 'betting' ? '#007bff' : 'var(--surface-2, #f8f9fa)', 
+              color: activeTab === 'betting' ? 'white' : 'var(--text, #333)',
               flexShrink: 0,
               whiteSpace: 'nowrap'
             }}
@@ -214,8 +214,8 @@ function PlayerView({ user, onLogout }) {
             onClick={() => setActiveTab('allbets')}
             className="btn"
             style={{ 
-              backgroundColor: activeTab === 'allbets' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'allbets' ? 'white' : '#333',
+              backgroundColor: activeTab === 'allbets' ? '#007bff' : 'var(--surface-2, #f8f9fa)', 
+              color: activeTab === 'allbets' ? 'white' : 'var(--text, #333)',
               flexShrink: 0,
               whiteSpace: 'nowrap'
             }}
@@ -226,8 +226,8 @@ function PlayerView({ user, onLogout }) {
             onClick={() => setActiveTab('leaderboard')}
             className="btn"
             style={{ 
-              backgroundColor: activeTab === 'leaderboard' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'leaderboard' ? 'white' : '#333',
+              backgroundColor: activeTab === 'leaderboard' ? '#007bff' : 'var(--surface-2, #f8f9fa)', 
+              color: activeTab === 'leaderboard' ? 'white' : 'var(--text, #333)',
               flexShrink: 0,
               whiteSpace: 'nowrap'
             }}
@@ -238,8 +238,8 @@ function PlayerView({ user, onLogout }) {
             onClick={() => setActiveTab('history')}
             className="btn"
             style={{ 
-              backgroundColor: activeTab === 'history' ? '#007bff' : '#f8f9fa', 
-              color: activeTab === 'history' ? 'white' : '#333',
+              backgroundColor: activeTab === 'history' ? '#007bff' : 'var(--surface-2, #f8f9fa)', 
+              color: activeTab === 'history' ? 'white' : 'var(--text, #333)',
               flexShrink: 0,
               whiteSpace: 'nowrap'
             }}
