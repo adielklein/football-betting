@@ -381,10 +381,17 @@ function AdminStats() {
 
           {/* Participation Ranking */}
           <Card title="דירוג השתתפות" icon="📊">
+            {/* המספרים הגולמיים ולא רק אחוז: "28 מתוך 30" אומר הרבה יותר,
+                ומאפשר לבדוק את המספר במקום להאמין לו. המכנה הוא השבועות
+                שהשחקן היה יכול להמר בהם - בלי כאלה שקדמו להצטרפותו ובלי
+                חודשים שהוחרג מהם. */}
+            <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', marginBottom: '0.5rem', lineHeight: 1.5 }}>
+              מתוך השבועות שבהם היה יכול להמר, בכמה באמת הימר
+            </div>
             {topByParticipation.map((player, i) => (
               <PlayerRow key={player.id} player={player} rank={i}
                 metric={player.participation + '%'}
-                metricLabel={player.weeklyScores.length + ' שבועות'}
+                metricLabel={`${player.weeksPlayed} מתוך ${player.weeksAvailable}`}
                 metricColor={player.participation >= 80 ? '#10b981' : player.participation >= 50 ? '#f59e0b' : '#ef4444'} />
             ))}
           </Card>

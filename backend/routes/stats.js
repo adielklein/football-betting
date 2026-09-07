@@ -7,6 +7,7 @@ const Week = require('../models/Week');
 const { normalizeTeamName } = require('../utils/teamNormalizer');
 const { buildNearMissReport } = require('../services/nearMissReport');
 const { buildLuckTable } = require('../services/luckTable');
+const { buildParticipation } = require('../services/participation');
 const User = require('../models/User');
 
 // GET /api/stats/user/:userId - סטטיסטיקות של שחקן
@@ -265,12 +266,15 @@ router.get('/admin', async (req, res) => {
     const User = require('../models/User');
     const League = require('../models/League');
 
-    const [allUsers, allWeeks, allMatches, allBets, allScores] = await Promise.all([
+    const MonthExclusion = require('../models/MonthExclusion');
+
+    const [allUsers, allWeeks, allMatches, allBets, allScores, allExclusions] = await Promise.all([
       User.find({}).lean(),
       Week.find({}).sort({ createdAt: 1 }).lean(),
       Match.find({}).lean(),
       Bet.find({}).populate('matchId').populate('weekId').lean(),
       Score.find({}).populate('weekId').populate('userId').lean(),
+      MonthExclusion.find({}, 'userId month season').lean(),
     ]);
 
     const players = allUsers.filter(u => u.role !== 'admin');
@@ -350,6 +354,26 @@ router.get('/admin', async (req, res) => {
       }
     }
 
+    // השתתפות אמיתית: מתוך השבועות שבהם השחקן היה יכול להמר, בכמה הימר.
+    // הנוסחה הקודמת חילקה את מספר רשומות הניקוד שלו במספר השבועות אי פעם,
+    // ורשומת ניקוד נוצרת לכל משתמש בכל חישוב - גם למי שלא הימר כלום. לכן
+    // כמעט כולם הוצגו כ-98% בעוד ההשתתפות בפועל נעה בין 15% ל-98%.
+    const weeksWithMatches = new Set(allMatches.map((m) => String(m.weekId)));
+    const participationRows = buildParticipation(
+      players,
+      allWeeks.map((w) => ({ ...w, hasMatches: weeksWithMatches.has(String(w._id)) })),
+      allBets.map((b) => ({ userId: b.userId, weekId: b.weekId?._id || b.weekId })),
+      allExclusions
+    );
+    const participationByUser = new Map(
+      participationRows.map((r) => [r.userId, {
+        participation: r.participation,
+        weeksPlayed: r.weeksPlayed,
+        weeksAvailable: r.weeksAvailable,
+        weeksMissed: r.weeksMissed
+      }])
+    );
+
     // Build player rankings
     const playerRankings = Object.values(playerStatsMap)
       .map(p => ({
@@ -358,7 +382,7 @@ router.get('/admin', async (req, res) => {
         exactRate: p.completedBets > 0 ? Math.round((p.exact / p.completedBets) * 100) : 0,
         avgPoints: p.completedBets > 0 ? Math.round((p.points / p.completedBets) * 10) / 10 : 0,
         points: Math.round(p.points * 10) / 10,
-        participation: allWeeks.length > 0 ? Math.round((p.weeklyScores.length / allWeeks.length) * 100) : 0,
+        ...(participationByUser.get(String(p.id)) || { participation: 0, weeksPlayed: 0, weeksAvailable: 0, weeksMissed: 0 }),
       }))
       .sort((a, b) => b.points - a.points);
 
