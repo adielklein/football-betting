@@ -37,6 +37,13 @@ const weekSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+
+  // מי כבר קיבל תזכורת לפני הנעילה לשבוע הזה. נשמר על השבוע ולא בזיכרון,
+  // כדי שהפעלה מחדש של השרת לא תשלח את אותה תזכורת פעם שנייה.
+  lockRemindersSent: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   createdAt: {
     type: Date,
     default: Date.now

@@ -326,6 +326,35 @@ const runLivePoll = async () => {
 cron.schedule('* * * * *', runLivePoll, { timezone: 'Asia/Jerusalem' });
 console.log('🔴 Cron registered: live poll every minute (only while matches are on)');
 
+// ⏰ תזכורת לפני נעילת שבוע.
+//
+// האפליקציה הבטיחה את התזכורת הזו מאז ומתמיד - היא מוצגת למשתמש בהפעלת
+// ההתראות ואפשר לבחור כמה שעות מראש - אבל שום קוד מעולם לא שלח אותה.
+//
+// כל עשר דקות ולא כל שעה, כי הבחירה היא פר-משתמש: מי שביקש שעתיים אמור
+// לקבל בערך בשעתיים, לא בטווח של שעה שלמה סביבן.
+const { runLockReminders } = require('./services/lockReminder');
+
+const runReminders = async () => {
+  try {
+    await runLockReminders();
+  } catch (err) {
+    console.error('⏰ [REMINDER] failed:', err.message);
+  }
+};
+
+cron.schedule('*/10 * * * *', runReminders, { timezone: 'Asia/Jerusalem' });
+console.log('⏰ Cron registered: lock reminders every 10 minutes');
+
+// בדיקה יבשה - מי היה מקבל תזכורת עכשיו, בלי לשלוח דבר. למנהלים בלבד.
+app.get('/api/admin/lock-reminders/preview', requireAdmin, async (req, res) => {
+  try {
+    res.json(await runLockReminders({ dryRun: true }));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 require('./services/pushNotifications');
 app.listen(PORT, () => {
