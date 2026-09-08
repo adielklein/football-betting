@@ -329,7 +329,7 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
                 onClick={load}
                 style={{
                   border: 'none', borderRadius: '10px', padding: '0.5rem 1.1rem',
-                  background: 'var(--surface-3, #eef2f8)', color: 'var(--theme-primary, #3b6fd4)', fontWeight: 700, fontSize: '13px', cursor: 'pointer'
+                  background: 'var(--surface-3, #eef2f8)', color: 'var(--theme-primary-text, #3b6fd4)', fontWeight: 700, fontSize: '13px', cursor: 'pointer'
                 }}
               >נסה שוב</button>
             </div>

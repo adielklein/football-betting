@@ -188,7 +188,7 @@ function PlayerStats({ user }) {
                 width: barWidth + 'px', flexShrink: 0
               }}>
                 <span style={{
-                  fontSize: '10px', fontWeight: '700', color: 'var(--theme-primary, #007bff)',
+                  fontSize: '10px', fontWeight: '700', color: 'var(--theme-primary-text, #007bff)',
                   marginBottom: '4px'
                 }}>
                   {week.weeklyScore}

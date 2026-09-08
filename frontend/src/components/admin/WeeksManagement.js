@@ -892,9 +892,9 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             style={{
               padding: '0.75rem',
-              border: '1px solid #dee2e6',
+              border: '1px solid var(--border-2, #dee2e6)',
               borderRadius: '4px',
-              backgroundColor: 'white',
+              backgroundColor: 'var(--surface, #fff)',
               cursor: 'pointer',
               display: 'flex',
               justifyContent: 'space-between',
@@ -919,8 +919,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
               right: 0,
               width: '100%',
               marginTop: '4px',
-              backgroundColor: 'white',
-              border: '1px solid #dee2e6',
+              backgroundColor: 'var(--surface, #fff)',
+              border: '1px solid var(--border-2, #dee2e6)',
               borderRadius: '4px',
               boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
               zIndex: 10000,
@@ -956,8 +956,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                         top: 0,
                         width: '200px',
                         marginRight: '-2px',
-                        backgroundColor: 'white',
-                        border: '1px solid #dee2e6',
+                        backgroundColor: 'var(--surface, #fff)',
+                        border: '1px solid var(--border-2, #dee2e6)',
                         borderRadius: '4px',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                         zIndex: 10001,
@@ -1001,8 +1001,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                                     top: 0,
                                     width: '250px',
                                     marginRight: '-2px',
-                                    backgroundColor: 'white',
-                                    border: '1px solid #dee2e6',
+                                    backgroundColor: 'var(--surface, #fff)',
+                                    border: '1px solid var(--border-2, #dee2e6)',
                                     borderRadius: '4px',
                                     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                                     zIndex: 10002,
@@ -1519,7 +1519,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                   {isEditingThis ? (
                     <div style={{ 
                       padding: '1rem', 
-                      backgroundColor: 'white', 
+                      backgroundColor: 'var(--surface, #fff)', 
                       borderRadius: '4px',
                       border: '2px solid #17a2b8'
                     }}>
@@ -1948,7 +1948,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                   marginTop: '1rem',
                   padding: '0.75rem',
                   backgroundColor: 'var(--surface, #fff)',
-                  border: '1px solid #dee2e6',
+                  border: '1px solid var(--border-2, #dee2e6)',
                   borderRadius: '6px'
                 }}>
                   <div style={{ fontSize: '12px', color: 'var(--text-3, #666)', marginBottom: '0.5rem', fontWeight: 'bold' }}>

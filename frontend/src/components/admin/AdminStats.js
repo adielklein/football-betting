@@ -418,7 +418,7 @@ function AdminStats() {
                     <span style={{ width: '24px', fontWeight: '700', color: 'var(--text-3, #888)', textAlign: 'center' }}>{i + 1}</span>
                     <span style={{ flex: 1, fontWeight: '600', color: 'var(--text, #333)' }}>{player.name}</span>
                     <span style={{ width: '40px', textAlign: 'center', color: 'var(--text-3, #666)' }}>{player.completedBets}</span>
-                    <span style={{ width: '40px', textAlign: 'center', fontWeight: '700', color: 'var(--theme-primary, #007bff)' }}>{player.points}</span>
+                    <span style={{ width: '40px', textAlign: 'center', fontWeight: '700', color: 'var(--theme-primary-text, #007bff)' }}>{player.points}</span>
                     <span style={{
                       width: '35px', textAlign: 'center', fontWeight: '700',
                       color: player.accuracy >= 50 ? '#10b981' : player.accuracy >= 35 ? '#f59e0b' : '#ef4444'

@@ -57,7 +57,7 @@ function UpdateBanner() {
           borderRadius: '10px',
           border: 'none',
           background: 'var(--surface, #ffffff)',
-          color: 'var(--theme-primary, #007bff)',
+          color: 'var(--theme-primary-text, #007bff)',
           fontWeight: 700,
           fontSize: '14px',
           cursor: updating ? 'default' : 'pointer',

@@ -1,6 +1,7 @@
 /* CSS Variables לערכות נושא */
 :root {
   --theme-primary: #007bff;
+  --theme-primary-text: #0a58ca;   /* גרסה קריאה של צבע המותג, נדרסת מ-applyTheme */
   --theme-secondary: #6c757d;
   --theme-accent: #28a745;
   --theme-background: #ffffff;
@@ -100,6 +101,7 @@
     --me-bg: #16263d;
     --me-fg: #8cc0f7;
     --overlay: rgba(0, 0, 0, 0.34);
+    --theme-primary-text: #6ea8fe;
   }
 }
 
@@ -138,6 +140,7 @@
   --me-bg: #16263d;
   --me-fg: #8cc0f7;
   --overlay: rgba(0, 0, 0, 0.34);
+  --theme-primary-text: #6ea8fe;
 }
 
 * {
@@ -172,7 +175,7 @@ body::before {
   opacity: 0.03;
   z-index: -1;
   pointer-events: none;
-  color: var(--theme-primary);
+  color: var(--theme-primary-text, var(--theme-primary));
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
@@ -376,7 +379,7 @@ body.has-image-logo::after {
 
 .card h3 {
   margin: 0 0 0.5rem 0;
-  color: var(--theme-primary);
+  color: var(--theme-primary-text, var(--theme-primary));
   font-size: 0.95rem;
   font-weight: 600;
 }

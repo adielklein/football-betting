@@ -1,4 +1,5 @@
 import { isDark } from './services/colorScheme';
+import { readableOn } from './services/readableColor';
 
 // src/themes.js - קובץ ערכות נושא עם תאימות מלאה ל-iOS Safari
 
@@ -422,6 +423,12 @@ export const applyTheme = (user) => {
     dark ? token('--text', '#e8eaed') : (theme.colors.primary === '#ffffff' ? '#000000' : '#333333')
   );
   root.style.setProperty('--theme-text-light', dark ? token('--text-3', '#98a0ac') : '#666666');
+
+  // צבע המותג כטקסט. צבעי מותג לא נבחרו כדי להיות קריאים על רקע כהה -
+  // ברצלונה היא ארגמן כהה שנותן ניגודיות 1.75 על המשטח הכהה, כלומר
+  // כותרות שכמעט נעלמות. הגוון נשמר, רק הבהירות מותאמת עד שהוא קריא.
+  const surface = dark ? token('--surface', '#1b1f26') : theme.colors.background;
+  root.style.setProperty('--theme-primary-text', readableOn(theme.colors.primary, surface));
   
   // 🍎 הוסף קלאס iOS לbody אם צריך
   if (isIOSDevice) {
