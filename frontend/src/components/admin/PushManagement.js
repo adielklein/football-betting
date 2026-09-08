@@ -620,7 +620,7 @@ function PushManagement() {
       <div style={{
         marginTop: '0.75rem', padding: '0.6rem 0.7rem',
         borderRadius: '12px',
-        background: 'linear-gradient(135deg, #fff9c4, #fff8e1)',
+        background: 'var(--warn-bg, #fff8e1)',
         border: '1px solid #fde68a',
         fontSize: '12px', color: 'var(--warn-fg, #92400e)'
       }}>

@@ -236,7 +236,7 @@ function NotificationSettings({ user }) {
             <span style={{
               padding: '1px 8px', borderRadius: '20px',
               fontSize: '10px', fontWeight: '700',
-              background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)',
+              background: 'var(--good-bg, #dcfce7)',
               color: 'var(--good-fg, #16a34a)', border: '1px solid #86efac'
             }}>
               פעיל
@@ -360,7 +360,7 @@ function NotificationSettings({ user }) {
                 <span style={{
                   flex: 1, textAlign: 'center',
                   padding: '0.4rem',
-                  background: 'linear-gradient(135deg, #dcfce7, #d1fae5)',
+                  background: 'var(--good-bg, #dcfce7)',
                   color: 'var(--good-fg, #166534)', borderRadius: '10px',
                   fontSize: '12px', fontWeight: '700',
                   border: '1px solid #86efac'

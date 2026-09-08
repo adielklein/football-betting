@@ -120,9 +120,10 @@ function HistoryViewer({ weeks, user }) {
   ];
 
   const getRankStyle = (index) => {
-    if (index === 0) return { icon: '🥇', bg: 'linear-gradient(135deg, #fff9c4, #fff176)', border: '#ffd54f' };
-    if (index === 1) return { icon: '🥈', bg: 'linear-gradient(135deg, #f5f5f5, #e0e0e0)', border: '#bdbdbd' };
-    if (index === 2) return { icon: '🥉', bg: 'linear-gradient(135deg, #ffe0b2, #ffcc80)', border: '#ffb74d' };
+    // זוג רקע/טקסט שמתהפך יחד - ראה את אותה הערה ב-Leaderboard
+    if (index === 0) return { icon: '🥇', bg: 'var(--gold-bg, #fff4c2)', fg: 'var(--gold-fg, #6b5200)', border: '#ffd54f' };
+    if (index === 1) return { icon: '🥈', bg: 'var(--silver-bg, #ececec)', fg: 'var(--silver-fg, #484848)', border: '#bdbdbd' };
+    if (index === 2) return { icon: '🥉', bg: 'var(--bronze-bg, #ffe0b2)', fg: 'var(--bronze-fg, #7a4512)', border: '#ffb74d' };
     return { icon: null, bg: 'transparent', border: 'transparent' };
   };
 
@@ -172,7 +173,7 @@ function HistoryViewer({ weeks, user }) {
       )}
 
       {!selectedHistoryWeek && !loading && filteredWeeks.length === 0 && (
-        <div className="card" style={{ textAlign: 'center', padding: '2rem', background: 'linear-gradient(135deg, #f8f9ff, #f0f4ff)' }}>
+        <div className="card" style={{ textAlign: 'center', padding: '2rem', background: 'var(--info-bg, #f8f9ff)' }}>
           <div style={{ fontSize: '40px', marginBottom: '0.5rem' }}>📭</div>
           <p style={{ color: 'var(--text-3, #888)', fontSize: '14px', margin: 0 }}>אין שבועות מסוננים. נסה לשנות את הסינון.</p>
         </div>
@@ -184,7 +185,7 @@ function HistoryViewer({ weeks, user }) {
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             marginBottom: '0.5rem', padding: '0.55rem 0.75rem',
-            background: 'linear-gradient(135deg, #f0f7ff, #e3efff)',
+            background: 'var(--info-bg, #f0f7ff)',
             borderRadius: '14px', border: '1px solid #c8dcf5',
             animation: 'scaleIn 0.25s ease'
           }}>
@@ -327,29 +328,31 @@ function HistoryViewer({ weeks, user }) {
                   const rank = getRankStyle(index);
                   const isMe = player.name === user.name;
                   const isTop3 = index < 3;
+                  // לשורה עם רקע משלה יש גם טקסט משלה
+                  const rowFg = isMe ? 'var(--me-fg, #14508f)' : (isTop3 ? rank.fg : 'var(--text, #333)');
                   return (
                     <div key={player.name} style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: isTop3 ? '0.5rem 0.55rem' : '0.4rem 0.5rem',
-                      background: isMe ? 'linear-gradient(135deg, #e3f2fd, #bbdefb)' : (isTop3 ? rank.bg : (index % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)')),
+                      background: isMe ? 'var(--me-bg, #dbeafe)' : (isTop3 ? rank.bg : (index % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)')),
                       borderRadius: isTop3 ? '10px' : '6px',
                       border: isMe ? '2px solid #64b5f6' : (isTop3 ? `1px solid ${rank.border}` : 'none'),
                       boxShadow: isMe ? '0 2px 8px rgba(33,150,243,0.15)' : 'none',
                       animation: `slideUp 0.2s ease ${index * 0.03}s both`
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, flex: 1 }}>
-                        <span style={{ fontSize: isTop3 ? '18px' : '12px', fontWeight: '800', minWidth: '24px', textAlign: 'center', color: !isTop3 ? 'var(--text-4, #bbb)' : undefined }}>
+                        <span style={{ fontSize: isTop3 ? '18px' : '12px', fontWeight: '800', minWidth: '24px', textAlign: 'center', color: !isTop3 ? 'var(--text-4, #bbb)' : rowFg }}>
                           {rank.icon || (index + 1)}
                         </span>
-                        <span style={{ fontWeight: isMe ? '700' : '500', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text, #333)' }}>
+                        <span style={{ fontWeight: isMe ? '700' : '500', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: rowFg }}>
                           {player.name}
-                          {isMe && <span style={{ color: 'var(--info-fg, #1976d2)', fontSize: '10px' }}> (אתה)</span>}
+                          {isMe && <span style={{ color: rowFg, opacity: 0.75, fontSize: '10px' }}> (אתה)</span>}
                         </span>
                       </div>
                       <span style={{
                         fontWeight: '800', fontSize: isTop3 ? '16px' : '14px', flexShrink: 0,
                         padding: '2px 10px', background: isTop3 ? 'rgba(255,255,255,0.7)' : 'var(--surface-3, #f5f5f5)',
-                        borderRadius: '10px', color: 'var(--text, #333)'
+                        borderRadius: '10px', color: rowFg
                       }}>{player.score}</span>
                     </div>
                   );

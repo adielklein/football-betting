@@ -46,7 +46,7 @@ function PlayerStats({ user }) {
     return (
       <div style={{
         padding: '2rem', textAlign: 'center',
-        background: 'linear-gradient(135deg, #f8f9ff, #f0f4ff)',
+        background: 'var(--info-bg, #f8f9ff)',
         borderRadius: '16px', margin: '0.5rem 0'
       }}>
         <div style={{ fontSize: '48px', marginBottom: '0.5rem' }}>📊</div>
@@ -273,7 +273,7 @@ function PlayerStats({ user }) {
   // === Team Row ===
   const TeamRow = ({ team, rank, isBest }) => {
     const color = isBest ? '#10b981' : '#ef4444';
-    const bg = isBest ? 'linear-gradient(135deg, #ecfdf5, #d1fae5)' : 'linear-gradient(135deg, #fef2f2, #fee2e2)';
+    const bg = isBest ? 'var(--good-bg, #ecfdf5)' : 'var(--bad-bg, #fef2f2)';
     return (
       <div style={{
         display: 'flex', alignItems: 'center', gap: '8px',
@@ -367,7 +367,7 @@ function PlayerStats({ user }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               <div style={{
                 textAlign: 'center', padding: '0.6rem',
-                background: 'linear-gradient(135deg, #fff7ed, #ffedd5)',
+                background: 'var(--warn-bg, #fff7ed)',
                 borderRadius: '12px'
               }}>
                 <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--warn-fg, #ea580c)' }}>{bestHitStreak}</div>
@@ -375,7 +375,7 @@ function PlayerStats({ user }) {
               </div>
               <div style={{
                 textAlign: 'center', padding: '0.6rem',
-                background: 'linear-gradient(135deg, #fefce8, #fef9c3)',
+                background: 'var(--warn-bg, #fefce8)',
                 borderRadius: '12px'
               }}>
                 <div style={{ fontSize: '24px', fontWeight: '800', color: '#ca8a04' }}>{currentHitStreak}</div>

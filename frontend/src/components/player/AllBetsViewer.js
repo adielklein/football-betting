@@ -198,7 +198,7 @@ function AllBetsViewer({ weeks, user }) {
       </div>
 
       {!selectedWeek && filteredWeeks.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '2rem', background: 'linear-gradient(135deg, #f8f9ff, #f0f4ff)' }}>
+        <div className="card" style={{ textAlign: 'center', padding: '2rem', background: 'var(--info-bg, #f8f9ff)' }}>
           <div style={{ fontSize: '40px', marginBottom: '0.5rem' }}>🔒</div>
           <p style={{ color: 'var(--text-3, #888)', fontSize: '14px', margin: 0 }}>ההימורים יהיו זמינים לצפייה כשיהיו שבועות נעולים</p>
         </div>
@@ -332,7 +332,7 @@ function AllBetsViewer({ weeks, user }) {
                   {match.result && match.result.team1Goals !== undefined && (
                     <div style={{
                       textAlign: 'center', marginBottom: '0.4rem', padding: '4px 8px',
-                      background: 'linear-gradient(135deg, #e8f5e9, #c8e6c9)', borderRadius: '8px',
+                      background: 'var(--good-bg, #e8f5e9)', borderRadius: '8px',
                       fontSize: '13px', fontWeight: '700', color: 'var(--good-fg, #2e7d32)'
                     }}>
                       תוצאה: {match.result.team1Goals}-{match.result.team2Goals}

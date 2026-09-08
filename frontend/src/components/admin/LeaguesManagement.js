@@ -359,7 +359,7 @@ function LeaguesManagement() {
             <div style={{
               padding: '0.75rem 1rem',
               borderBottom: '1px solid var(--border, #f0f0f0)',
-              background: 'linear-gradient(135deg, #f8f9fa, #fff)'
+              background: 'var(--surface-2, #f8f9fa)'
             }}>
               <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '700' }}>
                 ✏️ עריכת ליגה: {editingLeague.name}

@@ -249,7 +249,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                       {hasResult && (
                         <span style={{
                           padding: '3px 10px', borderRadius: '20px',
-                          background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)',
+                          background: 'var(--good-bg, #dcfce7)',
                           color: 'var(--good-fg, #16a34a)', fontSize: '13px', fontWeight: '800',
                           border: '1px solid #86efac'
                         }}>

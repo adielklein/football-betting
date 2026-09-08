@@ -235,7 +235,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
       <div className="card" style={{
         textAlign: 'center',
         padding: '2.5rem 1rem',
-        background: 'linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%)'
+        background: 'var(--info-bg, #f8f9ff)'
       }}>
         <div style={{ fontSize: '40px', marginBottom: '0.75rem' }}>⏳</div>
         <h2 style={{ fontSize: '1.1rem', color: 'var(--text-2, #444)', marginBottom: '0.3rem' }}>ממתינים לשבוע החדש</h2>
@@ -249,7 +249,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
       <div className="card" style={{
         textAlign: 'center',
         padding: '2.5rem 1rem',
-        background: 'linear-gradient(135deg, #fff8f0 0%, #fff3e0 100%)'
+        background: 'var(--warn-bg, #fff8f0)'
       }}>
         <div style={{ fontSize: '40px', marginBottom: '0.75rem' }}>🔒</div>
         <h2 style={{ fontSize: '1.1rem', color: 'var(--text-2, #444)', marginBottom: '0.3rem' }}>השבוע הסתיים</h2>
@@ -311,10 +311,10 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             gap: '6px', marginTop: '0.5rem', padding: '0.45rem 0.6rem',
             background: timeLeft.total < 3600000
-              ? 'linear-gradient(135deg, #fef2f2, #fee2e2)'
+              ? 'var(--bad-bg, #fef2f2)'
               : timeLeft.total < 86400000
-                ? 'linear-gradient(135deg, #fffbeb, #fef3c7)'
-                : 'linear-gradient(135deg, #eff6ff, #dbeafe)',
+                ? 'var(--warn-bg, #fffbeb)'
+                : 'var(--info-bg, #eff6ff)',
             borderRadius: '12px',
             border: `1px solid ${timeLeft.total < 3600000 ? '#fca5a5' : timeLeft.total < 86400000 ? '#fde68a' : '#bfdbfe'}`
           }}>

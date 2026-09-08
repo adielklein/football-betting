@@ -133,7 +133,7 @@ function AdminStats() {
     <div style={{
       display: 'flex', alignItems: 'center', gap: '8px',
       padding: '8px 10px', borderRadius: '10px',
-      background: rank < 3 ? 'linear-gradient(135deg, #fffbeb, #fef3c7)' : (rank % 2 === 0 ? 'var(--surface-2, #fafbfc)' : 'transparent'),
+      background: rank < 3 ? 'var(--warn-bg, #fffbeb)' : (rank % 2 === 0 ? 'var(--surface-2, #fafbfc)' : 'transparent'),
       marginBottom: '4px',
       animation: 'slideUp 0.3s ease both',
       animationDelay: (rank * 40) + 'ms'
@@ -298,7 +298,7 @@ function AdminStats() {
                 <div key={i} style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   padding: '4px 8px', borderRadius: '8px',
-                  background: i === 0 ? 'linear-gradient(135deg, #eff6ff, #dbeafe)' : 'transparent',
+                  background: i === 0 ? 'var(--info-bg, #eff6ff)' : 'transparent',
                   marginBottom: '2px'
                 }}>
                   <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text, #333)' }}>{pred.score}</span>
@@ -312,7 +312,7 @@ function AdminStats() {
                 <div key={i} style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   padding: '4px 8px', borderRadius: '8px',
-                  background: i === 0 ? 'linear-gradient(135deg, #ecfdf5, #d1fae5)' : 'transparent',
+                  background: i === 0 ? 'var(--good-bg, #ecfdf5)' : 'transparent',
                   marginBottom: '2px'
                 }}>
                   <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text, #333)' }}>{res.score}</span>
@@ -329,7 +329,7 @@ function AdminStats() {
                 <div key={i} style={{
                   display: 'flex', alignItems: 'center', gap: '8px',
                   padding: '8px 10px', borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #fef2f2, #fee2e2)',
+                  background: 'var(--bad-bg, #fef2f2)',
                   marginBottom: '6px'
                 }}>
                   <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text, #333)', flex: 1 }}>
@@ -537,7 +537,7 @@ function AdminStats() {
               <div key={team.name} style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
                 padding: '8px 10px', borderRadius: '10px',
-                background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)',
+                background: 'var(--good-bg, #ecfdf5)',
                 marginBottom: '6px',
                 animation: 'slideUp 0.3s ease both',
                 animationDelay: (i * 60) + 'ms'
@@ -563,7 +563,7 @@ function AdminStats() {
               <div key={team.name} style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
                 padding: '8px 10px', borderRadius: '10px',
-                background: 'linear-gradient(135deg, #fef2f2, #fee2e2)',
+                background: 'var(--bad-bg, #fef2f2)',
                 marginBottom: '6px',
                 animation: 'slideUp 0.3s ease both',
                 animationDelay: (i * 60) + 'ms'

@@ -166,9 +166,11 @@ function Leaderboard({ leaderboard, user }) {
   ];
 
   const getRankStyle = (index) => {
-    if (index === 0) return { icon: '🥇', bg: 'linear-gradient(135deg, #fff9c4 0%, #fff176 100%)', border: '#ffd54f', shadow: '0 2px 8px rgba(255,193,7,0.2)' };
-    if (index === 1) return { icon: '🥈', bg: 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)', border: '#bdbdbd', shadow: '0 2px 8px rgba(0,0,0,0.08)' };
-    if (index === 2) return { icon: '🥉', bg: 'linear-gradient(135deg, #ffe0b2 0%, #ffcc80 100%)', border: '#ffb74d', shadow: '0 2px 8px rgba(255,152,0,0.15)' };
+    // הרקע והטקסט מגיעים כזוג. הצבעים נושאים משמעות ולכן נשארים
+    // זהב/כסף/ארד, אבל הגוון מתהפך יחד עם מצב התצוגה.
+    if (index === 0) return { icon: '🥇', bg: 'var(--gold-bg, #fff4c2)', fg: 'var(--gold-fg, #6b5200)', border: '#ffd54f', shadow: '0 2px 8px rgba(255,193,7,0.2)' };
+    if (index === 1) return { icon: '🥈', bg: 'var(--silver-bg, #ececec)', fg: 'var(--silver-fg, #484848)', border: '#bdbdbd', shadow: '0 2px 8px rgba(0,0,0,0.08)' };
+    if (index === 2) return { icon: '🥉', bg: 'var(--bronze-bg, #ffe0b2)', fg: 'var(--bronze-fg, #7a4512)', border: '#ffb74d', shadow: '0 2px 8px rgba(255,152,0,0.15)' };
     return { icon: null, bg: 'transparent', border: 'transparent', shadow: 'none' };
   };
 
@@ -177,13 +179,16 @@ function Leaderboard({ leaderboard, user }) {
     const isTop3 = index < 3;
     const score = player[scoreKey] !== undefined ? player[scoreKey] : player.score;
 
+    // לשורה עם רקע משלה יש גם טקסט משלה. שורה רגילה יורשת את הרגיל.
+    const rowFg = isMe ? 'var(--me-fg, #14508f)' : (isTop3 ? rank.fg : 'var(--text, #333)');
+
     return (
       <div key={player.name} style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: isTop3 ? '0.6rem 0.65rem' : '0.45rem 0.6rem',
-        background: isMe ? 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)' : (isTop3 ? rank.bg : (index % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)')),
+        background: isMe ? 'var(--me-bg, #dbeafe)' : (isTop3 ? rank.bg : (index % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)')),
         borderRadius: isTop3 ? '12px' : '8px',
         border: isMe ? '2px solid #64b5f6' : (isTop3 ? `1px solid ${rank.border}` : '1px solid #f0f0f0'),
         boxShadow: isMe ? '0 2px 8px rgba(33,150,243,0.15)' : rank.shadow,
@@ -196,7 +201,7 @@ function Leaderboard({ leaderboard, user }) {
             fontWeight: '800',
             minWidth: '28px',
             textAlign: 'center',
-            color: !isTop3 ? 'var(--text-4, #bbb)' : undefined
+            color: !isTop3 ? 'var(--text-4, #bbb)' : rowFg
           }}>
             {rank.icon || (index + 1)}
           </span>
@@ -206,18 +211,18 @@ function Leaderboard({ leaderboard, user }) {
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
-            color: 'var(--text, #333)'
+            color: rowFg
           }}>
             {player.name}
             {isMe && (
-              <span style={{ color: 'var(--info-fg, #1976d2)', fontSize: '10px', marginRight: '3px', fontWeight: '600' }}> (אתה)</span>
+              <span style={{ color: rowFg, opacity: 0.75, fontSize: '10px', marginRight: '3px', fontWeight: '600' }}> (אתה)</span>
             )}
           </span>
         </div>
         <span style={{
           fontWeight: '800',
           fontSize: isTop3 ? '18px' : '15px',
-          color: isTop3 ? 'var(--text, #333)' : 'var(--text-2, #555)',
+          color: rowFg,
           flexShrink: 0,
           background: isTop3 ? 'rgba(255,255,255,0.7)' : 'var(--surface-3, #f5f5f5)',
           padding: '2px 12px',

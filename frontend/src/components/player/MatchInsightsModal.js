@@ -351,7 +351,7 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
                 <div style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.55rem',
                   padding: '0.6rem', borderRadius: '14px', marginBottom: '0.9rem',
-                  background: 'linear-gradient(135deg,#f3f8ff,#eef4ff)',
+                  background: 'var(--info-bg, #f3f8ff)',
                   border: '1px solid #dbe7fb'
                 }}>
                   <span style={{ fontSize: '15px' }}>⚡</span>

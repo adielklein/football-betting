@@ -183,8 +183,8 @@ function Login({ onLogin }) {
             marginTop: '0.75rem',
             padding: '0.6rem 0.75rem',
             background: message.includes('שגיאה') || message.includes('שגויים')
-              ? 'linear-gradient(135deg, #fee2e2, #fecaca)'
-              : 'linear-gradient(135deg, #dcfce7, #d1fae5)',
+              ? 'var(--bad-bg, #fee2e2)'
+              : 'var(--good-bg, #dcfce7)',
             color: message.includes('שגיאה') || message.includes('שגויים') ? 'var(--bad-fg, #991b1b)' : 'var(--good-fg, #166534)',
             borderRadius: '10px',
             textAlign: 'center',

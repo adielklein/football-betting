@@ -195,7 +195,7 @@ function NearMissView({ nearMisses, userId }) {
         <Card>
           <div style={{
             padding: '0.7rem', borderRadius: '12px',
-            background: 'linear-gradient(135deg, #fff5ed, #fdeadd)',
+            background: 'var(--warn-bg, #fff5ed)',
             border: '1px solid #f6d5bd'
           }}>
             <div style={{ fontSize: '11px', color: 'var(--warn-fg, #a1613c)', fontWeight: 700, marginBottom: '0.35rem' }}>

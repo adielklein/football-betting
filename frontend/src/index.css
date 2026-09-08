@@ -44,6 +44,18 @@
   --bad-fg: #a81f17;
   --info-bg: #eaf1fd;
   --info-fg: #1560ad;
+
+  /* מדליות ושורת "אתה". צבעי הפודיום נושאים משמעות ולכן הם נשארים
+     זהב/כסף/ארד בשני המצבים - אבל הגוון עצמו מתהפך, אחרת פס צהוב
+     בוהק על מסך כהה גם צורם וגם בולע את השם שכתוב עליו. */
+  --gold-bg: #fff4c2;
+  --gold-fg: #6b5200;
+  --silver-bg: #ececec;
+  --silver-fg: #484848;
+  --bronze-bg: #ffe0b2;
+  --bronze-fg: #7a4512;
+  --me-bg: #dbeafe;
+  --me-fg: #14508f;
 }
 
 /* העדפת המערכת. מסויג ב-not([data-theme="light"]) כדי שבחירה מפורשת
@@ -74,6 +86,15 @@
     --bad-fg: #f08b84;
     --info-bg: #16263d;
     --info-fg: #7cb4f5;
+
+    --gold-bg: #3a3113;
+    --gold-fg: #f2ce5c;
+    --silver-bg: #2e3238;
+    --silver-fg: #ccd2da;
+    --bronze-bg: #3a2a16;
+    --bronze-fg: #e8ac6a;
+    --me-bg: #16263d;
+    --me-fg: #8cc0f7;
   }
 }
 
@@ -102,6 +123,15 @@
   --bad-fg: #f08b84;
   --info-bg: #16263d;
   --info-fg: #7cb4f5;
+
+  --gold-bg: #3a3113;
+  --gold-fg: #f2ce5c;
+  --silver-bg: #2e3238;
+  --silver-fg: #ccd2da;
+  --bronze-bg: #3a2a16;
+  --bronze-fg: #e8ac6a;
+  --me-bg: #16263d;
+  --me-fg: #8cc0f7;
 }
 
 * {

@@ -492,7 +492,7 @@ function UsersManagement({ users, loadData, user }) {
                 return (
                   <div key={userItem._id} style={{
                     padding: '0.6rem',
-                    background: 'linear-gradient(135deg, #fff9c4 0%, #fff8e1 100%)',
+                    background: 'var(--warn-bg, #fff8e1)',
                     borderRadius: '12px',
                     border: '1px solid #ffe082',
                     animation: `slideUp 0.25s ease ${index * 0.03}s both`
@@ -603,7 +603,7 @@ function UsersManagement({ users, loadData, user }) {
                   justifyContent: 'space-between',
                   padding: '0.5rem 0.6rem',
                   background: isCurrentUser
-                    ? 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)'
+                    ? 'var(--me-bg, #dbeafe)'
                     : (index % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)'),
                   borderRadius: '10px',
                   border: isCurrentUser ? '1.5px solid #64b5f6' : '1px solid #f0f0f0',
