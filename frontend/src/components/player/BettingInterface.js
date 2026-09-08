@@ -56,12 +56,28 @@ function TeamPicker({ name, onClick }) {
   );
 }
 
+// השרת מסביר בדיוק למה שמירה נדחתה, והלקוח היה זורק את ההסבר ומציג
+// "שגיאה בשמירת ההימור" גנרי. שחקן שניסה להמר אחרי שההימורים נסגרו
+// ראה שגיאה בלי לדעת למה, וחשב שהאפליקציה פשוט לא שמרה לו.
+const SAVE_ERRORS = [
+  { match: /locked/i, text: 'ההימורים לשבוע הזה כבר נסגרו', closed: true },
+  { match: /expired/i, text: 'זמן ההימורים הסתיים', closed: true },
+  { match: /not active/i, text: 'השבוע הזה אינו פתוח להימורים', closed: true }
+];
+
+const describeSaveError = (serverMessage) => {
+  const hit = SAVE_ERRORS.find((e) => e.match.test(serverMessage || ''));
+  return hit || { text: 'שגיאה בשמירת ההימור', closed: false };
+};
 function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
   const [insightsFor, setInsightsFor] = useState(null);
   const [localBets, setLocalBets] = useState({});
   const [savingMatch, setSavingMatch] = useState(null);
   const [savedAnimation, setSavedAnimation] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
+  // השרת דחה שמירה בגלל סגירה. הדגל מקומי בכוונה - הוא מסנכרן את המסך
+  // עם המציאות מיד, בלי להמתין לטעינה מחדש של השבוע.
+  const [lockedByServer, setLockedByServer] = useState(false);
 
   const { liveByMatchId } = useLiveScores(selectedWeek?._id);
 
@@ -89,6 +105,8 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
     }, 1000);
     return () => clearInterval(timer);
   }, [selectedWeek?.lockTime]);
+
+  useEffect(() => { setLockedByServer(false); }, [selectedWeek?._id]);
 
   useEffect(() => {
     const existingBets = {};
@@ -171,7 +189,13 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
 
         toast.success('ההימור נשמר בהצלחה!');
       } else {
-        toast.error('שגיאה בשמירת ההימור');
+        const body = await response.json().catch(() => null);
+        const reason = describeSaveError(body?.message);
+        toast.error(reason.text);
+
+        // נסגר בזמן שהמסך היה פתוח: אין טעם להשאיר טופס חי שכל שמירה בו
+        // תיכשל. המסך עובר מיד למצב סגור, כמו במסך שנטען מחדש.
+        if (reason.closed) setLockedByServer(true);
       }
     } catch (error) {
       console.error('Error saving bet:', error);
@@ -206,6 +230,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
   };
 
   const isLocked = () => {
+    if (lockedByServer) return true;
     if (selectedWeek?.locked) return true;
     if (selectedWeek?.lockTime) {
       const lockTime = new Date(selectedWeek.lockTime);
@@ -267,8 +292,12 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
         background: 'var(--warn-bg, #fff8f0)'
       }}>
         <div style={{ fontSize: '40px', marginBottom: '0.75rem' }}>🔒</div>
-        <h2 style={{ fontSize: '1.1rem', color: 'var(--text-2, #444)', marginBottom: '0.3rem' }}>השבוע הסתיים</h2>
-        <p style={{ color: 'var(--text-3, #888)', fontSize: '0.85rem' }}>שבוע {selectedWeek.name} הסתיים. עבור להיסטוריה לצפייה בתוצאות.</p>
+        <h2 style={{ fontSize: '1.1rem', color: 'var(--text-2, #444)', marginBottom: '0.3rem' }}>ההימורים נסגרו</h2>
+        <p style={{ color: 'var(--text-3, #888)', fontSize: '0.85rem' }}>
+          ההימורים ל{selectedWeek.name} נסגרו עם תחילת המשחק הראשון
+          {selectedWeek.lockTime ? ` (${new Date(selectedWeek.lockTime).toLocaleString('he-IL', { weekday: 'long', hour: '2-digit', minute: '2-digit' })})` : ''}.
+          {' '}אפשר לעקוב אחרי התוצאות בלשונית הטבלה.
+        </p>
       </div>
     );
   }
