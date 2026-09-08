@@ -643,7 +643,9 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   {match.result.finalScore && (
                     <span style={{ fontSize: '11px', color: 'var(--text-3, #888)', fontWeight: 'normal' }}>
                       (<Score home={match.result.finalScore.team1Goals} away={match.result.finalScore.team2Goals} />
-                      {match.result.finalScore.penalties && `, פנדלים ${match.result.finalScore.penalties.team1}-${match.result.finalScore.penalties.team2}`} לאחר הארכה)
+                      {match.result.finalScore.penalties && (
+                        <>, פנדלים <Score home={match.result.finalScore.penalties.team1} away={match.result.finalScore.penalties.team2} /></>
+                      )} לאחר הארכה)
                     </span>
                   )}
                   {isSaved && (

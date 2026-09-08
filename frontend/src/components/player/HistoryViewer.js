@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import TeamLogo from '../TeamLogo';
+import Score from '../Score';
 
 function HistoryViewer({ weeks, user }) {
   const [selectedHistoryWeek, setSelectedHistoryWeek] = useState(null);
@@ -285,11 +286,13 @@ function HistoryViewer({ weeks, user }) {
                           </div>
                           {hasResult && (
                             <div style={{ fontSize: '12px', color: 'var(--text-3, #888)', marginTop: '2px', fontWeight: '600' }}>
-                              {match.result.team1Goals} - {match.result.team2Goals}
+                              <Score home={match.result.team1Goals} away={match.result.team2Goals} />
                               {match.result.finalScore && (
                                 <span style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', marginRight: '4px', fontWeight: 'normal' }}>
-                                  ({match.result.finalScore.team1Goals}-{match.result.finalScore.team2Goals}
-                                  {match.result.finalScore.penalties && `, פנדלים ${match.result.finalScore.penalties.team1}-${match.result.finalScore.penalties.team2}`})
+                                  (<Score home={match.result.finalScore.team1Goals} away={match.result.finalScore.team2Goals} />
+                                  {match.result.finalScore.penalties && (
+                                    <>, פנדלים <Score home={match.result.finalScore.penalties.team1} away={match.result.finalScore.penalties.team2} /></>
+                                  )})
                                 </span>
                               )}
                             </div>

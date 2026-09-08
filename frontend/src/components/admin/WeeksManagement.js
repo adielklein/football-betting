@@ -1784,7 +1784,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                               <span style={{ marginRight: '0.5rem', fontSize: '12px', fontWeight: 'normal', color: 'var(--good-fg, #5a6c5e)' }}>
                                 (<Score home={match.result.finalScore.team1Goals} away={match.result.finalScore.team2Goals} />
                                 {match.result.finalScore.penalties &&
-                                  `, פנדלים ${match.result.finalScore.penalties.team1}-${match.result.finalScore.penalties.team2}`
+                                  <>, פנדלים <Score home={match.result.finalScore.penalties.team1} away={match.result.finalScore.penalties.team2} /></>
                                 }
                                 {' לאחר הארכה'})
                               </span>
