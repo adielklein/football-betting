@@ -422,7 +422,7 @@ function UsersManagement({ users, loadData, user }) {
                 }}>
                   <span style={{
                     fontSize: '13px', fontWeight: '600',
-                    color: isExcluded ? '#c53030' : '#276749',
+                    color: isExcluded ? 'var(--bad-fg, #c53030)' : '#276749',
                     textDecoration: isExcluded ? 'line-through' : 'none'
                   }}>
                     {userItem.name}
@@ -497,7 +497,7 @@ function UsersManagement({ users, loadData, user }) {
                     border: '1px solid #ffe082',
                     animation: `slideUp 0.25s ease ${index * 0.03}s both`
                   }}>
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#f57f17', marginBottom: '0.4rem' }}>
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--warn-fg, #f57f17)', marginBottom: '0.4rem' }}>
                       ✏️ עריכת {userItem.name}
                     </div>
                     <div style={{
@@ -626,7 +626,7 @@ function UsersManagement({ users, loadData, user }) {
                         {userItem.role === 'admin' ? '👑 מנהל' : '⚽ שחקן'}
                       </span>
                       {isCurrentUser && (
-                        <span style={{ color: '#1976d2', fontSize: '10px', fontWeight: '600' }}>(אתה)</span>
+                        <span style={{ color: 'var(--info-fg, #1976d2)', fontSize: '10px', fontWeight: '600' }}>(אתה)</span>
                       )}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '2px', flexWrap: 'wrap' }}>

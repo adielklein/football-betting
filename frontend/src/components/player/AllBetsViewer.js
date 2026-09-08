@@ -191,7 +191,7 @@ function AllBetsViewer({ weeks, user }) {
         </select>
 
         {filteredWeeks.length === 0 && selectedSeason && (
-          <div style={{ padding: '0.5rem', backgroundColor: '#fff8e1', borderRadius: '8px', fontSize: '13px', color: '#f57f17', marginTop: '0.4rem', border: '1px solid #ffe082' }}>
+          <div style={{ padding: '0.5rem', backgroundColor: 'var(--warn-bg, #fff8e1)', borderRadius: '8px', fontSize: '13px', color: 'var(--warn-fg, #f57f17)', marginTop: '0.4rem', border: '1px solid #ffe082' }}>
             אין שבועות נעולים עבור הסינון הנבחר
           </div>
         )}
@@ -216,7 +216,7 @@ function AllBetsViewer({ weeks, user }) {
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', padding: '0 0.15rem' }}>
             <span style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text, #333)' }}>{selectedWeek.name}</span>
-            <span style={{ fontSize: '11px', color: '#f57f17', backgroundColor: '#fff8e1', padding: '3px 10px', borderRadius: '10px', fontWeight: '700', border: '1px solid #ffe082' }}>
+            <span style={{ fontSize: '11px', color: 'var(--warn-fg, #f57f17)', backgroundColor: 'var(--warn-bg, #fff8e1)', padding: '3px 10px', borderRadius: '10px', fontWeight: '700', border: '1px solid #ffe082' }}>
               🔒 נעול
             </span>
           </div>
@@ -303,7 +303,7 @@ function AllBetsViewer({ weeks, user }) {
                         <span style={{ fontSize: '9px', opacity: 0.55 }} aria-hidden="true">📊</span>
                       </button>
                       {match.result && match.result.team1Goals !== undefined && (
-                        <span style={{ fontSize: '12px', color: '#2e7d32', flexShrink: 0 }}>
+                        <span style={{ fontSize: '12px', color: 'var(--good-fg, #2e7d32)', flexShrink: 0 }}>
                           ({match.result.team1Goals}-{match.result.team2Goals})
                         </span>
                       )}
@@ -333,7 +333,7 @@ function AllBetsViewer({ weeks, user }) {
                     <div style={{
                       textAlign: 'center', marginBottom: '0.4rem', padding: '4px 8px',
                       background: 'linear-gradient(135deg, #e8f5e9, #c8e6c9)', borderRadius: '8px',
-                      fontSize: '13px', fontWeight: '700', color: '#2e7d32'
+                      fontSize: '13px', fontWeight: '700', color: 'var(--good-fg, #2e7d32)'
                     }}>
                       תוצאה: {match.result.team1Goals}-{match.result.team2Goals}
                     </div>
@@ -364,7 +364,7 @@ function AllBetsViewer({ weeks, user }) {
                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-2, #444)'
                           }}>
                             {player.name}
-                            {isMe && <span style={{ color: '#1976d2', fontSize: '10px' }}> (אתה)</span>}
+                            {isMe && <span style={{ color: 'var(--info-fg, #1976d2)', fontSize: '10px' }}> (אתה)</span>}
                           </span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
                             {bet && bet.prediction ? (

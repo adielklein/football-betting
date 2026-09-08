@@ -137,7 +137,7 @@ function AuditLog() {
     <div>
       {/* Push notification status */}
       <div style={{
-        backgroundColor: pushStatus === 'on' ? '#e8f5e9' : '#fff3e0',
+        backgroundColor: pushStatus === 'on' ? 'var(--good-bg, #e8f5e9)' : '#fff3e0',
         border: `1px solid ${pushStatus === 'on' ? '#c8e6c9' : '#ffe0b2'}`,
         borderRadius: '12px',
         padding: '0.7rem 1rem',

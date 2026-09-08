@@ -212,7 +212,7 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
 
         {includeOdds && (
           <div style={{
-            background: '#fffaf0', border: '1px solid #f5e3c0', color: '#9a7b3f',
+            background: 'var(--warn-bg, #fffaf0)', border: '1px solid #f5e3c0', color: 'var(--warn-fg, #9a7b3f)',
             padding: '0.45rem 0.7rem', borderRadius: '8px', fontSize: '12px',
             marginBottom: '0.75rem', flexShrink: 0
           }}>
@@ -222,7 +222,7 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
         )}
 
         {error && (
-          <div style={{ background: '#fee', color: '#900', padding: '0.5rem 0.75rem', borderRadius: '6px', marginBottom: '0.75rem', flexShrink: 0 }}>
+          <div style={{ background: 'var(--bad-bg, #fee)', color: 'var(--bad-fg, #900)', padding: '0.5rem 0.75rem', borderRadius: '6px', marginBottom: '0.75rem', flexShrink: 0 }}>
             {error}
           </div>
         )}

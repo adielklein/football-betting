@@ -191,10 +191,10 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
           <div style={{
             marginTop: '0.5rem', padding: '0.5rem 0.7rem', borderRadius: '10px',
             fontSize: '13px', fontWeight: '600',
-            backgroundColor: weekStatus.type === 'admin-override' ? '#fff3cd' :
-              weekStatus.type === 'locked' ? '#fee2e2' : '#dcfce7',
-            color: weekStatus.type === 'admin-override' ? '#92400e' :
-              weekStatus.type === 'locked' ? '#dc2626' : '#16a34a',
+            backgroundColor: weekStatus.type === 'admin-override' ? 'var(--warn-bg, #fff3cd)' :
+              weekStatus.type === 'locked' ? 'var(--bad-bg, #fee2e2)' : 'var(--good-bg, #dcfce7)',
+            color: weekStatus.type === 'admin-override' ? 'var(--warn-fg, #92400e)' :
+              weekStatus.type === 'locked' ? 'var(--bad-fg, #dc2626)' : 'var(--good-fg, #16a34a)',
             border: `1px solid ${weekStatus.type === 'admin-override' ? '#fde68a' :
               weekStatus.type === 'locked' ? '#fca5a5' : '#86efac'}`
           }}>
@@ -250,7 +250,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                         <span style={{
                           padding: '3px 10px', borderRadius: '20px',
                           background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)',
-                          color: '#16a34a', fontSize: '13px', fontWeight: '800',
+                          color: 'var(--good-fg, #16a34a)', fontSize: '13px', fontWeight: '800',
                           border: '1px solid #86efac'
                         }}>
                           {match.result.team1Goals}-{match.result.team2Goals}

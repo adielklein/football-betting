@@ -277,8 +277,8 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
           <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '700', color: 'var(--text, #333)' }}>{selectedWeek.name}</h2>
           <span style={{
             fontSize: '12px',
-            color: savedCount === matches.length ? '#fff' : '#28a745',
-            backgroundColor: savedCount === matches.length ? '#28a745' : '#e8f5e9',
+            color: savedCount === matches.length ? '#fff' : 'var(--good-fg, #28a745)',
+            backgroundColor: savedCount === matches.length ? '#28a745' : 'var(--good-bg, #e8f5e9)',
             padding: '3px 10px',
             borderRadius: '12px',
             fontWeight: '700',
@@ -323,7 +323,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
             </span>
             <span style={{
               fontSize: '12px', fontWeight: '600',
-              color: timeLeft.total < 3600000 ? '#dc2626' : timeLeft.total < 86400000 ? '#d97706' : '#2563eb'
+              color: timeLeft.total < 3600000 ? 'var(--bad-fg, #dc2626)' : timeLeft.total < 86400000 ? '#d97706' : 'var(--info-fg, #2563eb)'
             }}>
               נסגר בעוד
             </span>
@@ -541,7 +541,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   background: hasChanges && isComplete
                     ? 'linear-gradient(135deg, #28a745, #20c997)'
                     : (isSaved ? '#f0faf0' : 'var(--surface-3, #f5f5f5)'),
-                  color: hasChanges && isComplete ? 'white' : (isSaved ? '#2e7d32' : 'var(--text-4, #aaa)'),
+                  color: hasChanges && isComplete ? 'white' : (isSaved ? 'var(--good-fg, #2e7d32)' : 'var(--text-4, #aaa)'),
                   opacity: (!isComplete || !hasChanges) ? 0.85 : 1,
                   cursor: (!isComplete || !hasChanges) ? 'default' : 'pointer',
                   transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -559,9 +559,9 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                 <div style={{
                   textAlign: 'center',
                   fontSize: '11px',
-                  color: '#856404',
+                  color: 'var(--warn-fg, #856404)',
                   marginTop: '0.3rem',
-                  backgroundColor: '#fff8e1',
+                  backgroundColor: 'var(--warn-bg, #fff8e1)',
                   padding: '4px 8px',
                   borderRadius: '8px',
                   border: '1px solid #ffe082'
@@ -601,11 +601,11 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                       backgroundColor:
                         existingBet.team1Goals == match.result.team1Goals &&
                         existingBet.team2Goals == match.result.team2Goals
-                          ? '#d4edda' : '#fce4ec',
+                          ? 'var(--good-bg, #d4edda)' : 'var(--bad-bg, #fce4ec)',
                       color:
                         existingBet.team1Goals == match.result.team1Goals &&
                         existingBet.team2Goals == match.result.team2Goals
-                          ? '#155724' : '#c62828',
+                          ? 'var(--good-fg, #155724)' : 'var(--bad-fg, #c62828)',
                       fontSize: '11px',
                       fontWeight: '700'
                     }}>

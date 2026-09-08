@@ -69,11 +69,11 @@ function CompareRow({ label, a, b, lowerIsBetter = false }) {
   return (
     <div style={{ marginBottom: '0.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
-        <span style={{ fontSize: '13px', fontWeight: 800, color: aBetter ? '#1e7a3c' : 'var(--text-3, #666)', minWidth: '34px' }}>
+        <span style={{ fontSize: '13px', fontWeight: 800, color: aBetter ? 'var(--good-fg, #1e7a3c)' : 'var(--text-3, #666)', minWidth: '34px' }}>
           {a == null ? '—' : a}
         </span>
         <span style={{ fontSize: '10.5px', color: 'var(--text-4, #999)', fontWeight: 700 }}>{label}</span>
-        <span style={{ fontSize: '13px', fontWeight: 800, color: bBetter ? '#1e7a3c' : 'var(--text-3, #666)', minWidth: '34px', textAlign: 'left' }}>
+        <span style={{ fontSize: '13px', fontWeight: 800, color: bBetter ? 'var(--good-fg, #1e7a3c)' : 'var(--text-3, #666)', minWidth: '34px', textAlign: 'left' }}>
           {b == null ? '—' : b}
         </span>
       </div>
@@ -399,8 +399,8 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
                   </>
                 ) : (
                   <div style={{
-                    padding: '0.6rem', borderRadius: '10px', background: '#fffaf0',
-                    border: '1px solid #f5e3c0', fontSize: '11.5px', color: '#9a7b3f', textAlign: 'center'
+                    padding: '0.6rem', borderRadius: '10px', background: 'var(--warn-bg, #fffaf0)',
+                    border: '1px solid #f5e3c0', fontSize: '11.5px', color: 'var(--warn-fg, #9a7b3f)', textAlign: 'center'
                   }}>
                     ווינר עדיין לא פרסמו יחסים למשחק הזה — הם מתפרסמים בדרך כלל כשבוע לפני
                   </div>

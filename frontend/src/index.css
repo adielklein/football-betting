@@ -32,6 +32,18 @@
   --text-4: #868c96;   /* 3.0 ניגודיות על המשטח החלש ביותר */
   --border: #eeeeee;
   --border-2: #dde1e7;
+
+  /* צבעים סמנטיים. הרקע והטקסט מתהפכים יחד, ולכן תגית ירוקה נשארת
+     קריאה בשני המצבים - וגם טקסט ירוק שיושב ישירות על הכרטיס. עד
+     שהוגדרו כאן, ירוק כהה על כרטיס שהתהפך לכהה פשוט נעלם. */
+  --good-bg: #e8f6ec;
+  --good-fg: #1a6b35;
+  --warn-bg: #fff4d6;
+  --warn-fg: #7c5306;
+  --bad-bg: #fdecec;
+  --bad-fg: #a81f17;
+  --info-bg: #eaf1fd;
+  --info-fg: #1560ad;
 }
 
 /* העדפת המערכת. מסויג ב-not([data-theme="light"]) כדי שבחירה מפורשת
@@ -53,6 +65,15 @@
     --theme-background: #1b1f26;
     --theme-text: #e8eaed;
     --theme-text-light: #98a0ac;
+
+    --good-bg: #16301f;
+    --good-fg: #67d996;
+    --warn-bg: #33280e;
+    --warn-fg: #f0bf4a;
+    --bad-bg: #3a1d1d;
+    --bad-fg: #f08b84;
+    --info-bg: #16263d;
+    --info-fg: #7cb4f5;
   }
 }
 
@@ -72,6 +93,15 @@
   --theme-background: #1b1f26;
   --theme-text: #e8eaed;
   --theme-text-light: #98a0ac;
+
+  --good-bg: #16301f;
+  --good-fg: #67d996;
+  --warn-bg: #33280e;
+  --warn-fg: #f0bf4a;
+  --bad-bg: #3a1d1d;
+  --bad-fg: #f08b84;
+  --info-bg: #16263d;
+  --info-fg: #7cb4f5;
 }
 
 * {

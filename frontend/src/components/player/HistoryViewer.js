@@ -279,7 +279,7 @@ function HistoryViewer({ weeks, user }) {
                           {match.team1}
                         </span>
                         <div style={{ textAlign: 'center', flexShrink: 0 }}>
-                          <div style={{ fontSize: '20px', fontWeight: '800', color: '#1976d2', fontFamily: 'monospace', lineHeight: 1 }}>
+                          <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--info-fg, #1976d2)', fontFamily: 'monospace', lineHeight: 1 }}>
                             {bet ? `${bet.team1Goals} - ${bet.team2Goals}` : '-'}
                           </div>
                           {hasResult && (
@@ -343,7 +343,7 @@ function HistoryViewer({ weeks, user }) {
                         </span>
                         <span style={{ fontWeight: isMe ? '700' : '500', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text, #333)' }}>
                           {player.name}
-                          {isMe && <span style={{ color: '#1976d2', fontSize: '10px' }}> (אתה)</span>}
+                          {isMe && <span style={{ color: 'var(--info-fg, #1976d2)', fontSize: '10px' }}> (אתה)</span>}
                         </span>
                       </div>
                       <span style={{

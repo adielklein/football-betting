@@ -232,8 +232,8 @@ function PushManagement() {
               <div style={{
                 display: 'flex', gap: '6px', alignItems: 'flex-start',
                 padding: '0.5rem 0.6rem', marginBottom: '0.4rem',
-                background: '#fff8e1', border: '1px solid #ffe0a3',
-                borderRadius: '10px', fontSize: '11px', color: '#7a5c17', lineHeight: 1.5
+                background: 'var(--warn-bg, #fff8e1)', border: '1px solid #ffe0a3',
+                borderRadius: '10px', fontSize: '11px', color: 'var(--warn-fg, #7a5c17)', lineHeight: 1.5
               }}>
                 <span style={{ fontSize: '13px', flexShrink: 0 }}>🍎</span>
                 <span>
@@ -376,7 +376,7 @@ function PushManagement() {
                   <div key={u._id} onClick={() => handleUserToggle(u._id)} style={{
                     display: 'flex', alignItems: 'center', padding: '0.4rem 0.5rem',
                     cursor: 'pointer',
-                    backgroundColor: selectedUsers.includes(u._id) ? '#e3f2fd' : (i % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)'),
+                    backgroundColor: selectedUsers.includes(u._id) ? 'var(--info-bg, #e3f2fd)' : (i % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)'),
                     borderBottom: '1px solid #f5f5f5',
                     transition: 'background-color 0.15s ease'
                   }}>
@@ -473,7 +473,7 @@ function PushManagement() {
                       {r.placed}/{r.of}
                     </span>
                     {!r.canBeNotified && (
-                      <span style={{ fontSize: '9px', color: '#c2410c' }} title="אין התראות פעילות">🔕</span>
+                      <span style={{ fontSize: '9px', color: 'var(--warn-fg, #c2410c)' }} title="אין התראות פעילות">🔕</span>
                     )}
                   </div>
                 ))}
@@ -482,7 +482,7 @@ function PushManagement() {
           )}
           {pending.complete.length > 0 && (
             <div className="card" style={{ marginBottom: '0.5rem' }}>
-              <h3 style={{ fontSize: '0.85rem', margin: '0 0 0.15rem 0', fontWeight: 700, color: '#16a34a' }}>
+              <h3 style={{ fontSize: '0.85rem', margin: '0 0 0.15rem 0', fontWeight: 700, color: 'var(--good-fg, #16a34a)' }}>
                 ✅ סיימו ({pending.complete.length})
               </h3>
               
@@ -500,7 +500,7 @@ function PushManagement() {
                       {r.placed}/{r.of}
                     </span>
                     {!r.canBeNotified && (
-                      <span style={{ fontSize: '9px', color: '#c2410c' }} title="אין התראות פעילות">🔕</span>
+                      <span style={{ fontSize: '9px', color: 'var(--warn-fg, #c2410c)' }} title="אין התראות פעילות">🔕</span>
                     )}
                   </div>
                 ))}
@@ -527,7 +527,7 @@ function PushManagement() {
                       {r.placed}/{r.of}
                     </span>
                     {!r.canBeNotified && (
-                      <span style={{ fontSize: '9px', color: '#c2410c' }} title="אין התראות פעילות">🔕</span>
+                      <span style={{ fontSize: '9px', color: 'var(--warn-fg, #c2410c)' }} title="אין התראות פעילות">🔕</span>
                     )}
                   </div>
                 ))}
@@ -543,7 +543,7 @@ function PushManagement() {
         <div style={{ animation: 'scaleIn 0.2s ease' }}>
           {/* Subscribed */}
           <div className="card" style={{ marginBottom: '0.5rem' }}>
-            <h3 style={{ fontSize: '0.9rem', margin: '0 0 0.4rem 0', fontWeight: '700', color: '#16a34a' }}>
+            <h3 style={{ fontSize: '0.9rem', margin: '0 0 0.4rem 0', fontWeight: '700', color: 'var(--good-fg, #16a34a)' }}>
               ✅ מנויים ({getSubscribedUsers().length})
             </h3>
             {getSubscribedUsers().length === 0 ? (
@@ -579,7 +579,7 @@ function PushManagement() {
 
           {/* Unsubscribed */}
           <div className="card">
-            <h3 style={{ fontSize: '0.9rem', margin: '0 0 0.4rem 0', fontWeight: '700', color: '#dc2626' }}>
+            <h3 style={{ fontSize: '0.9rem', margin: '0 0 0.4rem 0', fontWeight: '700', color: 'var(--bad-fg, #dc2626)' }}>
               ❌ לא מנויים ({getUnsubscribedUsers().length})
             </h3>
             {getUnsubscribedUsers().length === 0 ? (
@@ -603,7 +603,7 @@ function PushManagement() {
                     <span style={{
                       padding: '2px 8px', borderRadius: '20px',
                       fontSize: '10px', fontWeight: '700',
-                      backgroundColor: '#fee2e2', color: '#dc2626',
+                      backgroundColor: 'var(--bad-bg, #fee2e2)', color: 'var(--bad-fg, #dc2626)',
                       border: '1px solid #fca5a5'
                     }}>
                       לא מנוי
@@ -622,7 +622,7 @@ function PushManagement() {
         borderRadius: '12px',
         background: 'linear-gradient(135deg, #fff9c4, #fff8e1)',
         border: '1px solid #fde68a',
-        fontSize: '12px', color: '#92400e'
+        fontSize: '12px', color: 'var(--warn-fg, #92400e)'
       }}>
         <div style={{ fontWeight: '700', marginBottom: '0.3rem' }}>💡 טיפים</div>
         <ul style={{ margin: 0, paddingRight: '16px', lineHeight: 1.6 }}>

@@ -108,7 +108,7 @@ function LuckTable({ meUserId }) {
 
               <span style={{
                 flex: 1, minWidth: 0, fontSize: '12px',
-                fontWeight: me ? 800 : 600, color: me ? '#5a3722' : 'var(--text-2, #444)',
+                fontWeight: me ? 800 : 600, color: me ? 'var(--warn-fg, #5a3722)' : 'var(--text-2, #444)',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
               }}>
                 {r.name}
@@ -169,13 +169,13 @@ function NearMissView({ nearMisses, userId }) {
           textAlign: 'center', padding: '0.6rem 0.4rem 0.4rem',
           background: ACCENT_SOFT, borderRadius: '12px', marginBottom: '0.6rem'
         }}>
-          <div style={{ fontSize: '11px', color: '#a1613c', fontWeight: 600 }}>
+          <div style={{ fontSize: '11px', color: 'var(--warn-fg, #a1613c)', fontWeight: 600 }}>
             שער אחד הפריד בינך לבין
           </div>
           <div style={{ fontSize: '38px', fontWeight: 900, color: ACCENT, lineHeight: 1.15 }}>
             <Num>{lostToOneGoal}</Num>
           </div>
-          <div style={{ fontSize: '11px', color: '#a1613c', fontWeight: 600 }}>נקודות נוספות</div>
+          <div style={{ fontSize: '11px', color: 'var(--warn-fg, #a1613c)', fontWeight: 600 }}>נקודות נוספות</div>
         </div>
 
         <div style={{ display: 'flex', gap: '6px' }}>
@@ -198,13 +198,13 @@ function NearMissView({ nearMisses, userId }) {
             background: 'linear-gradient(135deg, #fff5ed, #fdeadd)',
             border: '1px solid #f6d5bd'
           }}>
-            <div style={{ fontSize: '11px', color: '#a1613c', fontWeight: 700, marginBottom: '0.35rem' }}>
+            <div style={{ fontSize: '11px', color: 'var(--warn-fg, #a1613c)', fontWeight: 700, marginBottom: '0.35rem' }}>
               💔 השער שעלה הכי הרבה
             </div>
-            <div style={{ fontSize: '13.5px', color: '#5a3722', fontWeight: 700, marginBottom: '0.3rem' }}>
+            <div style={{ fontSize: '13.5px', color: 'var(--warn-fg, #5a3722)', fontWeight: 700, marginBottom: '0.3rem' }}>
               {biggestRankMiss.team1} נגד {biggestRankMiss.team2}
             </div>
-            <div style={{ fontSize: '12.5px', color: '#5a3722', fontWeight: 500, lineHeight: 1.6 }}>
+            <div style={{ fontSize: '12.5px', color: 'var(--warn-fg, #5a3722)', fontWeight: 500, lineHeight: 1.6 }}>
               ניחשת <Num style={{ fontWeight: 800 }}>{biggestRankMiss.predicted}</Num>,
               {' '}יצא <Num style={{ fontWeight: 800 }}>{biggestRankMiss.actual}</Num>.
               {' '}המשחק הזה לבדו היה מקפיץ אותך ב{biggestRankMiss.weekName ? `${biggestRankMiss.weekName} ` : ''}

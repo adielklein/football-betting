@@ -299,9 +299,9 @@ function LeaguesManagement() {
                       </span>
                       <span style={{
                         padding: '1px 6px',
-                        backgroundColor: league.type === 'club' ? '#e3f2fd' : league.type === 'national' ? '#fff3cd' : 'var(--surface-2, #f8f9fa)',
+                        backgroundColor: league.type === 'club' ? 'var(--info-bg, #e3f2fd)' : league.type === 'national' ? 'var(--warn-bg, #fff3cd)' : 'var(--surface-2, #f8f9fa)',
                         borderRadius: '10px', fontSize: '10px', fontWeight: '600',
-                        color: league.type === 'club' ? '#1565c0' : league.type === 'national' ? '#f57f17' : 'var(--text-3, #666)'
+                        color: league.type === 'club' ? 'var(--info-fg, #1565c0)' : league.type === 'national' ? 'var(--warn-fg, #f57f17)' : 'var(--text-3, #666)'
                       }}>
                         {league.type === 'club' ? '🏢 מועדון' : league.type === 'national' ? '🌍 נבחרות' : '📌 אחר'}
                       </span>

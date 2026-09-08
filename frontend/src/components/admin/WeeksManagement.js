@@ -1081,12 +1081,12 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                 </button>
               )}
               {selectedWeek.active && !selectedWeek.locked && (
-                <span style={{ padding: '0.5rem', color: '#28a745', fontWeight: 'bold' }}>
+                <span style={{ padding: '0.5rem', color: 'var(--good-fg, #28a745)', fontWeight: 'bold' }}>
                   🟢 השבוע פעיל
                 </span>
               )}
               {selectedWeek.locked && (
-                <span style={{ padding: '0.5rem', color: '#dc3545', fontWeight: 'bold' }}>
+                <span style={{ padding: '0.5rem', color: 'var(--bad-fg, #dc3545)', fontWeight: 'bold' }}>
                   🔒 השבוע נעול
                 </span>
               )}
@@ -1773,14 +1773,14 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                         ) : (
                           <div style={{
                             padding: '0.5rem 1rem',
-                            backgroundColor: '#d4edda',
-                            color: '#155724',
+                            backgroundColor: 'var(--good-bg, #d4edda)',
+                            color: 'var(--good-fg, #155724)',
                             borderRadius: '4px',
                             fontWeight: 'bold'
                           }}>
                             ✓ תוצאה סופית: {match.result.team1Goals}-{match.result.team2Goals}
                             {match.result.finalScore && (
-                              <span style={{ marginRight: '0.5rem', fontSize: '12px', fontWeight: 'normal', color: '#5a6c5e' }}>
+                              <span style={{ marginRight: '0.5rem', fontSize: '12px', fontWeight: 'normal', color: 'var(--good-fg, #5a6c5e)' }}>
                                 ({match.result.finalScore.team1Goals}-{match.result.finalScore.team2Goals}
                                 {match.result.finalScore.penalties &&
                                   `, פנדלים ${match.result.finalScore.penalties.team1}-${match.result.finalScore.penalties.team2}`
@@ -1837,12 +1837,12 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
             {uploadingImage && (
               <div style={{
                 padding: '1rem',
-                backgroundColor: '#fff3cd',
+                backgroundColor: 'var(--warn-bg, #fff3cd)',
                 borderRadius: '6px',
                 marginBottom: '1rem',
                 textAlign: 'center',
                 fontWeight: 'bold',
-                color: '#856404'
+                color: 'var(--warn-fg, #856404)'
               }}>
                 ⏳ מעלה תמונה ל-ImgBB...
               </div>
@@ -1986,7 +1986,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                     color: 'var(--text-3, #666)'
                   }}>
                     💡 תצוגה מקדימה:{' '}
-                    <div style={{ whiteSpace: 'pre-line', color: '#212529', marginTop: '0.25rem', fontWeight: '500' }}>
+                    <div style={{ whiteSpace: 'pre-line', color: 'var(--text, #212529)', marginTop: '0.25rem', fontWeight: '500' }}>
                       {customNotificationTitle}{'\n'}{customNotificationBody}
                     </div>
                   </div>

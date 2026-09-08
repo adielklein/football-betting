@@ -119,3 +119,57 @@ test('היררכיית הטקסט נשמרת: ראשי הכי חזק, עמום �
     assert.ok(c('--text-3') > c('--text-4'), `${mode}: --text-3 חייב להיות חזק מ---text-4`);
   }
 });
+
+// === צבעים סמנטיים ===
+//
+// ירוק כהה קריא מצוין על כרטיס לבן ונעלם על כרטיס כהה. אין ירוק אחד
+// שעובד בשניהם, ולכן הרקע והחזית מתהפכים יחד. הבדיקות כאן מוודאות שכל
+// זוג עומד בתקן בשני המצבים - גם על התגית הצבעונית וגם על המשטח הרגיל.
+
+const KINDS = ['good', 'warn', 'bad', 'info'];
+
+test('כל צבע סמנטי מוגדר בשני המצבים', () => {
+  for (const k of KINDS) {
+    for (const [mode, t] of [['בהיר', light], ['כהה', dark]]) {
+      assert.ok(t[`--${k}-bg`], `${mode}: חסר --${k}-bg`);
+      assert.ok(t[`--${k}-fg`], `${mode}: חסר --${k}-fg`);
+    }
+  }
+});
+
+test('טקסט סמנטי קריא על התגית הצבעונית שלו', () => {
+  for (const k of KINDS) {
+    for (const [mode, t] of [['בהיר', light], ['כהה', dark]]) {
+      const c = contrast(t[`--${k}-bg`], t[`--${k}-fg`]);
+      assert.ok(c >= 4.5, `${mode}: ${k} על התגית = ${c.toFixed(1)}, נדרש 4.5`);
+    }
+  }
+});
+
+test('טקסט סמנטי קריא גם כשהוא יושב ישירות על המשטח', () => {
+  // זה המקרה שנשבר בפועל: ירוק על הכרטיס, בלי תגית מסביבו
+  for (const k of KINDS) {
+    for (const [mode, t] of [['בהיר', light], ['כהה', dark]]) {
+      for (const surface of SURFACES) {
+        const c = contrast(t[surface], t[`--${k}-fg`]);
+        assert.ok(c >= 4.5, `${mode}: ${k} על ${surface} = ${c.toFixed(1)}, נדרש 4.5`);
+      }
+    }
+  }
+});
+
+test('התגית הצבעונית נבדלת מהמשטח שמאחוריה', () => {
+  for (const k of KINDS) {
+    for (const [mode, t] of [['בהיר', light], ['כהה', dark]]) {
+      const c = contrast(t['--surface'], t[`--${k}-bg`]);
+      assert.ok(c > 1.05, `${mode}: ${k}-bg לא נבדל מהמשטח`);
+    }
+  }
+});
+
+test('הרקע הסמנטי מתהפך יחד עם המצב', () => {
+  for (const k of KINDS) {
+    assert.ok(luminance(light[`--${k}-bg`]) > 0.7, `${k}-bg במצב בהיר כהה מדי`);
+    assert.ok(luminance(dark[`--${k}-bg`]) < 0.15, `${k}-bg במצב כהה בהיר מדי`);
+  }
+});

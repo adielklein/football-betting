@@ -210,7 +210,7 @@ function Leaderboard({ leaderboard, user }) {
           }}>
             {player.name}
             {isMe && (
-              <span style={{ color: '#1976d2', fontSize: '10px', marginRight: '3px', fontWeight: '600' }}> (אתה)</span>
+              <span style={{ color: 'var(--info-fg, #1976d2)', fontSize: '10px', marginRight: '3px', fontWeight: '600' }}> (אתה)</span>
             )}
           </span>
         </div>

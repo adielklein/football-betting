@@ -237,7 +237,7 @@ function NotificationSettings({ user }) {
               padding: '1px 8px', borderRadius: '20px',
               fontSize: '10px', fontWeight: '700',
               background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)',
-              color: '#16a34a', border: '1px solid #86efac'
+              color: 'var(--good-fg, #16a34a)', border: '1px solid #86efac'
             }}>
               פעיל
             </span>
@@ -361,7 +361,7 @@ function NotificationSettings({ user }) {
                   flex: 1, textAlign: 'center',
                   padding: '0.4rem',
                   background: 'linear-gradient(135deg, #dcfce7, #d1fae5)',
-                  color: '#166534', borderRadius: '10px',
+                  color: 'var(--good-fg, #166534)', borderRadius: '10px',
                   fontSize: '12px', fontWeight: '700',
                   border: '1px solid #86efac'
                 }}>
@@ -388,7 +388,7 @@ function NotificationSettings({ user }) {
           }}>
             <strong>💡 התקנה:</strong> פתח ב-Chrome/Safari → תפריט → "הוסף למסך הבית"
             <br />
-            <span style={{ fontSize: '10px', color: '#6366a1' }}>
+            <span style={{ fontSize: '10px', color: 'var(--info-fg, #6366a1)' }}>
               📱 תמיכה במספר מכשירים - כולם יקבלו התראות!
             </span>
           </div>

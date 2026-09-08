@@ -21,7 +21,7 @@ function LiveScore({ live, compact = false }) {
         gap: '5px',
         padding: compact ? '1px 7px' : '2px 9px',
         borderRadius: '999px',
-        backgroundColor: isLive ? '#fff0f1' : 'var(--surface-3, #f1f3f5)',
+        backgroundColor: isLive ? 'var(--bad-bg, #fff0f1)' : 'var(--surface-3, #f1f3f5)',
         border: `1px solid ${isLive ? '#f5c2c7' : 'var(--border-2, #e3e6ea)'}`,
         color,
         fontSize: compact ? '10px' : '11px',

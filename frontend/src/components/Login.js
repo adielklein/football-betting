@@ -185,7 +185,7 @@ function Login({ onLogin }) {
             background: message.includes('שגיאה') || message.includes('שגויים')
               ? 'linear-gradient(135deg, #fee2e2, #fecaca)'
               : 'linear-gradient(135deg, #dcfce7, #d1fae5)',
-            color: message.includes('שגיאה') || message.includes('שגויים') ? '#991b1b' : '#166534',
+            color: message.includes('שגיאה') || message.includes('שגויים') ? 'var(--bad-fg, #991b1b)' : 'var(--good-fg, #166534)',
             borderRadius: '10px',
             textAlign: 'center',
             fontSize: '13px',

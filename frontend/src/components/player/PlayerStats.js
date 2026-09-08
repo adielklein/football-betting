@@ -370,8 +370,8 @@ function PlayerStats({ user }) {
                 background: 'linear-gradient(135deg, #fff7ed, #ffedd5)',
                 borderRadius: '12px'
               }}>
-                <div style={{ fontSize: '24px', fontWeight: '800', color: '#ea580c' }}>{bestHitStreak}</div>
-                <div style={{ fontSize: '10px', color: '#9a3412', fontWeight: '600' }}>שיא רצף פגיעות</div>
+                <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--warn-fg, #ea580c)' }}>{bestHitStreak}</div>
+                <div style={{ fontSize: '10px', color: 'var(--warn-fg, #9a3412)', fontWeight: '600' }}>שיא רצף פגיעות</div>
               </div>
               <div style={{
                 textAlign: 'center', padding: '0.6rem',
@@ -379,7 +379,7 @@ function PlayerStats({ user }) {
                 borderRadius: '12px'
               }}>
                 <div style={{ fontSize: '24px', fontWeight: '800', color: '#ca8a04' }}>{currentHitStreak}</div>
-                <div style={{ fontSize: '10px', color: '#854d0e', fontWeight: '600' }}>רצף נוכחי</div>
+                <div style={{ fontSize: '10px', color: 'var(--warn-fg, #854d0e)', fontWeight: '600' }}>רצף נוכחי</div>
               </div>
             </div>
           </Card>
