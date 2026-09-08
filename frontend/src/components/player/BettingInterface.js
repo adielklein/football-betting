@@ -447,7 +447,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   </span>
                 </div>
                 {live && live.status !== 'scheduled' ? (
-                  <LiveScore live={live} />
+                  <LiveScore live={live} prediction={existingBet} />
                 ) : (
                   <span style={{ color: 'var(--text-4, #aaa)', fontSize: '11px', fontWeight: '500' }}>
                     {match.date} • {match.time}

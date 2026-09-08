@@ -262,7 +262,7 @@ function AllBetsViewer({ weeks, user }) {
                           }}>{myBadge.text}</span>
                         )}
                         {liveByMatchId[match._id] && liveByMatchId[match._id].status !== 'scheduled' ? (
-                          <LiveScore live={liveByMatchId[match._id]} compact />
+                          <LiveScore live={liveByMatchId[match._id]} prediction={myBet && myBet.prediction} compact />
                         ) : (
                           <span style={{ fontSize: '11px', color: 'var(--text-4, #aaa)', fontWeight: '500' }}>{match.date} • {match.time}</span>
                         )}
