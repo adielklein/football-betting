@@ -270,7 +270,7 @@ function AllBetsViewer({ weeks, user }) {
                       </div>
                     </div>
 
-                    <div style={{ textAlign: 'center', fontWeight: '700', fontSize: '14px', marginBottom: '0.3rem', color: 'var(--text, #333)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                    <div style={{ textAlign: 'center', fontWeight: '700', fontSize: '14px', marginBottom: '0.35rem', color: 'var(--text, #333)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', flexWrap: 'wrap' }}>
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setInsightsFor({ match, focusTeam: 1 }); }}
@@ -304,12 +304,29 @@ function AllBetsViewer({ weeks, user }) {
                         {match.team2}
                         <span style={{ fontSize: '9px', opacity: 0.55 }} aria-hidden="true">📊</span>
                       </button>
-                      {match.result && match.result.team1Goals !== undefined && (
-                        <span style={{ fontSize: '12px', color: 'var(--good-fg, #2e7d32)', flexShrink: 0 }}>
-                          (<Score home={match.result.team1Goals} away={match.result.team2Goals} />)
+                      {myBet && myBet.prediction && (
+                        <span style={{
+                          fontSize: '12px', flexShrink: 0, padding: '1px 8px',
+                          borderRadius: '999px', fontWeight: '800',
+                          backgroundColor: 'var(--me-bg, #e8f0fe)', color: 'var(--me-fg, #14508f)'
+                        }}>
+                          <span style={{ fontSize: '9px', opacity: 0.7, fontWeight: 700 }}>שלך </span>
+                          <Score home={myBet.prediction.team1Goals} away={myBet.prediction.team2Goals} />
                         </span>
                       )}
                     </div>
+
+                    {/* התוצאה עלתה מתוך האזור הנפתח: היא הדבר הראשון שמחפשים,
+                        ולחיצה כדי לראות אותה היא לחיצה מיותרת. */}
+                    {match.result && match.result.team1Goals !== undefined && (
+                      <div style={{
+                        textAlign: 'center', padding: '3px 8px',
+                        background: 'var(--good-bg, #e8f5e9)', borderRadius: '8px',
+                        fontSize: '13px', fontWeight: '700', color: 'var(--good-fg, #2e7d32)'
+                      }}>
+                        תוצאה: <Score home={match.result.team1Goals} away={match.result.team2Goals} />
+                      </div>
+                    )}
                   </div>
                     );
                   })()}
@@ -327,17 +344,6 @@ function AllBetsViewer({ weeks, user }) {
                           {odd.label}: {odd.value || '-'}
                         </span>
                       ))}
-                    </div>
-                  )}
-
-                  {/* תוצאה */}
-                  {match.result && match.result.team1Goals !== undefined && (
-                    <div style={{
-                      textAlign: 'center', marginBottom: '0.4rem', padding: '4px 8px',
-                      background: 'var(--good-bg, #e8f5e9)', borderRadius: '8px',
-                      fontSize: '13px', fontWeight: '700', color: 'var(--good-fg, #2e7d32)'
-                    }}>
-                      תוצאה: <Score home={match.result.team1Goals} away={match.result.team2Goals} />
                     </div>
                   )}
 
