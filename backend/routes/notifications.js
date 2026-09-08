@@ -380,6 +380,106 @@ router.post('/test', requireSelfOrAdmin((req) => req.body?.userId), async (req, 
   }
 });
 
+// ⚽ מי עדיין לא סיים להמר בשבוע, ודחיפה אליהם.
+//
+// "רשום לחודש" נקבע לפי MonthExclusion - רשימת מי שאינו משתתף בחודש.
+// שחקן שהוחרג מהחודש של השבוע לא אמור לקבל דחיפה להמר בו: הוא בכלל לא
+// בתחרות החודש הזה, וההתראה תיראה לו כטעות.
+
+const loadPending = async (weekId) => {
+  const Week = require('../models/Week');
+  const Match = require('../models/Match');
+  const Bet = require('../models/Bet');
+  const MonthExclusion = require('../models/MonthExclusion');
+  const { classifyBettors } = require('../services/pendingBettors');
+
+  const week = await Week.findById(weekId).lean();
+  if (!week) return null;
+
+  const [matches, players, bets, exclusions] = await Promise.all([
+    Match.find({ weekId }, '_id').lean(),
+    User.find({ role: { $ne: 'admin' } }, 'name pushSettings').lean(),
+    Bet.find({ weekId }, 'userId matchId').lean(),
+    MonthExclusion.find({ month: week.month, season: week.season }, 'userId').lean()
+  ]);
+
+  return {
+    week,
+    ...classifyBettors(players, matches.map((m) => m._id), bets, exclusions)
+  };
+};
+
+// רשימה בלבד, בלי לשלוח דבר
+router.get('/pending-bettors/:weekId', requireAdmin, async (req, res) => {
+  try {
+    const data = await loadPending(req.params.weekId);
+    if (!data) return res.status(404).json({ message: 'השבוע לא נמצא' });
+    res.json({
+      week: { _id: data.week._id, name: data.week.name, month: data.week.month, season: data.week.season },
+      matchCount: data.matchCount,
+      reachable: data.reachable,
+      pending: data.pending,
+      complete: data.complete,
+      notRegistered: data.notRegistered
+    });
+  } catch (error) {
+    console.error('pending-bettors error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// שליחה. בלי גוף - לכל מי שחסר וניתן להשגה; עם userIds - לתת-קבוצה בלבד.
+router.post('/nudge/:weekId', requireAdmin, async (req, res) => {
+  try {
+    const { userIds } = req.body || {};
+    const data = await loadPending(req.params.weekId);
+    if (!data) return res.status(404).json({ message: 'השבוע לא נמצא' });
+
+    const chosen = Array.isArray(userIds) && userIds.length > 0
+      ? new Set(userIds.map(String))
+      : null;
+
+    // גם כשנשלחת בחירה מפורשת, היא מסוננת מול רשימת החסרים. כך אי אפשר
+    // לדחוף בטעות מישהו שכבר סיים או שאינו רשום לחודש.
+    const targets = data.pending.filter(
+      (r) => r.canBeNotified && (!chosen || chosen.has(r.userId))
+    );
+
+    if (targets.length === 0) {
+      return res.json({ sent: 0, users: 0, message: 'אין למי לשלוח' });
+    }
+
+    const { nudgeMessage } = require('../services/pendingBettors');
+
+    // ההודעה אישית: כמה חסר לכל אחד. "לא הימרת" למי שמילא עשרה משחקים
+    // מתוך שלושה-עשר נשמע שגוי ומוריד את האמון בהתראות.
+    let sent = 0;
+    let reached = 0;
+    for (const row of targets) {
+      const { title, body } = nudgeMessage(data.week, row);
+      const result = await sendNotificationToUsers(
+        [row.userId], title, body,
+        { type: 'nudge', weekId: String(data.week._id), url: '/#/betting' }
+      );
+      sent += result?.sent || 0;
+      if ((result?.sent || 0) > 0) reached++;
+    }
+
+    const { logAdminAction } = require('../services/auditService');
+    const adminId = req.headers['x-user-id'] || req.body?.adminId;
+    if (adminId) {
+      logAdminAction(adminId, 'תזכורת למי שלא הימר', `${data.week.name} - ${reached} שחקנים`, {
+        weekId: data.week._id
+      });
+    }
+
+    res.json({ sent, users: reached, attempted: targets.length });
+  } catch (error) {
+    console.error('nudge error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Route לבדיקה
 router.get('/check', checkRoute);
 

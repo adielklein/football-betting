@@ -14,7 +14,56 @@ function PushManagement() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('broadcast');
 
+  // "מי לא הימר" - נטען לפי שבוע נבחר, ולא יחד עם שאר המסך
+  const [weeks, setWeeks] = useState([]);
+  const [nudgeWeekId, setNudgeWeekId] = useState('');
+  const [pending, setPending] = useState(null);
+  const [pendingLoading, setPendingLoading] = useState(false);
+
   useEffect(() => { loadStats(); loadUsers(); }, []);
+
+  useEffect(() => {
+    fetch(`${API_URL}/weeks`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((w) => {
+        const list = Array.isArray(w) ? [...w].reverse() : [];
+        setWeeks(list);
+        // ברירת המחדל היא השבוע הפעיל האחרון - זה כמעט תמיד מה שרוצים
+        const active = list.find((x) => x.active && !x.locked) || list[0];
+        if (active) setNudgeWeekId(active._id);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!nudgeWeekId) { setPending(null); return; }
+    let cancelled = false;
+    setPendingLoading(true);
+    fetch(`${API_URL}/notifications/pending-bettors/${nudgeWeekId}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((d) => { if (!cancelled) setPending(d); })
+      .catch(() => { if (!cancelled) setPending(null); })
+      .finally(() => { if (!cancelled) setPendingLoading(false); });
+    return () => { cancelled = true; };
+  }, [nudgeWeekId]);
+
+  const sendNudge = async () => {
+    if (!pending || pending.reachable === 0) return;
+    if (!window.confirm(`לשלוח תזכורת ל-${pending.reachable} שחקנים שלא סיימו להמר?`)) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/notifications/nudge/${nudgeWeekId}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
+      });
+      if (!res.ok) throw new Error('Failed');
+      const r = await res.json();
+      toast.success(`נשלח ל-${r.users} שחקנים (${r.sent} מכשירים)`);
+    } catch (e) {
+      toast.error('שגיאה בשליחת התזכורת');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadStats = async () => {
     try {
@@ -150,6 +199,7 @@ function PushManagement() {
   const subTabs = [
     { key: 'broadcast', label: 'לכולם', icon: '📢' },
     { key: 'selective', label: 'בררנית', icon: '🎯' },
+    { key: 'pending', label: 'לא הימרו', icon: '⚽' },
     { key: 'stats', label: 'משתמשים', icon: '📊' }
   ];
 
@@ -220,7 +270,7 @@ function PushManagement() {
       {/* Stats cards */}
       {stats && (
         <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+          display: 'grid', gridTemplateColumns: `repeat(${subTabs.length}, 1fr)`,
           gap: '0.4rem', marginBottom: '0.75rem'
         }}>
           {[
@@ -362,6 +412,133 @@ function PushManagement() {
       )}
 
       {/* Stats tab */}
+      {activeTab === 'pending' && (
+        <div style={{ animation: 'scaleIn 0.2s ease' }}>
+          <div className="card" style={{ marginBottom: '0.5rem' }}>
+            <label style={labelStyle}>שבוע</label>
+            <select value={nudgeWeekId} onChange={(e) => setNudgeWeekId(e.target.value)}
+              className="input" style={{ ...inputStyle, width: '100%' }}>
+              {weeks.map((w) => (
+                <option key={w._id} value={w._id}>{w.name}{w.active && !w.locked ? ' (פעיל)' : ''}</option>
+              ))}
+            </select>
+          </div>
+
+          {pendingLoading && (
+            <div className="card" style={{ textAlign: 'center', padding: '1.2rem', fontSize: '12px', color: 'var(--text-4, #aaa)' }}>
+              טוען…
+            </div>
+          )}
+
+          {!pendingLoading && pending && (
+            <>
+              <div className="card" style={{ marginBottom: '0.5rem' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-2, #555)', lineHeight: 1.6, marginBottom: '0.6rem' }}>
+                  ב<b>{pending.week.name}</b> יש {pending.matchCount} משחקים.
+                  {' '}<b>{pending.pending.length}</b> שחקנים עוד לא סיימו,
+                  {' '}ואפשר להשיג בהתראה <b>{pending.reachable}</b> מהם.
+                </div>
+                <button onClick={sendNudge} disabled={loading || pending.reachable === 0}
+                  className="btn" style={{
+                    width: '100%', background: pending.reachable > 0
+                      ? 'linear-gradient(135deg, #f59e0b, #d97706)' : undefined,
+                    color: pending.reachable > 0 ? 'white' : undefined,
+                    fontWeight: 700, fontSize: '13px'
+                  }}>
+                  {pending.reachable > 0 ? `⏰ שלח תזכורת ל-${pending.reachable} שחקנים` : 'אין למי לשלוח'}
+                </button>
+                <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', marginTop: '0.4rem', lineHeight: 1.5 }}>
+                  ההודעה אישית - היא אומרת לכל אחד כמה משחקים נשארו לו.
+                  {' '}מי שאינו רשום לחודש לא מקבל כלום.
+                </div>
+              </div>
+
+          {pending.pending.length > 0 && (
+            <div className="card" style={{ marginBottom: '0.5rem' }}>
+              <h3 style={{ fontSize: '0.85rem', margin: '0 0 0.15rem 0', fontWeight: 700, color: '#d97706' }}>
+                ❌ לא סיימו להמר ({pending.pending.length})
+              </h3>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                {pending.pending.map((r) => (
+                  <div key={r.userId} style={{
+                    display: 'flex', alignItems: 'center', gap: '0.4rem',
+                    padding: '0.35rem 0.5rem', borderRadius: '8px',
+                    background: 'var(--surface-2, #f8f9fc)', fontSize: '12px'
+                  }}>
+                    <span style={{ flex: 1, minWidth: 0, fontWeight: 600, color: 'var(--text, #333)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {r.name}
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-3, #888)', fontVariantNumeric: 'tabular-nums' }}>
+                      {r.placed}/{r.of}
+                    </span>
+                    {!r.canBeNotified && (
+                      <span style={{ fontSize: '9px', color: '#c2410c' }} title="אין התראות פעילות">🔕</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {pending.complete.length > 0 && (
+            <div className="card" style={{ marginBottom: '0.5rem' }}>
+              <h3 style={{ fontSize: '0.85rem', margin: '0 0 0.15rem 0', fontWeight: 700, color: '#16a34a' }}>
+                ✅ סיימו ({pending.complete.length})
+              </h3>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                {pending.complete.map((r) => (
+                  <div key={r.userId} style={{
+                    display: 'flex', alignItems: 'center', gap: '0.4rem',
+                    padding: '0.35rem 0.5rem', borderRadius: '8px',
+                    background: 'var(--surface-2, #f8f9fc)', fontSize: '12px'
+                  }}>
+                    <span style={{ flex: 1, minWidth: 0, fontWeight: 600, color: 'var(--text, #333)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {r.name}
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-3, #888)', fontVariantNumeric: 'tabular-nums' }}>
+                      {r.placed}/{r.of}
+                    </span>
+                    {!r.canBeNotified && (
+                      <span style={{ fontSize: '9px', color: '#c2410c' }} title="אין התראות פעילות">🔕</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {pending.notRegistered.length > 0 && (
+            <div className="card" style={{ marginBottom: '0.5rem' }}>
+              <h3 style={{ fontSize: '0.85rem', margin: '0 0 0.15rem 0', fontWeight: 700, color: 'var(--text-3, #888)' }}>
+                🚫 לא רשומים לחודש הזה ({pending.notRegistered.length})
+              </h3>
+              <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', marginBottom: '0.4rem' }}>מוחרגים מהחודש - לא יקבלו תזכורת</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                {pending.notRegistered.map((r) => (
+                  <div key={r.userId} style={{
+                    display: 'flex', alignItems: 'center', gap: '0.4rem',
+                    padding: '0.35rem 0.5rem', borderRadius: '8px',
+                    background: 'var(--surface-2, #f8f9fc)', fontSize: '12px'
+                  }}>
+                    <span style={{ flex: 1, minWidth: 0, fontWeight: 600, color: 'var(--text, #333)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {r.name}
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-3, #888)', fontVariantNumeric: 'tabular-nums' }}>
+                      {r.placed}/{r.of}
+                    </span>
+                    {!r.canBeNotified && (
+                      <span style={{ fontSize: '9px', color: '#c2410c' }} title="אין התראות פעילות">🔕</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+            </>
+          )}
+        </div>
+      )}
+
       {activeTab === 'stats' && (
         <div style={{ animation: 'scaleIn 0.2s ease' }}>
           {/* Subscribed */}
