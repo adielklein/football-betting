@@ -103,15 +103,30 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
     setLocalBets(existingBets);
   }, [bets]);
 
+  // הקלט מוגבל לספרות בלבד ולשתי תווים. עם inputMode מספרי הדפדפן פותח
+  // מקלדת ספרות במקום מקלדת מלאה, וזה חוסך את רוב החיכוך במילוי שלושה-עשר
+  // משחקים - בלי לקחת מקום מהפריסה, שאין בה מקום לתת.
   const handleBetChange = (matchId, field, value) => {
+    const digits = String(value).replace(/\D/g, '').slice(0, 2);
+
     setLocalBets(prev => ({
       ...prev,
       [matchId]: {
         ...prev[matchId],
-        [field]: value
+        [field]: digits
       }
     }));
+
+    // אחרי ספרה בשדה הראשון עוברים לשני. רוב התוצאות הן ספרה אחת,
+    // ולכן זה חוסך הקשה על השדה השני בכל משחק.
+    if (field === 'team1Goals' && digits.length === 1) {
+      const next = document.getElementById(`bet-${matchId}-2`);
+      if (next) next.focus();
+    }
   };
+
+  // מיקוד בוחר את התוכן, כך שהקלדה מחליפה במקום להוסיף בסוף
+  const selectOnFocus = (e) => e.target.select();
 
   const saveSingleBet = async (matchId) => {
     if (selectedWeek?.locked) {
@@ -460,10 +475,14 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   flexShrink: 0
                 }}>
                   <input
-                    type="number"
-                    min="0"
-                    max="20"
+                    id={`bet-${match._id}-1`}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={2}
+                    autoComplete="off"
                     value={currentBet.team1Goals || ''}
+                    onFocus={selectOnFocus}
                     onChange={(e) => handleBetChange(match._id, 'team1Goals', e.target.value)}
                     style={{
                       width: '46px',
@@ -493,10 +512,14 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                     lineHeight: 1
                   }}>:</span>
                   <input
-                    type="number"
-                    min="0"
-                    max="20"
+                    id={`bet-${match._id}-2`}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={2}
+                    autoComplete="off"
                     value={currentBet.team2Goals || ''}
+                    onFocus={selectOnFocus}
                     onChange={(e) => handleBetChange(match._id, 'team2Goals', e.target.value)}
                     style={{
                       width: '46px',
