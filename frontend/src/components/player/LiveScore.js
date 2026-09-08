@@ -1,11 +1,11 @@
 import React from 'react';
 import Score from '../Score';
-import { liveBetStatus, STATUS_LABEL } from '../../services/liveBetStatus';
+import { liveBetStatus, showsLiveBadge, STATUS_LABEL } from '../../services/liveBetStatus';
 
 // התוצאה החיה של משחק בודד. מוצגת בסדר team1-team2 כמו בכל שאר המסכים.
 //
-// שלושה מצבים: מתנהל (נקודה פועמת + דקה), הסתיים זה עתה, וכלום - שבו
-// הרכיב לא מצייר דבר ומפנה את מקומו לתאריך הרגיל.
+// שני מצבים שמציירים: מתנהל (נקודה פועמת + דקה), והסתיים-אך-טרם-סונכרן.
+// בכל שאר המקרים הרכיב לא מצייר דבר ומפנה את מקומו לתאריך או לתוצאה.
 //
 // הצבע נושא מידע: כשמועבר prediction, הוא אומר איפה המשתמש עומד מול
 // התוצאה הנוכחית - ירוק בול, צהוב כיוון נכון, אדום החמצה. בלי ניחוש שמור
@@ -19,9 +19,8 @@ const TONE = {
 const NEUTRAL_LIVE = { bg: 'var(--bad-bg, #fff0f1)', fg: '#dc3545', border: 'var(--bad-border, #f5c2c7)' };
 const NEUTRAL_DONE = { bg: 'var(--surface-3, #f1f3f5)', fg: 'var(--text-3, #6c757d)', border: 'var(--border-2, #e3e6ea)' };
 
-function LiveScore({ live, prediction, compact = false }) {
-  if (!live || live.status === 'scheduled') return null;
-  if (live.team1Goals == null || live.team2Goals == null) return null;
+function LiveScore({ live, prediction, result, compact = false }) {
+  if (!showsLiveBadge(live, result)) return null;
 
   const isLive = live.status === 'live';
   const status = liveBetStatus(prediction, live);

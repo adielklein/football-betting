@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import TeamLogo from '../TeamLogo';
 import LiveScore from './LiveScore';
 import useLiveScores from '../../services/useLiveScores';
+import { showsLiveBadge } from '../../services/liveBetStatus';
 import MatchInsightsModal from './MatchInsightsModal';
 import Score from '../Score';
 
@@ -261,8 +262,8 @@ function AllBetsViewer({ weeks, user }) {
                             backgroundColor: myBadge.bg, color: myBadge.color
                           }}>{myBadge.text}</span>
                         )}
-                        {liveByMatchId[match._id] && liveByMatchId[match._id].status !== 'scheduled' ? (
-                          <LiveScore live={liveByMatchId[match._id]} prediction={myBet && myBet.prediction} compact />
+                        {showsLiveBadge(liveByMatchId[match._id], match.result) ? (
+                          <LiveScore live={liveByMatchId[match._id]} prediction={myBet && myBet.prediction} result={match.result} compact />
                         ) : (
                           <span style={{ fontSize: '11px', color: 'var(--text-4, #aaa)', fontWeight: '500' }}>{match.date} • {match.time}</span>
                         )}

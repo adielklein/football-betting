@@ -32,6 +32,18 @@ export function liveBetStatus(prediction, live) {
   return 'miss';
 }
 
+// האם יש בכלל תג חי לצייר. אתרי הקריאה חייבים לשאול לפני שהם בוחרים
+// בין התג לתאריך - טרנרי שבוחר בתג ומקבל ממנו null משאיר חור ריק במסך.
+//
+// משחק שנגמר והתוצאה שלו כבר נשמרה לא מקבל תג: השורה מציגה את התוצאה
+// ממילא, ותג "הסתיים" לידה הוא אותו מספר פעמיים.
+export function showsLiveBadge(live, result) {
+  if (!live || live.status === 'scheduled') return false;
+  if (num(live.team1Goals) === null || num(live.team2Goals) === null) return false;
+  if (live.status !== 'live' && result != null && num(result.team1Goals) !== null) return false;
+  return true;
+}
+
 export const STATUS_LABEL = {
   exact: 'בול',
   direction: 'כיוון נכון',

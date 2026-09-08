@@ -3,6 +3,7 @@ import TeamLogo from '../TeamLogo';
 import MatchInsightsModal from './MatchInsightsModal';
 import LiveScore from './LiveScore';
 import useLiveScores from '../../services/useLiveScores';
+import { showsLiveBadge } from '../../services/liveBetStatus';
 import { setUnsavedChecker } from '../../services/unsavedGuard';
 import { toast } from '../../services/toast';
 import Score from '../Score';
@@ -446,8 +447,8 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                     {getLeagueName(match)}
                   </span>
                 </div>
-                {live && live.status !== 'scheduled' ? (
-                  <LiveScore live={live} prediction={existingBet} />
+                {showsLiveBadge(live, match.result) ? (
+                  <LiveScore live={live} prediction={existingBet} result={match.result} />
                 ) : (
                   <span style={{ color: 'var(--text-4, #aaa)', fontSize: '11px', fontWeight: '500' }}>
                     {match.date} • {match.time}
