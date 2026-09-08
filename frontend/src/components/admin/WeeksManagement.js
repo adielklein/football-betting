@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import TeamLogo from '../TeamLogo';
 import ImportMatchesModal from './ImportMatchesModal';
 import { toast } from '../../services/toast';
+import Score from '../Score';
 
 // אותה קביעה כמו בכל שאר המסכים. קודם זה הסתמך על משתנה סביבה של CRA,
 // והנפילה לברירת המחדל הייתה localhost - כלומר מסך ניהול השבועות היה
@@ -1778,10 +1779,10 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                             borderRadius: '4px',
                             fontWeight: 'bold'
                           }}>
-                            ✓ תוצאה סופית: {match.result.team1Goals}-{match.result.team2Goals}
+                            ✓ תוצאה סופית: <Score home={match.result.team1Goals} away={match.result.team2Goals} />
                             {match.result.finalScore && (
                               <span style={{ marginRight: '0.5rem', fontSize: '12px', fontWeight: 'normal', color: 'var(--good-fg, #5a6c5e)' }}>
-                                ({match.result.finalScore.team1Goals}-{match.result.finalScore.team2Goals}
+                                (<Score home={match.result.finalScore.team1Goals} away={match.result.finalScore.team2Goals} />
                                 {match.result.finalScore.penalties &&
                                   `, פנדלים ${match.result.finalScore.penalties.team1}-${match.result.finalScore.penalties.team2}`
                                 }

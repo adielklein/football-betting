@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import TeamLogo from '../TeamLogo';
 import { toast } from '../../services/toast';
+import Score from '../Score';
 
 function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, user }) {
   const [savingBet, setSavingBet] = useState(null);
@@ -253,7 +254,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                           color: 'var(--good-fg, #16a34a)', fontSize: '13px', fontWeight: '800',
                           border: '1px solid #86efac'
                         }}>
-                          {match.result.team1Goals}-{match.result.team2Goals}
+                          <Score home={match.result.team1Goals} away={match.result.team2Goals} />
                         </span>
                       )}
                       <span style={{

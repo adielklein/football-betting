@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Score from '../Score';
 
 // "כמה קרוב היית" - הניקוד שברח בגלל שער בודד.
 //
@@ -45,7 +46,7 @@ const ScoreChip = ({ score, color, bg, label }) => (
       display: 'block', padding: '2px 7px', borderRadius: '7px',
       background: bg, color, fontWeight: 800, fontSize: '12px'
     }}>
-      <Num>{score}</Num>
+      <Score pair={score} />
     </span>
     <span style={{ display: 'block', fontSize: '8.5px', color: 'var(--text-4, #aab1bb)', marginTop: '1px' }}>{label}</span>
   </span>
@@ -205,8 +206,8 @@ function NearMissView({ nearMisses, userId }) {
               {biggestRankMiss.team1} נגד {biggestRankMiss.team2}
             </div>
             <div style={{ fontSize: '12.5px', color: 'var(--warn-fg, #5a3722)', fontWeight: 500, lineHeight: 1.6 }}>
-              ניחשת <Num style={{ fontWeight: 800 }}>{biggestRankMiss.predicted}</Num>,
-              {' '}יצא <Num style={{ fontWeight: 800 }}>{biggestRankMiss.actual}</Num>.
+              ניחשת <Score pair={biggestRankMiss.predicted} style={{ fontWeight: 800 }} />,
+              {' '}יצא <Score pair={biggestRankMiss.actual} style={{ fontWeight: 800 }} />.
               {' '}המשחק הזה לבדו היה מקפיץ אותך ב{biggestRankMiss.weekName ? `${biggestRankMiss.weekName} ` : ''}
               {' '}ממקום <Num style={{ fontWeight: 900 }}>{biggestRankMiss.rankBefore}</Num>
               {' '}למקום <Num style={{ fontWeight: 900, color: GOOD }}>{biggestRankMiss.rankIfLanded}</Num>.

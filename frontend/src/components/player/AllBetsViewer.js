@@ -3,6 +3,7 @@ import TeamLogo from '../TeamLogo';
 import LiveScore from './LiveScore';
 import useLiveScores from '../../services/useLiveScores';
 import MatchInsightsModal from './MatchInsightsModal';
+import Score from '../Score';
 
 function AllBetsViewer({ weeks, user }) {
   const [selectedWeek, setSelectedWeek] = useState(null);
@@ -304,7 +305,7 @@ function AllBetsViewer({ weeks, user }) {
                       </button>
                       {match.result && match.result.team1Goals !== undefined && (
                         <span style={{ fontSize: '12px', color: 'var(--good-fg, #2e7d32)', flexShrink: 0 }}>
-                          ({match.result.team1Goals}-{match.result.team2Goals})
+                          (<Score home={match.result.team1Goals} away={match.result.team2Goals} />)
                         </span>
                       )}
                     </div>
@@ -335,7 +336,7 @@ function AllBetsViewer({ weeks, user }) {
                       background: 'var(--good-bg, #e8f5e9)', borderRadius: '8px',
                       fontSize: '13px', fontWeight: '700', color: 'var(--good-fg, #2e7d32)'
                     }}>
-                      תוצאה: {match.result.team1Goals}-{match.result.team2Goals}
+                      תוצאה: <Score home={match.result.team1Goals} away={match.result.team2Goals} />
                     </div>
                   )}
 
@@ -356,20 +357,20 @@ function AllBetsViewer({ weeks, user }) {
                         <div key={player._id} style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                           padding: '0.3rem 0.4rem',
-                          backgroundColor: isMe ? '#e8f0fe' : 'transparent',
+                          backgroundColor: isMe ? 'var(--me-bg, #e8f0fe)' : 'transparent',
                           borderRadius: '6px', fontSize: '13px'
                         }}>
                           <span style={{
                             fontWeight: isMe ? '700' : '400', flex: 1, minWidth: 0,
-                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-2, #444)'
+                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: isMe ? 'var(--me-fg, #14508f)' : 'var(--text-2, #444)'
                           }}>
                             {player.name}
-                            {isMe && <span style={{ color: 'var(--info-fg, #1976d2)', fontSize: '10px' }}> (אתה)</span>}
+                            {isMe && <span style={{ color: 'var(--me-fg, #14508f)', opacity: 0.75, fontSize: '10px' }}> (אתה)</span>}
                           </span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
                             {bet && bet.prediction ? (
                               <span style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: '14px', minWidth: '36px', textAlign: 'center', color: 'var(--text, #333)' }}>
-                                {bet.prediction.team1Goals}-{bet.prediction.team2Goals}
+                                <Score home={bet.prediction.team1Goals} away={bet.prediction.team2Goals} />
                               </span>
                             ) : (
                               <span style={{ color: 'var(--text-4, #ccc)', fontSize: '11px' }}>לא הימר</span>

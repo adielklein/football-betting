@@ -5,6 +5,7 @@ import LiveScore from './LiveScore';
 import useLiveScores from '../../services/useLiveScores';
 import { setUnsavedChecker } from '../../services/unsavedGuard';
 import { toast } from '../../services/toast';
+import Score from '../Score';
 
 // שם קבוצה לחיץ - פותח את חלון הנתונים. התג על הלוגו מסמן שאפשר ללחוץ
 // בלי להוסיף גובה לשורה הצפופה.
@@ -617,7 +618,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   borderRadius: '8px',
                   border: '1px solid #ffe082'
                 }}>
-                  {existingBet.team1Goals}-{existingBet.team2Goals} ← {currentBet.team1Goals || '?'}-{currentBet.team2Goals || '?'}
+                  <Score home={existingBet.team1Goals} away={existingBet.team2Goals} /> ← <Score home={currentBet.team1Goals} away={currentBet.team2Goals} />
                 </div>
               )}
 
@@ -637,11 +638,11 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                 }}>
                   <span style={{ color: 'var(--text-4, #999)', fontSize: '12px' }}>תוצאה:</span>
                   <span style={{ fontWeight: '800', fontSize: '15px', color: 'var(--text, #333)' }}>
-                    {match.result.team1Goals}-{match.result.team2Goals}
+                    <Score home={match.result.team1Goals} away={match.result.team2Goals} />
                   </span>
                   {match.result.finalScore && (
                     <span style={{ fontSize: '11px', color: 'var(--text-3, #888)', fontWeight: 'normal' }}>
-                      ({match.result.finalScore.team1Goals}-{match.result.finalScore.team2Goals}
+                      (<Score home={match.result.finalScore.team1Goals} away={match.result.finalScore.team2Goals} />
                       {match.result.finalScore.penalties && `, פנדלים ${match.result.finalScore.penalties.team1}-${match.result.finalScore.penalties.team2}`} לאחר הארכה)
                     </span>
                   )}

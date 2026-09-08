@@ -1,4 +1,5 @@
 import React from 'react';
+import Score from '../Score';
 
 // התוצאה החיה של משחק בודד. מוצגת בסדר team1-team2 כמו בכל שאר המסכים.
 //
@@ -43,10 +44,8 @@ function LiveScore({ live, compact = false }) {
         />
       )}
 
-      {/* המספרים בכיוון שמאל-לימין כדי שלא יתהפכו בתוך טקסט עברי */}
-      <span style={{ direction: 'ltr', unicodeBidi: 'isolate', fontVariantNumeric: 'tabular-nums' }}>
-        {live.team1Goals}-{live.team2Goals}
-      </span>
+      {/* הקבוצה הראשונה מימין, כמו בכותרת המשחק */}
+      <Score home={live.team1Goals} away={live.team2Goals} />
 
       <span style={{ fontWeight: 600, opacity: 0.85 }}>
         {isLive ? live.minute || live.statusText || 'חי' : 'הסתיים'}
