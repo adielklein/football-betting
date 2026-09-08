@@ -173,3 +173,70 @@ test('הרקע הסמנטי מתהפך יחד עם המצב', () => {
     assert.ok(luminance(dark[`--${k}-bg`]) < 0.15, `${k}-bg במצב כהה בהיר מדי`);
   }
 });
+
+// === שכבת ההבלטה שבתוך תגית צבעונית ===
+//
+// תגית הניקוד בשורת הפודיום היא שכבה שקופה מעל רקע המדליה, והמספר עליה
+// בצבע החזית של אותה מדליה. כשהשכבה מלבינה בשני המצבים, מספר בהיר על
+// שכבת לובן מקבל ניגודיות 1.0 - כלומר נעלם לגמרי. זה קרה בפועל.
+
+const rgb = (hex) => {
+  let x = hex.replace('#', '');
+  if (x.length === 3) x = x.split('').map((c) => c + c).join('');
+  return [0, 2, 4].map((i) => parseInt(x.slice(i, i + 2), 16));
+};
+const lumRgb = ([r, g, b]) => {
+  const f = [r, g, b].map((v) => {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * f[0] + 0.7152 * f[1] + 0.0722 * f[2];
+};
+const contrastRgb = (a, b) => {
+  const [hi, lo] = [lumRgb(a), lumRgb(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+};
+// שכבה שקופה מעל רקע אטום
+const composite = (bgHex, overlay) => {
+  const m = overlay.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?/);
+  assert.ok(m, `לא ניתן לפרסר את השכבה: ${overlay}`);
+  const [, r, g, b, a = '1'] = m;
+  const top = [+r, +g, +b];
+  const alpha = parseFloat(a);
+  return rgb(bgHex).map((c, i) => Math.round(c * (1 - alpha) + top[i] * alpha));
+};
+
+const overlayOf = (block) => {
+  const m = block.match(/--overlay\s*:\s*(rgba?\([^)]*\))/);
+  return m ? m[1] : null;
+};
+
+const TINTED = ['gold', 'silver', 'bronze', 'me'];
+
+test('שכבת ההבלטה מוגדרת בשני המצבים', () => {
+  assert.ok(overlayOf(blockAround('--overlay')), 'חסרה במצב בהיר');
+  assert.ok(overlayOf(blockAround(':root[data-theme="dark"]')), 'חסרה במצב כהה');
+});
+
+test('המספר על שכבת ההבלטה קריא בשני המצבים', () => {
+  const overlays = {
+    light: overlayOf(blockAround('--overlay')),
+    dark: overlayOf(blockAround(':root[data-theme="dark"]'))
+  };
+  for (const kind of TINTED) {
+    for (const [mode, tokens] of [['בהיר', light], ['כהה', dark]]) {
+      const key = mode === 'בהיר' ? 'light' : 'dark';
+      const surface = composite(tokens[`--${kind}-bg`], overlays[key]);
+      const c = contrastRgb(surface, rgb(tokens[`--${kind}-fg`]));
+      assert.ok(c >= 4.5, `${mode}: ${kind} על שכבת ההבלטה = ${c.toFixed(2)}, נדרש 4.5`);
+    }
+  }
+});
+
+test('השכבה מלבינה בבהיר ומכהה בכהה', () => {
+  // אם שתיהן מלבינות, המצב הכהה נשבר. זו בדיוק הרגרסיה שקרתה.
+  const l = composite('#808080', overlayOf(blockAround('--overlay')));
+  const d = composite('#808080', overlayOf(blockAround(':root[data-theme="dark"]')));
+  assert.ok(lumRgb(l) > lumRgb(rgb('#808080')), 'השכבה הבהירה חייבת להבהיר');
+  assert.ok(lumRgb(d) < lumRgb(rgb('#808080')), 'השכבה הכהה חייבת להכהות');
+});

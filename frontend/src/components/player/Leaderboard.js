@@ -224,7 +224,7 @@ function Leaderboard({ leaderboard, user }) {
           fontSize: isTop3 ? '18px' : '15px',
           color: rowFg,
           flexShrink: 0,
-          background: isTop3 ? 'rgba(255,255,255,0.7)' : 'var(--surface-3, #f5f5f5)',
+          background: isTop3 ? 'var(--overlay, rgba(255,255,255,0.72))' : 'var(--surface-3, #f5f5f5)',
           padding: '2px 12px',
           borderRadius: '10px',
           minWidth: '40px',

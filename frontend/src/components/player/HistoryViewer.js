@@ -351,7 +351,7 @@ function HistoryViewer({ weeks, user }) {
                       </div>
                       <span style={{
                         fontWeight: '800', fontSize: isTop3 ? '16px' : '14px', flexShrink: 0,
-                        padding: '2px 10px', background: isTop3 ? 'rgba(255,255,255,0.7)' : 'var(--surface-3, #f5f5f5)',
+                        padding: '2px 10px', background: isTop3 ? 'var(--overlay, rgba(255,255,255,0.72))' : 'var(--surface-3, #f5f5f5)',
                         borderRadius: '10px', color: rowFg
                       }}>{player.score}</span>
                     </div>
