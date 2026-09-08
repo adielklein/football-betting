@@ -654,6 +654,50 @@ router.get('/insights/:matchId', async (req, res) => {
   }
 });
 
+// 🔴 טבלה חיה - הדירוג השבועי כפי שהיה נראה אילו הכל היה נגמר עכשיו.
+//
+// מה שמעניין כאן אינו הניקוד אלא התנועה: ההפרש בין הדירוג לפי מה שכבר
+// סגור לבין הדירוג כולל המשחקים שמתנהלים ברגע זה. שער אחד במגרש מזיז
+// שורות על המסך.
+router.get('/live-table/:weekId', async (req, res) => {
+  try {
+    const weekId = req.params.weekId;
+    const User = require('../models/User');
+    const Bet = require('../models/Bet');
+    const MonthExclusion = require('../models/MonthExclusion');
+    const Week = require('../models/Week');
+    const { buildLiveTable } = require('../services/liveTable');
+
+    const week = await Week.findById(weekId).lean();
+    if (!week) return res.status(404).json({ message: 'השבוע לא נמצא' });
+
+    const [matches, players, bets, exclusions] = await Promise.all([
+      Match.find({ weekId }, 'team1 team2 result odds externalId fullDate').lean(),
+      User.find({ role: { $ne: 'admin' } }, 'name').lean(),
+      Bet.find({ weekId }, 'userId matchId prediction').lean(),
+      MonthExclusion.find({ month: week.month, season: week.season }, 'userId').lean()
+    ]);
+
+    // מוחרגים מהחודש אינם בתחרות השבוע הזה, בדיוק כמו בטבלה הרגילה
+    const excluded = new Set(exclusions.map((e) => String(e.userId)));
+    const inPlay = players.filter((p) => !excluded.has(String(p._id)));
+
+    const live = await liveScores.getLiveForWeek(weekId, matches);
+    const table = buildLiveTable(inPlay, matches, bets, live);
+
+    res.json({
+      weekId,
+      weekName: week.name,
+      ...table,
+      at: new Date()
+    });
+  } catch (err) {
+    console.error('❌ [external/live-table] error:', err.message);
+    // הטבלה החיה היא תוספת ולא תלות: כישלון לא אמור לשבור את מסך הטבלה
+    res.json({ rows: [], liveMatches: 0, pendingMatches: 0, error: true });
+  }
+});
+
 // 🔴 מצב חי - תוצאות ודקת משחק לשבוע. פתוח לשחקנים, קריאה בלבד.
 //
 // התשובה נשמרת בזיכרון לזמן קצר, ולכן כמה שחקנים שמסתכלים במקביל

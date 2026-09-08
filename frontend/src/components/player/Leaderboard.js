@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import LiveTable from './LiveTable';
 
 function Leaderboard({ leaderboard, user }) {
   const [monthlyScores, setMonthlyScores] = useState([]);
@@ -244,6 +245,10 @@ function Leaderboard({ leaderboard, user }) {
 
   return (
     <div>
+      {/* הטבלה החיה מציגה את עצמה רק כשבאמת יש משחק שמתנהל, ולכן היא
+          יושבת מעל הכל - ברגע שהיא מופיעה היא הדבר שרוצים לראות. */}
+      <LiveTable weekId={selectedWeekId} meUserId={user?.id || user?._id} />
+
       {/* Tab bar */}
       <div style={{
         display: 'grid',
