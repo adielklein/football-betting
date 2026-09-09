@@ -91,6 +91,22 @@ app.get('/api/audit', requireAdmin, async (req, res) => {
   }
 });
 
+// איזו גרסה רצה כאן. Render מזריק את משתני הגיט לבד בכל דיפלוי, ולכן
+// אין מה לתחזק - התשובה נכונה מעצמה. הנקודה פתוחה בלי אימות בכוונה:
+// הריפו ציבורי, ה-SHA לא חושף דבר, וכל הערך שלה הוא בזמינות המיידית.
+app.get('/api/version', (req, res) => {
+  const uptimeSeconds = Math.round(process.uptime());
+  const commit = process.env.RENDER_GIT_COMMIT || null;
+  res.json({
+    service: process.env.RENDER_SERVICE_NAME || 'local',
+    commit,
+    shortCommit: commit ? commit.slice(0, 7) : null,
+    branch: process.env.RENDER_GIT_BRANCH || null,
+    startedAt: new Date(Date.now() - uptimeSeconds * 1000).toISOString(),
+    uptimeSeconds
+  });
+});
+
 // Debug endpoint
 app.get('/api/debug', requireAdmin, async (req, res) => {
   try {

@@ -1,8 +1,22 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// הקומיט שממנו נבנתה החבילה, חתום לתוך index.html.
+//
+// Render מזריק את RENDER_GIT_COMMIT לסביבת הבנייה, ולכן אין מה לתחזק כאן.
+// index.html נבחר כי הוא הקובץ היחיד שתמיד מוגש ואף פעם לא נשמר בקאש
+// לאורך זמן - שאילתה אחת עליו עונה מה בדיוק רץ בפרודקשן.
+const COMMIT = process.env.RENDER_GIT_COMMIT || 'dev';
+
+const stampCommit = () => ({
+  name: 'stamp-commit',
+  transformIndexHtml: () => [
+    { tag: 'meta', attrs: { name: 'app-commit', content: COMMIT }, injectTo: 'head' }
+  ]
+});
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), stampCommit()],
 
   // כל קבצי המקור כאן הם .js גם כשיש בהם JSX. Vite קובע איך לפרסר קובץ לפי
   // הסיומת בלבד, ועל .js הוא מריץ loader של JS רגיל שלא יודע לקרוא JSX -

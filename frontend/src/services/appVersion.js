@@ -47,7 +47,7 @@ const servedBundle = async () => {
   // ואז לעולם לא נראה את הגרסה החדשה
   const res = await fetch(`/index.html?t=${Date.now()}`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`index ${res.status}`);
-  return bundleFrom(await res.text());
+  return bundleFromHtml(await res.text());
 };
 
 // מפעיל את onUpdateAvailable פעם אחת כשמתגלה גרסה חדשה. מחזיר פונקציית ניקוי.
