@@ -77,8 +77,9 @@ router.post('/calculate/:weekId', requireAdmin, async (req, res) => {
           entry.exactMatches.push({
             team1: match.team1,
             team2: match.team2,
-            // סדר טבעי team1-team2, כמו בכל מסכי האפליקציה
-            score: `${match.result.team1Goals}-${match.result.team2Goals}`
+            // רווחים סביב המקף בכוונה: בשורה עברית זו הצורה היחידה
+            // שבה שערי team1 נשארים בצד שבו נמצא שמה
+            score: `${match.result.team1Goals} - ${match.result.team2Goals}`
           });
         }
       }

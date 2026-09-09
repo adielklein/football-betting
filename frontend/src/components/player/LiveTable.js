@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Score from '../Score';
 
 // טבלה חיה: הדירוג השבועי כפי שהיה נראה אילו הכל היה נגמר עכשיו.
 //
@@ -15,6 +16,8 @@ const API_URL = window.location.hostname === 'localhost'
 
 const REFRESH_MS = 60 * 1000;
 
+// מספר בודד בלבד. זוג תוצאה הוא לא מספר בודד - הוא הולך ל-Score,
+// שמציב את הקבוצה הראשונה מימין כמו שמה.
 const Num = ({ children }) => (
   <span style={{ direction: 'ltr', unicodeBidi: 'isolate', fontVariantNumeric: 'tabular-nums' }}>
     {children}
@@ -165,7 +168,7 @@ function LiveTable({ weekId, meUserId }) {
                     <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {g.team1} נגד {g.team2}
                     </span>
-                    <span style={{ color: 'var(--text-4, #aaa)' }}><Num>{g.score}</Num></span>
+                    <span style={{ color: 'var(--text-4, #aaa)' }}><Score pair={g.score} /></span>
                     {g.minute && <span style={{ color: 'var(--bad-fg, #b3261e)', fontWeight: 700 }}>{g.minute}</span>}
                     <span style={{ fontWeight: 800, color: 'var(--good-fg, #1a6b35)', minWidth: '28px', textAlign: 'left' }}>
                       <Num>+{g.points}</Num>

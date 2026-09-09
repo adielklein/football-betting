@@ -354,7 +354,7 @@ router.patch('/:id/result', requireAdmin, async (req, res) => {
 
     // Audit log
     if (adminId) {
-      logAdminAction(adminId, 'עדכון תוצאה', `${match.team1} ${team1Goals}-${team2Goals} ${match.team2}`, { matchId: match._id });
+      logAdminAction(adminId, 'עדכון תוצאה', `${match.team1} ${team1Goals} - ${team2Goals} ${match.team2}`, { matchId: match._id });
     }
 
     res.json(match);

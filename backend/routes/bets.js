@@ -114,7 +114,7 @@ router.post('/', async (req, res) => {
     if (isAdmin && requestedByUserId && requestedByUserId !== userId) {
       const player = await User.findById(userId);
       const match = await Match.findById(matchId);
-      logAdminAction(requestedByUserId, 'עדכון הימור של שחקן', `${player?.name}: ${match?.team1} ${team1Goals}-${team2Goals} ${match?.team2}`, { playerId: userId, matchId, weekId });
+      logAdminAction(requestedByUserId, 'עדכון הימור של שחקן', `${player?.name}: ${match?.team1} ${team1Goals} - ${team2Goals} ${match?.team2}`, { playerId: userId, matchId, weekId });
     }
 
     res.json(bet);
@@ -183,7 +183,7 @@ router.patch('/:id', async (req, res) => {
     // Audit log - כשאדמין מעדכן הימור
     if (isAdmin && requestedByUserId) {
       const match = await Match.findById(existingBet.matchId);
-      logAdminAction(requestedByUserId, 'עדכון הימור של שחקן', `${betOwner?.name}: ${match?.team1} ${prediction.team1Goals}-${prediction.team2Goals} ${match?.team2}`, { betId: req.params.id, playerId: betOwner._id });
+      logAdminAction(requestedByUserId, 'עדכון הימור של שחקן', `${betOwner?.name}: ${match?.team1} ${prediction.team1Goals} - ${prediction.team2Goals} ${match?.team2}`, { betId: req.params.id, playerId: betOwner._id });
     }
 
     res.json(bet);
