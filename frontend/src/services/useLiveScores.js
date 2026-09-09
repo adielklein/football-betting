@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { goalTimestamps } from './liveNumbers';
 
 // מצב חי לשבוע: תוצאה ודקת משחק, מתעדכן כל עוד יש משחק שמתנהל.
 //
@@ -16,11 +17,17 @@ const API_URL = window.location.hostname === 'localhost'
 export default function useLiveScores(weekId) {
   const [byMatchId, setByMatchId] = useState({});
   const [anyLive, setAnyLive] = useState(false);
+  // מתי נכנס שער בכל משחק. חותמת הזמן היא שמפעילה את ההבזק מחדש,
+  // ולכן שני שערים ברצף מהבהבים פעמיים ולא פעם אחת ארוכה.
+  const [goalAt, setGoalAt] = useState({});
+  const lastGames = useRef({});
 
   useEffect(() => {
     if (!weekId) {
       setByMatchId({});
       setAnyLive(false);
+      setGoalAt({});
+      lastGames.current = {};
       return undefined;
     }
 
@@ -44,6 +51,8 @@ export default function useLiveScores(weekId) {
 
         const map = {};
         (data.games || []).forEach((g) => { map[g.matchId] = g; });
+        setGoalAt((prev) => goalTimestamps(lastGames.current, map, prev));
+        lastGames.current = map;
         setByMatchId(map);
         setAnyLive(!!data.live);
         schedule(!!data.live);
@@ -64,5 +73,5 @@ export default function useLiveScores(weekId) {
     };
   }, [weekId]);
 
-  return { liveByMatchId: byMatchId, anyLive };
+  return { liveByMatchId: byMatchId, anyLive, goalAtByMatchId: goalAt };
 }

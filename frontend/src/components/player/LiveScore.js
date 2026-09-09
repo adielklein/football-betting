@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Score from '../Score';
 import { liveBetStatus, showsLiveBadge, STATUS_LABEL } from '../../services/liveBetStatus';
 
@@ -20,6 +20,19 @@ const NEUTRAL_LIVE = { bg: 'var(--bad-bg, #fff0f1)', fg: '#dc3545', border: 'var
 const NEUTRAL_DONE = { bg: 'var(--surface-3, #f1f3f5)', fg: 'var(--text-3, #6c757d)', border: 'var(--border-2, #e3e6ea)' };
 
 function LiveScore({ live, prediction, result, compact = false }) {
+  // קפיצה קצרה כשהמספר משתנה. המפתח הוא חותמת זמן, כי אנימציה חוזרת
+  // דורשת אלמנט חדש - אותו אלמנט עם אותה אנימציה פשוט לא מתחיל שוב.
+  const pair = live ? `${live.team1Goals}-${live.team2Goals}` : null;
+  const lastPair = useRef(pair);
+  const [bumpAt, setBumpAt] = useState(0);
+
+  useEffect(() => {
+    if (lastPair.current !== null && pair !== null && lastPair.current !== pair) {
+      setBumpAt(Date.now());
+    }
+    lastPair.current = pair;
+  }, [pair]);
+
   if (!showsLiveBadge(live, result)) return null;
 
   const isLive = live.status === 'live';
@@ -65,7 +78,9 @@ function LiveScore({ live, prediction, result, compact = false }) {
       )}
 
       {/* הקבוצה הראשונה מימין, כמו בכותרת המשחק */}
-      <Score home={live.team1Goals} away={live.team2Goals} />
+      <span key={bumpAt} style={{ display: 'inline-flex', animation: bumpAt ? 'scoreBump 0.55s ease' : undefined }}>
+        <Score home={live.team1Goals} away={live.team2Goals} />
+      </span>
 
       <span aria-hidden="true" style={{ fontWeight: 600, opacity: 0.85 }}>
         {stateText}

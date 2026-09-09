@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import TeamLogo from '../TeamLogo';
 import LiveScore from './LiveScore';
+import GoalFlash from './GoalFlash';
 import useLiveScores from '../../services/useLiveScores';
 import { showsLiveBadge } from '../../services/liveBetStatus';
 import MatchInsightsModal from './MatchInsightsModal';
@@ -14,7 +15,7 @@ function AllBetsViewer({ weeks, user }) {
   const [loading, setLoading] = useState(false);
   const [expandedMatches, setExpandedMatches] = useState({});
 
-  const { liveByMatchId } = useLiveScores(selectedWeek?._id);
+  const { liveByMatchId, goalAtByMatchId } = useLiveScores(selectedWeek?._id);
   const [insightsFor, setInsightsFor] = useState(null);
 
   const [selectedSeason, setSelectedSeason] = useState('');
@@ -232,8 +233,10 @@ function AllBetsViewer({ weeks, user }) {
               {matches.map((match, matchIndex) => (
                 <div key={match._id} className="card" style={{
                   padding: '0.65rem',
+                  position: 'relative',
                   animation: `slideUp 0.25s ease ${matchIndex * 0.04}s both`
                 }}>
+                  <GoalFlash at={goalAtByMatchId[match._id]} />
                   {/* כותרת משחק - לחיץ */}
                   {(() => {
                     const myBet = getBetForUserAndMatch(user.id, match._id);

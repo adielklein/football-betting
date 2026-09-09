@@ -760,6 +760,29 @@ tr:hover {
   }
 }
 
+/* שער נכנס במשחק שהימרת עליו - ראה player/LiveScore.js ואת כרטיסי המשחק.
+   טבעת שנדלקת ודועכת על גבול הכרטיס. היא מצוירת בשכבה נפרדת מעל הכרטיס
+   ולא עליו, כדי שאפשר יהיה להפעיל אותה מחדש בכל שער בלי לטעון מחדש את
+   הכרטיס עצמו על כל מה שיש בו. */
+@keyframes goalFlash {
+  0%   { opacity: 0; }
+  12%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* המספר החדש נכנס בקפיצה קצרה, כדי שהעין תתפוס שהוא השתנה */
+@keyframes scoreBump {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.32); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes scoreBump {
+    0%, 100% { transform: none; }
+  }
+}
+
 /* הודעות קצרות - ראה components/ToastHost.js */
 @keyframes toastHostIn {
   from { opacity: 0; transform: translateY(-12px) scale(0.97); }

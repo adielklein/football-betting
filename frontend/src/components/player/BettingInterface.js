@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import TeamLogo from '../TeamLogo';
 import MatchInsightsModal from './MatchInsightsModal';
 import LiveScore from './LiveScore';
+import GoalFlash from './GoalFlash';
 import useLiveScores from '../../services/useLiveScores';
 import { showsLiveBadge } from '../../services/liveBetStatus';
 import { setUnsavedChecker } from '../../services/unsavedGuard';
@@ -81,7 +82,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
   // עם המציאות מיד, בלי להמתין לטעינה מחדש של השבוע.
   const [lockedByServer, setLockedByServer] = useState(false);
 
-  const { liveByMatchId } = useLiveScores(selectedWeek?._id);
+  const { liveByMatchId, goalAtByMatchId } = useLiveScores(selectedWeek?._id);
 
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
@@ -407,6 +408,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
 
           return (
             <div key={match._id} style={{
+              position: 'relative',
               padding: '0.7rem',
               border: '2px solid',
               borderColor: justSaved ? '#20c997' : (isSaved ? 'var(--border-2, #c3e6cb)' : 'var(--border, #eee)'),
@@ -418,6 +420,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                 : (isSaved ? '0 2px 8px rgba(0,0,0,0.04)' : '0 1px 4px rgba(0,0,0,0.06)'),
               animation: `slideUp 0.3s ease ${index * 0.03}s both`
             }}>
+              <GoalFlash at={goalAtByMatchId[match._id]} radius="14px" />
               {/* שורה עליונה: מספר + ליגה + תאריך */}
               <div style={{
                 display: 'flex',

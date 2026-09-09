@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Score from '../Score';
+import RollingNumber from '../RollingNumber';
 
 // טבלה חיה: הדירוג השבועי כפי שהיה נראה אילו הכל היה נגמר עכשיו.
 //
@@ -15,6 +16,64 @@ const API_URL = window.location.hostname === 'localhost'
   : 'https://football-betting-backend.onrender.com/api';
 
 const REFRESH_MS = 60 * 1000;
+const SLIDE_MS = 520;
+
+const prefersReduced = () =>
+  window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// השורות גולשות למקום החדש במקום לקפוץ אליו.
+//
+// הטכניקה היא FLIP: מודדים איפה כל שורה הייתה, נותנים ל-React לצייר את
+// הסדר החדש, ואז מחזירים כל שורה להיסט הישן שלה בלי מעבר - ומיד משחררים
+// אותה עם מעבר. הדפדפן מנפיש מהמקום הישן אל החדש, ולכן העין רואה את
+// המעקף עצמו ולא רק את התוצאה שלו.
+//
+// עובדים על transform ולא על top: הוא לא גורם לפריסה מחדש, ולכן שמונה
+// שורות שזזות יחד לא עולות דבר.
+const useSlideOnReorder = (order) => {
+  const nodes = useRef(new Map());
+  const offsets = useRef(new Map());
+  const lastOrder = useRef(order);
+
+  // רץ אחרי כל ציור ולא רק כשהסדר משתנה. פתיחת שורה דוחפת את כל מה
+  // שמתחתיה בלי לשנות סדר, ואם לא נמדוד גם אז, המדידה השמורה תתיישן -
+  // והמעקף הבא ייצא מנקודה שכבר לא נכונה.
+  useLayoutEffect(() => {
+    const previous = offsets.current;
+    const reordered = lastOrder.current !== order;
+    lastOrder.current = order;
+
+    const current = new Map();
+
+    nodes.current.forEach((el, id) => {
+      if (el) current.set(id, el.offsetTop);
+    });
+
+    if (reordered && previous.size && !prefersReduced()) {
+      current.forEach((top, id) => {
+        const was = previous.get(id);
+        if (was == null || was === top) return;
+        const el = nodes.current.get(id);
+        if (!el) return;
+
+        el.style.transition = 'none';
+        el.style.transform = `translateY(${was - top}px)`;
+        // קריאה לפני השחרור, אחרת הדפדפן מאחד את שתי הכתיבות לאחת
+        // ושום מעבר לא מתרחש
+        void el.offsetHeight;
+        el.style.transition = `transform ${SLIDE_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`;
+        el.style.transform = '';
+      });
+    }
+
+    offsets.current = current;
+  });
+
+  return (id) => (el) => {
+    if (el) nodes.current.set(id, el);
+    else nodes.current.delete(id);
+  };
+};
 
 // מספר בודד בלבד. זוג תוצאה הוא לא מספר בודד - הוא הולך ל-Score,
 // שמציב את הקבוצה הראשונה מימין כמו שמה.
@@ -27,6 +86,9 @@ const Num = ({ children }) => (
 function LiveTable({ weekId, meUserId }) {
   const [data, setData] = useState(null);
   const [expanded, setExpanded] = useState(null);
+  const rowRef = useSlideOnReorder(
+    (data && data.rows ? data.rows.map((r) => r.userId).join(',') : '')
+  );
 
   useEffect(() => {
     if (!weekId) { setData(null); return undefined; }
@@ -101,7 +163,7 @@ function LiveTable({ weekId, meUserId }) {
         const open = expanded === r.userId;
 
         return (
-          <div key={r.userId}>
+          <div key={r.userId} ref={rowRef(r.userId)} style={{ position: 'relative' }}>
             <div
               onClick={() => setExpanded(open ? null : r.userId)}
               style={{
@@ -154,7 +216,7 @@ function LiveTable({ weekId, meUserId }) {
                 fontSize: '14px', fontWeight: 800, minWidth: '34px', textAlign: 'left',
                 color: me ? 'var(--me-fg, #14508f)' : 'var(--text, #333)'
               }}>
-                <Num>{r.liveScore}</Num>
+                <RollingNumber value={r.liveScore} />
               </span>
             </div>
 
