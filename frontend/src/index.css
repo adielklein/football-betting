@@ -783,6 +783,24 @@ tr:hover {
   }
 }
 
+/* מעבר לשונית. הכיוון הוא חלק מהמידע: בפריסה עברית הלשונית הבאה נמצאת
+   משמאל, ולכן היא נכנסת משם. מסך שנכנס מהצד הלא נכון קורא כמו חזרה
+   אחורה. ראה services/useSwipeNav.js */
+@keyframes tabInNext {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes tabInPrev {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes tabInNext { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes tabInPrev { from { opacity: 0; } to { opacity: 1; } }
+}
+
 /* הודעות קצרות - ראה components/ToastHost.js */
 @keyframes toastHostIn {
   from { opacity: 0; transform: translateY(-12px) scale(0.97); }

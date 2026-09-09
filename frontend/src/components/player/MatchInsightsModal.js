@@ -278,6 +278,9 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
   return (
     <div
       onClick={onClose}
+      /* חלון שנפתח מעל המסך הוא עולם משל עצמו: החלקה בתוכו לא מחליפה
+         את הלשונית שמתחתיו. ראה services/useSwipeNav.js */
+      data-no-swipe=""
       style={{
         position: 'fixed', inset: 0, zIndex: 11000,
         background: 'rgba(16,20,28,0.55)', backdropFilter: 'blur(3px)',

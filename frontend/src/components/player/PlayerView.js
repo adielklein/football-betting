@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../services/api';
 import { applyTheme } from '../../themes';
 import PlayerHeader from './PlayerHeader';
@@ -10,6 +10,8 @@ import PlayerStats from './PlayerStats';
 import NotificationSettings from '../NotificationSettings';
 import { confirmLeave } from '../../services/unsavedGuard';
 import useTabRoute from '../../services/useTabRoute';
+import useSwipeNav from '../../services/useSwipeNav';
+import { stepTab } from '../../services/swipeNav';
 
 function PlayerView({ user, onLogout }) {
   const [weeks, setWeeks] = useState([]);
@@ -19,11 +21,25 @@ function PlayerView({ user, onLogout }) {
   const [leaderboard, setLeaderboard] = useState([]);
   // הלשונית נגזרת מהכתובת, כדי שכפתור "חזור" יחזור ללשונית הקודמת
   // במקום לצאת מהאפליקציה, ושרענון או קישור ינחתו במקום הנכון.
+  const TAB_KEYS = ['betting', 'allbets', 'leaderboard', 'history', 'stats'];
   const [activeTab, setActiveTab] = useTabRoute(
-    ['betting', 'allbets', 'leaderboard', 'history', 'stats'],
+    TAB_KEYS,
     'betting',
     { onBeforeChange: () => confirmLeave() }
   );
+
+  // החלקה בין לשוניות. עוברת דרך setActiveTab ולא דרך הניווט ישירות, ולכן
+  // אזהרת "הימור לא שמור" חלה עליה בדיוק כמו על לחיצה על לשונית.
+  const swipe = useSwipeNav((intent) => {
+    const next = stepTab(TAB_KEYS, activeTab, intent);
+    if (next) setActiveTab(next);
+  });
+
+  // מאיזה צד המסך החדש נכנס. נגזר מהמרחק בין הלשוניות, ולכן גם לחיצה על
+  // לשונית רחוקה מקבלת את הכיוון הנכון.
+  const previousTab = useRef(activeTab);
+  const tabDelta = TAB_KEYS.indexOf(activeTab) - TAB_KEYS.indexOf(previousTab.current);
+  useEffect(() => { previousTab.current = activeTab; }, [activeTab]);
   const [loading, setLoading] = useState(true);
 
   const API_URL = window.location.hostname === 'localhost'
@@ -232,7 +248,18 @@ function PlayerView({ user, onLogout }) {
           })}
         </div>
 
-        <div style={{ animation: 'scaleIn 0.2s ease' }}>
+        <div
+          {...swipe}
+          key={activeTab}
+          /* אין כאן touchAction בכוונה. ההחלקה נמדדת מהתחלה לסוף בלבד
+             ולא קוראת ל-preventDefault, ולכן אין מה להגביל - ו-pan-y היה
+             דווקא מכבה גלילה לרוחב בטבלאות הרחבות שבפנים. */
+          style={{
+            animation: tabDelta === 0
+              ? 'scaleIn 0.2s ease'
+              : `${tabDelta > 0 ? 'tabInNext' : 'tabInPrev'} 0.24s ease`
+          }}
+        >
           {activeTab === 'betting' && (
             <BettingInterface
               selectedWeek={selectedWeek}
