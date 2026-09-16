@@ -286,7 +286,7 @@ function AllBetsViewer({ weeks, user }) {
                           WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation'
                         }}
                       >
-                        <TeamLogo name={match.team1} />
+                        <TeamLogo name={match.team1} src={match.team1LogoUrl} />
                         {match.team1}
                         <span style={{ fontSize: '9px', opacity: 0.55 }} aria-hidden="true">📊</span>
                       </button>
@@ -303,7 +303,7 @@ function AllBetsViewer({ weeks, user }) {
                           WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation'
                         }}
                       >
-                        <TeamLogo name={match.team2} />
+                        <TeamLogo name={match.team2} src={match.team2LogoUrl} />
                         {match.team2}
                         <span style={{ fontSize: '9px', opacity: 0.55 }} aria-hidden="true">📊</span>
                       </button>

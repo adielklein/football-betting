@@ -227,6 +227,12 @@ router.post('/bulk', requireAdmin, async (req, res) => {
       if (m.externalId) data.externalId = String(m.externalId);
       if (m.externalProvider) data.externalProvider = String(m.externalProvider);
 
+      // סמל ומזהה הקבוצה כפי שהספק החזיר אותם, כדי שלא נחפש אותם שוב במקום אחר
+      if (m.team1LogoUrl) data.team1LogoUrl = String(m.team1LogoUrl);
+      if (m.team2LogoUrl) data.team2LogoUrl = String(m.team2LogoUrl);
+      if (m.team1ExternalId) data.team1ExternalId = String(m.team1ExternalId);
+      if (m.team2ExternalId) data.team2ExternalId = String(m.team2ExternalId);
+
       if (m.odds) {
         const oddsData = {};
         if (m.odds.homeWin && parseFloat(m.odds.homeWin) >= 1) oddsData.homeWin = parseFloat(m.odds.homeWin);

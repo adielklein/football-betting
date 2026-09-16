@@ -1699,7 +1699,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                         marginBottom: '0.75rem'
                       }}>
                         <div style={{ textAlign: 'center', fontWeight: '500', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-                          <TeamLogo name={match.team1} />
+                          <TeamLogo name={match.team1} src={match.team1LogoUrl} />
                           <span style={{ fontSize: '13px' }}>{match.team1} (בית)</span>
                         </div>
                         
@@ -1756,7 +1756,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                         />
                         
                         <div style={{ textAlign: 'center', fontWeight: '500', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-                          <TeamLogo name={match.team2} />
+                          <TeamLogo name={match.team2} src={match.team2LogoUrl} />
                           <span style={{ fontSize: '13px' }}>{match.team2} (חוץ)</span>
                         </div>
                       </div>

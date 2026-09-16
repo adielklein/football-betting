@@ -24,12 +24,20 @@ const matchSchema = new mongoose.Schema({
     required: true 
   },
   
-  team2: { 
-    type: String, 
-    required: true 
+  team2: {
+    type: String,
+    required: true
   },
-  
-  date: { 
+
+  // זהות הקבוצות אצל הספק שממנו יובא המשחק (365). עד עכשיו נשמר רק השם,
+  // והסמלים התגלו מחדש בצד הלקוח מול Google Favicon/TheSportsDB - מקור אחר
+  // לגמרי מזה שממנו הגיע המשחק. הסמל והמזהה מגיעים כבר בייבוא, ולכן נשמרים
+  team1LogoUrl: { type: String, default: null },
+  team2LogoUrl: { type: String, default: null },
+  team1ExternalId: { type: String, default: null },
+  team2ExternalId: { type: String, default: null },
+
+  date: {
     type: String, 
     required: true 
   }, // "01.09" - פורמט DD.MM לתצוגה

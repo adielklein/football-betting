@@ -277,7 +277,7 @@ function HistoryViewer({ weeks, user }) {
 
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginBottom: '0.35rem' }}>
                         <span style={{ flex: '1 1 0', textAlign: 'center', fontWeight: '700', fontSize: '13px', lineHeight: 1.2, minWidth: 0, color: 'var(--text, #333)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                          <TeamLogo name={match.team1} />
+                          <TeamLogo name={match.team1} src={match.team1LogoUrl} />
                           {match.team1}
                         </span>
                         <div style={{ textAlign: 'center', flexShrink: 0 }}>
@@ -299,7 +299,7 @@ function HistoryViewer({ weeks, user }) {
                           )}
                         </div>
                         <span style={{ flex: '1 1 0', textAlign: 'center', fontWeight: '700', fontSize: '13px', lineHeight: 1.2, minWidth: 0, color: 'var(--text, #333)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                          <TeamLogo name={match.team2} />
+                          <TeamLogo name={match.team2} src={match.team2LogoUrl} />
                           {match.team2}
                         </span>
                       </div>

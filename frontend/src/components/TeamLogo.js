@@ -6,14 +6,24 @@ import { getTeamLogoUrl, fetchTeamLogoUrl, getTeamFlag } from '../utils/teamLogo
  * - נבחרות: דגל אנימטיבי (WebP מתנופף)
  * - מועדונים: סמל מ-TheSportsDB (עם favicon כ-placeholder)
  */
-function TeamLogo({ name, size = 18 }) {
+// src - סמל שהגיע עם המשחק מהספק שממנו הוא יובא (365). כשהוא קיים הוא מנצח
+// את הגילוי מול Google Favicon/TheSportsDB, שהוא ניחוש לפי שם ומכסה רק את
+// הקבוצות שנמצאות בטבלאות הידניות
+function TeamLogo({ name, size = 18, src = null }) {
   const flagUrl = getTeamFlag(name);
   // getTeamLogoUrl מחזיר ישירות (כולל TheSportsDB R2 לישראליות) - אין צורך בקאש כאן
-  const [logoUrl, setLogoUrl] = useState(() => flagUrl ? null : getTeamLogoUrl(name));
+  const [logoUrl, setLogoUrl] = useState(() => flagUrl ? null : (src || getTeamLogoUrl(name)));
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
     if (flagUrl) return;
+
+    // יש סמל מהספק - אין מה לגלות
+    if (src) {
+      setLogoUrl(src);
+      setHidden(false);
+      return;
+    }
 
     let cancelled = false;
     fetchTeamLogoUrl(name).then(url => {
@@ -23,7 +33,7 @@ function TeamLogo({ name, size = 18 }) {
       }
     });
     return () => { cancelled = true; };
-  }, [name, flagUrl]);
+  }, [name, flagUrl, src]);
 
   // נבחרת - דגל אנימטיבי
   if (flagUrl) {

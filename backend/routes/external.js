@@ -162,6 +162,8 @@ router.get('/fixtures', async (req, res) => {
         team2He: f.team2He || null,
         team1LogoUrl: f.team1LogoUrl,
         team2LogoUrl: f.team2LogoUrl,
+        team1ExternalId: f.team1ExternalId || null,
+        team2ExternalId: f.team2ExternalId || null,
         kickoffIso: f.kickoffIso,
         date: israelTs.date,
         time: israelTs.time,

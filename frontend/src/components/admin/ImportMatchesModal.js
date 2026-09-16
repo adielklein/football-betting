@@ -197,7 +197,12 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
             externalId: f.apiId,
             externalProvider: f.provider,
             // כל משחק נושא את הליגה שלו, כדי ש"כל הליגות" ייובא נכון בבקשה אחת
-            leagueId: f.leagueId
+            leagueId: f.leagueId,
+            // הסמל והמזהה שהספק כבר החזיר - נשמרים במקום להתגלות מחדש אחר כך
+            team1LogoUrl: f.team1LogoUrl,
+            team2LogoUrl: f.team2LogoUrl,
+            team1ExternalId: f.team1ExternalId,
+            team2ExternalId: f.team2ExternalId
           };
           if (includeOdds) {
             const odds = {};
@@ -421,7 +426,7 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
                       style={{ width: '18px', height: '18px' }}
                     />
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flex: '1 1 200px', minWidth: '180px' }}>
-                      <TeamLogo name={f.team1} size={20} />
+                      <TeamLogo name={f.team1} size={20} src={f.team1LogoUrl} />
                       <input
                         type="text"
                         value={f.team1}
@@ -432,7 +437,7 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
                     </div>
                     <span style={{ color: 'var(--text-3, #888)', fontWeight: 'bold' }}>vs</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flex: '1 1 200px', minWidth: '180px' }}>
-                      <TeamLogo name={f.team2} size={20} />
+                      <TeamLogo name={f.team2} size={20} src={f.team2LogoUrl} />
                       <input
                         type="text"
                         value={f.team2}

@@ -87,9 +87,13 @@ const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate,
         team1En: g.homeCompetitor?.name || 'Unknown',
         team1He: g.homeCompetitor?.name || null,
         team1LogoUrl: competitorImg(g.homeCompetitor?.id),
+        // מזהה הקבוצה אצל 365. זהות יציבה שלא תלויה באיות השם, ולכן שווה
+        // לשמור אותה על המשחק ולא רק את הסמל שנגזר ממנה
+        team1ExternalId: g.homeCompetitor?.id != null ? String(g.homeCompetitor.id) : null,
         team2En: g.awayCompetitor?.name || 'Unknown',
         team2He: g.awayCompetitor?.name || null,
-        team2LogoUrl: competitorImg(g.awayCompetitor?.id)
+        team2LogoUrl: competitorImg(g.awayCompetitor?.id),
+        team2ExternalId: g.awayCompetitor?.id != null ? String(g.awayCompetitor.id) : null
       };
     })
     .filter(Boolean);
