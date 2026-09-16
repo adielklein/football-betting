@@ -5,6 +5,20 @@ import TeamLogo from '../TeamLogo';
 
 const DAYS_OPTIONS = [3, 7, 14, 30];
 
+// YYYY-MM-DD לפי התאריך המקומי (לא UTC, כדי שברירת המחדל תהיה "היום" האמיתי אצל האדמין)
+const toYmd = (d) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+const addDays = (d, n) => {
+  const copy = new Date(d);
+  copy.setDate(copy.getDate() + n);
+  return copy;
+};
+
 function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
   const importableLeagues = useMemo(
     () => (leagues || []).filter((l) => l.footballDataCode || l.scores365CompetitionId || l.sportsDbLeagueId || l.sofaScoreTournamentId || l.espnLeagueCode),
@@ -13,12 +27,18 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
 
   const [leagueId, setLeagueId] = useState(importableLeagues[0]?._id || '');
   const [days, setDays] = useState(7);
+  // 'days' - X ימים קדימה מהיום (ברירת המחדל). 'range' - טווח תאריכים מפורש,
+  // לשבוע ספציפי שלא בהכרח מתחיל היום (למשל מתכננים שבוע הבא מראש)
+  const [rangeMode, setRangeMode] = useState('days');
+  const [customFrom, setCustomFrom] = useState(() => toYmd(new Date()));
+  const [customTo, setCustomTo] = useState(() => toYmd(addDays(new Date(), 7)));
   const [includeOdds, setIncludeOdds] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [fixtures, setFixtures] = useState([]);
   const [providerName, setProviderName] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (!leagueId && importableLeagues.length > 0) {
@@ -28,11 +48,18 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
 
   const loadFixtures = async ({ refresh = false } = {}) => {
     if (!leagueId) return;
+    if (rangeMode === 'range' && (!customFrom || !customTo)) return;
     setLoading(true);
     setError('');
     setFixtures([]);
     try {
-      const data = await api.getUpcomingFixtures({ leagueId, days, includeOdds, refresh });
+      const data = await api.getUpcomingFixtures({
+        leagueId,
+        days,
+        includeOdds,
+        refresh,
+        ...(rangeMode === 'range' ? { fromDate: customFrom, toDate: customTo } : {})
+      });
       setProviderName(data.provider || null);
       const mapped = (data.fixtures || []).map((f) => ({
         ...f,
@@ -58,7 +85,7 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
 
   useEffect(() => {
     if (leagueId) loadFixtures();
-  }, [leagueId, days, includeOdds]);
+  }, [leagueId, days, includeOdds, rangeMode, customFrom, customTo]);
 
   const toggleSelected = (idx) => {
     setFixtures((prev) => prev.map((f, i) => (i === idx ? { ...f, selected: !f.selected } : f)));
@@ -78,9 +105,22 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
 
   const selectedCount = fixtures.filter((f) => f.selected).length;
 
+  // חיפוש שם קבוצה אחרי משיכה - נוח כשליגה מחזירה עשרות משחקים ורוצים
+  // לאתר מהר משחק ספציפי בלי לגלול על כל הרשימה
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredIndexed = fixtures
+    .map((f, idx) => ({ f, idx }))
+    .filter(({ f }) => {
+      if (!normalizedQuery) return true;
+      const t1 = (f.team1 || '').toLowerCase();
+      const t2 = (f.team2 || '').toLowerCase();
+      return t1.includes(normalizedQuery) || t2.includes(normalizedQuery);
+    });
+
   const handleSelectAll = () => {
-    const allSelected = fixtures.length > 0 && fixtures.every((f) => f.selected);
-    setFixtures((prev) => prev.map((f) => ({ ...f, selected: !allSelected })));
+    const visibleIdx = filteredIndexed.map(({ idx }) => idx);
+    const allSelected = visibleIdx.length > 0 && visibleIdx.every((idx) => fixtures[idx].selected);
+    setFixtures((prev) => prev.map((f, i) => (visibleIdx.includes(i) ? { ...f, selected: !allSelected } : f)));
   };
 
   const handleImport = async () => {
@@ -180,18 +220,55 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
             </select>
           </div>
           <div style={{ flex: '0 0 120px' }}>
-            <label>טווח ימים:</label>
+            <label>טווח:</label>
             <select
-              value={days}
-              onChange={(e) => setDays(parseInt(e.target.value, 10))}
+              value={rangeMode}
+              onChange={(e) => setRangeMode(e.target.value)}
               className="input"
               disabled={loading || submitting}
             >
-              {DAYS_OPTIONS.map((d) => (
-                <option key={d} value={d}>{d} ימים</option>
-              ))}
+              <option value="days">ימים קדימה</option>
+              <option value="range">תאריכים מותאם</option>
             </select>
           </div>
+          {rangeMode === 'days' ? (
+            <div style={{ flex: '0 0 120px' }}>
+              <label>מספר ימים:</label>
+              <select
+                value={days}
+                onChange={(e) => setDays(parseInt(e.target.value, 10))}
+                className="input"
+                disabled={loading || submitting}
+              >
+                {DAYS_OPTIONS.map((d) => (
+                  <option key={d} value={d}>{d} ימים</option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <>
+              <div style={{ flex: '0 0 150px' }}>
+                <label>מתאריך:</label>
+                <input
+                  type="date"
+                  value={customFrom}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                  className="input"
+                  disabled={loading || submitting}
+                />
+              </div>
+              <div style={{ flex: '0 0 150px' }}>
+                <label>עד תאריך:</label>
+                <input
+                  type="date"
+                  value={customTo}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  className="input"
+                  disabled={loading || submitting}
+                />
+              </div>
+            </>
+          )}
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '14px' }}>
             <input
               type="checkbox"
@@ -237,16 +314,32 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
 
           {!loading && fixtures.length > 0 && (
             <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <button onClick={handleSelectAll} className="btn" style={{ fontSize: '13px' }}>
-                  {fixtures.every((f) => f.selected) ? 'נקה הכל' : 'בחר הכל'}
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="input"
+                placeholder="🔎 חיפוש לפי שם קבוצה..."
+                style={{ marginBottom: '0.5rem', width: '100%' }}
+              />
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                <button onClick={handleSelectAll} className="btn" style={{ fontSize: '13px' }} disabled={filteredIndexed.length === 0}>
+                  {filteredIndexed.length > 0 && filteredIndexed.every(({ idx }) => fixtures[idx].selected) ? 'נקה הכל' : 'בחר הכל'}
                 </button>
                 <span style={{ fontSize: '13px', color: 'var(--text-3, #666)' }}>
                   {selectedCount} מתוך {fixtures.length} נבחרו
+                  {normalizedQuery && ` (מוצגים ${filteredIndexed.length})`}
                 </span>
               </div>
 
-              {fixtures.map((f, idx) => (
+              {normalizedQuery && filteredIndexed.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-3, #666)', fontSize: '13px' }}>
+                  לא נמצאו משחקים התואמים "{searchQuery}"
+                </div>
+              )}
+
+              {filteredIndexed.map(({ f, idx }) => (
                 <div
                   key={f.apiId}
                   style={{

@@ -6,7 +6,8 @@ function LeaguesManagement() {
   const [editingLeague, setEditingLeague] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [newLeague, setNewLeague] = useState({
-    name: '', key: '', color: '#6c757d', type: 'club', region: '', active: true, order: 0, apiFootballId: ''
+    name: '', key: '', color: '#6c757d', type: 'club', region: '', active: true, order: 0, apiFootballId: '',
+    footballDataCode: '', espnLeagueCode: '', sofaScoreTournamentId: '', scores365CompetitionId: ''
   });
   const [loading, setLoading] = useState(true);
 
@@ -46,7 +47,10 @@ function LeaguesManagement() {
         body: JSON.stringify(payload)
       });
       if (response.ok) {
-        setNewLeague({ name: '', key: '', color: '#6c757d', type: 'club', region: '', active: true, order: 0, apiFootballId: '' });
+        setNewLeague({
+          name: '', key: '', color: '#6c757d', type: 'club', region: '', active: true, order: 0, apiFootballId: '',
+          footballDataCode: '', espnLeagueCode: '', sofaScoreTournamentId: '', scores365CompetitionId: ''
+        });
         await loadLeagues();
         toast.success('ליגה נוצרה בהצלחה!');
       } else {
@@ -130,7 +134,11 @@ function LeaguesManagement() {
       type: league.type,
       region: league.region || '',
       order: league.order || 0,
-      apiFootballId: league.apiFootballId ?? ''
+      apiFootballId: league.apiFootballId ?? '',
+      footballDataCode: league.footballDataCode ?? '',
+      espnLeagueCode: league.espnLeagueCode ?? '',
+      sofaScoreTournamentId: league.sofaScoreTournamentId ?? '',
+      scores365CompetitionId: league.scores365CompetitionId ?? ''
     });
   };
 
@@ -242,6 +250,31 @@ function LeaguesManagement() {
               onChange={(e) => setNewLeague(prev => ({ ...prev, apiFootballId: e.target.value }))}
               className="input" style={inputStyle}
               title="מזהה הליגה ב-API-Football. דוגמאות: פרמייר ליג=39, לה ליגה=140, ליגת העל=383" />
+          </div>
+          <div>
+            <label style={labelStyle}>קוד football-data.org</label>
+            <input type="text" placeholder="PL / PD / BL1" value={newLeague.footballDataCode}
+              onChange={(e) => setNewLeague(prev => ({ ...prev, footballDataCode: e.target.value.toUpperCase() }))}
+              className="input" style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>קוד ESPN</label>
+            <input type="text" placeholder="eng.fa / eng.league_cup" value={newLeague.espnLeagueCode}
+              onChange={(e) => setNewLeague(prev => ({ ...prev, espnLeagueCode: e.target.value }))}
+              className="input" style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>מזהה SofaScore</label>
+            <input type="number" placeholder="266" value={newLeague.sofaScoreTournamentId}
+              onChange={(e) => setNewLeague(prev => ({ ...prev, sofaScoreTournamentId: e.target.value }))}
+              className="input" style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>מזהה 365scores</label>
+            <input type="number" placeholder="42" value={newLeague.scores365CompetitionId}
+              onChange={(e) => setNewLeague(prev => ({ ...prev, scores365CompetitionId: e.target.value }))}
+              className="input" style={inputStyle}
+              title="ניתן למצוא/לאמת ב-GET /api/external/debug/:leagueId אחרי יצירת הליגה" />
           </div>
         </div>
         <button onClick={handleCreateLeague} style={{
@@ -414,6 +447,31 @@ function LeaguesManagement() {
                     value={editForm.apiFootballId ?? ''} className="input" style={inputStyle}
                     onChange={(e) => setEditForm(prev => ({ ...prev, apiFootballId: e.target.value }))}
                     title="פרמייר ליג=39, לה ליגה=140, ליגת העל=383" />
+                </div>
+                <div>
+                  <label style={labelStyle}>קוד football-data.org (אופציונלי)</label>
+                  <input type="text" placeholder="PL / PD / BL1"
+                    value={editForm.footballDataCode ?? ''} className="input" style={inputStyle}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, footballDataCode: e.target.value.toUpperCase() }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>קוד ESPN (אופציונלי)</label>
+                  <input type="text" placeholder="eng.fa / eng.league_cup"
+                    value={editForm.espnLeagueCode ?? ''} className="input" style={inputStyle}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, espnLeagueCode: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>מזהה SofaScore (אופציונלי)</label>
+                  <input type="number" placeholder="266"
+                    value={editForm.sofaScoreTournamentId ?? ''} className="input" style={inputStyle}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, sofaScoreTournamentId: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>מזהה 365scores (אופציונלי)</label>
+                  <input type="number" placeholder="42"
+                    value={editForm.scores365CompetitionId ?? ''} className="input" style={inputStyle}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, scores365CompetitionId: e.target.value }))}
+                    title="ניתן לאמת ב-GET /api/external/debug/:leagueId" />
                 </div>
               </div>
             </div>

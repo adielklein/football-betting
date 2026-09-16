@@ -74,9 +74,11 @@ router.get('/health', (req, res) => {
   });
 });
 
+const isValidYmd = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+
 router.get('/fixtures', async (req, res) => {
   try {
-    const { leagueId, days = '7', includeOdds = 'false', refresh = 'false' } = req.query;
+    const { leagueId, days = '7', includeOdds = 'false', refresh = 'false', fromDate: fromQ, toDate: toQ } = req.query;
     if (!leagueId) {
       return res.status(400).json({ message: 'leagueId נדרש' });
     }
@@ -97,10 +99,18 @@ router.get('/fixtures', async (req, res) => {
       });
     }
 
-    const daysAhead = Math.min(Math.max(parseInt(days, 10) || 7, 1), 30);
-    const today = new Date();
-    const fromDate = formatDateForApi(today);
-    const toDate = formatDateForApi(new Date(today.getTime() + daysAhead * 24 * 60 * 60 * 1000));
+    // טווח תאריכים מפורש (למשל "כל המשחקים של השבוע הבא") גובר על "X ימים מהיום",
+    // כי מספר ימים קדימה תמיד נמדד מעכשיו ולא מתאים לתכנון שבוע ספציפי
+    let fromDate, toDate;
+    if (isValidYmd(fromQ) && isValidYmd(toQ)) {
+      fromDate = fromQ;
+      toDate = toQ;
+    } else {
+      const daysAhead = Math.min(Math.max(parseInt(days, 10) || 7, 1), 30);
+      const today = new Date();
+      fromDate = formatDateForApi(today);
+      toDate = formatDateForApi(new Date(today.getTime() + daysAhead * 24 * 60 * 60 * 1000));
+    }
     const wantOdds = includeOdds === 'true' || includeOdds === '1';
     const forceRefresh = refresh === 'true' || refresh === '1';
 

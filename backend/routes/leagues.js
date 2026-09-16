@@ -42,7 +42,10 @@ router.get('/:id', async (req, res) => {
 // ➕ יצירת ליגה חדשה (אדמין)
 router.post('/', requireAdmin, async (req, res) => {
   try {
-    const { name, key, color, type, region, active, order, apiFootballId } = req.body;
+    const {
+      name, key, color, type, region, active, order, apiFootballId,
+      footballDataCode, espnLeagueCode, sofaScoreTournamentId, scores365CompetitionId
+    } = req.body;
 
     // בדיקת שדות חובה
     if (!name || !key) {
@@ -55,6 +58,8 @@ router.post('/', requireAdmin, async (req, res) => {
       return res.status(400).json({ message: 'מפתח ליגה כבר קיים' });
     }
 
+    const toIntOrNull = (v) => (v == null || v === '' ? null : parseInt(v, 10));
+
     const league = new League({
       name,
       key,
@@ -63,7 +68,11 @@ router.post('/', requireAdmin, async (req, res) => {
       region: region || '',
       active: active !== undefined ? active : true,
       order: order || 0,
-      apiFootballId: apiFootballId == null || apiFootballId === '' ? null : parseInt(apiFootballId, 10)
+      apiFootballId: toIntOrNull(apiFootballId),
+      footballDataCode: footballDataCode == null || footballDataCode === '' ? null : footballDataCode,
+      espnLeagueCode: espnLeagueCode == null || espnLeagueCode === '' ? null : espnLeagueCode,
+      sofaScoreTournamentId: toIntOrNull(sofaScoreTournamentId),
+      scores365CompetitionId: toIntOrNull(scores365CompetitionId)
     });
     
     await league.save();
@@ -86,7 +95,10 @@ router.post('/', requireAdmin, async (req, res) => {
 // ✏️ עדכון ליגה (אדמין)
 router.patch('/:id', requireAdmin, async (req, res) => {
   try {
-    const { name, key, color, type, region, active, order, apiFootballId } = req.body;
+    const {
+      name, key, color, type, region, active, order, apiFootballId,
+      footballDataCode, espnLeagueCode, sofaScoreTournamentId, scores365CompetitionId
+    } = req.body;
 
     // אם משנים מפתח, בדוק שהוא ייחודי
     if (key) {
@@ -100,6 +112,8 @@ router.patch('/:id', requireAdmin, async (req, res) => {
       }
     }
 
+    const toIntOrNull = (v) => (v === null || v === '' ? null : parseInt(v, 10));
+
     const updateData = {};
     if (name !== undefined) updateData.name = name;
     if (key !== undefined) updateData.key = key;
@@ -108,12 +122,12 @@ router.patch('/:id', requireAdmin, async (req, res) => {
     if (region !== undefined) updateData.region = region;
     if (active !== undefined) updateData.active = active;
     if (order !== undefined) updateData.order = order;
-    if (apiFootballId !== undefined) {
-      updateData.apiFootballId = apiFootballId === null || apiFootballId === ''
-        ? null
-        : parseInt(apiFootballId, 10);
-    }
-    
+    if (apiFootballId !== undefined) updateData.apiFootballId = toIntOrNull(apiFootballId);
+    if (footballDataCode !== undefined) updateData.footballDataCode = footballDataCode === '' ? null : footballDataCode;
+    if (espnLeagueCode !== undefined) updateData.espnLeagueCode = espnLeagueCode === '' ? null : espnLeagueCode;
+    if (sofaScoreTournamentId !== undefined) updateData.sofaScoreTournamentId = toIntOrNull(sofaScoreTournamentId);
+    if (scores365CompetitionId !== undefined) updateData.scores365CompetitionId = toIntOrNull(scores365CompetitionId);
+
     const league = await League.findByIdAndUpdate(
       req.params.id,
       updateData,
@@ -239,6 +253,9 @@ router.post('/seed-european', requireAdmin, async (req, res) => {
       // אנגליה
       { name: 'פרמייר ליג', key: 'english', color: '#dc3545', type: 'club', region: 'אנגליה', order: 20, apiFootballId: 39, footballDataCode: 'PL', espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 7 },
       { name: 'גביע אנגליה (FA Cup)', key: 'english-fa-cup', color: '#a71d2a', type: 'club', region: 'אנגליה', order: 21, apiFootballId: 45, footballDataCode: null, espnLeagueCode: 'eng.fa', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 8 },
+      // גביע הליגה האנגלי (EFL Cup / Carabao Cup). קוד ESPN לא מאומת מול הרשת האמיתית -
+      // אם "ייבוא משחקים" לא מחזיר כלום, בדוק/תקן דרך admin → ליגות → עריכה, או GET /api/external/debug/:leagueId
+      { name: 'גביע הליגה האנגלי (Carabao Cup)', key: 'english-league-cup', color: '#1f3a93', type: 'club', region: 'אנגליה', order: 22, apiFootballId: 48, footballDataCode: null, espnLeagueCode: 'eng.league_cup', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null },
       // איטליה
       { name: 'סרייה א', key: 'italian', color: '#28a745', type: 'club', region: 'איטליה', order: 30, apiFootballId: 135, footballDataCode: 'SA', espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 17 },
       { name: 'גביע איטליה (Coppa Italia)', key: 'italian-cup', color: '#1e7e34', type: 'club', region: 'איטליה', order: 31, apiFootballId: 137, footballDataCode: null, espnLeagueCode: 'ita.coppa_italia', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 20 },
