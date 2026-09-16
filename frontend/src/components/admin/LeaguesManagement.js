@@ -10,6 +10,7 @@ function LeaguesManagement() {
     footballDataCode: '', espnLeagueCode: '', sofaScoreTournamentId: '', scores365CompetitionId: ''
   });
   const [loading, setLoading] = useState(true);
+  const [seeding, setSeeding] = useState(false);
 
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
@@ -125,6 +126,27 @@ function LeaguesManagement() {
     }
   };
 
+  // מוסיף ליגות/גביעים חסרים מהרשימה המובנית בקוד (backend/routes/leagues.js)
+  // ומעדכן מזהי ספק לקיימות. בלי הכפתור הזה, כל שינוי ברשימה המובנית
+  // (למשל הוספת גביע חדש) נשאר רק בקוד ולא נכנס בפועל למסד הנתונים
+  const handleSeedEuropean = async () => {
+    setSeeding(true);
+    try {
+      const response = await fetch(`${API_URL}/leagues/seed-european`, { method: 'POST' });
+      const data = await response.json();
+      if (response.ok) {
+        await loadLeagues();
+        toast.success(data.message || 'הליגות סונכרנו בהצלחה!');
+      } else {
+        toast.error('שגיאה: ' + data.message);
+      }
+    } catch (error) {
+      toast.error('שגיאה בסנכרון הליגות');
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   const startEditing = (league) => {
     setEditingLeague(league);
     setEditForm({
@@ -172,19 +194,34 @@ function LeaguesManagement() {
           <h2 style={{ fontSize: '0.95rem', margin: 0, fontWeight: '700' }}>
             🏆 ניהול ליגות ({leagues.length})
           </h2>
-          {leagues.length === 0 && (
+          <div style={{ display: 'flex', gap: '0.4rem' }}>
             <button
-              onClick={handleInitializeDefaultLeagues}
+              onClick={handleSeedEuropean}
+              disabled={seeding}
+              title="מוסיף ליגות/גביעים חסרים מהרשימה המובנית בקוד, ומעדכן מזהי ספק לקיימות"
               style={{
                 padding: '0.4rem 0.8rem',
-                background: 'linear-gradient(135deg, #28a745, #20c997)',
+                background: seeding ? '#9e9e9e' : 'linear-gradient(135deg, #007bff, #00a2ff)',
                 color: 'white', border: 'none', borderRadius: '8px',
-                fontSize: '12px', fontWeight: '700', cursor: 'pointer'
+                fontSize: '12px', fontWeight: '700', cursor: seeding ? 'default' : 'pointer'
               }}
             >
-              🏆 אתחל ברירת מחדל
+              {seeding ? '⏳ מסנכרן...' : '🌍 סנכרן ליגות אירופאיות'}
             </button>
-          )}
+            {leagues.length === 0 && (
+              <button
+                onClick={handleInitializeDefaultLeagues}
+                style={{
+                  padding: '0.4rem 0.8rem',
+                  background: 'linear-gradient(135deg, #28a745, #20c997)',
+                  color: 'white', border: 'none', borderRadius: '8px',
+                  fontSize: '12px', fontWeight: '700', cursor: 'pointer'
+                }}
+              >
+                🏆 אתחל ברירת מחדל
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
