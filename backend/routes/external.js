@@ -407,6 +407,21 @@ router.post('/sync-results/:weekId', requireAdmin, async (req, res) => {
   }
 });
 
+// 🔎 חיפוש תחרות ב-365scores לפי שם - כדי לחבר ליגה חדשה למזהה הנכון
+// בלי לנחש מספרים. רץ מהשרת, שם יש גישה ל-365.
+router.get('/365-competitions', requireAdmin, async (req, res) => {
+  try {
+    const { query = '', refresh = 'false' } = req.query;
+    const result = await scores365Api.searchCompetitions(query, {
+      refresh: refresh === 'true' || refresh === '1'
+    });
+    res.json(result);
+  } catch (err) {
+    console.error('❌ [external/365-competitions] error:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // 🔬 בדיקה רב-טווחית - בודק האם ESPN בכלל מחזיק נתונים על הליגה
 router.get('/probe/:leagueId', async (req, res) => {
   try {

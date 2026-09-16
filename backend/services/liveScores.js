@@ -29,6 +29,11 @@ const cache = new Map(); // weekId -> { at, games }
 const stripPrefix = (externalId) =>
   externalId && externalId.startsWith('365_') ? externalId.slice(4) : externalId;
 
+// רק מזהי 365 נשלחים לנקודת הקצה של 365. משחק שיובא מספק אחר (espn_/sofa_/
+// tsdb_) עבר עד עכשיו כמו שהוא, ומכיוון שכל משחקי השבוע נשלחים בבקשה אחת -
+// מזהה זר אחד היה מסכן את המצב החי של כל השבוע, לא רק של עצמו.
+const is365Id = (externalId) => !!externalId && !/^(espn|sofa|tsdb)_/.test(externalId);
+
 const apiGet = async (path) => {
   const res = await fetch(`${API_BASE}${path}`, {
     headers: {
@@ -73,7 +78,7 @@ const toLiveEntry = (match, game) => {
 
 // שליפה אחת עבור אוסף משחקים. מחזירה מפה מ-matchId לנתוני החי.
 const fetchLiveFor = async (matches) => {
-  const withExternal = matches.filter((m) => m.externalId);
+  const withExternal = matches.filter((m) => is365Id(m.externalId));
   if (withExternal.length === 0) return [];
 
   const byGameId = new Map(withExternal.map((m) => [String(stripPrefix(m.externalId)), m]));

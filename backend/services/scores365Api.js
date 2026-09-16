@@ -479,10 +479,91 @@ const fetchTeamInsights = async (externalId, { refresh = false, formSize = 5 } =
   return insights;
 };
 
+// ── חיפוש תחרויות ─────────────────────────────────────────────────
+// כדי לחבר ליגה חדשה צריך את מזהה התחרות ב-365, ומספר שגוי לא נכשל אלא
+// מצביע בשקט על תחרות אחרת. לכן שואלים את 365 עצמם במקום לנחש.
+//
+// ל-365 אין endpoint מתועד לרשימת תחרויות, ולכן מנסים כמה נתיבים מוכרים
+// ומחזירים את הראשון שהחזיר רשימה. אם אף אחד לא הצליח מוחזר גם אבחון -
+// מה חזר בפועל מכל נתיב - כדי שאפשר יהיה לתקן לפי עובדות ולא בניחוש.
+const COMMON_QUERY = 'appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6';
+
+const COMPETITION_PATHS = [
+  `/competitions/?${COMMON_QUERY}`,
+  `/search/?${COMMON_QUERY}&filter=competitions&query=`
+];
+
+const asArray = (v) => (Array.isArray(v) ? v : []);
+
+// התחרויות עשויות לשבת תחת כמה מפתחות, תלוי בנתיב
+const extractCompetitions = (json) =>
+  asArray(json?.competitions).length ? asArray(json.competitions) : asArray(json?.results?.competitions);
+
+const fetchAllCompetitions = async (refresh = false) => {
+  const cacheKey = '365_competitions';
+  if (!refresh) {
+    const hit = cacheGet(cacheKey);
+    if (hit) return hit;
+  }
+
+  const diagnostics = [];
+  for (const path of COMPETITION_PATHS) {
+    try {
+      const json = await apiGet(path);
+      const competitions = extractCompetitions(json);
+      if (competitions.length > 0) {
+        const countryById = new Map(asArray(json.countries).map((c) => [c.id, c.name]));
+        const value = {
+          source: path,
+          competitions: competitions.map((c) => ({
+            id: c.id,
+            name: c.name,
+            country: c.countryId != null ? countryById.get(c.countryId) || null : null,
+            sportId: c.sportId ?? null
+          }))
+        };
+        cacheSet(cacheKey, value);
+        return value;
+      }
+      diagnostics.push({ path, ok: true, topLevelKeys: Object.keys(json || {}).slice(0, 15), competitions: 0 });
+    } catch (err) {
+      diagnostics.push({ path, ok: false, error: err.message });
+    }
+  }
+
+  return { source: null, competitions: [], diagnostics };
+};
+
+// חיפוש לפי שם התחרות או שם המדינה. 365 מחזירים עברית (langId=2), ולכן
+// "גביע" ו-"אנגליה" עובדים כמו שהם
+const searchCompetitions = async (query, { refresh = false } = {}) => {
+  const all = await fetchAllCompetitions(refresh);
+  const needle = String(query || '').trim().toLowerCase();
+
+  // sportId 1 = כדורגל. כשהשדה חסר לא מסננים, כדי לא לאבד תוצאות
+  const football = all.competitions.filter((c) => c.sportId == null || c.sportId === 1);
+  const matched = needle
+    ? football.filter(
+        (c) =>
+          (c.name || '').toLowerCase().includes(needle) ||
+          (c.country || '').toLowerCase().includes(needle)
+      )
+    : football;
+
+  return {
+    source: all.source,
+    total: all.competitions.length,
+    count: matched.length,
+    competitions: matched.slice(0, 50),
+    ...(all.diagnostics ? { diagnostics: all.diagnostics } : {})
+  };
+};
+
 module.exports = {
   isConfigured,
   fetchUpcomingFixtures,
   fetchOddsForFixture,
   fetchResult,
-  fetchTeamInsights
+  fetchTeamInsights,
+  searchCompetitions
 };

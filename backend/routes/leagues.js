@@ -253,8 +253,10 @@ router.post('/seed-european', requireAdmin, async (req, res) => {
       // אנגליה
       { name: 'פרמייר ליג', key: 'english', color: '#dc3545', type: 'club', region: 'אנגליה', order: 20, apiFootballId: 39, footballDataCode: 'PL', espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 7 },
       { name: 'גביע אנגליה (FA Cup)', key: 'english-fa-cup', color: '#a71d2a', type: 'club', region: 'אנגליה', order: 21, apiFootballId: 45, footballDataCode: null, espnLeagueCode: 'eng.fa', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 8 },
-      // גביע הליגה האנגלי (EFL Cup / Carabao Cup). קוד ESPN לא מאומת מול הרשת האמיתית -
-      // אם "ייבוא משחקים" לא מחזיר כלום, בדוק/תקן דרך admin → ליגות → עריכה, או GET /api/external/debug/:leagueId
+      // גביע הליגה האנגלי (EFL Cup / Carabao Cup). ESPN כאן הוא פתרון ביניים בלבד:
+      // רק 365 מחזיר שמות בעברית, ורק הוא מזין יחסי ווינר, תובנות וטבלה חיה.
+      // כדי להשלים: admin → ליגות → "חיפוש תחרות ב-365scores", ולהזין את המזהה
+      // בשדה "מזהה 365scores" (סנכרון לא ידרוס מזהה שהוזן ידנית)
       { name: 'גביע הליגה האנגלי (Carabao Cup)', key: 'english-league-cup', color: '#1f3a93', type: 'club', region: 'אנגליה', order: 22, apiFootballId: 48, footballDataCode: null, espnLeagueCode: 'eng.league_cup', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null },
       // איטליה
       { name: 'סרייה א', key: 'italian', color: '#28a745', type: 'club', region: 'איטליה', order: 30, apiFootballId: 135, footballDataCode: 'SA', espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 17 },
@@ -274,15 +276,20 @@ router.post('/seed-european', requireAdmin, async (req, res) => {
     const created = [];
     const updated = [];
 
+    // מזהה שהרשימה המובנית לא מכירה (null) לא מוחק מזהה שהוזן ידנית במסך
+    // הניהול. בלי זה, לחיצה על "סנכרן" כדי לקלוט תחרות חדשה הייתה מוחקת
+    // בשקט מזהים שהאדמין השלים בעצמו
+    const keep = (current, fromSeed) => (fromSeed == null ? current : fromSeed);
+
     for (const item of seedLeagues) {
       const existing = await League.findOne({ key: item.key });
       if (existing) {
-        existing.apiFootballId = item.apiFootballId;
-        existing.footballDataCode = item.footballDataCode;
-        existing.espnLeagueCode = item.espnLeagueCode;
-        existing.sofaScoreTournamentId = item.sofaScoreTournamentId;
-        existing.sportsDbLeagueId = item.sportsDbLeagueId;
-        existing.scores365CompetitionId = item.scores365CompetitionId;
+        existing.apiFootballId = keep(existing.apiFootballId, item.apiFootballId);
+        existing.footballDataCode = keep(existing.footballDataCode, item.footballDataCode);
+        existing.espnLeagueCode = keep(existing.espnLeagueCode, item.espnLeagueCode);
+        existing.sofaScoreTournamentId = keep(existing.sofaScoreTournamentId, item.sofaScoreTournamentId);
+        existing.sportsDbLeagueId = keep(existing.sportsDbLeagueId, item.sportsDbLeagueId);
+        existing.scores365CompetitionId = keep(existing.scores365CompetitionId, item.scores365CompetitionId);
         if (!existing.region) existing.region = item.region;
         await existing.save();
         updated.push(existing);

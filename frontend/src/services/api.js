@@ -217,6 +217,14 @@ export const api = {
     return json;
   }),
 
+  // חיפוש תחרות ב-365scores לפי שם, כדי לקבל את המזהה הנכון בלי לנחש
+  search365Competitions: (query) =>
+    fetch(`${API_BASE_URL}/external/365-competitions?query=${encodeURIComponent(query)}`).then(async res => {
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
+      return json;
+    }),
+
   // External fixtures (API-Football)
   getUpcomingFixtures: ({ leagueId, days = 7, includeOdds = false, refresh = false, fromDate, toDate }) => {
     const params = new URLSearchParams({
