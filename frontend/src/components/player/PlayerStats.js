@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import NearMissView from './NearMissView';
+import TeamLogo from '../TeamLogo';
 
 function PlayerStats({ user }) {
   const [stats, setStats] = useState(null);
@@ -290,6 +291,7 @@ function PlayerStats({ user }) {
         }}>
           {rank + 1}
         </span>
+        <TeamLogo name={team.name} src={team.logo} size={18} />
         <span style={{ flex: 1, fontSize: '13px', fontWeight: '700', color: 'var(--text, #333)' }}>
           {team.name}
         </span>
@@ -508,6 +510,7 @@ function PlayerStats({ user }) {
                   padding: '6px 8px', borderRadius: '8px',
                   background: i % 2 === 0 ? 'var(--surface-2, #fafbfc)' : 'transparent',
                 }}>
+                  <TeamLogo name={team.name} src={team.logo} size={16} />
                   <span style={{ flex: 1, fontSize: '12px', fontWeight: '600', color: 'var(--text-2, #444)' }}>
                     {team.name}
                   </span>

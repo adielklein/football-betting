@@ -34,8 +34,9 @@ router.get('/user/:userId', async (req, res) => {
     // === סטטיסטיקות לפי קבוצה ===
     const teamStats = {}; // { teamName: { bets, exact, direction, wrong, points } }
 
-    // === סטטיסטיקות לפי ליגה ===
-    const leagueStats = {};
+    // סמל הקבוצה כפי שהגיע מ-365 בייבוא. נאסף מהמשחקים עצמם כדי שהטבלאות
+    // יראו את הסמל האמיתי ולא ינחשו אותו לפי השם בצד הלקוח
+    const teamLogos = {};
 
     // === התפלגות תוצאות ניחוש ===
     const predictionDistribution = { home: 0, draw: 0, away: 0 };
@@ -78,6 +79,9 @@ router.get('/user/:userId', async (req, res) => {
       const team1 = normalizeTeamName(match.team1);
       const team2 = normalizeTeamName(match.team2);
 
+      if (match.team1LogoUrl && !teamLogos[team1]) teamLogos[team1] = match.team1LogoUrl;
+      if (match.team2LogoUrl && !teamLogos[team2]) teamLogos[team2] = match.team2LogoUrl;
+
       for (const team of [team1, team2]) {
         if (!teamStats[team]) {
           teamStats[team] = { bets: 0, exact: 0, direction: 0, wrong: 0, points: 0 };
@@ -88,17 +92,6 @@ router.get('/user/:userId', async (req, res) => {
         else teamStats[team].wrong++;
         teamStats[team].points += bet.points || 0;
       }
-
-      // סטטיסטיקה לפי ליגה
-      const leagueName = match.league || 'ללא ליגה';
-      if (!leagueStats[leagueName]) {
-        leagueStats[leagueName] = { bets: 0, exact: 0, direction: 0, wrong: 0, points: 0 };
-      }
-      leagueStats[leagueName].bets++;
-      if (isExact) leagueStats[leagueName].exact++;
-      else if (isDirection) leagueStats[leagueName].direction++;
-      else leagueStats[leagueName].wrong++;
-      leagueStats[leagueName].points += bet.points || 0;
     }
 
     // === סטטיסטיקות לפי שבוע (ציר זמן) ===
@@ -114,6 +107,7 @@ router.get('/user/:userId', async (req, res) => {
     const teamStatsArray = Object.entries(teamStats)
       .map(([name, stats]) => ({
         name,
+        logo: teamLogos[name] || null,
         ...stats,
         accuracy: stats.bets > 0 ? Math.round(((stats.exact + stats.direction) / stats.bets) * 100) : 0,
         exactRate: stats.bets > 0 ? Math.round((stats.exact / stats.bets) * 100) : 0,
@@ -442,6 +436,7 @@ router.get('/admin', async (req, res) => {
 
     // === סטטיסטיקות לפי קבוצה (כלל השחקנים) ===
     const globalTeamStats = {};
+    const globalTeamLogos = {};
     for (const bet of completedBets) {
       const match = bet.matchId;
       if (!match) continue;
@@ -450,6 +445,9 @@ router.get('/admin', async (req, res) => {
 
       const team1 = normalizeTeamName(match.team1);
       const team2 = normalizeTeamName(match.team2);
+
+      if (match.team1LogoUrl && !globalTeamLogos[team1]) globalTeamLogos[team1] = match.team1LogoUrl;
+      if (match.team2LogoUrl && !globalTeamLogos[team2]) globalTeamLogos[team2] = match.team2LogoUrl;
 
       for (const team of [team1, team2]) {
         if (!globalTeamStats[team]) {
@@ -465,6 +463,7 @@ router.get('/admin', async (req, res) => {
     const globalTeamRankings = Object.entries(globalTeamStats)
       .map(([name, s]) => ({
         name,
+        logo: globalTeamLogos[name] || null,
         ...s,
         accuracy: s.bets > 0 ? Math.round(((s.exact + s.direction) / s.bets) * 100) : 0,
         exactRate: s.bets > 0 ? Math.round((s.exact / s.bets) * 100) : 0,

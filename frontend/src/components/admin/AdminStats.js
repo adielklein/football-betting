@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PlayerStats from '../player/PlayerStats';
+import TeamLogo from '../TeamLogo';
 
 function AdminStats() {
   const [stats, setStats] = useState(null);
@@ -547,6 +548,7 @@ function AdminStats() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '12px', fontWeight: '800', color: '#fff', background: '#10b981'
                 }}>{i + 1}</span>
+                <TeamLogo name={team.name} src={team.logo} size={18} />
                 <span style={{ flex: 1, fontSize: '13px', fontWeight: '700', color: 'var(--text, #333)' }}>{team.name}</span>
                 <span style={{ fontSize: '10px', color: 'var(--text-3, #888)' }}>{team.bets} הימורים</span>
                 <span style={{
@@ -573,6 +575,7 @@ function AdminStats() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '12px', fontWeight: '800', color: '#fff', background: '#ef4444'
                 }}>{i + 1}</span>
+                <TeamLogo name={team.name} src={team.logo} size={18} />
                 <span style={{ flex: 1, fontSize: '13px', fontWeight: '700', color: 'var(--text, #333)' }}>{team.name}</span>
                 <span style={{ fontSize: '10px', color: 'var(--text-3, #888)' }}>{team.bets} הימורים</span>
                 <span style={{
@@ -592,6 +595,7 @@ function AdminStats() {
                   padding: '5px 8px', borderRadius: '8px',
                   background: i % 2 === 0 ? 'var(--surface-2, #fafbfc)' : 'transparent',
                 }}>
+                  <TeamLogo name={team.name} src={team.logo} size={16} />
                   <span style={{ flex: 1, fontSize: '12px', fontWeight: '600', color: 'var(--text-2, #444)' }}>
                     {team.name}
                   </span>
