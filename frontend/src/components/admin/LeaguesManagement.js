@@ -2,6 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { toast } from '../../services/toast';
 import { api } from '../../services/api';
 
+// הספק שבו הליגה תשתמש בפועל, באותו סדר עדיפויות של pickProvider בשרת.
+// 365 הוא היחיד שמזין יחסים, תובנות וטבלה חיה, ולכן ההבדל בין "365" לבין
+// כל השאר הוא הבדל בתכונות ולא רק במקור הנתונים
+const activeProvider = (league) => {
+  if (league.scores365CompetitionId) return { label: '365scores', good: true };
+  if (league.footballDataCode) return { label: 'football-data', good: false };
+  if (league.espnLeagueCode) return { label: 'ESPN', good: false };
+  if (league.sportsDbLeagueId) return { label: 'TheSportsDB', good: false };
+  if (league.sofaScoreTournamentId) return { label: 'SofaScore', good: false };
+  return { label: 'ללא ספק', good: false };
+};
+
 const searchLabelStyle = {
   fontSize: '11px', color: 'var(--text-3, #888)', display: 'block', marginBottom: '3px', fontWeight: '600'
 };
@@ -515,6 +527,23 @@ function LeaguesManagement() {
                       }}>
                         #{league.order}
                       </span>
+                      {(() => {
+                        const p = activeProvider(league);
+                        return (
+                          <span
+                            title={p.good
+                              ? 'יחסי ווינר, תובנות וטבלה חיה זמינים'
+                              : 'ללא יחסי ווינר, תובנות וטבלה חיה - הם קיימים רק ב-365scores'}
+                            style={{
+                              padding: '1px 6px', borderRadius: '10px', fontSize: '10px', fontWeight: '700',
+                              backgroundColor: p.good ? 'var(--good-bg, #e6f4ea)' : 'var(--warn-bg, #fff3cd)',
+                              color: p.good ? 'var(--good-fg, #1e7e34)' : 'var(--warn-fg, #9a7b3f)'
+                            }}
+                          >
+                            {p.good ? '✓' : '⚠'} {p.label}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

@@ -663,12 +663,15 @@ router.get('/insights/:matchId', async (req, res) => {
     await upgradeTo365(match);
 
     if (!match.externalId || match.externalProvider !== '365scores') {
-      // הגענו לכאן רק אחרי שניסינו לאתר את המשחק ב-365 ולא מצאנו
+      // הגענו לכאן רק אחרי שניסינו לאתר את המשחק ב-365 ולא מצאנו.
+      // שם הליגה נכנס להודעה כי הוא מה שצריך לתקן, ובלעדיו ההודעה מתארת
+      // מצב אבל לא אומרת על מה ללחוץ
+      const leagueName = match.leagueId?.name || 'הליגה';
       return res.status(404).json({
         message: 'אין נתונים סטטיסטיים למשחק הזה',
         reason: match.leagueId?.scores365CompetitionId
-          ? 'לא נמצאה התאמה ב-365scores למשחק הזה'
-          : 'הליגה של המשחק לא מוגדרת ב-365scores, ורק משם מגיעות הסטטיסטיקות'
+          ? `לא נמצאה התאמה ב-365scores למשחק הזה (${leagueName})`
+          : `ל"${leagueName}" אין מזהה 365scores, ורק משם מגיעות הסטטיסטיקות. אפשר להשלים בניהול ליגות ← עריכה ← חיפוש תחרות ב-365scores`
       });
     }
 
