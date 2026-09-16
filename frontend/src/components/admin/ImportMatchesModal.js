@@ -162,6 +162,12 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
       return t1.includes(normalizedQuery) || t2.includes(normalizedQuery) || lg.includes(normalizedQuery);
     });
 
+  // ליגות שנמשכו מספק גיבוי. 365 הוא היחיד שמזין יחסים, תובנות וטבלה חיה,
+  // ולכן עדיף לדעת על זה בזמן הייבוא ולא כשמגלים חלון ריק אחר כך
+  const nonScores365 = [...new Set(
+    fixtures.filter((f) => f.provider && f.provider !== '365scores').map((f) => f.leagueName)
+  )];
+
   const handleSelectAll = () => {
     const visibleIdx = filteredIndexed.map(({ idx }) => idx);
     const allSelected = visibleIdx.length > 0 && visibleIdx.every((idx) => fixtures[idx].selected);
@@ -359,6 +365,17 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
         {error && (
           <div style={{ background: 'var(--bad-bg, #fee)', color: 'var(--bad-fg, #900)', padding: '0.5rem 0.75rem', borderRadius: '6px', marginBottom: '0.75rem', flexShrink: 0 }}>
             {error}
+          </div>
+        )}
+
+        {nonScores365.length > 0 && (
+          <div style={{
+            background: 'var(--warn-bg, #fffaf0)', border: '1px solid #f5e3c0', color: 'var(--warn-fg, #9a7b3f)',
+            padding: '0.45rem 0.7rem', borderRadius: '8px', fontSize: '12px',
+            marginBottom: '0.75rem', flexShrink: 0
+          }}>
+            ⚠️ {nonScores365.join(', ')} נמשכו מספק גיבוי ולא מ-365scores (365 לא החזיר משחקים בטווח).
+            משחקים כאלה ייובאו בלי יחסי ווינר, בלי תובנות טרום-משחק ובלי טבלה חיה.
           </div>
         )}
 

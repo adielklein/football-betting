@@ -310,6 +310,32 @@ const discoverExternalId = async (match, providersByName, debugCollector = null)
   return null;
 };
 
+// ⬆️ שדרוג משחק למזהה של 365.
+//
+// כש-365 לא מחזיר משחקים בטווח המבוקש, הייבוא נופל לספק גיבוי (ESPN וכו')
+// ושומר את המזהה שלו. מאותו רגע המשחק תקוע: יחסי ווינר, תובנות וטבלה חיה
+// קיימים אך ורק ב-365. הגילוי כאן רץ קודם רק כשלא היה מזהה בכלל, ולכן משחק
+// עם מזהה ESPN לא קיבל אף פעם הזדמנות למצוא את התאום שלו ב-365.
+//
+// pickProvider מעדיף 365 כשלליגה יש מזהה תחרות, ולכן די בלהריץ את הגילוי -
+// וההחלפה מתבצעת רק מול התאמה אמיתית של שתי הקבוצות בחלון התאריכים.
+const upgradeTo365 = async (match) => {
+  if (match.externalId && match.externalProvider === '365scores') return false;
+
+  const league = match.leagueId;
+  if (!league || !league.scores365CompetitionId) return false;
+
+  const discovered = await discoverExternalId(match);
+  if (!discovered || discovered.externalProvider !== '365scores') return false;
+
+  const from = match.externalProvider || 'ללא מזהה';
+  match.externalId = discovered.externalId;
+  match.externalProvider = discovered.externalProvider;
+  await match.save();
+  console.log(`⬆️ [365] ${match.team1} vs ${match.team2}: ${from} → ${discovered.externalId}`);
+  return true;
+};
+
 // 🆕 סנכרון תוצאות לשבוע - מושך תוצאות מהספקים, מעדכן רק משחקים בלי תוצאה ידנית
 router.post('/sync-results/:weekId', requireAdmin, async (req, res) => {
   try {
@@ -571,17 +597,13 @@ router.post('/sync-odds/:weekId', requireAdmin, async (req, res) => {
 
     const summary = { checked: matches.length, updated: 0, unchanged: 0, noOdds: 0, noExternal: 0, details: [] };
 
-    // גילוי externalId חסר - סדרתי, כדי לא להציף את הספק
+    // איתור/שדרוג מזהה 365 - סדרתי, כדי לא להציף את הספק. משחק שיובא דרך
+    // ספק גיבוי מקבל כאן הזדמנות לעבור ל-365, שרק בו יש יחסים
+    let upgraded = 0;
     for (const m of matches) {
-      if (!m.externalId || !m.externalProvider) {
-        const discovered = await discoverExternalId(m, { '365scores': scores365Api });
-        if (discovered) {
-          m.externalId = discovered.externalId;
-          m.externalProvider = discovered.externalProvider;
-          await m.save();
-        }
-      }
+      if (await upgradeTo365(m)) upgraded++;
     }
+    summary.upgradedTo365 = upgraded;
 
     const targets = matches.filter((m) => m.externalId && m.externalProvider === '365scores');
     summary.noExternal = matches.length - targets.length;
@@ -636,20 +658,17 @@ router.get('/insights/:matchId', async (req, res) => {
     const match = await Match.findById(req.params.matchId).populate('leagueId');
     if (!match) return res.status(404).json({ message: 'המשחק לא נמצא' });
 
-    // אין מזהה חיצוני - ננסה לגלות ולשמור (עלות חד-פעמית)
-    if (!match.externalId || !match.externalProvider) {
-      const discovered = await discoverExternalId(match, { '365scores': scores365Api });
-      if (discovered) {
-        match.externalId = discovered.externalId;
-        match.externalProvider = discovered.externalProvider;
-        await match.save();
-      }
-    }
+    // אין מזהה של 365 - ננסה לאתר ולשמור (עלות חד-פעמית). מכסה גם משחק
+    // שאין לו מזהה כלל וגם משחק שיובא דרך ספק גיבוי
+    await upgradeTo365(match);
 
     if (!match.externalId || match.externalProvider !== '365scores') {
+      // הגענו לכאן רק אחרי שניסינו לאתר את המשחק ב-365 ולא מצאנו
       return res.status(404).json({
         message: 'אין נתונים סטטיסטיים למשחק הזה',
-        reason: match.externalId ? `ספק ${match.externalProvider} לא תומך בסטטיסטיקות` : 'לא נמצאה התאמה ב-365scores'
+        reason: match.leagueId?.scores365CompetitionId
+          ? 'לא נמצאה התאמה ב-365scores למשחק הזה'
+          : 'הליגה של המשחק לא מוגדרת ב-365scores, ורק משם מגיעות הסטטיסטיקות'
       });
     }
 
