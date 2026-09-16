@@ -98,6 +98,15 @@ const SETTING_BY_EVENT = {
   end: 'matchEndAlerts'
 };
 
+// ניקוד יכול להיות שבר (יחס חלקי מעוגל לעשירית), ולכן לא מספיק "N נקודות":
+// "1 נקודות" שגוי, ו-"0 נקודות" נשמע כמו תקלה ולא כמו תוצאה
+const pointsPhrase = (points) => {
+  const n = Math.round(points * 10) / 10;
+  if (n === 0) return 'לא צברת נקודות הפעם';
+  if (n === 1) return 'הרווחת נקודה אחת';
+  return `הרווחת ${n} נקודות`;
+};
+
 // נוסח ההתראה. team1/team2 הם השמות כפי שהם מוצגים אצלנו
 function describeEvent(event, team1, team2) {
   const score = `${event.team1Goals ?? 0} - ${event.team2Goals ?? 0}`;
@@ -117,11 +126,38 @@ function describeEvent(event, team1, team2) {
       const who = event.side === 'team1' ? team1 : event.side === 'team2' ? team2 : null;
       return { title: '🟥 כרטיס אדום', body: who ? `${who} · ${pair}` : pair };
     }
-    case 'end':
-      return { title: '🔚 המשחק הסתיים', body: `${pair} ${score}` };
+    case 'end': {
+      const base = `${pair} ${score}`;
+      if (event.points == null) return { title: '🔚 המשחק הסתיים', body: base };
+      return { title: '🔚 המשחק הסתיים', body: `${base}\n${pointsPhrase(event.points)}` };
+    }
     default:
       return null;
   }
 }
 
-module.exports = { detectEvents, describeEvent, SETTING_BY_EVENT };
+// מי אמור לקבל התראת סוף משחק, אחרי שהניקוד כבר חושב.
+//
+// ההכרעה העדינה כאן היא הכפילות מול התראת ה"בול": מי שקיבל בול על משחק
+// מסוים לא צריך גם התראת סוף משחק עליו. הזיווג הוא משתמש+משחק, כדי שבול
+// במשחק אחד לא ישתיק את ההתראה על משחק אחר באותה ריצה; והחסימה חלה רק
+// כשהבול באמת נשלח, כדי שמי שכיבה התראות בול לא יישאר בלי כלום.
+function selectMatchEndRecipients({
+  candidates = [],
+  exactPairs = new Set(),
+  exactNotifiedUserIds = new Set(),
+  excludedIds = [],
+  wantsEndAlert = () => false
+}) {
+  const excluded = new Set(excludedIds.map(String));
+
+  return candidates.filter(({ userId, matchId }) => {
+    const uid = String(userId);
+    if (excluded.has(uid)) return false;
+    if (!wantsEndAlert(uid)) return false;
+    if (exactNotifiedUserIds.has(uid) && exactPairs.has(`${uid}:${matchId}`)) return false;
+    return true;
+  });
+}
+
+module.exports = { detectEvents, describeEvent, selectMatchEndRecipients, SETTING_BY_EVENT };

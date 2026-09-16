@@ -322,6 +322,11 @@ const notifyLiveEvents = async (matches, games) => {
     await Match.updateOne({ _id: match._id }, { $set: { liveSnapshot: next } });
 
     for (const event of events) {
+      // סוף משחק נשלח מחישוב הניקוד (routes/scores.js) ולא מכאן, כי שם
+      // כבר ידוע כמה נקודות כל אחד הרוויח ומי קלע בול. שליחה גם כאן הייתה
+      // מייצרת התראה כפולה, ובלי הניקוד
+      if (event.type === 'end') continue;
+
       const setting = SETTING_BY_EVENT[event.type];
       if (!setting) continue;
 

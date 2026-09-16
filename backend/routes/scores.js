@@ -9,6 +9,7 @@ const { sendNotificationToUsers } = require('../services/pushNotifications');
 const { logAdminAction } = require('../services/auditService');
 const { requireAdmin } = require('../middleware/requireAdmin');
 const { calculateMatchPoints } = require('../services/scoring');
+const { describeEvent, selectMatchEndRecipients } = require('../services/matchEvents');
 const router = express.Router();
 
 // Calculate scores for a week
@@ -44,6 +45,12 @@ router.post('/calculate/:weekId', requireAdmin, async (req, res) => {
     const exactByUser = new Map();
     const userById = new Map(users.map((u) => [u._id.toString(), u]));
 
+    // מועמדים להתראת סוף משחק, ומי שקלע בול באותו משחק.
+    // הזיווג הוא לפי משתמש *ומשחק* ולא לפי משתמש בלבד: מי שקלע בול במשחק
+    // אחד עדיין אמור לקבל התראת סוף משחק על משחק אחר באותה ריצה
+    const endCandidates = [];
+    const exactPairs = new Set();
+
     for (const bet of bets) {
       const match = matchById.get(bet.matchId.toString());
       if (!match) continue;
@@ -65,6 +72,16 @@ router.post('/calculate/:weekId', requireAdmin, async (req, res) => {
         notifyMatchIds.has(match._id.toString()) &&
         bet.prediction.team1Goals === match.result.team1Goals &&
         bet.prediction.team2Goals === match.result.team2Goals;
+
+      // כל הימור על משחק שתוצאתו נכנסה עכשיו הוא מועמד להתראת סוף משחק,
+      // עם הניקוד שהרגע חושב עבורו
+      if (hasResult(match) && notifyMatchIds.has(match._id.toString())) {
+        const user = userById.get(userId);
+        if (user && user.role !== 'admin') {
+          endCandidates.push({ userId, matchId: String(match._id), match, points });
+          if (isExact) exactPairs.add(`${userId}:${match._id}`);
+        }
+      }
 
       if (isExact) {
         const user = userById.get(userId);
@@ -115,14 +132,20 @@ router.post('/calculate/:weekId', requireAdmin, async (req, res) => {
       return res.json({ message: 'Scores reset successfully (no results found)' });
     }
 
+    // מוחרגים מהחודש אינם בתחרות, ולכן אינם מקבלים אף התראת תוצאה
+    const excludedIds = week
+      ? (await MonthExclusion.find({ month: week.month, season: week.season })).map((e) => e.userId.toString())
+      : [];
+
+    // מי שהתראת הבול באמת יצאה אליו. רק עבורו ההתראה הזו "מכסה" את המשחק,
+    // ולכן מי שכיבה התראות בול אך הפעיל התראות סוף משחק עדיין יקבל אחת -
+    // אחרת הוא לא היה מקבל דבר דווקא על המשחק שקלע בו
+    const exactNotifiedUserIds = new Set();
+
     // התראות "בול" למי שניחש במדויק את המשחקים שנכנסו עכשיו
     const exactScoreUsers = [...exactByUser.values()];
     if (exactScoreUsers.length > 0) {
       try {
-        const excludedIds = week
-          ? (await MonthExclusion.find({ month: week.month, season: week.season })).map((e) => e.userId.toString())
-          : [];
-
         const usersToNotify = exactScoreUsers.filter((eu) => {
           if (excludedIds.includes(eu.userId.toString())) return false;
           const u = userById.get(eu.userId.toString());
@@ -134,12 +157,57 @@ router.post('/calculate/:weekId', requireAdmin, async (req, res) => {
           const matchLines = eu.exactMatches.map((m) => `⚽ ${m.team1} ${m.score} ${m.team2}`).join('\n');
           const body = `ניחשת בול!\n${matchLines}\nכל הכבוד 🔥`;
           await sendNotificationToUsers([eu.userId], title, body, { type: 'exact_score' });
+          exactNotifiedUserIds.add(eu.userId.toString());
         }
         if (usersToNotify.length > 0) {
           console.log(`🎯 Exact score notifications sent to ${usersToNotify.length} users`);
         }
       } catch (pushError) {
         console.error('Push notification error (non-critical):', pushError.message);
+      }
+    }
+
+    // 🔚 התראת סוף משחק, עם הניקוד שכל אחד הרוויח.
+    //
+    // יושבת כאן ולא בסריקה החיה מפני שרק אחרי החישוב יש ניקוד לדווח עליו,
+    // והמספר שיוצא בהתראה הוא בדיוק זה שנכנס לטבלה.
+    //
+    // מי שקלע בול באותו משחק מקבל את התראת הבול בלבד: שתי התראות על אותו
+    // משחק הן רעש, והבול הוא הבשורה הטובה מביניהן
+    if (endCandidates.length > 0) {
+      try {
+        const recipients = selectMatchEndRecipients({
+          candidates: endCandidates,
+          exactPairs,
+          exactNotifiedUserIds,
+          excludedIds,
+          wantsEndAlert: (uid) => {
+            const u = userById.get(uid);
+            return !!(u && u.pushSettings?.enabled && u.pushSettings?.matchEndAlerts === true);
+          }
+        });
+
+        for (const { userId, match, points } of recipients) {
+          const text = describeEvent(
+            {
+              type: 'end',
+              team1Goals: match.result.team1Goals,
+              team2Goals: match.result.team2Goals,
+              points
+            },
+            match.team1,
+            match.team2
+          );
+          await sendNotificationToUsers([userId], text.title, text.body, {
+            type: 'match_end',
+            matchId: String(match._id)
+          });
+        }
+        if (recipients.length > 0) {
+          console.log(`🔚 Match end notifications sent to ${recipients.length} bettors`);
+        }
+      } catch (pushError) {
+        console.error('Match end notification error (non-critical):', pushError.message);
       }
     }
 

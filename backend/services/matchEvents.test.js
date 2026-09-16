@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { detectEvents, describeEvent } = require('./matchEvents');
+const { detectEvents, describeEvent, selectMatchEndRecipients } = require('./matchEvents');
 
 const types = (r) => r.events.map((e) => e.type);
 
@@ -96,4 +96,71 @@ test('נוסח ההתראה כולל את שמות הקבוצות ואת התו�
 
   const end = describeEvent({ type: 'end', team1Goals: 2, team2Goals: 2 }, 'א', 'ב');
   assert.match(end.body, /2 - 2/);
+});
+
+test('סוף משחק מציג את הניקוד שהורווח, בניסוח שמתאים לכמות', () => {
+  const withPoints = (p) =>
+    describeEvent({ type: 'end', team1Goals: 1, team2Goals: 0, points: p }, 'א', 'ב').body;
+
+  assert.match(withPoints(3), /הרווחת 3 נקודות/);
+  assert.match(withPoints(1), /הרווחת נקודה אחת/);
+  assert.match(withPoints(0), /לא צברת נקודות/);
+  // ניקוד לפי יחסים הוא שבר, ומעוגל לעשירית
+  assert.match(withPoints(2.6666), /2\.7/);
+
+  // בלי ניקוד - הנוסח הישן, בלי שורה שנייה ריקה
+  const plain = describeEvent({ type: 'end', team1Goals: 1, team2Goals: 0 }, 'א', 'ב').body;
+  assert.ok(!plain.includes('\n'));
+});
+
+// ── בחירת מקבלי התראת סוף משחק ─────────────────────────────────────
+const pick = (over = {}) =>
+  selectMatchEndRecipients({
+    candidates: [{ userId: 'u1', matchId: 'm1' }],
+    wantsEndAlert: () => true,
+    ...over
+  }).map((c) => `${c.userId}:${c.matchId}`);
+
+test('מי שהפעיל התראות סוף משחק מקבל אותן', () => {
+  assert.deepEqual(pick(), ['u1:m1']);
+});
+
+test('מי שלא הפעיל התראות סוף משחק לא מקבל', () => {
+  assert.deepEqual(pick({ wantsEndAlert: () => false }), []);
+});
+
+test('בול שנשלח על אותו משחק מבטל את התראת סוף המשחק', () => {
+  assert.deepEqual(pick({
+    exactPairs: new Set(['u1:m1']),
+    exactNotifiedUserIds: new Set(['u1'])
+  }), []);
+});
+
+test('בול שלא נשלח בפועל אינו מבטל - אחרת מי שכיבה התראות בול לא יקבל דבר', () => {
+  assert.deepEqual(pick({
+    exactPairs: new Set(['u1:m1']),
+    exactNotifiedUserIds: new Set()
+  }), ['u1:m1']);
+});
+
+test('בול במשחק אחד אינו משתיק את ההתראה על משחק אחר באותה ריצה', () => {
+  const got = pick({
+    candidates: [{ userId: 'u1', matchId: 'm1' }, { userId: 'u1', matchId: 'm2' }],
+    exactPairs: new Set(['u1:m1']),
+    exactNotifiedUserIds: new Set(['u1'])
+  });
+  assert.deepEqual(got, ['u1:m2']);
+});
+
+test('בול של משתמש אחד אינו משתיק משתמש אחר על אותו משחק', () => {
+  const got = pick({
+    candidates: [{ userId: 'u1', matchId: 'm1' }, { userId: 'u2', matchId: 'm1' }],
+    exactPairs: new Set(['u1:m1']),
+    exactNotifiedUserIds: new Set(['u1'])
+  });
+  assert.deepEqual(got, ['u2:m1']);
+});
+
+test('מוחרג מהחודש אינו מקבל התראת סוף משחק', () => {
+  assert.deepEqual(pick({ excludedIds: ['u1'] }), []);
 });
