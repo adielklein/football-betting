@@ -5,6 +5,13 @@ import TeamLogo from '../TeamLogo';
 
 const DAYS_OPTIONS = [3, 7, 14, 30];
 
+// ערך דמה בבורר הליגה: מושך מכל הליגות המוגדרות במקום אחת-אחת
+const ALL_LEAGUES = '__all__';
+
+// 365 חוסמים לפי IP על ריבוי בקשות בו-זמנית, ולכן מושכים כמה ליגות במקביל
+// ולא את כולן יחד
+const LEAGUE_CONCURRENCY = 3;
+
 // YYYY-MM-DD לפי התאריך המקומי (לא UTC, כדי שברירת המחדל תהיה "היום" האמיתי אצל האדמין)
 const toYmd = (d) => {
   const y = d.getFullYear();
@@ -36,9 +43,11 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [fixtures, setFixtures] = useState([]);
-  const [providerName, setProviderName] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  // ליגות שהמשיכה שלהן נכשלה. במצב "כל הליגות" כישלון של אחת לא אמור
+  // להפיל את כל השאר, אבל כן צריך להיות גלוי
+  const [failedLeagues, setFailedLeagues] = useState([]);
 
   useEffect(() => {
     if (!leagueId && importableLeagues.length > 0) {
@@ -52,30 +61,65 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
     setLoading(true);
     setError('');
     setFixtures([]);
+    setFailedLeagues([]);
+
+    const targets = leagueId === ALL_LEAGUES
+      ? importableLeagues
+      : importableLeagues.filter((l) => l._id === leagueId);
+
+    const collected = [];
+    const failures = [];
+    let cursor = 0;
+
     try {
-      const data = await api.getUpcomingFixtures({
-        leagueId,
-        days,
-        includeOdds,
-        refresh,
-        ...(rangeMode === 'range' ? { fromDate: customFrom, toDate: customTo } : {})
-      });
-      setProviderName(data.provider || null);
-      const mapped = (data.fixtures || []).map((f) => ({
-        ...f,
-        selected: false,
-        // אם הספק החזיר שם בעברית (365scores) - נשתמש בו ישירות, אחרת נתרגם
-        team1: f.team1He || getHebrewNameByEnglish(f.team1En),
-        team2: f.team2He || getHebrewNameByEnglish(f.team2En),
-        oddsEdited: f.odds
-          ? {
-              homeWin: f.odds.homeWin ?? '',
-              draw: f.odds.draw ?? '',
-              awayWin: f.odds.awayWin ?? ''
+      await Promise.all(
+        Array.from({ length: Math.min(LEAGUE_CONCURRENCY, targets.length) }, async () => {
+          while (cursor < targets.length) {
+            const lg = targets[cursor++];
+            try {
+              const data = await api.getUpcomingFixtures({
+                leagueId: lg._id,
+                days,
+                includeOdds,
+                refresh,
+                ...(rangeMode === 'range' ? { fromDate: customFrom, toDate: customTo } : {})
+              });
+              (data.fixtures || []).forEach((f) => {
+                collected.push({
+                  ...f,
+                  selected: false,
+                  leagueId: lg._id,
+                  leagueName: lg.name,
+                  // הספק נשמר לכל משחק בנפרד: במשיכה מכל הליגות הוא עשוי
+                  // להיות שונה מליגה לליגה
+                  provider: data.provider || null,
+                  // אם הספק החזיר שם בעברית (365scores) - נשתמש בו ישירות, אחרת נתרגם
+                  team1: f.team1He || getHebrewNameByEnglish(f.team1En),
+                  team2: f.team2He || getHebrewNameByEnglish(f.team2En),
+                  oddsEdited: f.odds
+                    ? {
+                        homeWin: f.odds.homeWin ?? '',
+                        draw: f.odds.draw ?? '',
+                        awayWin: f.odds.awayWin ?? ''
+                      }
+                    : { homeWin: '', draw: '', awayWin: '' }
+                });
+              });
+            } catch (err) {
+              failures.push({ league: lg.name, message: err.message || 'שגיאה' });
             }
-          : { homeWin: '', draw: '', awayWin: '' }
-      }));
-      setFixtures(mapped);
+          }
+        })
+      );
+
+      collected.sort((a, b) => new Date(a.kickoffIso) - new Date(b.kickoffIso));
+      setFixtures(collected);
+      setFailedLeagues(failures);
+
+      // כשליגה אחת נבחרה וגם היא נכשלה, זו שגיאה של המסך כולו ולא הערה בצד
+      if (collected.length === 0 && failures.length > 0 && targets.length === 1) {
+        setError(failures[0].message);
+      }
     } catch (err) {
       setError(err.message || 'שגיאה בטעינת משחקים');
     } finally {
@@ -114,7 +158,8 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
       if (!normalizedQuery) return true;
       const t1 = (f.team1 || '').toLowerCase();
       const t2 = (f.team2 || '').toLowerCase();
-      return t1.includes(normalizedQuery) || t2.includes(normalizedQuery);
+      const lg = (f.leagueName || '').toLowerCase();
+      return t1.includes(normalizedQuery) || t2.includes(normalizedQuery) || lg.includes(normalizedQuery);
     });
 
   const handleSelectAll = () => {
@@ -139,8 +184,10 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
     try {
       const payload = {
         weekId: week._id,
-        leagueId,
         adminId,
+        // ליגה ברמת הבקשה היא רשת ביטחון למשחק שאיבד את שלו. במצב "כל הליגות"
+        // אין ערך כזה, וכל משחק נושא את הליגה שלו
+        ...(leagueId !== ALL_LEAGUES ? { leagueId } : {}),
         matches: chosen.map((f) => {
           const obj = {
             team1: f.team1.trim(),
@@ -148,7 +195,9 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
             date: f.date,
             time: f.time,
             externalId: f.apiId,
-            externalProvider: providerName
+            externalProvider: f.provider,
+            // כל משחק נושא את הליגה שלו, כדי ש"כל הליגות" ייובא נכון בבקשה אחת
+            leagueId: f.leagueId
           };
           if (includeOdds) {
             const odds = {};
@@ -214,6 +263,9 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
               disabled={loading || submitting}
             >
               {importableLeagues.length === 0 && <option value="">אין ליגות עם מזהה חיצוני</option>}
+              {importableLeagues.length > 0 && (
+                <option value={ALL_LEAGUES}>🌍 כל הליגות ({importableLeagues.length})</option>
+              )}
               {importableLeagues.map((l) => (
                 <option key={l._id} value={l._id}>{l.name}</option>
               ))}
@@ -295,12 +347,23 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
           }}>
             ℹ️ ווינר מפרסמים יחסים רק למחזור הקרוב. משחקים רחוקים יותר ייובאו בלי יחסים —
             אפשר להשלים אותם אחר כך בכפתור <strong>"💰 עדכן יחסי ווינר"</strong> במסך השבוע.
+            {leagueId === ALL_LEAGUES && ' משיכת יחסים לכל הליגות יחד אורכת זמן — כל משחק הוא פנייה נפרדת לספק.'}
           </div>
         )}
 
         {error && (
           <div style={{ background: 'var(--bad-bg, #fee)', color: 'var(--bad-fg, #900)', padding: '0.5rem 0.75rem', borderRadius: '6px', marginBottom: '0.75rem', flexShrink: 0 }}>
             {error}
+          </div>
+        )}
+
+        {failedLeagues.length > 0 && (
+          <div style={{
+            background: 'var(--warn-bg, #fffaf0)', border: '1px solid #f5e3c0', color: 'var(--warn-fg, #9a7b3f)',
+            padding: '0.45rem 0.7rem', borderRadius: '8px', fontSize: '12px',
+            marginBottom: '0.75rem', flexShrink: 0
+          }}>
+            ⚠️ {failedLeagues.length} ליגות לא נמשכו: {failedLeagues.map((f) => f.league).join(', ')}
           </div>
         )}
 
@@ -341,7 +404,7 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
 
               {filteredIndexed.map(({ f, idx }) => (
                 <div
-                  key={f.apiId}
+                  key={`${f.leagueId}_${f.apiId}`}
                   style={{
                     border: f.selected ? '2px solid #0a7' : '1px solid #ddd',
                     borderRadius: '8px',
@@ -381,6 +444,15 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
                     <div style={{ fontSize: '14px', color: 'var(--text-2, #444)', whiteSpace: 'nowrap' }}>
                       📅 {f.date} | 🕒 {f.time}
                     </div>
+                    {leagueId === ALL_LEAGUES && f.leagueName && (
+                      <span style={{
+                        fontSize: '11px', fontWeight: '700', whiteSpace: 'nowrap',
+                        padding: '2px 8px', borderRadius: '10px',
+                        background: 'var(--surface-3, #eef3f8)', color: 'var(--text-3, #667)'
+                      }}>
+                        {f.leagueName}
+                      </span>
+                    )}
                   </div>
                   {includeOdds && (
                     <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', alignItems: 'center', paddingRight: '30px' }}>

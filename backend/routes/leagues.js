@@ -1,5 +1,6 @@
 const express = require('express');
 const League = require('../models/League');
+const scores365Api = require('../services/scores365Api');
 const { requireAdmin } = require('../middleware/requireAdmin');
 const router = express.Router();
 
@@ -247,17 +248,20 @@ router.post('/seed-european', requireAdmin, async (req, res) => {
       // ישראל - דרך 365scores (חברה ישראלית, מחזירים שמות בעברית)
       { name: 'ליגת העל', key: 'israeli', color: '#6f42c1', type: 'club', region: 'ישראל', order: 1, apiFootballId: 383, footballDataCode: null, espnLeagueCode: null, sofaScoreTournamentId: 266, sportsDbLeagueId: 4644, scores365CompetitionId: 42 },
       { name: 'גביע המדינה', key: 'israeli-cup', color: '#5a32a3', type: 'club', region: 'ישראל', order: 2, apiFootballId: 384, footballDataCode: null, espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 49 },
+      // גביע הטוטו - התחרות הישראלית השלישית, והפער הבולט ברשימה. המזהה
+      // מתאתר בסנכרון מול 365, כמו בגביע הליגה האנגלי
+      { name: 'גביע הטוטו', key: 'israeli-toto-cup', color: '#4b2a86', type: 'club', region: 'ישראל', order: 3, apiFootballId: null, footballDataCode: null, espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['טוטו'], country: 'ישראל' } },
       // ספרד
       { name: 'לה ליגה', key: 'spanish', color: '#007bff', type: 'club', region: 'ספרד', order: 10, apiFootballId: 140, footballDataCode: 'PD', espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 11 },
       { name: 'קופה דל ריי', key: 'spanish-cup', color: '#0056b3', type: 'club', region: 'ספרד', order: 11, apiFootballId: 143, footballDataCode: null, espnLeagueCode: 'esp.copa_del_rey', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 13 },
       // אנגליה
       { name: 'פרמייר ליג', key: 'english', color: '#dc3545', type: 'club', region: 'אנגליה', order: 20, apiFootballId: 39, footballDataCode: 'PL', espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 7 },
       { name: 'גביע אנגליה (FA Cup)', key: 'english-fa-cup', color: '#a71d2a', type: 'club', region: 'אנגליה', order: 21, apiFootballId: 45, footballDataCode: null, espnLeagueCode: 'eng.fa', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 8 },
-      // גביע הליגה האנגלי (EFL Cup / Carabao Cup). ESPN כאן הוא פתרון ביניים בלבד:
-      // רק 365 מחזיר שמות בעברית, ורק הוא מזין יחסי ווינר, תובנות וטבלה חיה.
-      // כדי להשלים: admin → ליגות → "חיפוש תחרות ב-365scores", ולהזין את המזהה
-      // בשדה "מזהה 365scores" (סנכרון לא ידרוס מזהה שהוזן ידנית)
-      { name: 'גביע הליגה האנגלי (Carabao Cup)', key: 'english-league-cup', color: '#1f3a93', type: 'club', region: 'אנגליה', order: 22, apiFootballId: 48, footballDataCode: null, espnLeagueCode: 'eng.league_cup', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null },
+      // גביע הליגה האנגלי (EFL Cup / Carabao Cup). אין כאן מזהה 365 כתוב מראש
+      // כי מזהה שגוי לא נכשל אלא מצביע בשקט על תחרות אחרת; במקום זה seek365
+      // מבקש מהסנכרון לאתר אותו מול 365 עצמם. ESPN נשאר כגיבוי בלבד - רק 365
+      // מחזיר עברית ומזין יחסי ווינר, תובנות וטבלה חיה
+      { name: 'גביע הליגה האנגלי (Carabao Cup)', key: 'english-league-cup', color: '#1f3a93', type: 'club', region: 'אנגליה', order: 22, apiFootballId: 48, footballDataCode: null, espnLeagueCode: 'eng.league_cup', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['גביע הליגה', 'קאראבאו', 'League Cup'], country: 'אנגליה' } },
       // איטליה
       { name: 'סרייה א', key: 'italian', color: '#28a745', type: 'club', region: 'איטליה', order: 30, apiFootballId: 135, footballDataCode: 'SA', espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 17 },
       { name: 'גביע איטליה (Coppa Italia)', key: 'italian-cup', color: '#1e7e34', type: 'club', region: 'איטליה', order: 31, apiFootballId: 137, footballDataCode: null, espnLeagueCode: 'ita.coppa_italia', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 20 },
@@ -282,25 +286,71 @@ router.post('/seed-european', requireAdmin, async (req, res) => {
     const keep = (current, fromSeed) => (fromSeed == null ? current : fromSeed);
 
     for (const item of seedLeagues) {
-      const existing = await League.findOne({ key: item.key });
+      // seek365 הוא הנחיה לסנכרון, לא שדה של הליגה
+      const { seek365, ...fields } = item;
+      const existing = await League.findOne({ key: fields.key });
       if (existing) {
-        existing.apiFootballId = keep(existing.apiFootballId, item.apiFootballId);
-        existing.footballDataCode = keep(existing.footballDataCode, item.footballDataCode);
-        existing.espnLeagueCode = keep(existing.espnLeagueCode, item.espnLeagueCode);
-        existing.sofaScoreTournamentId = keep(existing.sofaScoreTournamentId, item.sofaScoreTournamentId);
-        existing.sportsDbLeagueId = keep(existing.sportsDbLeagueId, item.sportsDbLeagueId);
-        existing.scores365CompetitionId = keep(existing.scores365CompetitionId, item.scores365CompetitionId);
-        if (!existing.region) existing.region = item.region;
+        existing.apiFootballId = keep(existing.apiFootballId, fields.apiFootballId);
+        existing.footballDataCode = keep(existing.footballDataCode, fields.footballDataCode);
+        existing.espnLeagueCode = keep(existing.espnLeagueCode, fields.espnLeagueCode);
+        existing.sofaScoreTournamentId = keep(existing.sofaScoreTournamentId, fields.sofaScoreTournamentId);
+        existing.sportsDbLeagueId = keep(existing.sportsDbLeagueId, fields.sportsDbLeagueId);
+        existing.scores365CompetitionId = keep(existing.scores365CompetitionId, fields.scores365CompetitionId);
+        if (!existing.region) existing.region = fields.region;
         await existing.save();
         updated.push(existing);
       } else {
-        const doc = await League.create(item);
+        const doc = await League.create(fields);
         created.push(doc);
       }
     }
 
+    // השלמת מזהי 365 חסרים מול 365 עצמם, במקום לכתוב מספר מנוחש בקוד.
+    // התנאי המחמיר הוא הבטיחות כאן: משלימים אך ורק כשיש התאמה יחידה
+    // לשם ולמדינה. ריבוי מועמדים או אפס מועמדים מדווחים ולא מוכרעים לבד.
+    const seekByKey = new Map(
+      seedLeagues.filter((i) => i.seek365).map((i) => [i.key, i.seek365])
+    );
+    const resolved365 = [];
+    const unresolved365 = [];
+
+    for (const doc of [...created, ...updated]) {
+      const seek = seekByKey.get(doc.key);
+      if (!seek || doc.scores365CompetitionId != null) continue;
+
+      let candidates = [];
+      try {
+        for (const name of seek.names) {
+          const found = await scores365Api.searchCompetitions(name);
+          candidates = found.competitions.filter(
+            (c) => !seek.country || (c.country && c.country.includes(seek.country))
+          );
+          if (candidates.length > 0) break;
+        }
+      } catch (err) {
+        unresolved365.push({ league: doc.name, error: err.message });
+        continue;
+      }
+
+      if (candidates.length === 1) {
+        doc.scores365CompetitionId = candidates[0].id;
+        await doc.save();
+        resolved365.push({
+          league: doc.name,
+          id: candidates[0].id,
+          matchedName: candidates[0].name,
+          country: candidates[0].country
+        });
+      } else {
+        unresolved365.push({ league: doc.name, candidates: candidates.slice(0, 8) });
+      }
+    }
+
+    const resolvedNote = resolved365.length > 0 ? `, אותרו ${resolved365.length} מזהי 365` : '';
     res.status(201).json({
-      message: `נוצרו ${created.length} ליגות, עודכנו ${updated.length}`,
+      message: `נוצרו ${created.length} ליגות, עודכנו ${updated.length}${resolvedNote}`,
+      resolved365,
+      unresolved365,
       created: created.length,
       updated: updated.length,
       leagues: [...created, ...updated]

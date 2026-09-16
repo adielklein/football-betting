@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const Match = require('../models/Match');
 const Week = require('../models/Week');
 const League = require('../models/League');
@@ -151,16 +152,34 @@ router.post('/bulk', requireAdmin, async (req, res) => {
       return res.status(400).json({ message: 'matches חייב להיות מערך לא ריק' });
     }
 
-    let validLeagueId = leagueId;
-    if (!validLeagueId && league) {
+    let defaultLeagueId = leagueId;
+    if (!defaultLeagueId && league) {
       const found = await League.findOne({ key: league });
       if (!found) return res.status(400).json({ message: `ליגה '${league}' לא נמצאה` });
-      validLeagueId = found._id;
+      defaultLeagueId = found._id;
     }
-    if (!validLeagueId) return res.status(400).json({ message: 'חובה לבחור ליגה' });
 
-    const leagueDoc = await League.findById(validLeagueId);
-    if (!leagueDoc) return res.status(400).json({ message: 'הליגה שנבחרה לא קיימת' });
+    // ייבוא יכול להגיע מכמה ליגות בבת אחת ("כל הליגות" במסך הייבוא), ולכן
+    // לכל משחק מותר לשאת leagueId משלו. ליגה ברמת הבקשה נשארת כברירת מחדל
+    // למשחקים שלא נשאו אחת, כדי לא לשבור קריאות קיימות
+    const referenced = [
+      ...matches.map((m) => m.leagueId).filter(Boolean),
+      ...(defaultLeagueId ? [defaultLeagueId] : [])
+    ].map(String);
+
+    if (referenced.length === 0) return res.status(400).json({ message: 'חובה לבחור ליגה' });
+
+    const invalid = [...new Set(referenced)].filter((id) => !mongoose.isValidObjectId(id));
+    if (invalid.length > 0) {
+      return res.status(400).json({ message: `מזהה ליגה לא תקין: ${invalid.join(', ')}` });
+    }
+
+    const leagueDocs = await League.find({ _id: { $in: [...new Set(referenced)] } });
+    const leagueById = new Map(leagueDocs.map((l) => [String(l._id), l]));
+
+    if (defaultLeagueId && !leagueById.has(String(defaultLeagueId))) {
+      return res.status(400).json({ message: 'הליגה שנבחרה לא קיימת' });
+    }
 
     const docs = [];
     const errors = [];
@@ -168,6 +187,12 @@ router.post('/bulk', requireAdmin, async (req, res) => {
     matches.forEach((m, idx) => {
       if (!m.team1 || !m.team2 || !m.date || !m.time) {
         errors.push({ index: idx, message: 'חסרים שדות חובה (team1/team2/date/time)' });
+        return;
+      }
+
+      const matchLeague = leagueById.get(String(m.leagueId || defaultLeagueId));
+      if (!matchLeague) {
+        errors.push({ index: idx, message: 'הליגה של המשחק לא קיימת' });
         return;
       }
 
@@ -189,8 +214,8 @@ router.post('/bulk', requireAdmin, async (req, res) => {
 
       const data = {
         weekId,
-        leagueId: validLeagueId,
-        league: leagueDoc.key,
+        leagueId: matchLeague._id,
+        league: matchLeague.key,
         team1: m.team1,
         team2: m.team2,
         date: m.date,
@@ -222,10 +247,13 @@ router.post('/bulk', requireAdmin, async (req, res) => {
       .populate('leagueId');
 
     if (adminId) {
-      const summary = `${inserted.length} משחקים בליגת ${leagueDoc.name}`;
+      const usedLeagues = [...new Set(docs.map((d) => String(d.leagueId)))];
+      const summary = usedLeagues.length === 1
+        ? `${inserted.length} משחקים בליגת ${leagueById.get(usedLeagues[0]).name}`
+        : `${inserted.length} משחקים ב-${usedLeagues.length} ליגות`;
       logAdminAction(adminId, 'ייבוא משחקים מ-API', summary, {
         weekId,
-        leagueId: validLeagueId,
+        leagueIds: usedLeagues,
         count: inserted.length
       });
     }

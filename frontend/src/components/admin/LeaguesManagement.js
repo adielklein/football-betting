@@ -2,6 +2,117 @@ import React, { useState, useEffect } from 'react';
 import { toast } from '../../services/toast';
 import { api } from '../../services/api';
 
+const searchLabelStyle = {
+  fontSize: '11px', color: 'var(--text-3, #888)', display: 'block', marginBottom: '3px', fontWeight: '600'
+};
+
+const searchInputStyle = {
+  borderRadius: '10px', fontSize: '13px', padding: '0.45rem 0.6rem'
+};
+
+// חיפוש תחרות ב-365 לפי שם. 365 הוא הספק המועדף כאן - הוא מחזיר עברית, ורק
+// הוא מזין יחסי ווינר, תובנות וטבלה חיה - ולכן שווה למצוא את המזהה הנכון
+// במקום לנחש מספר, שלא נכשל אלא מצביע בשקט על תחרות אחרת.
+function Competition365Search({ onPick }) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState(null);
+  const [searching, setSearching] = useState(false);
+
+  const search = async () => {
+    if (!query.trim()) {
+      toast.warning('הקלד שם תחרות או מדינה');
+      return;
+    }
+    setSearching(true);
+    try {
+      const data = await api.search365Competitions(query.trim());
+      setResults(data);
+      if (data.competitions.length === 0) {
+        toast.warning(data.source ? 'לא נמצאו תחרויות תואמות' : 'לא התקבלה רשימת תחרויות מ-365');
+      }
+    } catch (error) {
+      toast.error('שגיאה בחיפוש: ' + error.message);
+      setResults(null);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  return (
+    <div style={{
+      background: 'var(--surface-2, #fafafa)', border: '1px solid var(--border, #f0f0f0)',
+      borderRadius: '10px', padding: '0.6rem', marginBottom: '0.5rem'
+    }}>
+      <label style={searchLabelStyle}>🔎 חיפוש תחרות ב-365scores (לפי שם או מדינה)</label>
+      <div style={{ display: 'flex', gap: '0.4rem' }}>
+        <input
+          type="text"
+          placeholder="גביע הליגה / אנגליה"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') search(); }}
+          className="input" style={{ ...searchInputStyle, flex: 1 }}
+        />
+        <button
+          onClick={search}
+          disabled={searching}
+          style={{
+            padding: '0.45rem 0.8rem',
+            background: searching ? '#9e9e9e' : 'linear-gradient(135deg, #007bff, #00a2ff)',
+            color: 'white', border: 'none', borderRadius: '10px',
+            fontSize: '13px', fontWeight: '700', cursor: searching ? 'default' : 'pointer',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          {searching ? '⏳' : 'חפש'}
+        </button>
+      </div>
+
+      {results && results.competitions.length > 0 && (
+        <div style={{ marginTop: '0.5rem', maxHeight: '180px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          {results.competitions.map((c) => (
+            <div key={c.id} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              gap: '0.5rem', padding: '0.35rem 0.5rem',
+              background: 'var(--surface, #fff)', border: '1px solid var(--border, #f0f0f0)',
+              borderRadius: '8px', fontSize: '12px'
+            }}>
+              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {c.name}
+                {c.country && <span style={{ color: 'var(--text-4, #999)' }}> · {c.country}</span>}
+                <span style={{ fontFamily: 'monospace', color: 'var(--text-4, #aaa)' }}> · {c.id}</span>
+              </span>
+              <button
+                onClick={() => onPick(c)}
+                style={{
+                  padding: '0.2rem 0.55rem', background: 'var(--surface-3, #eef3f8)',
+                  border: 'none', borderRadius: '6px', fontSize: '11px',
+                  fontWeight: '700', cursor: 'pointer', flexShrink: 0
+                }}
+              >
+                השתמש
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {results && !results.source && (
+        <div style={{
+          marginTop: '0.5rem', fontSize: '11px', color: 'var(--warn-fg, #9a7b3f)',
+          background: 'var(--warn-bg, #fffaf0)', border: '1px solid #f5e3c0',
+          borderRadius: '8px', padding: '0.4rem 0.55rem'
+        }}>
+          ⚠️ 365 לא החזירו רשימת תחרויות. פירוט הניסיונות:
+          <pre style={{ margin: '0.3rem 0 0', whiteSpace: 'pre-wrap', fontSize: '10px' }}>
+            {JSON.stringify(results.diagnostics, null, 1)}
+          </pre>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function LeaguesManagement() {
   const [leagues, setLeagues] = useState([]);
   const [editingLeague, setEditingLeague] = useState(null);
@@ -12,9 +123,6 @@ function LeaguesManagement() {
   });
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
-  const [compQuery, setCompQuery] = useState('');
-  const [compResults, setCompResults] = useState(null);
-  const [compSearching, setCompSearching] = useState(false);
 
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
@@ -141,6 +249,21 @@ function LeaguesManagement() {
       if (response.ok) {
         await loadLeagues();
         toast.success(data.message || 'הליגות סונכרנו בהצלחה!');
+
+        // מזהה שאותר אוטומטית - מראים למה הוא התחבר, כדי שיהיה אפשר לוודא
+        (data.resolved365 || []).forEach((r) => {
+          toast.success(`${r.league} → 365 #${r.id} (${r.matchedName}${r.country ? `, ${r.country}` : ''})`);
+        });
+
+        // לא הוכרע לבד - נשאר לאדמין, עם המועמדים שנמצאו
+        (data.unresolved365 || []).forEach((u) => {
+          const detail = u.error
+            ? u.error
+            : u.candidates && u.candidates.length > 0
+              ? `${u.candidates.length} מועמדים - בחר ידנית בעריכת הליגה`
+              : 'לא נמצאה תחרות תואמת ב-365';
+          toast.warning(`${u.league}: ${detail}`);
+        });
       } else {
         toast.error('שגיאה: ' + data.message);
       }
@@ -148,28 +271,6 @@ function LeaguesManagement() {
       toast.error('שגיאה בסנכרון הליגות');
     } finally {
       setSeeding(false);
-    }
-  };
-
-  // מוצא את מזהה התחרות ב-365 לפי שם, במקום לנחש מספר. מספר שגוי לא נכשל -
-  // הוא מצביע בשקט על תחרות אחרת - ולכן שואלים את 365 עצמם
-  const handleSearchCompetitions = async () => {
-    if (!compQuery.trim()) {
-      toast.warning('הקלד שם תחרות או מדינה');
-      return;
-    }
-    setCompSearching(true);
-    try {
-      const data = await api.search365Competitions(compQuery.trim());
-      setCompResults(data);
-      if (data.competitions.length === 0) {
-        toast.warning(data.source ? 'לא נמצאו תחרויות תואמות' : 'לא התקבלה רשימת תחרויות מ-365');
-      }
-    } catch (error) {
-      toast.error('שגיאה בחיפוש: ' + error.message);
-      setCompResults(null);
-    } finally {
-      setCompSearching(false);
     }
   };
 
@@ -341,79 +442,9 @@ function LeaguesManagement() {
           </div>
         </div>
 
-        {/* חיפוש תחרות ב-365. 365 הוא הספק המועדף - הוא מחזיר עברית ורק הוא
-            תומך ביחסים, בתובנות ובטבלה החיה - ולכן שווה למצוא את המזהה הנכון */}
-        <div style={{
-          background: 'var(--surface-2, #fafafa)', border: '1px solid var(--border, #f0f0f0)',
-          borderRadius: '10px', padding: '0.6rem', marginBottom: '0.5rem'
-        }}>
-          <label style={labelStyle}>🔎 חיפוש תחרות ב-365scores (לפי שם או מדינה)</label>
-          <div style={{ display: 'flex', gap: '0.4rem' }}>
-            <input
-              type="text"
-              placeholder="גביע הליגה / אנגליה"
-              value={compQuery}
-              onChange={(e) => setCompQuery(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleSearchCompetitions(); }}
-              className="input" style={{ ...inputStyle, flex: 1 }}
-            />
-            <button
-              onClick={handleSearchCompetitions}
-              disabled={compSearching}
-              style={{
-                padding: '0.45rem 0.8rem',
-                background: compSearching ? '#9e9e9e' : 'linear-gradient(135deg, #007bff, #00a2ff)',
-                color: 'white', border: 'none', borderRadius: '10px',
-                fontSize: '13px', fontWeight: '700', cursor: compSearching ? 'default' : 'pointer',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {compSearching ? '⏳' : 'חפש'}
-            </button>
-          </div>
-
-          {compResults && compResults.competitions.length > 0 && (
-            <div style={{ marginTop: '0.5rem', maxHeight: '180px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              {compResults.competitions.map((c) => (
-                <div key={c.id} style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  gap: '0.5rem', padding: '0.35rem 0.5rem',
-                  background: 'var(--surface, #fff)', border: '1px solid var(--border, #f0f0f0)',
-                  borderRadius: '8px', fontSize: '12px'
-                }}>
-                  <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {c.name}
-                    {c.country && <span style={{ color: 'var(--text-4, #999)' }}> · {c.country}</span>}
-                    <span style={{ fontFamily: 'monospace', color: 'var(--text-4, #aaa)' }}> · {c.id}</span>
-                  </span>
-                  <button
-                    onClick={() => setNewLeague(prev => ({ ...prev, scores365CompetitionId: String(c.id) }))}
-                    style={{
-                      padding: '0.2rem 0.55rem', background: 'var(--surface-3, #eef3f8)',
-                      border: 'none', borderRadius: '6px', fontSize: '11px',
-                      fontWeight: '700', cursor: 'pointer', flexShrink: 0
-                    }}
-                  >
-                    השתמש
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {compResults && !compResults.source && (
-            <div style={{
-              marginTop: '0.5rem', fontSize: '11px', color: 'var(--warn-fg, #9a7b3f)',
-              background: 'var(--warn-bg, #fffaf0)', border: '1px solid #f5e3c0',
-              borderRadius: '8px', padding: '0.4rem 0.55rem'
-            }}>
-              ⚠️ 365 לא החזירו רשימת תחרויות. פירוט הניסיונות:
-              <pre style={{ margin: '0.3rem 0 0', whiteSpace: 'pre-wrap', fontSize: '10px' }}>
-                {JSON.stringify(compResults.diagnostics, null, 1)}
-              </pre>
-            </div>
-          )}
-        </div>
+        <Competition365Search
+          onPick={(c) => setNewLeague(prev => ({ ...prev, scores365CompetitionId: String(c.id) }))}
+        />
 
         <button onClick={handleCreateLeague} style={{
           width: '100%', padding: '0.55rem',
@@ -609,8 +640,11 @@ function LeaguesManagement() {
                   <input type="number" placeholder="42"
                     value={editForm.scores365CompetitionId ?? ''} className="input" style={inputStyle}
                     onChange={(e) => setEditForm(prev => ({ ...prev, scores365CompetitionId: e.target.value }))}
-                    title="ניתן לאמת ב-GET /api/external/debug/:leagueId" />
+                    title="אפשר למצוא אותו בחיפוש שמתחת" />
                 </div>
+                <Competition365Search
+                  onPick={(c) => setEditForm(prev => ({ ...prev, scores365CompetitionId: String(c.id) }))}
+                />
               </div>
             </div>
 
