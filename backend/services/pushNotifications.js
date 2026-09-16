@@ -1,6 +1,7 @@
 const webpush = require('web-push');
 const fetch = require('node-fetch');
 const User = require('../models/User');
+const { styleFor } = require('./notificationStyle');
 
 console.log('🔔 [PUSH SERVICE] ========================================');
 console.log('🔔 [PUSH SERVICE] Initializing Push Notifications Service...');
@@ -128,10 +129,16 @@ async function uploadImageToImgBB(base64Image) {
 // נשארת ב-data, שם היא כן משמשת - האפליקציה מציגה אותה בפתיחה.
 const APPLE_PUSH_HOST = 'web.push.apple.com';
 
+// מה שאפל לא מממשת נחתך בדרך אליה. זה לא רק ניקיון: ל-Web Push יש תקרת
+// payload של כ-4KB, וכפתורים ומערכי רטט שלעולם לא יוצגו תופסים ממנה מקום
+const APPLE_UNSUPPORTED = ['image', 'badge', 'vibrate', 'actions'];
+
 const payloadFor = (subscription, payload) => {
   const endpoint = subscription?.endpoint || '';
-  if (!endpoint.includes(APPLE_PUSH_HOST) || payload.image === undefined) return payload;
-  const { image, ...rest } = payload;
+  if (!endpoint.includes(APPLE_PUSH_HOST)) return payload;
+
+  const rest = { ...payload };
+  for (const key of APPLE_UNSUPPORTED) delete rest[key];
   return rest;
 };
 
@@ -323,15 +330,21 @@ async function sendNotificationToUsers(userIds, title, body, data = {}, imageUrl
 
     console.log(`📢 [PUSH] Found ${users.length} users`);
 
+    // קצב הרטט והכפתורים נגזרים מסוג ההתראה, כדי שכל סוג יורגש אחרת
+    // ויוביל למקום הנכון באפליקציה
+    const style = styleFor(data?.type);
+
     const payload = {
       title,
       body,
       icon: '/logo192.png',
       badge: '/logo192.png',
-      vibrate: [200, 100, 200],
+      vibrate: style.vibrate,
+      actions: style.actions,
       tag: `group-${Date.now()}`,
       data: {
         ...(data || {}),
+        actionUrls: style.actionUrls,
         imageUrl: finalImageUrl || undefined
       }
     };

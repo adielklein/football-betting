@@ -3,18 +3,18 @@
 console.log('🔧 Service Worker loading...');
 
 // גרסה - שנה את זה כדי לאלץ עדכון
-const CACHE_VERSION = 'v1.1.0'; // ✅ עדכנתי את הגרסה!
+const CACHE_VERSION = 'v1.2.0'; // כפתורי פעולה בהתראות
 const CACHE_NAME = `football-betting-${CACHE_VERSION}`;
 
 // התקנת Service Worker
 self.addEventListener('install', (event) => {
-  console.log('✅ Service Worker installed - v1.1.0 with image support');
+  console.log('✅ Service Worker installed - v1.2.0 with notification actions');
   self.skipWaiting(); // מיד להפעיל את ה-SW החדש
 });
 
 // הפעלת Service Worker
 self.addEventListener('activate', (event) => {
-  console.log('✅ Service Worker activated - v1.1.0');
+  console.log('✅ Service Worker activated - v1.2.0');
   event.waitUntil(
     // נקה cache ישנים
     caches.keys().then(cacheNames => {
@@ -113,8 +113,13 @@ self.addEventListener('notificationclick', (event) => {
   
   event.notification.close();
 
+  // לחיצה על כפתור בהתראה מובילה ליעד של אותו כפתור. ה-service worker לא
+  // מכיר את סוגי ההתראות - השרת שולח מפה מ-action ליעד, וכאן רק קוראים בה
+  const data = event.notification.data || {};
+  const actionUrl = event.action ? data.actionUrls?.[event.action] : null;
+
   // פתח את האפליקציה או עבור לעמוד מסוים
-  const urlToOpen = event.notification.data?.url || '/';
+  const urlToOpen = actionUrl || data.url || '/';
   
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
@@ -146,4 +151,4 @@ self.addEventListener('notificationclose', (event) => {
   console.log('❌ [SW] Notification closed:', event.notification.tag);
 });
 
-console.log('✅ Service Worker v1.1.0 loaded successfully with image support!');
+console.log('✅ Service Worker v1.2.0 loaded successfully with notification actions!');
