@@ -141,6 +141,98 @@ function LuckTable({ meUserId }) {
   );
 }
 
+// טבלת האומץ: מי מנחש נגד היחסים, ומי תמיד על הבטוח.
+//
+// היחסים נשמרים ממילא על כל משחק ומשמשים לניקוד בלבד. הם גם דעה, ולכן אפשר
+// לתמחר כל ניחוש: כמה לא סביר היה הכיוון שנבחר. הדירוג לפי ממוצע ולא לפי
+// סכום, מאותה סיבה שבטבלת חוסר המזל - אחרת זה מדרג ותק ולא אופי.
+function CourageTable({ meUserId }) {
+  const [rows, setRows] = useState(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API_URL}/stats/courage-table`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((d) => { if (!cancelled) setRows(Array.isArray(d) ? d : []); })
+      .catch(() => { if (!cancelled) setFailed(true); });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (failed || (rows && rows.length === 0)) return null;
+
+  return (
+    <Card title="מי הכי אמיץ" icon="🦁">
+      <div style={{ fontSize: '10.5px', color: 'var(--text-3, #9aa2ae)', marginBottom: '0.6rem', lineHeight: 1.5 }}>
+        כמה הניחושים שלך הולכים נגד היחסים. המספר הימני: האם האומץ השתלם —
+        ההפרש בנקודות בין ההימורים האמיצים שלך לזהירים שלך.
+      </div>
+
+      {!rows ? (
+        <div style={{ padding: '0.8rem', textAlign: 'center', fontSize: '11px', color: 'var(--text-4, #b6bcc6)' }}>
+          טוען…
+        </div>
+      ) : (
+        rows.map((r) => {
+          const me = String(r.userId) === String(meUserId);
+          const paid = r.braveryPaid;
+          return (
+            <div
+              key={r.userId}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                padding: '0.45rem 0.4rem',
+                borderTop: '1px dashed var(--border, #eef1f4)',
+                background: me ? ACCENT_SOFT : 'transparent',
+                borderRadius: me ? '8px' : 0
+              }}
+            >
+              <span style={{
+                minWidth: '18px', fontSize: '11px', fontWeight: 800,
+                color: r.rank === 1 ? ACCENT : 'var(--text-4, #b6bcc6)'
+              }}>
+                {r.rank ? <Num>{r.rank}</Num> : '–'}
+              </span>
+
+              <span style={{
+                flex: 1, minWidth: 0, fontSize: '12px',
+                fontWeight: me ? 800 : 600, color: me ? 'var(--warn-fg, #5a3722)' : 'var(--text-2, #444)',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+              }}>
+                {r.name}
+              </span>
+
+              <span style={{ fontSize: '10px', color: 'var(--text-4, #aab1bb)', minWidth: '60px', textAlign: 'left' }}>
+                <Num>{r.braveBets}</Num> אמיצים
+              </span>
+
+              <span style={{ fontSize: '10.5px', color: 'var(--text-3, #8b93a0)', minWidth: '40px', textAlign: 'left' }}>
+                <Num>{r.courage}</Num>
+              </span>
+
+              <span
+                title={paid == null ? 'אין מספיק הימורים משני הסוגים כדי להשוות' : ''}
+                style={{
+                  fontSize: '13px', fontWeight: 800, minWidth: '40px', textAlign: 'left',
+                  color: paid == null
+                    ? 'var(--text-4, #c3c8d0)'
+                    : paid > 0 ? 'var(--good-fg, #1e7e34)' : paid < 0 ? 'var(--bad-fg, #b23b3b)' : 'var(--text-3, #8b93a0)'
+                }}
+              >
+                {paid == null ? '–' : <><Num>{paid > 0 ? `+${paid}` : paid}</Num></>}
+              </span>
+            </div>
+          );
+        })
+      )}
+
+      <div style={{ fontSize: '9px', color: 'var(--text-4, #c3c8d0)', marginTop: '0.5rem', textAlign: 'center' }}>
+        אמיץ = ניחוש בכיוון שהיחסים נתנו לו פחות מ-50%
+      </div>
+    </Card>
+  );
+}
+
 function NearMissView({ nearMisses, userId }) {
   const data = nearMisses;
 
@@ -254,6 +346,9 @@ function NearMissView({ nearMisses, userId }) {
 
       {/* טבלת חוסר המזל: כולם מקבלים את אותו יחס, ולכן יש מקום אחד אמיתי */}
       <LuckTable meUserId={userId} />
+
+      {/* מי מנחש נגד היחסים, והאם זה משתלם לו */}
+      <CourageTable meUserId={userId} />
 
       {/* השבועות שבהם הכי הרבה ברח - בלי טענות על מקומות */}
       {weeks.length > 0 && (

@@ -7,6 +7,7 @@ const Week = require('../models/Week');
 const { normalizeTeamName } = require('../utils/teamNormalizer');
 const { buildNearMissReport } = require('../services/nearMissReport');
 const { buildLuckTable } = require('../services/luckTable');
+const { buildCourageTable } = require('../services/courageTable');
 const { buildParticipation } = require('../services/participation');
 const User = require('../models/User');
 
@@ -250,6 +251,43 @@ router.get('/luck-table', async (req, res) => {
     res.json(rows);
   } catch (error) {
     console.error('luck-table error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/stats/courage-table - מי הולך נגד היחסים, והאם זה משתלם לו
+//
+// כמו טבלת חוסר המזל: טבלה אחת לכל הליגה, ולכן מחושבת פעם אחת ומוגשת
+// מהזיכרון לכולם במקום שליפה מלאה לכל כניסה
+let courageCache = { at: 0, rows: null };
+
+router.get('/courage-table', async (req, res) => {
+  try {
+    if (courageCache.rows && Date.now() - courageCache.at < LUCK_TTL_MS) {
+      return res.json(courageCache.rows);
+    }
+
+    const [players, bets, matches] = await Promise.all([
+      User.find({ role: { $ne: 'admin' } }, 'name').lean(),
+      Bet.find({}, 'userId matchId prediction points').lean(),
+      Match.find({}, 'result odds').lean()
+    ]);
+
+    const matchById = new Map(matches.map((m) => [String(m._id), m]));
+    const rows = buildCourageTable(
+      bets.map((b) => ({
+        userId: b.userId,
+        prediction: b.prediction,
+        points: b.points,
+        match: matchById.get(String(b.matchId))
+      })),
+      players
+    );
+
+    courageCache = { at: Date.now(), rows };
+    res.json(rows);
+  } catch (error) {
+    console.error('courage-table error:', error);
     res.status(500).json({ error: error.message });
   }
 });
