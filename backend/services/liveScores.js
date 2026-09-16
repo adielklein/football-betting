@@ -61,10 +61,36 @@ const scoreOf = (competitor) => {
   return s == null || s < 0 ? null : Math.round(s);
 };
 
+// כרטיסים אדומים. אין לנו תיעוד של המבנה שבו 365 מחזירים אותם בנקודת הקצה
+// הזו, ולכן מנסים כמה שמות סבירים ומחזירים null כשאף אחד לא קיים. null
+// פירושו "לא ידוע" ולא "אפס", וזיהוי האירועים לא מייצר ממנו כרטיס אדום -
+// כך שגם אם הספק לא מדווח כרטיסים, אף אחד לא מקבל התראת שווא
+const redCardsOf = (competitor) => {
+  const v = competitor?.redCards ?? competitor?.redCardsCount ?? competitor?.redcards;
+  return typeof v === 'number' && v >= 0 ? Math.round(v) : null;
+};
+
+// מדווח פעם אחת לכל עליית שרת אם התשובה החיה לא כוללת כרטיסים, כדי
+// שאפשר יהיה לדעת מהלוג אם התראות אדום בכלל ניתנות למימוש מהמקור הזה
+let redCardSupportLogged = false;
+const noteRedCardSupport = (competitor) => {
+  if (redCardSupportLogged || !competitor) return;
+  redCardSupportLogged = true;
+  const supported = redCardsOf(competitor) != null;
+  console.log(
+    supported
+      ? '🟥 [LIVE] 365 מדווחים כרטיסים אדומים - התראות אדום פעילות'
+      : `🟥 [LIVE] אין שדה כרטיסים אדומים בתשובה החיה. שדות זמינים: ${Object.keys(competitor).join(', ')}`
+  );
+};
+
 // מה שהלקוח צריך כדי לצייר שורה חיה, בסדר team1/team2 של האפליקציה
 const toLiveEntry = (match, game) => {
   const finished = game.statusGroup === STATUS_FINISHED;
+  noteRedCardSupport(game.homeCompetitor);
   return {
+    team1Reds: redCardsOf(game.homeCompetitor),
+    team2Reds: redCardsOf(game.awayCompetitor),
     matchId: String(match._id),
     status: finished ? 'finished' : game.statusGroup === STATUS_LIVE ? 'live' : 'scheduled',
     statusText: game.shortStatusText || game.statusText || null,

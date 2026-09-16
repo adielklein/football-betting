@@ -163,7 +163,7 @@ app.get('/', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     authSystem: 'Username/Password',
     endpoints: {
-      debug: '/api/debug',
+      debug: '/api/debug',
       auth: '/api/auth/*',
       weeks: '/api/weeks/*',
       matches: '/api/matches/*',
@@ -293,6 +293,63 @@ console.log('🕐 Cron registered: sync-results every hour at minute 17');
 // יכלה לחכות עד שעה שלמה לסריקה השעתית, ועכשיו היא נתפסת תוך דקה.
 const liveScores = require('./services/liveScores');
 
+// 📣 התראות אירועים במשחק חי.
+//
+// האירועים נגזרים מהפרש בין תמונת המצב השמורה על המשחק לזו שחזרה עכשיו,
+// והתמונה החדשה נשמרת מיד אחרי השליחה - כך שהפעלה מחדש של השרת באמצע
+// משחק לא שולחת שוב את אותו שער.
+//
+// כל ארבעת הסוגים כבויים כברירת מחדל, ולכן ברוב המקרים אין למי לשלוח
+// ואפילו לא נשלפת רשימת משתמשים.
+const { detectEvents, describeEvent, SETTING_BY_EVENT } = require('./services/matchEvents');
+
+const notifyLiveEvents = async (matches, games) => {
+  const User = require('./models/User');
+  const { sendNotificationToUsers } = require('./services/pushNotifications');
+  const liveById = new Map(games.map((g) => [String(g.matchId), g]));
+
+  for (const match of matches) {
+    const live = liveById.get(String(match._id));
+    if (!live) continue;
+
+    const { events, next, changed } = detectEvents(match.liveSnapshot, live);
+    if (!changed) continue;
+
+    // התמונה נשמרת בכל מקרה, גם כשאין למי לשלוח, כי היא קו הבסיס להפרש הבא.
+    // updateOne ולא save: המסמך נשלף עם projection חלקי, וכתיבה ממוקדת של
+    // השדה היחיד שהשתנה לא תלויה בשדות שלא נשלפו
+    match.liveSnapshot = next;
+    await Match.updateOne({ _id: match._id }, { $set: { liveSnapshot: next } });
+
+    for (const event of events) {
+      const setting = SETTING_BY_EVENT[event.type];
+      if (!setting) continue;
+
+      try {
+        const recipients = await User.find(
+          { role: { $ne: 'admin' }, 'pushSettings.enabled': true, [`pushSettings.${setting}`]: true },
+          '_id'
+        );
+        if (recipients.length === 0) continue;
+
+        const text = describeEvent(event, match.team1, match.team2);
+        if (!text) continue;
+
+        await sendNotificationToUsers(
+          recipients.map((u) => u._id),
+          text.title,
+          text.body,
+          { type: `match_${event.type}`, matchId: String(match._id) }
+        );
+        console.log(`📣 [LIVE] ${event.type}: ${match.team1} - ${match.team2} → ${recipients.length} משתמשים`);
+      } catch (err) {
+        // התראה שנכשלה לא אמורה לעצור את הסריקה או את חישוב הניקוד
+        console.warn(`📣 [LIVE] שליחת ${event.type} נכשלה:`, err.message);
+      }
+    }
+  }
+};
+
 let livePollInFlight = false;
 
 const runLivePoll = async () => {
@@ -305,7 +362,7 @@ const runLivePoll = async () => {
     const to = new Date(now + 10 * 60 * 1000);
     const candidates = await Match.find(
       { fullDate: { $gte: from, $lte: to }, externalId: { $ne: null } },
-      'weekId externalId fullDate result'
+      'weekId externalId fullDate result team1 team2 liveSnapshot'
     );
     const inWindow = candidates.filter((m) => liveScores.inBroadcastWindow(m, now));
     if (inWindow.length === 0) return;
@@ -320,6 +377,8 @@ const runLivePoll = async () => {
     for (const [weekId, matches] of byWeek) {
       liveScores.invalidate(weekId);
       const games = await liveScores.getLiveForWeek(weekId, matches);
+
+      await notifyLiveEvents(matches, games);
 
       // משחק שהסתיים אצל הספק אך עדיין אין לו תוצאה אצלנו. הבדיקה הזו
       // אידמפוטנטית - ברגע שהתוצאה נכנסה היא כבר לא מזוהה שוב.

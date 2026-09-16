@@ -7,7 +7,7 @@ import Leaderboard from './Leaderboard';
 import HistoryViewer from './HistoryViewer';
 import AllBetsViewer from './AllBetsViewer';
 import PlayerStats from './PlayerStats';
-import NotificationSettings from '../NotificationSettings';
+import SettingsView from './SettingsView';
 import { confirmLeave } from '../../services/unsavedGuard';
 import useTabRoute from '../../services/useTabRoute';
 import useSwipeNav from '../../services/useSwipeNav';
@@ -21,7 +21,10 @@ function PlayerView({ user, onLogout }) {
   const [leaderboard, setLeaderboard] = useState([]);
   // הלשונית נגזרת מהכתובת, כדי שכפתור "חזור" יחזור ללשונית הקודמת
   // במקום לצאת מהאפליקציה, ושרענון או קישור ינחתו במקום הנכון.
-  const TAB_KEYS = ['betting', 'allbets', 'leaderboard', 'history', 'stats'];
+  // הלשוניות הנראות בסרגל. ההגדרות אינן ביניהן - הן מסך שלם שנפתח
+  // מגלגל השיניים בכותרת, ולכן אין סיבה שיגזלו מקום בסרגל צר ממילא
+  const VISIBLE_TABS = ['betting', 'allbets', 'leaderboard', 'history', 'stats'];
+  const TAB_KEYS = [...VISIBLE_TABS, 'settings'];
   const [activeTab, setActiveTab] = useTabRoute(
     TAB_KEYS,
     'betting',
@@ -31,7 +34,7 @@ function PlayerView({ user, onLogout }) {
   // החלקה בין לשוניות. עוברת דרך setActiveTab ולא דרך הניווט ישירות, ולכן
   // אזהרת "הימור לא שמור" חלה עליה בדיוק כמו על לחיצה על לשונית.
   const swipe = useSwipeNav((intent) => {
-    const next = stepTab(TAB_KEYS, activeTab, intent);
+    const next = stepTab(VISIBLE_TABS, activeTab, intent);
     if (next) setActiveTab(next);
   });
 
@@ -197,11 +200,10 @@ function PlayerView({ user, onLogout }) {
         selectedWeek={selectedWeek}
         userScore={getUserTotalScore()}
         onLogout={onLogout}
+        onOpenSettings={() => setActiveTab('settings')}
       />
 
       <div className="container">
-        <NotificationSettings user={user} />
-
         {/* Tab Bar */}
         <div style={{
           display: 'grid',
@@ -293,6 +295,10 @@ function PlayerView({ user, onLogout }) {
 
           {activeTab === 'stats' && (
             <PlayerStats user={user} />
+          )}
+
+          {activeTab === 'settings' && (
+            <SettingsView user={user} />
           )}
         </div>
       </div>

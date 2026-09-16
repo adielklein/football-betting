@@ -1,13 +1,64 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from '../services/toast';
 
-function NotificationSettings({ user }) {
+// שורת מתג אחת. הופקה מהמתג שהיה כאן inline, כדי שכל ההתראות ייראו אותו
+// דבר במקום שכל אחת תצייר מתג משלה
+function ToggleRow({ label, hint, checked, onChange }) {
+  return (
+    <div
+      onClick={() => onChange(!checked)}
+      style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: '0.5rem', padding: '0.4rem 0', cursor: 'pointer',
+        WebkitTapHighlightColor: 'transparent'
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-2, #555)', cursor: 'pointer' }}>
+          {label}
+        </label>
+        {hint && (
+          <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', marginTop: '1px' }}>{hint}</div>
+        )}
+      </div>
+      <div style={{
+        width: '40px', height: '22px', borderRadius: '11px',
+        background: checked ? 'linear-gradient(135deg, #28a745, #20c997)' : '#ccc',
+        position: 'relative', transition: 'background 0.3s ease',
+        flexShrink: 0
+      }}>
+        <div style={{
+          width: '18px', height: '18px', borderRadius: '50%',
+          background: 'var(--surface, #fff)', position: 'absolute', top: '2px',
+          left: checked ? '20px' : '2px',
+          transition: 'left 0.3s ease',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// התראות אירועים במשחק חי. כולן כבויות כברירת מחדל - נדלקות רק בבחירה
+const MATCH_EVENT_ALERTS = [
+  { key: 'goalAlerts', label: '⚽ שערים', hint: 'התראה על כל שער במשחקי השבוע' },
+  { key: 'redCardAlerts', label: '🟥 כרטיסים אדומים', hint: 'התראה על הרחקה' },
+  { key: 'matchStartAlerts', label: '🏁 תחילת משחק', hint: 'שריקת פתיחה' },
+  { key: 'matchEndAlerts', label: '🔚 סיום משחק', hint: 'שריקת סיום והתוצאה' }
+];
+
+function NotificationSettings({ user, embedded = false }) {
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [hoursBeforeLock, setHoursBeforeLock] = useState(2);
   const [exactScoreAlerts, setExactScoreAlerts] = useState(true);
+  // ברירת המחדל כאן זהה לזו שבמסד: כבוי. כך משתמש שטרם בחר לא רואה מתג
+  // דלוק שמבטיח התראות שלא יגיעו
+  const [eventAlerts, setEventAlerts] = useState({
+    goalAlerts: false, redCardAlerts: false, matchStartAlerts: false, matchEndAlerts: false
+  });
   const [loading, setLoading] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  const [showSettings, setShowSettings] = useState(embedded);
 
   const API_URL = 'https://football-betting-backend.onrender.com/api';
 
@@ -70,6 +121,15 @@ function NotificationSettings({ user }) {
         }
         if (currentUser?.pushSettings?.exactScoreAlerts === false) {
           setExactScoreAlerts(false);
+        }
+        if (currentUser?.pushSettings) {
+          const saved = currentUser.pushSettings;
+          setEventAlerts({
+            goalAlerts: !!saved.goalAlerts,
+            redCardAlerts: !!saved.redCardAlerts,
+            matchStartAlerts: !!saved.matchStartAlerts,
+            matchEndAlerts: !!saved.matchEndAlerts
+          });
         }
       }
     } catch (error) {
@@ -173,7 +233,7 @@ function NotificationSettings({ user }) {
       const response = await fetch(`${API_URL}/notifications/settings`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, hoursBeforeLock, soundEnabled: true, exactScoreAlerts })
+        body: JSON.stringify({ userId, hoursBeforeLock, soundEnabled: true, exactScoreAlerts, ...eventAlerts })
       });
 
       if (response.ok) toast.success('הגדרות עודכנו בהצלחה!');
@@ -216,7 +276,8 @@ function NotificationSettings({ user }) {
       background: 'var(--theme-background)',
       boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)'
     }}>
-      {/* Header - always visible */}
+      {/* Header - מוסתר כשהרכיב יושב בתוך דף ההגדרות, שיש לו כותרת משלו */}
+      {!embedded && (
       <div
         onClick={() => setShowSettings(!showSettings)}
         style={{
@@ -252,6 +313,7 @@ function NotificationSettings({ user }) {
           ▼
         </span>
       </div>
+      )}
 
       {/* Expandable settings */}
       {showSettings && (
@@ -293,32 +355,28 @@ function NotificationSettings({ user }) {
               </select>
             </div>
 
-            {/* Exact Score Alerts Toggle */}
-            <div
-              onClick={() => setExactScoreAlerts(!exactScoreAlerts)}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '0.4rem 0', cursor: 'pointer', marginBottom: '0.4rem',
-                WebkitTapHighlightColor: 'transparent'
-              }}
-            >
-              <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-2, #555)', cursor: 'pointer' }}>
-                🎯 התראה על ניחוש מדויק
-              </label>
-              <div style={{
-                width: '40px', height: '22px', borderRadius: '11px',
-                background: exactScoreAlerts ? 'linear-gradient(135deg, #28a745, #20c997)' : '#ccc',
-                position: 'relative', transition: 'background 0.3s ease',
-                flexShrink: 0
-              }}>
-                <div style={{
-                  width: '18px', height: '18px', borderRadius: '50%',
-                  background: 'var(--surface, #fff)', position: 'absolute', top: '2px',
-                  left: exactScoreAlerts ? '20px' : '2px',
-                  transition: 'left 0.3s ease',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-                }} />
+            <ToggleRow
+              label="🎯 התראה על ניחוש מדויק"
+              checked={exactScoreAlerts}
+              onChange={setExactScoreAlerts}
+            />
+
+            <div style={{
+              marginTop: '0.5rem', paddingTop: '0.5rem',
+              borderTop: '1px solid var(--border, #eee)'
+            }}>
+              <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-3, #888)', marginBottom: '0.2rem' }}>
+                אירועים במשחק חי
               </div>
+              {MATCH_EVENT_ALERTS.map(({ key, label, hint }) => (
+                <ToggleRow
+                  key={key}
+                  label={label}
+                  hint={hint}
+                  checked={eventAlerts[key]}
+                  onChange={(value) => setEventAlerts((prev) => ({ ...prev, [key]: value }))}
+                />
+              ))}
             </div>
 
             {isSubscribed && (

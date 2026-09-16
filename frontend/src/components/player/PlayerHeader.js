@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { applyTheme } from '../../themes';
 import ColorSchemeToggle from '../ColorSchemeToggle';
 
-function PlayerHeader({ user, selectedWeek, userScore, onLogout }) {
+function PlayerHeader({ user, selectedWeek, userScore, onLogout, onOpenSettings }) {
 
   useEffect(() => {
     if (user) {
@@ -64,6 +64,20 @@ function PlayerHeader({ user, selectedWeek, userScore, onLogout }) {
               </div>
             </div>
             <ColorSchemeToggle />
+            {onOpenSettings && (
+              <button onClick={onOpenSettings} className="btn" aria-label="הגדרות" title="הגדרות" style={{
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.08) 100%)',
+                color: 'white',
+                padding: '0.4rem 0.6rem',
+                fontSize: '15px',
+                margin: 0,
+                lineHeight: 1,
+                borderRadius: '10px',
+                border: '1px solid rgba(255,255,255,0.15)'
+              }}>
+                ⚙️
+              </button>
+            )}
             <button onClick={onLogout} className="btn" style={{
               background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.08) 100%)',
               color: 'white',

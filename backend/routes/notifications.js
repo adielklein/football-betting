@@ -243,6 +243,14 @@ router.patch('/settings', requireSelfOrAdmin((req) => req.body?.userId), async (
       updateFields['pushSettings.exactScoreAlerts'] = exactScoreAlerts;
     }
 
+    // התראות אירועים במשחק חי. נשמרות רק כשנשלחו במפורש, כך שעדכון חלקי
+    // של הגדרה אחרת לא מכבה אותן בטעות
+    for (const key of ['goalAlerts', 'redCardAlerts', 'matchStartAlerts', 'matchEndAlerts']) {
+      if (req.body[key] !== undefined) {
+        updateFields[`pushSettings.${key}`] = !!req.body[key];
+      }
+    }
+
     const user = await User.findByIdAndUpdate(userId, updateFields, { new: true });
     
     if (!user) {

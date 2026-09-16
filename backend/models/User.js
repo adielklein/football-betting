@@ -47,6 +47,26 @@ const userSchema = new mongoose.Schema({
     exactScoreAlerts: {
       type: Boolean,
       default: true
+    },
+
+    // התראות אירועים במשחק חי. כולן כבויות כברירת מחדל ונדלקות רק בבחירה
+    // מפורשת של המשתמש - אלה ההתראות התכופות ביותר במערכת, ושער אחד
+    // בשבוע עמוס יכול להגיע לעשרות הודעות
+    goalAlerts: {
+      type: Boolean,
+      default: false
+    },
+    redCardAlerts: {
+      type: Boolean,
+      default: false
+    },
+    matchStartAlerts: {
+      type: Boolean,
+      default: false
+    },
+    matchEndAlerts: {
+      type: Boolean,
+      default: false
     }
   },
   createdAt: {

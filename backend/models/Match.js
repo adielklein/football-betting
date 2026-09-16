@@ -37,6 +37,17 @@ const matchSchema = new mongoose.Schema({
   team1ExternalId: { type: String, default: null },
   team2ExternalId: { type: String, default: null },
 
+  // תמונת המצב האחרונה שנראתה בסריקה החיה. ממנה נגזרים אירועי שער/אדום/
+  // פתיחה/סיום, והיא נשמרת כאן ולא בזיכרון כדי שהפעלה מחדש של השרת לא
+  // תשלח שוב התראה שכבר יצאה
+  liveSnapshot: {
+    status: { type: String, default: null },
+    team1Goals: { type: Number, default: null },
+    team2Goals: { type: Number, default: null },
+    team1Reds: { type: Number, default: null },
+    team2Reds: { type: Number, default: null }
+  },
+
   date: {
     type: String, 
     required: true 
