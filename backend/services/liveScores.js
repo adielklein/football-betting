@@ -120,6 +120,48 @@ const fetchLiveFor = async (matches) => {
     .filter(Boolean);
 };
 
+// ── נסיגה אחרי כישלון ─────────────────────────────────────────────
+//
+// עד עכשיו כישלון מול 365 פשוט נבלע: הסריקה המשיכה באותו קצב, והטבלה החיה
+// נעלמה מהמסך בלי הסבר. בסריקה כל 10 שניות זה גם אומר להמשיך להכות בספק
+// שכבר אמר לא.
+//
+// ההשהיה מוכפלת עם כל כישלון רצוף ומתאפסת בהצלחה הראשונה. היא משותפת לכל
+// הקוראים - גם הסריקה וגם בקשות השחקנים - אחרת אחד מהם היה ממשיך לפנות
+// בזמן שהשני נח.
+const BACKOFF_BASE_MS = 30 * 1000;
+const BACKOFF_MAX_MS = 5 * 60 * 1000;
+
+let consecutiveFailures = 0;
+let nextAttemptAt = 0;
+
+// ההשהיה אחרי n כישלונות רצופים: 30ש, דקה, 2, 4, ואז תקרה של 5 דקות
+const backoffDelay = (failures) =>
+  Math.min(BACKOFF_BASE_MS * Math.pow(2, Math.max(failures, 1) - 1), BACKOFF_MAX_MS);
+
+const inBackoff = (now = Date.now()) => now < nextAttemptAt;
+
+const noteFailure = (err) => {
+  consecutiveFailures++;
+  const wait = backoffDelay(consecutiveFailures);
+  nextAttemptAt = Date.now() + wait;
+  console.warn(
+    `🔴 [LIVE] פנייה ל-365 נכשלה (${consecutiveFailures} ברצף): ${err.message}. ` +
+    `נסיגה ל-${Math.round(wait / 1000)} שניות`
+  );
+};
+
+const noteSuccess = () => {
+  if (consecutiveFailures > 0) {
+    console.log(`🔴 [LIVE] 365 חזר אחרי ${consecutiveFailures} כישלונות`);
+  }
+  consecutiveFailures = 0;
+  nextAttemptAt = 0;
+};
+
+// לבדיקות בלבד
+const resetBackoff = () => { consecutiveFailures = 0; nextAttemptAt = 0; };
+
 // מצב חי לשבוע. מגיש מהזיכרון אם התשובה עדיין טרייה.
 const getLiveForWeek = async (weekId, matches) => {
   const key = String(weekId);
@@ -132,9 +174,19 @@ const getLiveForWeek = async (weekId, matches) => {
     return [];
   }
 
-  const games = await fetchLiveFor(active);
-  cache.set(key, { at: Date.now(), games });
-  return games;
+  // בזמן נסיגה לא פונים לספק. מגישים את התשובה האחרונה הידועה גם אם היא
+  // ישנה - עדיף מלמחוק את הטבלה החיה מהמסך
+  if (inBackoff()) return hit ? hit.games : [];
+
+  try {
+    const games = await fetchLiveFor(active);
+    noteSuccess();
+    cache.set(key, { at: Date.now(), games });
+    return games;
+  } catch (err) {
+    noteFailure(err);
+    return hit ? hit.games : [];
+  }
 };
 
 const invalidate = (weekId) => cache.delete(String(weekId));
@@ -144,6 +196,10 @@ module.exports = {
   fetchLiveFor,
   inBroadcastWindow,
   invalidate,
+  inBackoff,
+  backoffDelay,
+  resetBackoff,
+  BACKOFF_MAX_MS,
   STATUS_FINISHED,
   STATUS_LIVE
 };

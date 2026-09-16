@@ -283,11 +283,15 @@ const runResultsSync = async () => {
 cron.schedule('17 * * * *', runResultsSync, { timezone: 'Asia/Jerusalem' });
 console.log('🕐 Cron registered: sync-results every hour at minute 17');
 
-// 🔴 סריקת מצב חי כל דקה.
+// 🔴 סריקת מצב חי כל 10 שניות.
 //
-// כל משחקי השבוע נשלפים מ-365 בבקשה אחת, וכשיש משחקים חיים 365 עצמם
-// מבקשים רענון כל 5 שניות - דקה היא הרבה מתחת לזה. הסריקה רצה אך ורק
-// כשיש משחק בחלון שידור, כך שברוב שעות היממה היא לא פונה ל-365 בכלל.
+// כל משחקי השבוע נשלפים מ-365 בבקשה אחת - לא אחת למשחק - וכשיש משחקים
+// חיים 365 עצמם מחזירים ttl=5, כלומר מצפים לרענון כל 5 שניות. 10 שניות
+// עדיין שמרניות מזה. הסריקה רצה אך ורק כשיש משחק בחלון שידור, כך שברוב
+// שעות היממה היא לא פונה ל-365 בכלל.
+//
+// כישלון מול הספק מפעיל נסיגה מתרחבת (ראה liveScores), כדי שקצב גבוה לא
+// יתורגם להמשך הכאה בספק שכבר סירב.
 //
 // היא גם מקצרת דרמטית את הזמן עד שהניקוד מתעדכן: עד עכשיו תוצאה סופית
 // יכלה לחכות עד שעה שלמה לסריקה השעתית, ועכשיו היא נתפסת תוך דקה.
@@ -359,6 +363,11 @@ let livePollInFlight = false;
 
 const runLivePoll = async () => {
   if (livePollInFlight) return;
+
+  // בזמן נסיגה אחרי כישלון לא נוגעים בכלום: לא בספק, לא במסד, וגם לא
+  // ב-cache - invalidate היה מוחק את התשובה האחרונה שמסך השחקנים מגיש
+  if (liveScores.inBackoff()) return;
+
   livePollInFlight = true;
   try {
     const now = Date.now();
@@ -403,8 +412,10 @@ const runLivePoll = async () => {
   }
 };
 
-cron.schedule('* * * * *', runLivePoll, { timezone: 'Asia/Jerusalem' });
-console.log('🔴 Cron registered: live poll every minute (only while matches are on)');
+// שישה שדות ולא חמישה: השדה הראשון הוא שניות. node-cron תומך בזה,
+// וזו הדרך היחידה לרדת מתחת לדקה
+cron.schedule('*/10 * * * * *', runLivePoll, { timezone: 'Asia/Jerusalem' });
+console.log('🔴 Cron registered: live poll every 10s (only while matches are on)');
 
 // ⏰ תזכורת לפני נעילת שבוע.
 //
