@@ -3,6 +3,7 @@ import LiveTable from './LiveTable';
 
 function Leaderboard({ leaderboard, user }) {
   const [monthlyScores, setMonthlyScores] = useState([]);
+  const [seasonalScores, setSeasonalScores] = useState([]);
   const [selectedWeekScores, setSelectedWeekScores] = useState([]);
   const [availableWeeks, setAvailableWeeks] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(null);
@@ -56,13 +57,16 @@ function Leaderboard({ leaderboard, user }) {
         setSelectedSeason(latestSeason);
         setInitializedFromData(true);
         calculateMonthlyScores(scoresData, weeksData, latestMonth, latestSeason);
+        calculateSeasonalScores(scoresData, weeksData, latestSeason);
         return;
       }
 
       calculateMonthlyScores(scoresData, weeksData);
+      calculateSeasonalScores(scoresData, weeksData);
     } catch (error) {
       console.error('Error loading scores data:', error);
       setMonthlyScores([]);
+      setSeasonalScores([]);
       setAvailableWeeks([]);
     } finally {
       setLoading(false);
@@ -118,6 +122,56 @@ function Leaderboard({ leaderboard, user }) {
 
     const monthlyArray = Object.values(userScores).sort((a, b) => b.monthlyScore - a.monthlyScore);
     setMonthlyScores(monthlyArray);
+  };
+
+  const calculateSeasonalScores = async (scoresData, weeksData, overrideSeason) => {
+    const useSeason = overrideSeason || selectedSeason;
+    if (!useSeason) return;
+
+    // חריגים לעונה כולה - בניגוד לחודשי, כאן צריך את החריגים של כל חודש
+    // בעונה יחד, כי כל שבוע שייך לחודש משלו
+    let excludedByMonth = {};
+    try {
+      const exclResponse = await fetch(`${API_URL}/exclusions?season=${useSeason}`);
+      if (exclResponse.ok) {
+        const exclusions = await exclResponse.json();
+        exclusions.forEach(e => {
+          if (!excludedByMonth[e.month]) excludedByMonth[e.month] = new Set();
+          excludedByMonth[e.month].add(e.userId);
+        });
+      }
+    } catch (e) { /* ignore */ }
+
+    const seasonWeeks = weeksData.filter(week => {
+      if (!week || !week.active) return false;
+      const weekSeason = week.season || '2025-26';
+      return weekSeason === useSeason;
+    });
+
+    const weekMonthById = {};
+    seasonWeeks.forEach(week => {
+      weekMonthById[week._id] = week.month || new Date(week.createdAt).getMonth() + 1;
+    });
+
+    const userScores = {};
+
+    scoresData.forEach(score => {
+      if (!score.userId || score.userId.role === 'admin') return;
+      const weekId = score.weekId && score.weekId._id ? score.weekId._id : score.weekId;
+      if (!(weekId in weekMonthById)) return;
+
+      const userId = score.userId._id;
+      const weekMonth = weekMonthById[weekId];
+      if (excludedByMonth[weekMonth] && excludedByMonth[weekMonth].has(userId)) return;
+
+      if (!userScores[userId]) {
+        userScores[userId] = { name: score.userId.name, seasonalScore: 0 };
+      }
+      userScores[userId].seasonalScore += score.weeklyScore || 0;
+    });
+
+    const seasonalArray = Object.values(userScores).sort((a, b) => b.seasonalScore - a.seasonalScore);
+    setSeasonalScores(seasonalArray);
   };
 
   const loadWeekScores = async () => {
@@ -240,6 +294,7 @@ function Leaderboard({ leaderboard, user }) {
   const tabs = [
     { key: 'monthly', label: 'חודשי', icon: '🏅' },
     { key: 'weekly', label: 'שבועי', icon: '📊' },
+    { key: 'seasonal', label: 'עונתי', icon: '📅' },
     { key: 'general', label: 'כללי', icon: '🏆' }
   ];
 
@@ -252,7 +307,7 @@ function Leaderboard({ leaderboard, user }) {
       {/* Tab bar */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
+        gridTemplateColumns: 'repeat(4, 1fr)',
         gap: '3px',
         marginBottom: '0.75rem',
         padding: '3px',
@@ -319,6 +374,22 @@ function Leaderboard({ leaderboard, user }) {
           >
             {months.map(month => (
               <option key={month.value} value={month.value}>{month.label}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* סינון עונה - מוצג בטאב עונתי */}
+      {activeTab === 'seasonal' && (
+        <div style={{ marginBottom: '0.75rem' }}>
+          <select
+            value={selectedSeason}
+            onChange={(e) => setSelectedSeason(e.target.value)}
+            className="input"
+            style={{ width: '100%', fontSize: '13px', padding: '0.45rem', borderRadius: '10px' }}
+          >
+            {seasons.map(season => (
+              <option key={season.value} value={season.value}>{season.label}</option>
             ))}
           </select>
         </div>
@@ -401,25 +472,33 @@ function Leaderboard({ leaderboard, user }) {
           </div>
         )}
 
+        {/* דירוג עונתי */}
+        {activeTab === 'seasonal' && (
+          <div className="card">
+            <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
+              📅 דירוג עונתי - {seasons.find(s => s.value === selectedSeason)?.label}
+            </h2>
+            {!loading && seasonalScores.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                {seasonalScores.map((player, index) =>
+                  renderPlayerRow(player, index, 'seasonalScore', player.name === user.name, index * 0.04)
+                )}
+              </div>
+            )}
+            {seasonalScores.length === 0 && !loading && (
+              <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1.5rem', fontSize: '14px' }}>
+                אין נתונים לעונה {seasons.find(s => s.value === selectedSeason)?.label}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* דירוג כללי */}
         {activeTab === 'general' && (
           <div className="card">
             <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
-              🏆 דירוג כללי - {selectedSeason}
+              🏆 דירוג כללי (כל הזמנים)
             </h2>
-            {/* בורר עונה לטאב כללי */}
-            <div style={{ marginBottom: '0.5rem' }}>
-              <select
-                value={selectedSeason}
-                onChange={(e) => setSelectedSeason(e.target.value)}
-                className="input"
-                style={{ width: '100%', fontSize: '13px', padding: '0.45rem', borderRadius: '10px' }}
-              >
-                {seasons.map(season => (
-                  <option key={season.value} value={season.value}>{season.label}</option>
-                ))}
-              </select>
-            </div>
             {leaderboard.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                 {leaderboard.map((entry, index) =>

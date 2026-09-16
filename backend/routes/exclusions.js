@@ -3,13 +3,19 @@ const MonthExclusion = require('../models/MonthExclusion');
 const { requireAdmin } = require('../middleware/requireAdmin');
 const router = express.Router();
 
-// Get excluded users for a month+season
+// Get excluded users for a month+season, or for a whole season when month is omitted
 router.get('/', async (req, res) => {
   try {
     const { month, season } = req.query;
-    if (!month || !season) {
-      return res.status(400).json({ message: 'month and season are required' });
+    if (!season) {
+      return res.status(400).json({ message: 'season is required' });
     }
+
+    if (!month) {
+      const exclusions = await MonthExclusion.find({ season });
+      return res.json(exclusions.map(e => ({ userId: e.userId.toString(), month: e.month })));
+    }
+
     const exclusions = await MonthExclusion.find({
       month: parseInt(month),
       season
