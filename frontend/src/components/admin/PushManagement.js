@@ -663,6 +663,16 @@ function PushManagement() {
                       {row.devices.map((d, di) => (
                         <div key={di} style={{ fontSize: '10px', color: 'var(--text-3, #888)' }}>
                           📱 {d.label}
+                          {d.pending && (
+                            // המכשיר טרם דיווח על עצמו. עדיף לומר את זה מלהציג
+                            // שם דפדפן כאילו זו התשובה
+                            <span
+                              title="המכשיר יזוהה בפעם הבאה שהאפליקציה תיפתח בו"
+                              style={{ color: 'var(--text-4, #bbb)', cursor: 'help' }}
+                            >
+                              {' · טרם זוהה'}
+                            </span>
+                          )}
                           {d.lastSeenAt && (
                             <span style={{ color: 'var(--text-4, #bbb)' }}>
                               {' · נראה '}{new Date(d.lastSeenAt).toLocaleDateString('he-IL')}

@@ -146,6 +146,10 @@ const describeSubscription = (sub) => {
     model: model || null,
     platform: platform || null,
     brand: brandOf(model) || null,
+    // מנוי שנרשם לפני שהתחלנו לשמור מידע על המכשיר. אין עליו מה לומר עדיין,
+    // והוא יתמלא לבד בפעם הבאה שאותו מכשיר יפתח את האפליקציה. מסומן כדי
+    // שהשורה לא תיראה כמו תשובה סופית
+    pending: !model && !platform,
     label: identity === service ? service : `${identity} · ${service}`,
     addedAt: sub?.addedAt || null,
     lastSeenAt: sub?.lastSeenAt || null

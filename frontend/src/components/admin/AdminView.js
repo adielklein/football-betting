@@ -10,6 +10,7 @@ import AdminStats from './AdminStats';
 import AuditLog from './AuditLog';
 import LoadingSpinner from './LoadingSpinner';
 import useTabRoute from '../../services/useTabRoute';
+import { syncPushSubscription } from '../../services/pushSync';
 
 function AdminView({ user, onLogout }) {
   const [weeks, setWeeks] = useState([]);
@@ -35,6 +36,12 @@ function AdminView({ user, onLogout }) {
   useEffect(() => {
     loadData();
   }, []);
+
+  // גם מי שעובד רק במסך הניהול צריך שהמנוי שלו יסונכרן: זה מה שמרענן את
+  // זיהוי המכשיר, וגם מה שנרשם מחדש כשהדפדפן ביטל את המנוי בשקט
+  useEffect(() => {
+    syncPushSubscription(user);
+  }, [user]);
 
   // בדוק פעולות audit חדשות כל 30 שניות
   useEffect(() => {
