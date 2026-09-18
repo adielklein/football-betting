@@ -12,6 +12,7 @@ import { confirmLeave } from '../../services/unsavedGuard';
 import useTabRoute from '../../services/useTabRoute';
 import useSwipeNav from '../../services/useSwipeNav';
 import { stepTab } from '../../services/swipeNav';
+import { syncPushSubscription } from '../../services/pushSync';
 
 function PlayerView({ user, onLogout }) {
   const [weeks, setWeeks] = useState([]);
@@ -52,6 +53,13 @@ function PlayerView({ user, onLogout }) {
   useEffect(() => {
     applyTheme(user);
   }, [user, user?.theme]);
+
+  // סנכרון מנוי ההתראות בכל פתיחה, מכל מסך. קודם זה קרה כתופעת לוואי של
+  // כרטיס ההגדרות שהיה מורכב מעל כל מסך; משהוא עבר לדף ההגדרות, הסנכרון
+  // עבר איתו והפסיק לרוץ למי שלא נכנס לשם
+  useEffect(() => {
+    syncPushSubscription(user);
+  }, [user]);
 
   useEffect(() => {
     loadData();

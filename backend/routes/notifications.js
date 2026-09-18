@@ -218,7 +218,14 @@ router.post('/subscribe', requireSelfOrAdmin((req) => req.body?.userId), async (
     }
     
     user.pushSettings.enabled = true;
-    user.pushSettings.hoursBeforeLock = hoursBeforeLock || 2;
+
+    // רק כשנשלח במפורש. סנכרון רקע אינו יודע מה המשתמש בחר, ו-|| 2 היה
+    // מאפס את ההעדפה שלו בכל פתיחה של האפליקציה
+    if (hoursBeforeLock !== undefined && hoursBeforeLock !== null) {
+      user.pushSettings.hoursBeforeLock = hoursBeforeLock;
+    } else if (user.pushSettings.hoursBeforeLock == null) {
+      user.pushSettings.hoursBeforeLock = 2;
+    }
 
     // המערך הוא Mixed, ומונגוס לא מזהה השמה לאיבר קיים בתוכו. בלי זה עדכון
     // של מנוי קיים פשוט לא נשמר - מה שכבר היה נכון לפני שדה lastSeenAt,
