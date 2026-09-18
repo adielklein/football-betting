@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const {
-  pushServiceOf, modelFromUserAgent, platformFromUserAgent, iphoneFromScreen, describeSubscription
+  pushServiceOf, modelFromUserAgent, platformFromUserAgent, describeSubscription
 } = require('./deviceInfo');
 
 const UA_A55 = 'Mozilla/5.0 (Linux; Android 14; SM-A556B Build/UP1A.231005.007) AppleWebKit/537.36 Chrome/123.0 Mobile Safari/537.36';
@@ -58,61 +58,19 @@ test('סוג המכשיר מוחזר בעברית, ומבדיל טלפון ממ�
   assert.equal(platformFromUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)'), 'מק');
 });
 
-test('גיאומטריית מסך מחזירה קבוצת דגמים, ולא דגם בודד', () => {
-  const group = iphoneFromScreen({ width: 393, height: 852, dpr: 3 });
-  // אותו viewport בדיוק באייפון 15, ב-15 Pro וב-16, ולכן חייבים להופיע
-  // כמה דגמים - קבוצה ולא הכרעה
-  assert.ok(group.includes('15'), group);
-  assert.ok(group.includes('16'), group);
-  assert.ok(group.split('/').length >= 3, group);
-});
-
-test('הכיוון שבו הטלפון מוחזק לא משנה את הזיהוי', () => {
-  const portrait = iphoneFromScreen({ width: 393, height: 852, dpr: 3 });
-  const landscape = iphoneFromScreen({ width: 852, height: 393, dpr: 3 });
-  assert.equal(portrait, landscape);
-});
-
-test('מסך לא מוכר או חסר לא מייצר ניחוש', () => {
-  assert.equal(iphoneFromScreen({ width: 1234, height: 4321, dpr: 3 }), null);
-  assert.equal(iphoneFromScreen({}), null);
-  assert.equal(iphoneFromScreen(null), null);
-});
-
-test('שם שהמשתמש נתן גובר על כל זיהוי אחר', () => {
-  const d = describeSubscription({
-    endpoint: FCM_EP, userAgent: UA_A55, deviceName: 'הסמסונג של אדיאל'
-  });
-  assert.equal(d.deviceName, 'הסמסונג של אדיאל');
-  assert.match(d.label, /הסמסונג של אדיאל/);
-  assert.equal(d.modelHint, null);
-});
-
-test('בלי שם - הדגם מה-UA הוא הזיהוי', () => {
+test('הדגם מה-UA הוא הזיהוי', () => {
   const d = describeSubscription({ endpoint: FCM_EP, userAgent: UA_A55 });
   assert.equal(d.model, 'Galaxy A55');
   assert.match(d.label, /Galaxy A55/);
   assert.equal(d.brand, 'סמסונג');
 });
 
-test('אייפון מוצג כ"אייפון", והקבוצה לפי המסך נשארת רמז ולא כותרת', () => {
-  const d = describeSubscription({
-    endpoint: APPLE_EP, userAgent: UA_IPHONE, screen: { width: 393, height: 852, dpr: 3 }
-  });
-  // חלק הזהות נקי - בלי רשימת ארבעה דגמים. ה-"/" שנשאר בשורה מגיע משם
-  // שירות הדחיפה ("Safari / Apple") ולא מהדגם
+test('אייפון מוצג כ"אייפון" - אין ממה לגזור דגם', () => {
+  const d = describeSubscription({ endpoint: APPLE_EP, userAgent: UA_IPHONE });
   const identity = d.label.split(' · ')[0];
   assert.equal(identity, 'אייפון');
-  assert.ok(!identity.includes('/'), identity);
-  // והצמצום עדיין זמין למי שמרחף
-  assert.match(d.modelHint, /15/);
-});
-
-test('אייפון בלי מסך מוצג כ"אייפון" בלי רמז', () => {
-  const d = describeSubscription({ endpoint: APPLE_EP, userAgent: UA_IPHONE });
+  assert.equal(d.model, null);
   assert.equal(d.platform, 'אייפון');
-  assert.equal(d.modelHint, null);
-  assert.match(d.label, /אייפון/);
 });
 
 test('מחשב מזוהה כמחשב ולא כדפדפן', () => {
@@ -134,7 +92,3 @@ test('התיאור לעולם אינו כולל את כתובת הדחיפה', (
   assert.ok(!JSON.stringify(d).includes('SECRET-DEVICE-ID'));
 });
 
-test('שם מכשיר ארוך נחתך, כדי שלא ישבור את המסך', () => {
-  const d = describeSubscription({ endpoint: FCM_EP, deviceName: 'א'.repeat(200) });
-  assert.ok(d.deviceName.length <= 40);
-});

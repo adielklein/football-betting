@@ -20,17 +20,6 @@ const pickProvider = (league) => {
   return null;
 };
 
-// fallback - אם הספק הראשי החזיר 0 או נכשל, ננסה את הבא
-const fallbackProviders = (league, exclude) => {
-  const candidates = [];
-  if (league.footballDataCode && exclude !== 'football-data.org') candidates.push({ name: 'football-data.org', api: footballDataApi, codeField: 'footballDataCode' });
-  if (league.espnLeagueCode && exclude !== 'ESPN') candidates.push({ name: 'ESPN', api: espnApi, codeField: 'espnLeagueCode' });
-  if (league.sportsDbLeagueId && exclude !== 'TheSportsDB') candidates.push({ name: 'TheSportsDB', api: sportsDbApi, codeField: 'sportsDbLeagueId' });
-  if (league.sofaScoreTournamentId && exclude !== 'SofaScore') candidates.push({ name: 'SofaScore', api: sofaScoreApi, codeField: 'sofaScoreTournamentId' });
-  if (league.scores365CompetitionId && exclude !== '365scores') candidates.push({ name: '365scores', api: scores365Api, codeField: 'scores365CompetitionId' });
-  return candidates;
-};
-
 const { requireAdmin } = require('../middleware/requireAdmin');
 const router = express.Router();
 
@@ -78,7 +67,7 @@ const isValidYmd = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s)
 
 router.get('/fixtures', async (req, res) => {
   try {
-    const { leagueId, days = '7', includeOdds = 'false', refresh = 'false', fromDate: fromQ, toDate: toQ, fallback = 'true' } = req.query;
+    const { leagueId, days = '7', includeOdds = 'false', refresh = 'false', fromDate: fromQ, toDate: toQ } = req.query;
     if (!leagueId) {
       return res.status(400).json({ message: 'leagueId נדרש' });
     }
@@ -114,7 +103,11 @@ router.get('/fixtures', async (req, res) => {
     const wantOdds = includeOdds === 'true' || includeOdds === '1';
     const forceRefresh = refresh === 'true' || refresh === '1';
 
-    let activeProvider = provider;
+    // ספק אחד, בקשה אחת. הייתה כאן שרשרת גיבוי שנכנסה לפעולה כשהספק
+    // הראשי החזיר 0, אבל אצל 365 אפס הוא אפס אמיתי - אין משחקים בטווח -
+    // ולכן השרשרת רק שילמה ארבעה ספקים בטור על תשובה שהייתה נכונה מלכתחילה.
+    // זה גם מה שהפך ליגה ריקה למקרה היקר ביותר במשיכה מרובה.
+    const activeProvider = provider;
     let fixtures = [];
     try {
       fixtures = await provider.api.fetchUpcomingFixtures({
@@ -124,38 +117,8 @@ router.get('/fixtures', async (req, res) => {
         refresh: forceRefresh
       });
     } catch (primaryErr) {
-      console.warn(`⚠️ [external] primary provider ${provider.name} failed:`, primaryErr.message);
+      console.warn(`⚠️ [external] provider ${provider.name} failed:`, primaryErr.message);
       fixtures = [];
-    }
-
-    // אם הראשי נכשל או החזיר 0, ננסה fallbacks.
-    //
-    // fallback=false מכבה את זה, ומשיכה של כל הליגות יחד משתמשת בזה: ליגה
-    // בלי משחקים בטווח היא המקרה הנפוץ, ובדיוק היא זו שמשלמת את השרשרת
-    // כולה - ארבעה ספקים בטור על שום דבר. מכיוון שהשרשרת נכנסת לפעולה רק
-    // כשהספק הראשי החזיר 0, כיבוי שלה מוותר כמעט תמיד על "אין משחקים"
-    // ולא על נתונים.
-    const allowFallback = fallback !== 'false' && fallback !== '0';
-
-    if (fixtures.length === 0 && allowFallback) {
-      for (const fb of fallbackProviders(league, provider.name)) {
-        try {
-          console.log(`🔁 [external] trying fallback ${fb.name} for ${league.name}`);
-          const fbFixtures = await fb.api.fetchUpcomingFixtures({
-            [fb.codeField]: league[fb.codeField],
-            fromDate,
-            toDate,
-            refresh: forceRefresh
-          });
-          if (fbFixtures.length > 0) {
-            fixtures = fbFixtures;
-            activeProvider = fb;
-            break;
-          }
-        } catch (fbErr) {
-          console.warn(`⚠️ [external] fallback ${fb.name} failed:`, fbErr.message);
-        }
-      }
     }
 
     const upcoming = fixtures.filter((f) => new Date(f.kickoffIso).getTime() > Date.now());

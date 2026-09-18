@@ -1,36 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from '../services/toast';
 
-// שם המכשיר נשמר בדפדפן ולא רק בשרת: כל מכשיר זוכר את שמו ושולח אותו
-// מחדש בכל סנכרון, ולכן אין צורך בנתיב נפרד לעדכון. מזהה מכשיר אמיתי אין
-// בדפדפן - באייפון אפל לא מדווחת אפילו את הדגם - ולכן זו הדרך היחידה
-// שמסך הניהול יוכל לומר "האייפון של אדיאל" ולא רק "אייפון".
-const DEVICE_NAME_KEY = 'football_betting_device_name';
-
-const readDeviceName = () => {
-  try { return localStorage.getItem(DEVICE_NAME_KEY) || ''; } catch (e) { return ''; }
-};
-
-const writeDeviceName = (name) => {
-  try {
-    if (name) localStorage.setItem(DEVICE_NAME_KEY, name);
-    else localStorage.removeItem(DEVICE_NAME_KEY);
-  } catch (e) { /* מצב פרטי - השם פשוט לא יישמר */ }
-};
-
-// גיאומטריית המסך. בשרת אין אליה גישה, והיא הקירוב היחיד לדגם אייפון
-const screenInfo = () => {
-  try {
-    return {
-      width: window.screen?.width || null,
-      height: window.screen?.height || null,
-      dpr: window.devicePixelRatio || 1
-    };
-  } catch (e) {
-    return null;
-  }
-};
-
 // שורת מתג אחת. הופקה מהמתג שהיה כאן inline, כדי שכל ההתראות ייראו אותו
 // דבר במקום שכל אחת תצייר מתג משלה
 function ToggleRow({ label, hint, checked, onChange }) {
@@ -87,7 +57,6 @@ function NotificationSettings({ user, embedded = false }) {
   const [eventAlerts, setEventAlerts] = useState({
     goalAlerts: false, redCardAlerts: false, matchStartAlerts: false, matchEndAlerts: false
   });
-  const [deviceName, setDeviceName] = useState(readDeviceName);
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(embedded);
 
@@ -138,7 +107,7 @@ function NotificationSettings({ user, embedded = false }) {
         fetch(`${API_URL}/notifications/subscribe`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: userIdForSync, subscription, hoursBeforeLock, silent: true, screen: screenInfo(), deviceName: readDeviceName() })
+          body: JSON.stringify({ userId: userIdForSync, subscription, hoursBeforeLock, silent: true })
         }).catch((syncError) => console.warn('Subscription sync failed:', syncError));
       }
 
@@ -201,7 +170,7 @@ function NotificationSettings({ user, embedded = false }) {
       const saveResponse = await fetch(`${API_URL}/notifications/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, subscription, hoursBeforeLock, screen: screenInfo(), deviceName: readDeviceName() })
+        body: JSON.stringify({ userId, subscription, hoursBeforeLock })
       });
 
       if (saveResponse.ok) {
@@ -260,26 +229,6 @@ function NotificationSettings({ user, embedded = false }) {
     try {
       const userId = getUserId();
       if (!userId) { toast.error('שגיאה: לא ניתן לזהות את המשתמש'); return; }
-
-      // השם נשמר על רשומת המכשיר ולא על המשתמש, ולכן הוא נשלח דרך
-      // /subscribe - שם יושב המנוי של המכשיר הזה
-      writeDeviceName(deviceName.trim());
-      try {
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.getSubscription();
-        if (subscription) {
-          await fetch(`${API_URL}/notifications/subscribe`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId, subscription, hoursBeforeLock, silent: true,
-              screen: screenInfo(), deviceName: deviceName.trim()
-            })
-          });
-        }
-      } catch (nameError) {
-        console.warn('Device name sync failed:', nameError);
-      }
 
       const response = await fetch(`${API_URL}/notifications/settings`, {
         method: 'PATCH',
@@ -405,25 +354,6 @@ function NotificationSettings({ user, embedded = false }) {
                 <option value={24}>יום לפני</option>
               </select>
             </div>
-
-            {isSubscribed && (
-              <div style={{ marginBottom: '0.5rem' }}>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-2, #555)', display: 'block', marginBottom: '3px' }}>
-                  שם המכשיר הזה
-                </label>
-                <input
-                  type="text"
-                  value={deviceName}
-                  onChange={(e) => setDeviceName(e.target.value.slice(0, 40))}
-                  placeholder="למשל: אייפון 15 שלי"
-                  className="input"
-                  style={{ width: '100%', fontSize: '13px', padding: '0.35rem 0.5rem', borderRadius: '8px' }}
-                />
-                <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', marginTop: '2px' }}>
-                  עוזר לזהות איזה מכשיר זה במסך הניהול. נשמר על המכשיר הזה בלבד.
-                </div>
-              </div>
-            )}
 
             <ToggleRow
               label="🎯 התראה על ניחוש מדויק"

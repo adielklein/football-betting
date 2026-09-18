@@ -166,7 +166,7 @@ router.post('/subscribe', requireSelfOrAdmin((req) => req.body?.userId), async (
   try {
     // silent - סנכרון רקע של מנוי קיים. בלעדיו כל פתיחה של האפליקציה
     // הייתה שולחת התראת "התראות הופעלו".
-    const { userId, subscription, hoursBeforeLock, silent, screen, deviceName } = req.body;
+    const { userId, subscription, hoursBeforeLock, silent } = req.body;
 
     console.log(`📥 Saving subscription for user ${userId}${silent ? ' (silent sync)' : ''}`);
     
@@ -198,27 +198,12 @@ router.post('/subscribe', requireSelfOrAdmin((req) => req.body?.userId), async (
     const userAgent = String(req.headers['user-agent'] || '').slice(0, 300);
     const now = new Date();
 
-    // גיאומטריית המסך נשלחת מהלקוח, כי בשרת אין אליה גישה. היא נחוצה רק
-    // באייפון: אפל לא מדווחת דגם ב-User-Agent, והמסך הוא הקירוב היחיד.
-    const screenInfo = screen && Number(screen.width) && Number(screen.height)
-      ? {
-          width: Math.round(Number(screen.width)),
-          height: Math.round(Number(screen.height)),
-          dpr: Math.round(Number(screen.dpr) || 1)
-        }
-      : null;
-
-    const name = String(deviceName || '').trim().slice(0, 40) || null;
-
     if (existingIndex >= 0) {
       console.log(`🔄 Updating existing subscription`);
       const previous = user.pushSettings.subscriptions[existingIndex] || {};
       user.pushSettings.subscriptions[existingIndex] = {
         ...subscription,
         userAgent: userAgent || previous.userAgent || null,
-        screen: screenInfo || previous.screen || null,
-        // שם שנמחק בכוונה בלקוח צריך להימחק גם כאן, ולכן null מפורש גובר
-        deviceName: deviceName === undefined ? (previous.deviceName || null) : name,
         addedAt: previous.addedAt || now,
         lastSeenAt: now
       };
@@ -227,8 +212,6 @@ router.post('/subscribe', requireSelfOrAdmin((req) => req.body?.userId), async (
       user.pushSettings.subscriptions.push({
         ...subscription,
         userAgent: userAgent || null,
-        screen: screenInfo,
-        deviceName: name,
         addedAt: now,
         lastSeenAt: now
       });

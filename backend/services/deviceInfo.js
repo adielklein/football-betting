@@ -1,19 +1,12 @@
 // זיהוי המכשיר שמאחורי מנוי התראות, לתצוגה במסך הניהול.
 //
-// שלושה מקורות, בסדר אמינות יורד:
+// שני מקורות, שניהם מה-User-Agent:
 //
-// 1. שם שהמשתמש נתן למכשיר. המקור היחיד שהוא ודאי, והיחיד שיכול לומר
-//    "האייפון של אדיאל" ולא רק "אייפון". נשמר בדפדפן ונשלח מחדש בכל
-//    סנכרון, כך שהמכשיר זוכר את שמו בעצמו.
-//
-// 2. דגם מה-User-Agent. באנדרואיד הוא באמת שם: "Android 14; SM-A556B".
+// 1. דגם הטלפון. באנדרואיד הוא באמת שם: "Android 14; SM-A556B" → Galaxy A55.
 //    באייפון הוא לא - אפל לא מדווחת את הדגם, בשום צורה.
 //
-// 3. סוג המכשיר בעברית - אייפון, סמסונג, מחשב. זו רצפת הבסיס, וכשאין דגם
+// 2. סוג המכשיר בעברית - אייפון, מחשב, טאבלט. זו רצפת הבסיס, וכשאין דגם
 //    היא התשובה: "אייפון" עונה על השאלה שנשאלה.
-//
-// גיאומטריית המסך מצמצמת אייפון לקבוצת דגמים, אבל לא לדגם - 15, 15 Pro ו-16
-// חולקים בדיוק אותו viewport - ולכן היא רמז לריחוף ולא הכותרת של השורה.
 //
 // וכשאין אף אחד מהם - שירות הדחיפה, שמזהה דפדפן ולא מכשיר.
 
@@ -119,36 +112,6 @@ const platformFromUserAgent = (userAgent) => {
   return null;
 };
 
-// viewport בנקודות CSS (לאורך) וצפיפות → קבוצת דגמים. מקור: טבלאות
-// viewport ציבוריות. הקבוצות אמיתיות ולא עיגול פינות: 393x852@3 הוא באמת
-// אותו מסך באייפון 15, ב-15 Pro וב-16.
-const IPHONE_SCREENS = {
-  '320x568@2': 'iPhone SE (דור 1) / 5s',
-  '375x667@2': 'iPhone SE (2/3) / 8 / 7 / 6s',
-  '414x736@3': 'iPhone 8 Plus / 7 Plus',
-  '375x812@3': 'iPhone 13 mini / 12 mini / 11 Pro / X',
-  '414x896@2': 'iPhone 11 / XR',
-  '414x896@3': 'iPhone 11 Pro Max / XS Max',
-  '390x844@3': 'iPhone 14 / 13 / 13 Pro / 12',
-  '428x926@3': 'iPhone 14 Plus / 13 Pro Max / 12 Pro Max',
-  '393x852@3': 'iPhone 16 / 15 Pro / 15 / 14 Pro',
-  '430x932@3': 'iPhone 16 Plus / 15 Pro Max / 15 Plus / 14 Pro Max',
-  '402x874@3': 'iPhone 16 Pro',
-  '440x956@3': 'iPhone 16 Pro Max'
-};
-
-const iphoneFromScreen = (screen) => {
-  const w = Number(screen?.width);
-  const h = Number(screen?.height);
-  const dpr = Math.round(Number(screen?.dpr) || 0);
-  if (!w || !h || !dpr) return null;
-
-  // המסך מדווח לפי הכיוון שבו המשתמש החזיק את הטלפון
-  const short = Math.min(w, h);
-  const long = Math.max(w, h);
-  return IPHONE_SCREENS[`${short}x${long}@${dpr}`] || null;
-};
-
 /**
  * תיאור מנוי אחד לתצוגה. אינו מחזיר את כתובת הדחיפה - היא מזהה מכשיר
  * ואין סיבה שתעבור לדפדפן, גם לא של אדמין.
@@ -157,22 +120,14 @@ const describeSubscription = (sub) => {
   const service = pushServiceOf(sub?.endpoint);
   const model = modelFromUserAgent(sub?.userAgent);
   const platform = platformFromUserAgent(sub?.userAgent);
-  const byScreen = platform === 'אייפון' ? iphoneFromScreen(sub?.screen) : null;
-  const named = String(sub?.deviceName || '').trim().slice(0, 40) || null;
 
-  // סדר האמינות: שם שנתן המשתמש, דגם מה-UA, ואז סוג המכשיר.
-  //
-  // קבוצת הדגמים לפי מסך אינה נכנסת לשורה עצמה: "iPhone 16 / 15 Pro / 15 /
-  // 14 Pro" הוא רעש, ו"אייפון" עונה על השאלה. הקבוצה נשמרת כרמז לריחוף.
-  const identity = named || model || platform || service;
+  // דגם אם יש, אחרת סוג המכשיר, ואחרון - שירות הדחיפה
+  const identity = model || platform || service;
 
   return {
     service,
     model: model || null,
     platform: platform || null,
-    deviceName: named,
-    // צמצום לפי מסך, כשיש. קבוצה ולא דגם, ולכן רמז ולא כותרת
-    modelHint: !named && !model ? byScreen : null,
     brand: brandOf(model) || null,
     label: identity === service ? service : `${identity} · ${service}`,
     addedAt: sub?.addedAt || null,
@@ -185,6 +140,5 @@ module.exports = {
   pushServiceOf,
   modelFromUserAgent,
   platformFromUserAgent,
-  iphoneFromScreen,
   describeSubscription
 };

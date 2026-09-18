@@ -73,7 +73,6 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
     const failures = [];
     let cursor = 0;
     let done = 0;
-    const bulk = targets.length > 1;
     setProgress({ done: 0, total: targets.length });
 
     try {
@@ -87,10 +86,6 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
                 days,
                 includeOdds,
                 refresh,
-                // שרשרת הגיבוי היא ארבעה ספקים בטור, והיא נכנסת לפעולה בדיוק
-                // במקרה הנפוץ של ליגה בלי משחקים. במשיכה מרובה היא הייתה
-                // הרוב המוחלט של ההמתנה, ולכן מכובה כאן
-                ...(bulk ? { fallback: false } : {}),
                 ...(rangeMode === 'range' ? { fromDate: customFrom, toDate: customTo } : {})
               });
 
