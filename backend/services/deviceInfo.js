@@ -9,9 +9,11 @@
 // 2. דגם מה-User-Agent. באנדרואיד הוא באמת שם: "Android 14; SM-A556B".
 //    באייפון הוא לא - אפל לא מדווחת את הדגם, בשום צורה.
 //
-// 3. גיאומטריית המסך, בשביל אייפון בלבד. היא מצמצמת לקבוצת דגמים ולא
-//    לדגם: אייפון 15, 15 Pro ו-16 חולקים בדיוק אותו viewport. לכן מוחזר
-//    טווח מפורש ולא ניחוש של דגם בודד.
+// 3. סוג המכשיר בעברית - אייפון, סמסונג, מחשב. זו רצפת הבסיס, וכשאין דגם
+//    היא התשובה: "אייפון" עונה על השאלה שנשאלה.
+//
+// גיאומטריית המסך מצמצמת אייפון לקבוצת דגמים, אבל לא לדגם - 15, 15 Pro ו-16
+// חולקים בדיוק אותו viewport - ולכן היא רמז לריחוף ולא הכותרת של השורה.
 //
 // וכשאין אף אחד מהם - שירות הדחיפה, שמזהה דפדפן ולא מכשיר.
 
@@ -49,6 +51,28 @@ const SAMSUNG_MODELS = {
   'SM-F956': 'Galaxy Z Fold6', 'SM-F741': 'Galaxy Z Flip6'
 };
 
+// היצרן מתוך קוד/שם הדגם. כשאין דגם מוכר, המותג לבדו עדיף על קוד עירום:
+// "סמסונג" אומר משהו, "SM-Z999B" צריך חיפוש בגוגל
+const BRANDS = [
+  { test: /^SM-|^GT-|^SCH-|galaxy/i, name: 'סמסונג' },
+  { test: /^Pixel/i, name: 'Google Pixel' },
+  { test: /redmi|xiaomi|^POCO|^M\d{4}/i, name: 'שיאומי' },
+  { test: /^CPH|oneplus/i, name: 'OnePlus' },
+  { test: /^RMX|realme/i, name: 'Realme' },
+  { test: /oppo/i, name: 'Oppo' },
+  { test: /^vivo/i, name: 'vivo' },
+  { test: /^moto|motorola/i, name: 'מוטורולה' },
+  { test: /huawei|honor/i, name: 'Huawei' },
+  { test: /^Nokia/i, name: 'נוקיה' }
+];
+
+const brandOf = (model) => {
+  const m = String(model || '').trim();
+  if (!m) return null;
+  const hit = BRANDS.find((b) => b.test.test(m));
+  return hit ? hit.name : null;
+};
+
 const prettifyAndroidModel = (raw) => {
   const model = String(raw || '').trim();
   if (!model) return null;
@@ -57,7 +81,9 @@ const prettifyAndroidModel = (raw) => {
   const samsung = model.match(/^(SM-[A-Z]\d{3,4})/i);
   if (samsung) {
     const base = samsung[1].toUpperCase();
-    return SAMSUNG_MODELS[base] || model;
+    if (SAMSUNG_MODELS[base]) return SAMSUNG_MODELS[base];
+    // דגם שלא בטבלה: המותג קודם, והקוד נשאר בסוגריים למי שרוצה לחפש
+    return `סמסונג (${model})`;
   }
 
   // שאר היצרנים בדרך כלל מדווחים שם קריא כבר: "Pixel 8", "Redmi Note 12"
@@ -76,17 +102,20 @@ const modelFromUserAgent = (userAgent) => {
   return null;
 };
 
-// מערכת ההפעלה, כשאין דגם. גם זה מידע - "אייפון" עדיף על "Safari"
+// סוג המכשיר בעברית. זו רצפת הבסיס: כשאין דגם מדויק - ובאייפון לעולם אין -
+// "אייפון" או "מחשב Windows" עונים על השאלה, בניגוד ל"Safari" שעונה על
+// שאלה אחרת לגמרי
 const platformFromUserAgent = (userAgent) => {
   const ua = String(userAgent || '');
   if (!ua) return null;
   // אייפד לפני מק: אייפדוס מדווח על עצמו כמקינטוש
-  if (/iPhone/i.test(ua)) return 'iPhone';
-  if (/iPad/i.test(ua)) return 'iPad';
-  if (/Android/i.test(ua)) return /Mobile/i.test(ua) ? 'Android' : 'טאבלט Android';
-  if (/Macintosh|Mac OS X/i.test(ua)) return 'Mac';
-  if (/Windows/i.test(ua)) return 'Windows';
-  if (/Linux/i.test(ua)) return 'Linux';
+  if (/iPhone/i.test(ua)) return 'אייפון';
+  if (/iPad/i.test(ua)) return 'אייפד';
+  if (/Android/i.test(ua)) return /Mobile/i.test(ua) ? 'אנדרואיד' : 'טאבלט אנדרואיד';
+  if (/Macintosh|Mac OS X/i.test(ua)) return 'מק';
+  if (/Windows/i.test(ua)) return 'מחשב Windows';
+  if (/CrOS/i.test(ua)) return 'Chromebook';
+  if (/Linux/i.test(ua)) return 'מחשב Linux';
   return null;
 };
 
@@ -128,19 +157,23 @@ const describeSubscription = (sub) => {
   const service = pushServiceOf(sub?.endpoint);
   const model = modelFromUserAgent(sub?.userAgent);
   const platform = platformFromUserAgent(sub?.userAgent);
-  const byScreen = platform === 'iPhone' ? iphoneFromScreen(sub?.screen) : null;
+  const byScreen = platform === 'אייפון' ? iphoneFromScreen(sub?.screen) : null;
   const named = String(sub?.deviceName || '').trim().slice(0, 40) || null;
 
-  // סדר האמינות: שם שנתן המשתמש, דגם מה-UA, קבוצה לפי מסך, ואז מה שנשאר
-  const identity = named || model || byScreen || platform || service;
+  // סדר האמינות: שם שנתן המשתמש, דגם מה-UA, ואז סוג המכשיר.
+  //
+  // קבוצת הדגמים לפי מסך אינה נכנסת לשורה עצמה: "iPhone 16 / 15 Pro / 15 /
+  // 14 Pro" הוא רעש, ו"אייפון" עונה על השאלה. הקבוצה נשמרת כרמז לריחוף.
+  const identity = named || model || platform || service;
 
   return {
     service,
     model: model || null,
     platform: platform || null,
     deviceName: named,
-    // מסך מצמצם לקבוצה ולא לדגם, ולכן מסומן ככזה במפורש
-    approximate: !named && !model && !!byScreen,
+    // צמצום לפי מסך, כשיש. קבוצה ולא דגם, ולכן רמז ולא כותרת
+    modelHint: !named && !model ? byScreen : null,
+    brand: brandOf(model) || null,
     label: identity === service ? service : `${identity} · ${service}`,
     addedAt: sub?.addedAt || null,
     lastSeenAt: sub?.lastSeenAt || null
@@ -148,6 +181,7 @@ const describeSubscription = (sub) => {
 };
 
 module.exports = {
+  brandOf,
   pushServiceOf,
   modelFromUserAgent,
   platformFromUserAgent,

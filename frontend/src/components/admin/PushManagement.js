@@ -663,10 +663,12 @@ function PushManagement() {
                       {row.devices.map((d, di) => (
                         <div key={di} style={{ fontSize: '10px', color: 'var(--text-3, #888)' }}>
                           📱 {d.label}
-                          {d.approximate && (
+                          {d.modelHint && (
+                            // הצמצום לפי המסך הוא קבוצת דגמים ולא דגם, ולכן
+                            // הוא רמז לריחוף ולא חלק מהשורה
                             <span
-                              title="אפל לא מדווחת את דגם האייפון. זוהה לפי גודל המסך, שמשותף לכמה דגמים"
-                              style={{ color: 'var(--warn-fg, #9a7b3f)' }}
+                              title={`לפי גודל המסך: ${d.modelHint}. אפל לא מדווחת את הדגם, והמסך משותף לכמה דגמים`}
+                              style={{ color: 'var(--warn-fg, #9a7b3f)', cursor: 'help' }}
                             >
                               {' ~'}
                             </span>
