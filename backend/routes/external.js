@@ -78,7 +78,7 @@ const isValidYmd = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s)
 
 router.get('/fixtures', async (req, res) => {
   try {
-    const { leagueId, days = '7', includeOdds = 'false', refresh = 'false', fromDate: fromQ, toDate: toQ } = req.query;
+    const { leagueId, days = '7', includeOdds = 'false', refresh = 'false', fromDate: fromQ, toDate: toQ, fallback = 'true' } = req.query;
     if (!leagueId) {
       return res.status(400).json({ message: 'leagueId נדרש' });
     }
@@ -128,8 +128,16 @@ router.get('/fixtures', async (req, res) => {
       fixtures = [];
     }
 
-    // אם הראשי נכשל או החזיר 0, ננסה fallbacks
-    if (fixtures.length === 0) {
+    // אם הראשי נכשל או החזיר 0, ננסה fallbacks.
+    //
+    // fallback=false מכבה את זה, ומשיכה של כל הליגות יחד משתמשת בזה: ליגה
+    // בלי משחקים בטווח היא המקרה הנפוץ, ובדיוק היא זו שמשלמת את השרשרת
+    // כולה - ארבעה ספקים בטור על שום דבר. מכיוון שהשרשרת נכנסת לפעולה רק
+    // כשהספק הראשי החזיר 0, כיבוי שלה מוותר כמעט תמיד על "אין משחקים"
+    // ולא על נתונים.
+    const allowFallback = fallback !== 'false' && fallback !== '0';
+
+    if (fixtures.length === 0 && allowFallback) {
       for (const fb of fallbackProviders(league, provider.name)) {
         try {
           console.log(`🔁 [external] trying fallback ${fb.name} for ${league.name}`);

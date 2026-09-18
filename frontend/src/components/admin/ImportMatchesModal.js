@@ -9,8 +9,8 @@ const DAYS_OPTIONS = [3, 7, 14, 30];
 const ALL_LEAGUES = '__all__';
 
 // 365 חוסמים לפי IP על ריבוי בקשות בו-זמנית, ולכן מושכים כמה ליגות במקביל
-// ולא את כולן יחד
-const LEAGUE_CONCURRENCY = 3;
+// ולא את כולן יחד. חמש ולא שלוש: 16 ליגות בשלישיות היו כחצי דקה של המתנה
+const LEAGUE_CONCURRENCY = 5;
 
 // YYYY-MM-DD לפי התאריך המקומי (לא UTC, כדי שברירת המחדל תהיה "היום" האמיתי אצל האדמין)
 const toYmd = (d) => {
@@ -48,6 +48,9 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
   // ליגות שהמשיכה שלהן נכשלה. במצב "כל הליגות" כישלון של אחת לא אמור
   // להפיל את כל השאר, אבל כן צריך להיות גלוי
   const [failedLeagues, setFailedLeagues] = useState([]);
+  // התקדמות המשיכה מכל הליגות. המשחקים מוצגים בזרימה, ולכן צריך גם לומר
+  // שהרשימה עוד לא שלמה
+  const [progress, setProgress] = useState({ done: 0, total: 0 });
 
   useEffect(() => {
     if (!leagueId && importableLeagues.length > 0) {
@@ -67,9 +70,11 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
       ? importableLeagues
       : importableLeagues.filter((l) => l._id === leagueId);
 
-    const collected = [];
     const failures = [];
     let cursor = 0;
+    let done = 0;
+    const bulk = targets.length > 1;
+    setProgress({ done: 0, total: targets.length });
 
     try {
       await Promise.all(
@@ -82,42 +87,55 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
                 days,
                 includeOdds,
                 refresh,
+                // שרשרת הגיבוי היא ארבעה ספקים בטור, והיא נכנסת לפעולה בדיוק
+                // במקרה הנפוץ של ליגה בלי משחקים. במשיכה מרובה היא הייתה
+                // הרוב המוחלט של ההמתנה, ולכן מכובה כאן
+                ...(bulk ? { fallback: false } : {}),
                 ...(rangeMode === 'range' ? { fromDate: customFrom, toDate: customTo } : {})
               });
-              (data.fixtures || []).forEach((f) => {
-                collected.push({
-                  ...f,
-                  selected: false,
-                  leagueId: lg._id,
-                  leagueName: lg.name,
-                  // הספק נשמר לכל משחק בנפרד: במשיכה מכל הליגות הוא עשוי
-                  // להיות שונה מליגה לליגה
-                  provider: data.provider || null,
-                  // אם הספק החזיר שם בעברית (365scores) - נשתמש בו ישירות, אחרת נתרגם
-                  team1: f.team1He || getHebrewNameByEnglish(f.team1En),
-                  team2: f.team2He || getHebrewNameByEnglish(f.team2En),
-                  oddsEdited: f.odds
-                    ? {
-                        homeWin: f.odds.homeWin ?? '',
-                        draw: f.odds.draw ?? '',
-                        awayWin: f.odds.awayWin ?? ''
-                      }
-                    : { homeWin: '', draw: '', awayWin: '' }
-                });
-              });
+
+              const arrived = (data.fixtures || []).map((f) => ({
+                ...f,
+                selected: false,
+                leagueId: lg._id,
+                leagueName: lg.name,
+                // הספק נשמר לכל משחק בנפרד: במשיכה מכל הליגות הוא עשוי
+                // להיות שונה מליגה לליגה
+                provider: data.provider || null,
+                // אם הספק החזיר שם בעברית (365scores) - נשתמש בו ישירות, אחרת נתרגם
+                team1: f.team1He || getHebrewNameByEnglish(f.team1En),
+                team2: f.team2He || getHebrewNameByEnglish(f.team2En),
+                oddsEdited: f.odds
+                  ? {
+                      homeWin: f.odds.homeWin ?? '',
+                      draw: f.odds.draw ?? '',
+                      awayWin: f.odds.awayWin ?? ''
+                    }
+                  : { homeWin: '', draw: '', awayWin: '' }
+              }));
+
+              // כל ליגה מוצגת ברגע שהיא חוזרת, ולא בסוף. הזמן הכולל לא
+              // משתנה, אבל ההמתנה הריקה כן - ואפשר להתחיל לבחור מיד.
+              // ממוזג לפי שעת פתיחה כדי שהסדר יישמר גם בזרימה
+              if (arrived.length > 0) {
+                setFixtures((prev) =>
+                  [...prev, ...arrived].sort((a, b) => new Date(a.kickoffIso) - new Date(b.kickoffIso))
+                );
+              }
             } catch (err) {
               failures.push({ league: lg.name, message: err.message || 'שגיאה' });
+            } finally {
+              done++;
+              setProgress({ done, total: targets.length });
             }
           }
         })
       );
 
-      collected.sort((a, b) => new Date(a.kickoffIso) - new Date(b.kickoffIso));
-      setFixtures(collected);
       setFailedLeagues(failures);
 
       // כשליגה אחת נבחרה וגם היא נכשלה, זו שגיאה של המסך כולו ולא הערה בצד
-      if (collected.length === 0 && failures.length > 0 && targets.length === 1) {
+      if (failures.length > 0 && targets.length === 1) {
         setError(failures[0].message);
       }
     } catch (err) {
@@ -390,14 +408,26 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
         )}
 
         <div style={{ overflowY: 'auto', flex: 1, paddingLeft: '0.25rem', paddingRight: '0.25rem' }}>
-          {loading && <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-3, #666)' }}>⏳ טוען משחקים...</div>}
+          {/* בזמן טעינה מרובה הרשימה כבר מוצגת, ולכן זו שורת התקדמות ולא
+              מסך המתנה חוסם */}
+          {loading && (
+            <div style={{
+              textAlign: 'center', padding: fixtures.length > 0 ? '0.5rem' : '2rem',
+              color: 'var(--text-3, #666)', fontSize: fixtures.length > 0 ? '12px' : '14px'
+            }}>
+              ⏳ טוען
+              {progress.total > 1 && ` ליגות… ${progress.done} מתוך ${progress.total}`}
+              {progress.total <= 1 && ' משחקים…'}
+            </div>
+          )}
+
           {!loading && fixtures.length === 0 && !error && (
             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-3, #666)' }}>
               אין משחקים זמינים בטווח הנבחר
             </div>
           )}
 
-          {!loading && fixtures.length > 0 && (
+          {fixtures.length > 0 && (
             <>
               <input
                 type="text"

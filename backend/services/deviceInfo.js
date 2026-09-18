@@ -1,15 +1,19 @@
 // זיהוי המכשיר שמאחורי מנוי התראות, לתצוגה במסך הניהול.
 //
-// שני מקורות, ובכוונה בסדר הזה:
+// שלושה מקורות, בסדר אמינות יורד:
 //
-// 1. כתובת הדחיפה. היא קיימת בכל מנוי, כולל כאלה שנרשמו לפני שהתחלנו
-//    לשמור מידע נוסף, ולכן היא עובדת רטרואקטיבית. אבל היא מזהה את *שירות
-//    הדחיפה* ולא את המכשיר: Chrome בדסקטופ ו-Chrome באנדרואיד שולחים שניהם
-//    דרך FCM. לכן לא נטען כאן "אנדרואיד" - נאמר "Chrome".
+// 1. שם שהמשתמש נתן למכשיר. המקור היחיד שהוא ודאי, והיחיד שיכול לומר
+//    "האייפון של אדיאל" ולא רק "אייפון". נשמר בדפדפן ונשלח מחדש בכל
+//    סנכרון, כך שהמכשיר זוכר את שמו בעצמו.
 //
-// 2. ה-User-Agent, שנשמר מכאן והלאה. הוא זה שיודע להבדיל בין אייפון לבין
-//    מק, ובין טלפון למחשב. למנוי ישן הוא לא קיים, וזה בסדר - עדיף "Chrome"
-//    בלי דגם מאשר לנחש דגם.
+// 2. דגם מה-User-Agent. באנדרואיד הוא באמת שם: "Android 14; SM-A556B".
+//    באייפון הוא לא - אפל לא מדווחת את הדגם, בשום צורה.
+//
+// 3. גיאומטריית המסך, בשביל אייפון בלבד. היא מצמצמת לקבוצת דגמים ולא
+//    לדגם: אייפון 15, 15 Pro ו-16 חולקים בדיוק אותו viewport. לכן מוחזר
+//    טווח מפורש ולא ניחוש של דגם בודד.
+//
+// וכשאין אף אחד מהם - שירות הדחיפה, שמזהה דפדפן ולא מכשיר.
 
 const PUSH_SERVICES = [
   { match: 'web.push.apple.com', label: 'Safari / Apple' },
@@ -19,7 +23,6 @@ const PUSH_SERVICES = [
   { match: 'notify.windows.com', label: 'Edge / Windows' }
 ];
 
-// שירות הדחיפה לפי הכתובת, או המאחסן עצמו כשאינו מוכר
 const pushServiceOf = (endpoint) => {
   const url = String(endpoint || '');
   if (!url) return 'לא ידוע';
@@ -31,13 +34,53 @@ const pushServiceOf = (endpoint) => {
   return host || 'לא ידוע';
 };
 
-// דגם/מערכת מתוך ה-User-Agent. מוחזר null כשאין ממה לגזור, כדי שהקורא
-// יציג את שירות הדחיפה בלבד במקום לנחש
-const deviceFromUserAgent = (userAgent) => {
+// קודי דגם של סמסונג לשם השיווקי. אצל סדרת A הקוד דומה לשם (A556 → A55),
+// אבל בסדרת S הוא לא (S911 → S23), ולכן טבלה ולא נוסחה. מה שלא מופיע כאן
+// מוצג כקוד - "SM-A556B" עדיין מזהה מכשיר, בניגוד לשם מומצא.
+const SAMSUNG_MODELS = {
+  'SM-A556': 'Galaxy A55', 'SM-A546': 'Galaxy A54', 'SM-A536': 'Galaxy A53',
+  'SM-A356': 'Galaxy A35', 'SM-A346': 'Galaxy A34', 'SM-A336': 'Galaxy A33',
+  'SM-A256': 'Galaxy A25', 'SM-A155': 'Galaxy A15', 'SM-A146': 'Galaxy A14',
+  'SM-S921': 'Galaxy S24', 'SM-S926': 'Galaxy S24+', 'SM-S928': 'Galaxy S24 Ultra',
+  'SM-S911': 'Galaxy S23', 'SM-S916': 'Galaxy S23+', 'SM-S918': 'Galaxy S23 Ultra',
+  'SM-S901': 'Galaxy S22', 'SM-S906': 'Galaxy S22+', 'SM-S908': 'Galaxy S22 Ultra',
+  'SM-S711': 'Galaxy S23 FE', 'SM-G991': 'Galaxy S21', 'SM-G998': 'Galaxy S21 Ultra',
+  'SM-F946': 'Galaxy Z Fold5', 'SM-F731': 'Galaxy Z Flip5',
+  'SM-F956': 'Galaxy Z Fold6', 'SM-F741': 'Galaxy Z Flip6'
+};
+
+const prettifyAndroidModel = (raw) => {
+  const model = String(raw || '').trim();
+  if (!model) return null;
+
+  // קוד סמסונג נושא סיומת אזורית (B/E/U/N) שאינה מעניינת
+  const samsung = model.match(/^(SM-[A-Z]\d{3,4})/i);
+  if (samsung) {
+    const base = samsung[1].toUpperCase();
+    return SAMSUNG_MODELS[base] || model;
+  }
+
+  // שאר היצרנים בדרך כלל מדווחים שם קריא כבר: "Pixel 8", "Redmi Note 12"
+  return model;
+};
+
+// הדגם מתוך ה-User-Agent. null כשאין - כלומר תמיד באייפון
+const modelFromUserAgent = (userAgent) => {
   const ua = String(userAgent || '');
   if (!ua) return null;
 
-  // הסדר חשוב: אייפד מזוהה לפני מק, כי אייפדוס מדווח על עצמו כמקינטוש
+  // "Linux; Android 14; SM-A556B Build/UP1A" או "...; SM-A556B)"
+  const android = ua.match(/Android\s+[\d.]+;\s*([^;)]+?)(?:\s+Build\/[^;)]*)?\)/i);
+  if (android) return prettifyAndroidModel(android[1]);
+
+  return null;
+};
+
+// מערכת ההפעלה, כשאין דגם. גם זה מידע - "אייפון" עדיף על "Safari"
+const platformFromUserAgent = (userAgent) => {
+  const ua = String(userAgent || '');
+  if (!ua) return null;
+  // אייפד לפני מק: אייפדוס מדווח על עצמו כמקינטוש
   if (/iPhone/i.test(ua)) return 'iPhone';
   if (/iPad/i.test(ua)) return 'iPad';
   if (/Android/i.test(ua)) return /Mobile/i.test(ua) ? 'Android' : 'טאבלט Android';
@@ -47,21 +90,67 @@ const deviceFromUserAgent = (userAgent) => {
   return null;
 };
 
+// viewport בנקודות CSS (לאורך) וצפיפות → קבוצת דגמים. מקור: טבלאות
+// viewport ציבוריות. הקבוצות אמיתיות ולא עיגול פינות: 393x852@3 הוא באמת
+// אותו מסך באייפון 15, ב-15 Pro וב-16.
+const IPHONE_SCREENS = {
+  '320x568@2': 'iPhone SE (דור 1) / 5s',
+  '375x667@2': 'iPhone SE (2/3) / 8 / 7 / 6s',
+  '414x736@3': 'iPhone 8 Plus / 7 Plus',
+  '375x812@3': 'iPhone 13 mini / 12 mini / 11 Pro / X',
+  '414x896@2': 'iPhone 11 / XR',
+  '414x896@3': 'iPhone 11 Pro Max / XS Max',
+  '390x844@3': 'iPhone 14 / 13 / 13 Pro / 12',
+  '428x926@3': 'iPhone 14 Plus / 13 Pro Max / 12 Pro Max',
+  '393x852@3': 'iPhone 16 / 15 Pro / 15 / 14 Pro',
+  '430x932@3': 'iPhone 16 Plus / 15 Pro Max / 15 Plus / 14 Pro Max',
+  '402x874@3': 'iPhone 16 Pro',
+  '440x956@3': 'iPhone 16 Pro Max'
+};
+
+const iphoneFromScreen = (screen) => {
+  const w = Number(screen?.width);
+  const h = Number(screen?.height);
+  const dpr = Math.round(Number(screen?.dpr) || 0);
+  if (!w || !h || !dpr) return null;
+
+  // המסך מדווח לפי הכיוון שבו המשתמש החזיק את הטלפון
+  const short = Math.min(w, h);
+  const long = Math.max(w, h);
+  return IPHONE_SCREENS[`${short}x${long}@${dpr}`] || null;
+};
+
 /**
- * תיאור מנוי אחד לתצוגה. אינו מחזיר את כתובת הדחיפה עצמה - היא מזהה
- * מכשיר ואין סיבה שתעבור לדפדפן, גם לא של אדמין.
+ * תיאור מנוי אחד לתצוגה. אינו מחזיר את כתובת הדחיפה - היא מזהה מכשיר
+ * ואין סיבה שתעבור לדפדפן, גם לא של אדמין.
  */
 const describeSubscription = (sub) => {
   const service = pushServiceOf(sub?.endpoint);
-  const device = deviceFromUserAgent(sub?.userAgent);
+  const model = modelFromUserAgent(sub?.userAgent);
+  const platform = platformFromUserAgent(sub?.userAgent);
+  const byScreen = platform === 'iPhone' ? iphoneFromScreen(sub?.screen) : null;
+  const named = String(sub?.deviceName || '').trim().slice(0, 40) || null;
+
+  // סדר האמינות: שם שנתן המשתמש, דגם מה-UA, קבוצה לפי מסך, ואז מה שנשאר
+  const identity = named || model || byScreen || platform || service;
 
   return {
     service,
-    device,
-    label: device ? `${device} · ${service}` : service,
+    model: model || null,
+    platform: platform || null,
+    deviceName: named,
+    // מסך מצמצם לקבוצה ולא לדגם, ולכן מסומן ככזה במפורש
+    approximate: !named && !model && !!byScreen,
+    label: identity === service ? service : `${identity} · ${service}`,
     addedAt: sub?.addedAt || null,
     lastSeenAt: sub?.lastSeenAt || null
   };
 };
 
-module.exports = { pushServiceOf, deviceFromUserAgent, describeSubscription };
+module.exports = {
+  pushServiceOf,
+  modelFromUserAgent,
+  platformFromUserAgent,
+  iphoneFromScreen,
+  describeSubscription
+};

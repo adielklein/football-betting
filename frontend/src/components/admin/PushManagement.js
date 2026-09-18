@@ -663,6 +663,14 @@ function PushManagement() {
                       {row.devices.map((d, di) => (
                         <div key={di} style={{ fontSize: '10px', color: 'var(--text-3, #888)' }}>
                           📱 {d.label}
+                          {d.approximate && (
+                            <span
+                              title="אפל לא מדווחת את דגם האייפון. זוהה לפי גודל המסך, שמשותף לכמה דגמים"
+                              style={{ color: 'var(--warn-fg, #9a7b3f)' }}
+                            >
+                              {' ~'}
+                            </span>
+                          )}
                           {d.lastSeenAt && (
                             <span style={{ color: 'var(--text-4, #bbb)' }}>
                               {' · נראה '}{new Date(d.lastSeenAt).toLocaleDateString('he-IL')}

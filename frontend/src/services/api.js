@@ -226,7 +226,7 @@ export const api = {
     }),
 
   // External fixtures (API-Football)
-  getUpcomingFixtures: ({ leagueId, days = 7, includeOdds = false, refresh = false, fromDate, toDate }) => {
+  getUpcomingFixtures: ({ leagueId, days = 7, includeOdds = false, refresh = false, fromDate, toDate, fallback = true }) => {
     const params = new URLSearchParams({
       leagueId,
       days: String(days),
@@ -237,6 +237,7 @@ export const api = {
       params.set('fromDate', fromDate);
       params.set('toDate', toDate);
     }
+    if (!fallback) params.set('fallback', 'false');
     return fetch(`${API_BASE_URL}/external/fixtures?${params.toString()}`).then(async res => {
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
