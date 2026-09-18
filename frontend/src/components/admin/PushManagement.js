@@ -13,6 +13,8 @@ function PushManagement() {
   const [notificationImage, setNotificationImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('broadcast');
+  const [overview, setOverview] = useState(null);
+  const [overviewFailed, setOverviewFailed] = useState(false);
 
   // "מי לא הימר" - נטען לפי שבוע נבחר, ולא יחד עם שאר המסך
   const [weeks, setWeeks] = useState([]);
@@ -193,6 +195,18 @@ function PushManagement() {
   const getSubscribedUsers = () => users.filter(isUserSubscribed);
   const getUnsubscribedUsers = () => users.filter(u => !isUserSubscribed(u));
 
+  // נטען רק כשנכנסים ללשונית: זו שליפה של כל המשתמשים והמכשירים שלהם,
+  // ואין סיבה לשלם עליה בכל כניסה למסך ההתראות
+  useEffect(() => {
+    if (activeTab !== 'settings' || overview) return;
+    let cancelled = false;
+    fetch(`${API_URL}/notifications/admin/overview`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((d) => { if (!cancelled) setOverview(Array.isArray(d) ? d : []); })
+      .catch(() => { if (!cancelled) setOverviewFailed(true); });
+    return () => { cancelled = true; };
+  }, [activeTab, overview]);
+
   const labelStyle = { display: 'block', marginBottom: '4px', fontWeight: '700', fontSize: '12px', color: 'var(--text-2, #555)' };
   const inputStyle = { borderRadius: '10px', fontSize: '13px', padding: '0.5rem 0.6rem' };
 
@@ -200,7 +214,17 @@ function PushManagement() {
     { key: 'broadcast', label: 'לכולם', icon: '📢' },
     { key: 'selective', label: 'בררנית', icon: '🎯' },
     { key: 'pending', label: 'לא הימרו', icon: '⚽' },
-    { key: 'stats', label: 'משתמשים', icon: '📊' }
+    { key: 'stats', label: 'משתמשים', icon: '📊' },
+    { key: 'settings', label: 'מי מקבל מה', icon: '🔔' }
+  ];
+
+  // כל סוגי ההתראות, כדי שהטבלה תראה גם מה כבוי ולא רק מה דלוק
+  const ALERT_KINDS = [
+    { key: 'goalAlerts', label: '⚽ שערים' },
+    { key: 'redCardAlerts', label: '🟥 אדומים' },
+    { key: 'matchStartAlerts', label: '🏁 פתיחה' },
+    { key: 'matchEndAlerts', label: '🔚 סיום' },
+    { key: 'exactScoreAlerts', label: '🎯 בול' }
   ];
 
   const notificationFormFields = (
@@ -534,6 +558,122 @@ function PushManagement() {
               </div>
             </div>
           )}
+            </>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'settings' && (
+        <div style={{ animation: 'scaleIn 0.2s ease' }}>
+          {overviewFailed && (
+            <div className="card" style={{ marginBottom: '0.5rem', color: 'var(--bad-fg, #dc2626)', fontSize: '13px' }}>
+              לא ניתן לטעון את ההגדרות
+            </div>
+          )}
+
+          {!overview && !overviewFailed && (
+            <div className="card" style={{ textAlign: 'center', padding: '1.2rem', fontSize: '12px', color: 'var(--text-4, #aaa)' }}>
+              טוען…
+            </div>
+          )}
+
+          {overview && (
+            <>
+              {/* כמה אנשים בכלל הדליקו כל סוג - עונה על "האם מישהו משתמש בזה" */}
+              <div className="card" style={{ marginBottom: '0.5rem' }}>
+                <h3 style={{ fontSize: '0.9rem', margin: '0 0 0.4rem 0', fontWeight: '700' }}>
+                  🔔 מי מקבל מה ({overview.length})
+                </h3>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                  {ALERT_KINDS.map(({ key, label }) => {
+                    const count = overview.filter((r) => r.enabled && r.alerts[key]).length;
+                    return (
+                      <span key={key} style={{
+                        fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px',
+                        background: count > 0 ? 'var(--good-bg, #dcfce7)' : 'var(--surface-3, #f0f2f5)',
+                        color: count > 0 ? 'var(--good-fg, #16a34a)' : 'var(--text-4, #aaa)'
+                      }}>
+                        {label} {count}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {overview.map((row, i) => (
+                <div key={row.userId} className="card" style={{
+                  marginBottom: '0.4rem', padding: '0.6rem',
+                  animation: `slideUp 0.2s ease ${Math.min(i * 0.03, 0.3)}s both`
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
+                    <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text, #333)' }}>{row.name}</span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-4, #aaa)' }}>@{row.username}</span>
+
+                    {!row.enabled ? (
+                      <span style={{
+                        fontSize: '10px', fontWeight: '700', padding: '1px 7px', borderRadius: '10px',
+                        background: 'var(--surface-3, #f0f2f5)', color: 'var(--text-4, #999)'
+                      }}>
+                        כבוי
+                      </span>
+                    ) : row.deviceCount === 0 ? (
+                      // מופעל בלי מכשיר = ההתראות לא יגיעו לאף מקום
+                      <span
+                        title="ההתראות מופעלות אבל אין מכשיר רשום - שום התראה לא תגיע"
+                        style={{
+                          fontSize: '10px', fontWeight: '700', padding: '1px 7px', borderRadius: '10px',
+                          background: 'var(--warn-bg, #fff3cd)', color: 'var(--warn-fg, #9a7b3f)'
+                        }}
+                      >
+                        ⚠ מופעל בלי מכשיר
+                      </span>
+                    ) : (
+                      <span style={{
+                        fontSize: '10px', fontWeight: '700', padding: '1px 7px', borderRadius: '10px',
+                        background: 'var(--good-bg, #dcfce7)', color: 'var(--good-fg, #16a34a)'
+                      }}>
+                        {row.deviceCount} מכשירים
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginBottom: '0.35rem' }}>
+                    {ALERT_KINDS.map(({ key, label }) => {
+                      const on = !!row.alerts[key];
+                      return (
+                        <span key={key} style={{
+                          fontSize: '10px', fontWeight: on ? '700' : '500',
+                          padding: '2px 7px', borderRadius: '9px',
+                          background: on ? 'var(--good-bg, #dcfce7)' : 'transparent',
+                          color: on ? 'var(--good-fg, #16a34a)' : 'var(--text-4, #bbb)',
+                          border: on ? 'none' : '1px dashed var(--border, #e5e7eb)',
+                          textDecoration: on ? 'none' : 'line-through'
+                        }}>
+                          {label}
+                        </span>
+                      );
+                    })}
+                    <span style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', alignSelf: 'center' }}>
+                      · תזכורת {row.alerts.hoursBeforeLock}שע לפני
+                    </span>
+                  </div>
+
+                  {row.devices.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      {row.devices.map((d, di) => (
+                        <div key={di} style={{ fontSize: '10px', color: 'var(--text-3, #888)' }}>
+                          📱 {d.label}
+                          {d.lastSeenAt && (
+                            <span style={{ color: 'var(--text-4, #bbb)' }}>
+                              {' · נראה '}{new Date(d.lastSeenAt).toLocaleDateString('he-IL')}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
             </>
           )}
         </div>

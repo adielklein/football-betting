@@ -1,5 +1,6 @@
 const express = require('express');
 const { requireAdmin, requireSelfOrAdmin } = require('../middleware/requireAdmin');
+const { describeSubscription } = require('../services/deviceInfo');
 const router = express.Router();
 const User = require('../models/User');
 const InAppNotification = require('../models/InAppNotification');
@@ -66,6 +67,54 @@ router.get('/stats', async (req, res) => {
     res.json(stats);
   } catch (error) {
     console.error('Error getting stats:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// 🛠️ תמונת ההתראות של כל המשתמשים, לאדמין.
+//
+// יושב כאן ולא ב-/auth/users בכוונה: הנתיב ההוא פתוח, כי האפליקציה צריכה
+// ממנו שמות שחקנים לטבלאות, ולכן הוא מחזיר סיכום בלבד. העדפות התראה של
+// כל אחד ורשימת המכשירים שלו אינן משהו שצריך להיות גלוי לכל קורא.
+//
+// גם כאן לא מוחזרת כתובת הדחיפה עצמה - היא מזהה מכשיר, ולתצוגה מספיק
+// התיאור שנגזר ממנה.
+router.get('/admin/overview', requireAdmin, async (req, res) => {
+  try {
+    const users = await User.find({ role: { $ne: 'admin' } }, 'name username pushSettings')
+      .sort({ name: 1 })
+      .lean();
+
+    const rows = users.map((u) => {
+      const ps = u.pushSettings || {};
+      const subs = [
+        ...(Array.isArray(ps.subscriptions) ? ps.subscriptions : []),
+        ...(ps.subscription ? [ps.subscription] : [])
+      ];
+
+      return {
+        userId: String(u._id),
+        name: u.name,
+        username: u.username,
+        // "מופעל" בלי אף מכשיר רשום פירושו שההתראות לא יגיעו לאף מקום,
+        // וזו בדיוק התקלה שהמסך הזה אמור לחשוף
+        enabled: !!ps.enabled,
+        deviceCount: subs.length,
+        alerts: {
+          hoursBeforeLock: ps.hoursBeforeLock ?? 2,
+          exactScoreAlerts: ps.exactScoreAlerts !== false,
+          goalAlerts: !!ps.goalAlerts,
+          redCardAlerts: !!ps.redCardAlerts,
+          matchStartAlerts: !!ps.matchStartAlerts,
+          matchEndAlerts: !!ps.matchEndAlerts
+        },
+        devices: subs.map(describeSubscription)
+      };
+    });
+
+    res.json(rows);
+  } catch (error) {
+    console.error('Error building notifications overview:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -139,18 +188,43 @@ router.post('/subscribe', requireSelfOrAdmin((req) => req.body?.userId), async (
     const existingIndex = user.pushSettings.subscriptions.findIndex(
       sub => sub.endpoint === subscription.endpoint
     );
-    
+
+    // מידע על המכשיר, לצד המנוי עצמו. כתובת הדחיפה מזהה את שירות הדחיפה
+    // אבל לא את המכשיר, ולכן בלי זה מסך הניהול יכול לומר "Chrome" ולא
+    // "אנדרואיד של מי". web-push קורא endpoint ו-keys בלבד ומתעלם מהשאר.
+    //
+    // הנתיב הזה נקרא גם בכל פתיחת אפליקציה (silent sync), ולכן lastSeenAt
+    // עונה על השאלה שבאמת נשאלת כשהתראה לא הגיעה: המכשיר הזה עוד חי?
+    const userAgent = String(req.headers['user-agent'] || '').slice(0, 300);
+    const now = new Date();
+
     if (existingIndex >= 0) {
       console.log(`🔄 Updating existing subscription`);
-      user.pushSettings.subscriptions[existingIndex] = subscription;
+      const previous = user.pushSettings.subscriptions[existingIndex] || {};
+      user.pushSettings.subscriptions[existingIndex] = {
+        ...subscription,
+        userAgent: userAgent || previous.userAgent || null,
+        addedAt: previous.addedAt || now,
+        lastSeenAt: now
+      };
     } else {
       console.log(`➕ Adding new subscription (total will be ${user.pushSettings.subscriptions.length + 1})`);
-      user.pushSettings.subscriptions.push(subscription);
+      user.pushSettings.subscriptions.push({
+        ...subscription,
+        userAgent: userAgent || null,
+        addedAt: now,
+        lastSeenAt: now
+      });
     }
     
     user.pushSettings.enabled = true;
     user.pushSettings.hoursBeforeLock = hoursBeforeLock || 2;
-    
+
+    // המערך הוא Mixed, ומונגוס לא מזהה השמה לאיבר קיים בתוכו. בלי זה עדכון
+    // של מנוי קיים פשוט לא נשמר - מה שכבר היה נכון לפני שדה lastSeenAt,
+    // והוא זה שהופך את השקט הזה לניכר
+    user.markModified('pushSettings.subscriptions');
+
     await user.save();
     
     console.log(`✅ Subscription saved for ${user.name} (${user.pushSettings.subscriptions.length} devices)`);
