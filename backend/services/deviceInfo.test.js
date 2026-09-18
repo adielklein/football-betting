@@ -6,6 +6,8 @@ const {
 
 const UA_A55 = 'Mozilla/5.0 (Linux; Android 14; SM-A556B Build/UP1A.231005.007) AppleWebKit/537.36 Chrome/123.0 Mobile Safari/537.36';
 const UA_IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
+// כך נראה כרום מודרני באנדרואיד: הפלטפורמה מוקפאת והדגם הוא האות K
+const UA_CHROME_REDUCED = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Mobile Safari/537.36';
 const APPLE_EP = 'https://web.push.apple.com/abc';
 const FCM_EP = 'https://fcm.googleapis.com/fcm/send/xyz';
 
@@ -92,3 +94,36 @@ test('התיאור לעולם אינו כולל את כתובת הדחיפה', (
   assert.ok(!JSON.stringify(d).includes('SECRET-DEVICE-ID'));
 });
 
+
+test('"K" אינו דגם - זה מה שכרום שם אחרי שצמצם את ה-User-Agent', () => {
+  assert.equal(modelFromUserAgent(UA_CHROME_REDUCED), null);
+});
+
+test('כרום מצומצם בלי Client Hints מוצג כ"אנדרואיד", לא כ-K', () => {
+  const d = describeSubscription({ endpoint: FCM_EP, userAgent: UA_CHROME_REDUCED });
+  const identity = d.label.split(' · ')[0];
+  assert.equal(identity, 'אנדרואיד');
+  assert.ok(!d.label.includes('K ·'), d.label);
+});
+
+test('Client Hints מחזיר את הדגם, והוא מתורגם לשם השיווקי', () => {
+  const d = describeSubscription({
+    endpoint: FCM_EP, userAgent: UA_CHROME_REDUCED, model: 'SM-A556B'
+  });
+  assert.equal(d.model, 'Galaxy A55');
+  assert.match(d.label, /^Galaxy A55 · /);
+});
+
+test('Client Hints גובר על ה-User-Agent כשיש שניהם', () => {
+  const d = describeSubscription({
+    endpoint: FCM_EP, userAgent: UA_A55, model: 'SM-S918B'
+  });
+  assert.equal(d.model, 'Galaxy S23 Ultra');
+});
+
+test('Client Hints ריק או placeholder נופל לסוג המכשיר', () => {
+  for (const model of ['', 'K', 'Unknown', null]) {
+    const d = describeSubscription({ endpoint: FCM_EP, userAgent: UA_CHROME_REDUCED, model });
+    assert.equal(d.label.split(' · ')[0], 'אנדרואיד', String(model));
+  }
+});

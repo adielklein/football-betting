@@ -166,7 +166,7 @@ router.post('/subscribe', requireSelfOrAdmin((req) => req.body?.userId), async (
   try {
     // silent - סנכרון רקע של מנוי קיים. בלעדיו כל פתיחה של האפליקציה
     // הייתה שולחת התראת "התראות הופעלו".
-    const { userId, subscription, hoursBeforeLock, silent } = req.body;
+    const { userId, subscription, hoursBeforeLock, silent, model } = req.body;
 
     console.log(`📥 Saving subscription for user ${userId}${silent ? ' (silent sync)' : ''}`);
     
@@ -196,6 +196,9 @@ router.post('/subscribe', requireSelfOrAdmin((req) => req.body?.userId), async (
     // הנתיב הזה נקרא גם בכל פתיחת אפליקציה (silent sync), ולכן lastSeenAt
     // עונה על השאלה שבאמת נשאלת כשהתראה לא הגיעה: המכשיר הזה עוד חי?
     const userAgent = String(req.headers['user-agent'] || '').slice(0, 300);
+    // דגם מ-Client Hints. כרום מודרני לא מדווח דגם ב-User-Agent - הוא שם
+    // שם את האות "K" - ולכן זה המקור היחיד שנותר
+    const clientModel = String(model || '').trim().slice(0, 60) || null;
     const now = new Date();
 
     if (existingIndex >= 0) {
@@ -204,6 +207,7 @@ router.post('/subscribe', requireSelfOrAdmin((req) => req.body?.userId), async (
       user.pushSettings.subscriptions[existingIndex] = {
         ...subscription,
         userAgent: userAgent || previous.userAgent || null,
+        model: clientModel || previous.model || null,
         addedAt: previous.addedAt || now,
         lastSeenAt: now
       };
@@ -212,6 +216,7 @@ router.post('/subscribe', requireSelfOrAdmin((req) => req.body?.userId), async (
       user.pushSettings.subscriptions.push({
         ...subscription,
         userAgent: userAgent || null,
+        model: clientModel,
         addedAt: now,
         lastSeenAt: now
       });

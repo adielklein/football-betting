@@ -26,6 +26,23 @@ const urlBase64ToUint8Array = (base64String) => {
   return outputArray;
 };
 
+
+// דגם המכשיר. מאז Chrome 110 ה-User-Agent באנדרואיד מוקפא והדגם בו הוא
+// האות "K", ולכן זו הדרך היחידה שנותרה לדעת מה המכשיר. זו מחרוזת הדגם
+// עצמה ("SM-A556B") ולא גזירה ממנה.
+//
+// קיים רק בדפדפני Chromium. בספארי אין userAgentData בכלל, ולכן באייפון
+// יוחזר null - וזה בסדר, שם ממילא אין דגם בשום דרך.
+const deviceModel = async () => {
+  try {
+    if (!navigator.userAgentData?.getHighEntropyValues) return null;
+    const hints = await navigator.userAgentData.getHighEntropyValues(['model']);
+    return hints?.model || null;
+  } catch (error) {
+    return null;
+  }
+};
+
 const isSupported = () =>
   'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
 
@@ -65,7 +82,7 @@ export async function syncPushSubscription(user) {
     await fetch(`${API_URL}/notifications/subscribe`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, subscription, silent: true })
+      body: JSON.stringify({ userId, subscription, silent: true, model: await deviceModel() })
     }).catch((syncError) => console.warn('Subscription sync failed:', syncError));
 
     return subscription;

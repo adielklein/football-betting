@@ -1,12 +1,18 @@
 // זיהוי המכשיר שמאחורי מנוי התראות, לתצוגה במסך הניהול.
 //
-// שני מקורות, שניהם מה-User-Agent:
+// שלושה מקורות לדגם, בסדר הזה:
 //
-// 1. דגם הטלפון. באנדרואיד הוא באמת שם: "Android 14; SM-A556B" → Galaxy A55.
-//    באייפון הוא לא - אפל לא מדווחת את הדגם, בשום צורה.
+// 1. Client Hints. מאז Chrome 110 (2023) ה-User-Agent באנדרואיד מוקפא -
+//    הפלטפורמה תמיד "Android 10" והדגם הוא האות "K" בדיוק - ולכן הדגם
+//    האמיתי מגיע רק מ-navigator.userAgentData.getHighEntropyValues(['model']),
+//    שהלקוח שולח אלינו. זו מחרוזת הדגם עצמה, לא גזירה ממנה.
 //
-// 2. סוג המכשיר בעברית - אייפון, מחשב, טאבלט. זו רצפת הבסיס, וכשאין דגם
-//    היא התשובה: "אייפון" עונה על השאלה שנשאלה.
+// 2. ה-User-Agent. עדיין נושא דגם בדפדפנים שלא מצמצמים - Samsung Internet,
+//    פיירפוקס, webview - ולכן נשאר כגיבוי.
+//
+// 3. סוג המכשיר בעברית - אייפון, מחשב, טאבלט. רצפת הבסיס, וכשאין דגם היא
+//    התשובה. באייפון היא תמיד התשובה: אפל לא מדווחת דגם באף אחת מהדרכים,
+//    ו-userAgentData אינו קיים בספארי בכלל.
 //
 // וכשאין אף אחד מהם - שירות הדחיפה, שמזהה דפדפן ולא מכשיר.
 
@@ -83,14 +89,24 @@ const prettifyAndroidModel = (raw) => {
   return model;
 };
 
-// הדגם מתוך ה-User-Agent. null כשאין - כלומר תמיד באייפון
+// דגמים שאינם דגם. "K" הוא מה ש-Chrome שם במקום הדגם מאז שצמצם את
+// ה-User-Agent, ולהציג אותו כשם מכשיר זה להציג את הצנזורה עצמה
+const PLACEHOLDER_MODELS = /^(K|Android|Unknown|Generic.*)$/i;
+
+const cleanModel = (raw) => {
+  const model = String(raw || '').trim();
+  if (!model || PLACEHOLDER_MODELS.test(model)) return null;
+  return prettifyAndroidModel(model);
+};
+
+// הדגם מתוך ה-User-Agent. null כשאין - באייפון תמיד, ובכרום מאז הצמצום
 const modelFromUserAgent = (userAgent) => {
   const ua = String(userAgent || '');
   if (!ua) return null;
 
   // "Linux; Android 14; SM-A556B Build/UP1A" או "...; SM-A556B)"
   const android = ua.match(/Android\s+[\d.]+;\s*([^;)]+?)(?:\s+Build\/[^;)]*)?\)/i);
-  if (android) return prettifyAndroidModel(android[1]);
+  if (android) return cleanModel(android[1]);
 
   return null;
 };
@@ -118,7 +134,8 @@ const platformFromUserAgent = (userAgent) => {
  */
 const describeSubscription = (sub) => {
   const service = pushServiceOf(sub?.endpoint);
-  const model = modelFromUserAgent(sub?.userAgent);
+  // Client Hints קודם: זה המקום היחיד שבו כרום מודרני מדווח דגם בכלל
+  const model = cleanModel(sub?.model) || modelFromUserAgent(sub?.userAgent);
   const platform = platformFromUserAgent(sub?.userAgent);
 
   // דגם אם יש, אחרת סוג המכשיר, ואחרון - שירות הדחיפה
