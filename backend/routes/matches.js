@@ -244,16 +244,51 @@ router.post('/bulk', requireAdmin, async (req, res) => {
       docs.push(data);
     });
 
-    if (docs.length === 0) {
-      return res.status(400).json({ message: 'אין משחקים תקינים להוספה', errors });
+    // סינון כפילויות מול מה שכבר בשבוע, ובתוך הבקשה עצמה.
+    //
+    // insertMany הכניס עד עכשיו כל מה שנשלח, ולכן ייבוא של אותה ליגה פעמיים -
+    // למשל סרייה א' ואז "כל הליגות" - יצר שני מסמכים לאותו משחק. זה לא רק
+    // כפילות במסך: כל עותק סורק בנפרד ושולח התראות משלו, וגם הניקוד נספר
+    // פעמיים.
+    //
+    // שני מפתחות: המזהה החיצוני כשיש, ושמות הקבוצות + התאריך למשחקים
+    // שנוספו ידנית ואין להם מזהה.
+    const existing = await Match.find({ weekId }, 'externalId team1 team2 date').lean();
+
+    const pairKey = (m) => `${String(m.team1).trim()}|${String(m.team2).trim()}|${m.date}`;
+    const takenExternal = new Set(existing.map((m) => m.externalId).filter(Boolean).map(String));
+    const takenPairs = new Set(existing.map(pairKey));
+
+    const fresh = [];
+    const duplicates = [];
+
+    for (const d of docs) {
+      const externalKey = d.externalId ? String(d.externalId) : null;
+      if ((externalKey && takenExternal.has(externalKey)) || takenPairs.has(pairKey(d))) {
+        duplicates.push(`${d.team1} - ${d.team2}`);
+        continue;
+      }
+      if (externalKey) takenExternal.add(externalKey);
+      takenPairs.add(pairKey(d));
+      fresh.push(d);
     }
 
-    const inserted = await Match.insertMany(docs);
+    if (fresh.length === 0) {
+      return res.status(400).json({
+        message: duplicates.length > 0
+          ? `כל המשחקים שנבחרו כבר קיימים בשבוע (${duplicates.length})`
+          : 'אין משחקים תקינים להוספה',
+        duplicates,
+        errors
+      });
+    }
+
+    const inserted = await Match.insertMany(fresh);
     const populated = await Match.find({ _id: { $in: inserted.map((d) => d._id) } })
       .populate('leagueId');
 
     if (adminId) {
-      const usedLeagues = [...new Set(docs.map((d) => String(d.leagueId)))];
+      const usedLeagues = [...new Set(fresh.map((d) => String(d.leagueId)))];
       const summary = usedLeagues.length === 1
         ? `${inserted.length} משחקים בליגת ${leagueById.get(usedLeagues[0]).name}`
         : `${inserted.length} משחקים ב-${usedLeagues.length} ליגות`;
@@ -264,7 +299,7 @@ router.post('/bulk', requireAdmin, async (req, res) => {
       });
     }
 
-    res.status(201).json({ created: populated.length, matches: populated, errors });
+    res.status(201).json({ created: populated.length, matches: populated, duplicates, errors });
   } catch (error) {
     console.error('Error bulk creating matches:', error);
     res.status(500).json({ message: error.message });

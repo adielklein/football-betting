@@ -51,6 +51,9 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
   // התקדמות המשיכה מכל הליגות. המשחקים מוצגים בזרימה, ולכן צריך גם לומר
   // שהרשימה עוד לא שלמה
   const [progress, setProgress] = useState({ done: 0, total: 0 });
+  // משחקים שנשלחו וכבר היו בשבוע. השרת מדלג עליהם, והמודאל נשאר פתוח
+  // כדי שהאדמין יראה מה בדיוק לא נוסף במקום שהחלון ייסגר כאילו הכל עבר
+  const [skipped, setSkipped] = useState(null);
 
   useEffect(() => {
     if (!leagueId && importableLeagues.length > 0) {
@@ -63,6 +66,7 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
     if (rangeMode === 'range' && (!customFrom || !customTo)) return;
     setLoading(true);
     setError('');
+    setSkipped(null);
     setFixtures([]);
     setFailedLeagues([]);
 
@@ -200,6 +204,7 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
     }
     setSubmitting(true);
     setError('');
+    setSkipped(null);
     try {
       const payload = {
         weekId: week._id,
@@ -238,6 +243,12 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
       };
       const result = await api.bulkCreateMatches(payload);
       if (onImported) onImported(result);
+
+      const duplicates = Array.isArray(result?.duplicates) ? result.duplicates : [];
+      if (duplicates.length > 0) {
+        setSkipped({ created: result?.created || 0, duplicates });
+        return;
+      }
       onClose();
     } catch (err) {
       setError(err.message || 'שגיאה בייבוא המשחקים');
@@ -378,6 +389,21 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
         {error && (
           <div style={{ background: 'var(--bad-bg, #fee)', color: 'var(--bad-fg, #900)', padding: '0.5rem 0.75rem', borderRadius: '6px', marginBottom: '0.75rem', flexShrink: 0 }}>
             {error}
+          </div>
+        )}
+
+        {skipped && (
+          <div style={{
+            background: 'var(--warn-bg, #fffaf0)', border: '1px solid #f5e3c0', color: 'var(--warn-fg, #9a7b3f)',
+            padding: '0.45rem 0.7rem', borderRadius: '8px', fontSize: '12px',
+            marginBottom: '0.75rem', flexShrink: 0
+          }}>
+            {skipped.created > 0
+              ? `נוספו ${skipped.created} משחקים. `
+              : ''}
+            {skipped.duplicates.length} משחקים כבר היו בשבוע ולכן לא נוספו שוב:{' '}
+            {skipped.duplicates.slice(0, 5).join(', ')}
+            {skipped.duplicates.length > 5 && ` ועוד ${skipped.duplicates.length - 5}`}
           </div>
         )}
 
@@ -547,12 +573,12 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem', flexShrink: 0, gap: '0.5rem' }}>
           <button onClick={onClose} className="btn" disabled={submitting}>
-            ביטול
+            {skipped ? 'סגור' : 'ביטול'}
           </button>
           <button
             onClick={handleImport}
             className="btn btn-primary"
-            disabled={submitting || selectedCount === 0}
+            disabled={submitting || selectedCount === 0 || !!skipped}
           >
             {submitting ? 'מייבא...' : `➕ הוסף ${selectedCount} משחקים נבחרים`}
           </button>

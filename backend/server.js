@@ -312,6 +312,12 @@ const notifyLiveEvents = async (matches, games) => {
   const { sendNotificationToUsers } = require('./services/pushNotifications');
   const liveById = new Map(games.map((g) => [String(g.matchId), g]));
 
+  // הגנה על מסמכים כפולים שכבר במסד: אותו משחק שנוסף לשבוע פעמיים מחזיק
+  // שתי תמונות מצב, מזהה את אותו אירוע פעמיים ושולח שתי התראות זהות.
+  // הייבוא כבר חוסם כפילויות חדשות, אבל מה שנוצר קודם עדיין כאן - ולכן
+  // אירוע זהה על אותו מזהה חיצוני נשלח פעם אחת בסריקה
+  const sentInThisPoll = new Set();
+
   for (const match of matches) {
     const live = liveById.get(String(match._id));
     if (!live) continue;
@@ -333,6 +339,13 @@ const notifyLiveEvents = async (matches, games) => {
 
       const setting = SETTING_BY_EVENT[event.type];
       if (!setting) continue;
+
+      const eventKey = `${match.externalId}|${JSON.stringify(event)}`;
+      if (sentInThisPoll.has(eventKey)) {
+        console.warn(`📣 [LIVE] ${event.type} כפול ל-${match.team1} - ${match.team2} (מסמך כפול בשבוע) - לא נשלח שוב`);
+        continue;
+      }
+      sentInThisPoll.add(eventKey);
 
       try {
         const recipients = await User.find(
