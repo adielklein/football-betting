@@ -358,12 +358,14 @@ const notifyLiveEvents = async (matches, games, sentInThisPoll = new Set()) => {
       const setting = SETTING_BY_EVENT[event.type];
       if (!setting) continue;
 
-      const alreadySentKey = `${match.externalId}|${eventKey(event)}`;
-      if (sentInThisPoll.has(alreadySentKey)) {
+      const key = eventKey(event);
+
+      const sharedKey = `${match.externalId}|${key}`;
+      if (sentInThisPoll.has(sharedKey)) {
         console.warn(`📣 [LIVE] ${event.type} כפול ל-${match.team1} - ${match.team2} (אותו משחק שמור פעמיים) - לא נשלח שוב`);
         continue;
       }
-      sentInThisPoll.add(alreadySentKey);
+      sentInThisPoll.add(sharedKey);
 
       try {
         const recipients = await User.find(
@@ -375,6 +377,23 @@ const notifyLiveEvents = async (matches, games, sentInThisPoll = new Set()) => {
         const text = describeEvent(event, match.team1, match.team2);
         if (!text) continue;
 
+        // ההתראה נתפסת לפני שהיא נשלחת, בכתיבה אחת אטומית: התנאי הוא
+        // שהחתימה עוד לא ברשימה, ולכן רק הקורא הראשון מצליח לכתוב. זה מה
+        // שהופך "המשחק התחיל" לחד-פעמי באמת - גם אם הספק ידווח שוב "טרם
+        // החל" ואז "מתנהל", גם אחרי הפעלה מחדש של השרת וגם אם שתי סריקות
+        // רצות במקביל. תמונת המצב לבדה רואה כל תנודה כשריקת פתיחה חדשה.
+        //
+        // נתפסת רק כשבאמת עומדים לשלוח: אם אף אחד לא ביקש את ההתראה הזו
+        // אין מה לסמן, ומי שיפעיל אותה באמצע המשחק עדיין יקבל את הבא
+        const claim = await Match.updateOne(
+          { _id: match._id, notifiedEvents: { $ne: key } },
+          { $addToSet: { notifiedEvents: key } }
+        );
+        if (claim.modifiedCount === 0) {
+          console.warn(`📣 [LIVE] ${event.type} כבר נשלח ל-${match.team1} - ${match.team2} - לא נשלח שוב`);
+          continue;
+        }
+
         await sendNotificationToUsers(
           recipients.map((u) => u._id),
           text.title,
@@ -384,12 +403,15 @@ const notifyLiveEvents = async (matches, games, sentInThisPoll = new Set()) => {
             matchId: String(match._id),
             // החתימה נושאת את המזהה החיצוני ולא את מזהה המסמך, כדי ששני
             // מסמכים לאותו משחק יישאו את אותו tag ויתלכדו על המכשיר
-            dedupeKey: `${match.externalId}:${eventKey(event)}`
+            dedupeKey: `${match.externalId}:${key}`
           }
         );
         console.log(`📣 [LIVE] ${event.type}: ${match.team1} - ${match.team2} → ${recipients.length} משתמשים`);
       } catch (err) {
-        // התראה שנכשלה לא אמורה לעצור את הסריקה או את חישוב הניקוד
+        // התראה שנכשלה לא אמורה לעצור את הסריקה או את חישוב הניקוד.
+        // התפיסה משוחררת כדי שהסריקה הבאה תנסה שוב - אחרת אירוע שנכשל
+        // ברשת היה נחשב "כבר נשלח" ולא היה יוצא לעולם
+        await Match.updateOne({ _id: match._id }, { $pull: { notifiedEvents: key } });
         console.warn(`📣 [LIVE] שליחת ${event.type} נכשלה:`, err.message);
       }
     }

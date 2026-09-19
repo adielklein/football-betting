@@ -21,6 +21,7 @@ const WINDOW_AFTER_MS = 4 * 60 * 60 * 1000;
 const CACHE_TTL_MS = 20 * 1000;
 
 // 365scores statusGroup: 2=טרם החל, 3=מתנהל, 4=הסתיים
+const STATUS_SCHEDULED = 2;
 const STATUS_LIVE = 3;
 const STATUS_FINISHED = 4;
 
@@ -85,7 +86,20 @@ const noteRedCardSupport = (competitor) => {
 };
 
 // מה שהלקוח צריך כדי לצייר שורה חיה, בסדר team1/team2 של האפליקציה
+// כל statusGroup שאינו אחד משלושת המוכרים מתורגם ל"טרם החל", וזה בדיוק
+// מה שיכול להיראות כשריקת פתיחה נוספת כשהמשחק כבר מתנהל. מדווח פעם אחת
+// לכל ערך חדש, כדי שיהיה אפשר לדעת אם זה מה שקורה ומה הערך האמיתי
+const seenStatusGroups = new Set();
+const noteStatusGroup = (game) => {
+  const group = game?.statusGroup;
+  if (group === STATUS_LIVE || group === STATUS_FINISHED || group === STATUS_SCHEDULED) return;
+  if (seenStatusGroups.has(group)) return;
+  seenStatusGroups.add(group);
+  console.log(`⚪ [LIVE] statusGroup לא מוכר מ-365: ${group} ("${game?.shortStatusText || game?.statusText || ''}")`);
+};
+
 const toLiveEntry = (match, game) => {
+  noteStatusGroup(game);
   const finished = game.statusGroup === STATUS_FINISHED;
   noteRedCardSupport(game.homeCompetitor);
   return {
