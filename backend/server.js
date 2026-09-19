@@ -309,16 +309,13 @@ const {
   detectEvents, describeEvent, eventKey, SETTING_BY_EVENT, SNAPSHOT_FIELDS
 } = require('./services/matchEvents');
 
-const notifyLiveEvents = async (matches, games) => {
+// sentInThisPoll מגיע מהסבב ולא נוצר כאן: אותו משחק יכול להיות שמור בשני
+// מסמכים, וגם בשני שבועות שונים - ואז אלה שתי קריאות נפרדות. זיכרון
+// משותף לכל הסבב הוא מה שהופך אותן לשליחה אחת
+const notifyLiveEvents = async (matches, games, sentInThisPoll = new Set()) => {
   const User = require('./models/User');
   const { sendNotificationToUsers } = require('./services/pushNotifications');
   const liveById = new Map(games.map((g) => [String(g.matchId), g]));
-
-  // הגנה על מסמכים כפולים שכבר במסד: אותו משחק שנוסף לשבוע פעמיים מחזיק
-  // שתי תמונות מצב, מזהה את אותו אירוע פעמיים ושולח שתי התראות זהות.
-  // הייבוא כבר חוסם כפילויות חדשות, אבל מה שנוצר קודם עדיין כאן - ולכן
-  // אירוע זהה על אותו מזהה חיצוני נשלח פעם אחת בסריקה
-  const sentInThisPoll = new Set();
 
   for (const match of matches) {
     const live = liveById.get(String(match._id));
@@ -361,12 +358,12 @@ const notifyLiveEvents = async (matches, games) => {
       const setting = SETTING_BY_EVENT[event.type];
       if (!setting) continue;
 
-      const eventKey = `${match.externalId}|${JSON.stringify(event)}`;
-      if (sentInThisPoll.has(eventKey)) {
-        console.warn(`📣 [LIVE] ${event.type} כפול ל-${match.team1} - ${match.team2} (מסמך כפול בשבוע) - לא נשלח שוב`);
+      const alreadySentKey = `${match.externalId}|${eventKey(event)}`;
+      if (sentInThisPoll.has(alreadySentKey)) {
+        console.warn(`📣 [LIVE] ${event.type} כפול ל-${match.team1} - ${match.team2} (אותו משחק שמור פעמיים) - לא נשלח שוב`);
         continue;
       }
-      sentInThisPoll.add(eventKey);
+      sentInThisPoll.add(alreadySentKey);
 
       try {
         const recipients = await User.find(
@@ -421,6 +418,23 @@ const runLivePoll = async () => {
     const inWindow = candidates.filter((m) => liveScores.inBroadcastWindow(m, now));
     if (inWindow.length === 0) return;
 
+    // אותו משחק שמור בשני מסמכים - באותו שבוע או בשניים - הוא מקור להתראה
+    // כפולה וגם לניקוד כפול, והוא לא נראה בשום מסך אחד. מדווח כאן כדי
+    // שאפשר יהיה למצוא אותו במקום לנחש
+    const copies = new Map();
+    for (const m of inWindow) {
+      const id = String(m.externalId);
+      copies.set(id, (copies.get(id) || 0) + 1);
+    }
+    for (const m of inWindow) {
+      if (copies.get(String(m.externalId)) > 1) {
+        console.warn(`⚠️ [LIVE] ${m.team1} - ${m.team2} שמור יותר מפעם אחת (שבוע ${m.weekId}, מסמך ${m._id})`);
+      }
+    }
+
+    // משותף לכל השבועות בסבב, ולא לכל שבוע בנפרד
+    const sentInThisPoll = new Set();
+
     const byWeek = new Map();
     for (const m of inWindow) {
       const key = String(m.weekId);
@@ -432,7 +446,7 @@ const runLivePoll = async () => {
       liveScores.invalidate(weekId);
       const games = await liveScores.getLiveForWeek(weekId, matches);
 
-      await notifyLiveEvents(matches, games);
+      await notifyLiveEvents(matches, games, sentInThisPoll);
 
       // משחק שהסתיים אצל הספק אך עדיין אין לו תוצאה אצלנו. הבדיקה הזו
       // אידמפוטנטית - ברגע שהתוצאה נכנסה היא כבר לא מזוהה שוב.
