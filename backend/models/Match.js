@@ -56,6 +56,19 @@ const matchSchema = new mongoose.Schema({
   // מחדש של השרת וגם אם שתי סריקות רצות במקביל
   notifiedEvents: { type: [String], default: [] },
 
+  // יומן קצר של מה שהסריקה החיה ראתה ועשתה במשחק הזה: כל שינוי מצב מהספק,
+  // כל התראה שיצאה וכל אחת שנחסמה. בלעדיו כל בירור של "למה קיבלתי את זה
+  // שוב" מסתיים בלוגים של Render, שגם נמחקים אחרי כמה ימים. מוגבל ל-40
+  // הרשומות האחרונות, ונכתב רק כשבאמת קרה משהו
+  liveLog: {
+    type: [{
+      at: { type: Date, default: Date.now },
+      kind: { type: String },   // status | sent | blocked
+      detail: { type: String }
+    }],
+    default: []
+  },
+
   date: {
     type: String, 
     required: true 

@@ -31,6 +31,34 @@ const createIsraelDate = (year, month, day, hour, minute) => {
   return new Date(tempDate.getTime() - offsetMs);
 };
 
+// יומן הסריקה החיה: מה הספק דיווח על כל משחק, אילו התראות יצאו ואילו
+// נחסמו. קיים כדי שאפשר יהיה לענות על "למה קיבלתי את ההתראה הזו שוב"
+// מתוך מסך הניהול, ולא מלוגים של השרת שנמחקים אחרי כמה ימים
+router.get('/live-log', requireAdmin, async (req, res) => {
+  try {
+    const hours = Math.min(Number(req.query.hours) || 24, 24 * 7);
+    const since = new Date(Date.now() - hours * 60 * 60 * 1000);
+
+    const matches = await Match.find(
+      { 'liveLog.0': { $exists: true }, fullDate: { $gte: since } },
+      'team1 team2 fullDate externalId liveLog'
+    ).sort({ fullDate: -1 }).limit(40).lean();
+
+    res.json(
+      matches.map((m) => ({
+        _id: m._id,
+        team1: m.team1,
+        team2: m.team2,
+        fullDate: m.fullDate,
+        externalId: m.externalId,
+        entries: (m.liveLog || []).slice().reverse()
+      }))
+    );
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Get all matches for a week
 router.get('/week/:weekId', async (req, res) => {
   try {

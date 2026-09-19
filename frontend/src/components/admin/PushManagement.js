@@ -22,6 +22,10 @@ function PushManagement() {
   const [pending, setPending] = useState(null);
   const [pendingLoading, setPendingLoading] = useState(false);
 
+  // יומן הסריקה החיה. נטען רק כשנכנסים ללשונית שלו
+  const [liveLog, setLiveLog] = useState(null);
+  const [liveLogFailed, setLiveLogFailed] = useState(false);
+
   useEffect(() => { loadStats(); loadUsers(); }, []);
 
   useEffect(() => {
@@ -198,6 +202,14 @@ function PushManagement() {
   // נטען רק כשנכנסים ללשונית: זו שליפה של כל המשתמשים והמכשירים שלהם,
   // ואין סיבה לשלם עליה בכל כניסה למסך ההתראות
   useEffect(() => {
+    if (activeTab !== 'live' || liveLog) return;
+    fetch(`${API_URL}/matches/live-log?hours=24`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then(setLiveLog)
+      .catch(() => setLiveLogFailed(true));
+  }, [activeTab, liveLog]);
+
+  useEffect(() => {
     if (activeTab !== 'settings' || overview) return;
     let cancelled = false;
     fetch(`${API_URL}/notifications/admin/overview`)
@@ -215,7 +227,8 @@ function PushManagement() {
     { key: 'selective', label: 'בררנית', icon: '🎯' },
     { key: 'pending', label: 'לא הימרו', icon: '⚽' },
     { key: 'stats', label: 'משתמשים', icon: '📊' },
-    { key: 'settings', label: 'מי מקבל מה', icon: '🔔' }
+    { key: 'settings', label: 'מי מקבל מה', icon: '🔔' },
+    { key: 'live', label: 'יומן חי', icon: '📜' }
   ];
 
   // כל סוגי ההתראות, כדי שהטבלה תראה גם מה כבוי ולא רק מה דלוק
@@ -560,6 +573,64 @@ function PushManagement() {
           )}
             </>
           )}
+        </div>
+      )}
+
+      {activeTab === 'live' && (
+        <div style={{ animation: 'scaleIn 0.2s ease' }}>
+          <div className="card" style={{ marginBottom: '0.5rem', fontSize: '11px', color: 'var(--text-3, #888)' }}>
+            מה הסריקה החיה ראתה ועשתה ב-24 השעות האחרונות: כל שינוי מצב שדווח מ-365,
+            כל התראה שיצאה, וכל התראה שנחסמה כי כבר נשלחה. משחק שמדווח שוב ושוב
+            אותו מעבר מצב ייראה כאן מיד.
+          </div>
+
+          {liveLogFailed && (
+            <div className="card" style={{ marginBottom: '0.5rem', color: 'var(--bad-fg, #dc2626)', fontSize: '13px' }}>
+              לא ניתן לטעון את היומן
+            </div>
+          )}
+
+          {!liveLog && !liveLogFailed && (
+            <div className="card" style={{ textAlign: 'center', padding: '1.2rem', fontSize: '12px', color: 'var(--text-4, #aaa)' }}>
+              טוען…
+            </div>
+          )}
+
+          {liveLog && liveLog.length === 0 && (
+            <div className="card" style={{ textAlign: 'center', padding: '1.2rem', fontSize: '12px', color: 'var(--text-4, #aaa)' }}>
+              אין עדיין רשומות. היומן מתמלא בזמן שמשחקים משודרים.
+            </div>
+          )}
+
+          {liveLog && liveLog.map((m) => (
+            <div key={m._id} className="card" style={{ marginBottom: '0.4rem', padding: '0.6rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
+                <span style={{ fontWeight: '700', fontSize: '13px' }}>{m.team1} - {m.team2}</span>
+                <span style={{ fontSize: '10px', color: 'var(--text-4, #aaa)' }}>{m.externalId}</span>
+              </div>
+
+              {m.entries.map((e, idx) => (
+                <div key={idx} style={{
+                  display: 'flex', gap: '0.4rem', alignItems: 'baseline',
+                  fontSize: '11px', padding: '2px 0',
+                  borderTop: idx === 0 ? 'none' : '1px solid var(--surface-3, #f0f2f5)'
+                }}>
+                  <span style={{ color: 'var(--text-4, #aaa)', fontVariantNumeric: 'tabular-nums' }}>
+                    {new Date(e.at).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  </span>
+                  <span style={{
+                    fontWeight: '700',
+                    color: e.kind === 'sent'
+                      ? 'var(--good-fg, #16a34a)'
+                      : e.kind === 'blocked' ? 'var(--warn-fg, #9a7b3f)' : 'var(--text-3, #888)'
+                  }}>
+                    {e.kind === 'sent' ? '📣' : e.kind === 'blocked' ? '⛔' : '·'}
+                  </span>
+                  <span style={{ color: 'var(--text-2, #555)' }}>{e.detail}</span>
+                </div>
+              ))}
+            </div>
+          ))}
         </div>
       )}
 

@@ -342,7 +342,22 @@ const notifyLiveEvents = async (matches, games, sentInThisPoll = new Set()) => {
       guard[`liveSnapshot.${field}`] = prev?.[field] ?? null;
     }
 
-    const write = await Match.updateOne(guard, { $set: { liveSnapshot: next } });
+    // רשומת היומן נכתבת באותה פעולה: מה הספק דיווח, וממה למה השתנה.
+    // זו השורה שעונה על "למה יצאה ההתראה הזו" בלי לחפש בלוגים של Render
+    const logEntry = {
+      at: new Date(),
+      kind: 'status',
+      detail:
+        `${prev?.status || '—'} → ${next.status || '—'}` +
+        ` | ${next.team1Goals ?? '?'}-${next.team2Goals ?? '?'}` +
+        (live.statusText ? ` | ${live.statusText}` : '') +
+        (events.length > 0 ? ` | אירועים: ${events.map((e) => e.type).join(', ')}` : '')
+    };
+
+    const write = await Match.updateOne(guard, {
+      $set: { liveSnapshot: next },
+      $push: { liveLog: { $each: [logEntry], $slice: -40 } }
+    });
     if (write.modifiedCount === 0) {
       console.warn(`📣 [LIVE] ${match.team1} - ${match.team2}: התמונה כבר עודכנה במקביל - לא נשלח שוב`);
       continue;
@@ -391,6 +406,10 @@ const notifyLiveEvents = async (matches, games, sentInThisPoll = new Set()) => {
         );
         if (claim.modifiedCount === 0) {
           console.warn(`📣 [LIVE] ${event.type} כבר נשלח ל-${match.team1} - ${match.team2} - לא נשלח שוב`);
+          await Match.updateOne(
+            { _id: match._id },
+            { $push: { liveLog: { $each: [{ at: new Date(), kind: 'blocked', detail: `${key} - כבר נשלח` }], $slice: -40 } } }
+          );
           continue;
         }
 
@@ -407,6 +426,10 @@ const notifyLiveEvents = async (matches, games, sentInThisPoll = new Set()) => {
           }
         );
         console.log(`📣 [LIVE] ${event.type}: ${match.team1} - ${match.team2} → ${recipients.length} משתמשים`);
+        await Match.updateOne(
+          { _id: match._id },
+          { $push: { liveLog: { $each: [{ at: new Date(), kind: 'sent', detail: `${key} → ${recipients.length} משתמשים` }], $slice: -40 } } }
+        );
       } catch (err) {
         // התראה שנכשלה לא אמורה לעצור את הסריקה או את חישוב הניקוד.
         // התפיסה משוחררת כדי שהסריקה הבאה תנסה שוב - אחרת אירוע שנכשל
