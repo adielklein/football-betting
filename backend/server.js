@@ -305,7 +305,9 @@ const liveScores = require('./services/liveScores');
 //
 // כל ארבעת הסוגים כבויים כברירת מחדל, ולכן ברוב המקרים אין למי לשלוח
 // ואפילו לא נשלפת רשימת משתמשים.
-const { detectEvents, describeEvent, SETTING_BY_EVENT } = require('./services/matchEvents');
+const {
+  detectEvents, describeEvent, eventKey, SETTING_BY_EVENT, SNAPSHOT_FIELDS
+} = require('./services/matchEvents');
 
 const notifyLiveEvents = async (matches, games) => {
   const User = require('./models/User');
@@ -322,14 +324,33 @@ const notifyLiveEvents = async (matches, games) => {
     const live = liveById.get(String(match._id));
     if (!live) continue;
 
-    const { events, next, changed } = detectEvents(match.liveSnapshot, live);
+    const prev = typeof match.liveSnapshot?.toObject === 'function'
+      ? match.liveSnapshot.toObject()
+      : match.liveSnapshot;
+
+    const { events, next, changed } = detectEvents(prev, live);
     if (!changed) continue;
 
     // התמונה נשמרת בכל מקרה, גם כשאין למי לשלוח, כי היא קו הבסיס להפרש הבא.
+    //
+    // הכתיבה מותנית בתמונה הקודמת ולא עיוורת: אם שתי סריקות רצות על אותו
+    // משחק - שני מופעי שרת, או סבב שהתחיל לפני שהקודם הספיק לשמור - שתיהן
+    // ראו את אותה תמונה ושתיהן היו שולחות את אותה התראה. כאן רק אחת מהן
+    // מצליחה לכתוב, והשנייה יוצאת בלי לשלוח.
+    //
     // updateOne ולא save: המסמך נשלף עם projection חלקי, וכתיבה ממוקדת של
     // השדה היחיד שהשתנה לא תלויה בשדות שלא נשלפו
+    const guard = { _id: match._id };
+    for (const field of SNAPSHOT_FIELDS) {
+      guard[`liveSnapshot.${field}`] = prev?.[field] ?? null;
+    }
+
+    const write = await Match.updateOne(guard, { $set: { liveSnapshot: next } });
+    if (write.modifiedCount === 0) {
+      console.warn(`📣 [LIVE] ${match.team1} - ${match.team2}: התמונה כבר עודכנה במקביל - לא נשלח שוב`);
+      continue;
+    }
     match.liveSnapshot = next;
-    await Match.updateOne({ _id: match._id }, { $set: { liveSnapshot: next } });
 
     for (const event of events) {
       // סוף משחק נשלח מחישוב הניקוד (routes/scores.js) ולא מכאן, כי שם
@@ -361,7 +382,13 @@ const notifyLiveEvents = async (matches, games) => {
           recipients.map((u) => u._id),
           text.title,
           text.body,
-          { type: `match_${event.type}`, matchId: String(match._id) }
+          {
+            type: `match_${event.type}`,
+            matchId: String(match._id),
+            // החתימה נושאת את המזהה החיצוני ולא את מזהה המסמך, כדי ששני
+            // מסמכים לאותו משחק יישאו את אותו tag ויתלכדו על המכשיר
+            dedupeKey: `${match.externalId}:${eventKey(event)}`
+          }
         );
         console.log(`📣 [LIVE] ${event.type}: ${match.team1} - ${match.team2} → ${recipients.length} משתמשים`);
       } catch (err) {

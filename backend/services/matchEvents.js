@@ -74,7 +74,9 @@ function detectEvents(prev, live) {
   if (team1Reds > 0 || team2Reds > 0) {
     events.push({
       type: 'red',
-      side: team1Reds > 0 && team2Reds > 0 ? 'both' : team1Reds > 0 ? 'team1' : 'team2'
+      side: team1Reds > 0 && team2Reds > 0 ? 'both' : team1Reds > 0 ? 'team1' : 'team2',
+      team1Reds: next.team1Reds,
+      team2Reds: next.team2Reds
     });
   }
 
@@ -88,6 +90,29 @@ function detectEvents(prev, live) {
 
   return { events, next, changed };
 }
+
+// שדות תמונת המצב, בסדר אחד ויחיד. הכתיבה המותנית בסריקה בונה מהם את
+// התנאי, ולכן הם חיים כאן ליד ההגדרה ולא משוכפלים שם
+const SNAPSHOT_FIELDS = Object.keys(EMPTY);
+
+// חתימה יציבה לאירוע. היא הופכת ל-tag של ההתראה, ולכן שליחה שנייה של אותו
+// אירוע - מסמך כפול, שני מופעי שרת, ניסיון חוזר - מחליפה על המכשיר את
+// ההתראה הקודמת במקום להופיע לידה. אירוע אחר באותו משחק נושא חתימה אחרת
+// ולכן מוצג בנפרד
+const eventKey = (event) => {
+  switch (event?.type) {
+    case 'start':
+      return 'start';
+    case 'goal':
+      return `goal:${event.team1Goals}-${event.team2Goals}`;
+    case 'red':
+      return `red:${event.team1Reds}-${event.team2Reds}`;
+    case 'end':
+      return `end:${event.team1Goals}-${event.team2Goals}`;
+    default:
+      return String(event?.type || 'event');
+  }
+};
 
 // שם השדה בהגדרות המשתמש שמאשר כל סוג אירוע. ברירת המחדל של כולם היא
 // כבויה, ולכן משתמש שלא בחר דבר לא יקבל שום התראה חדשה
@@ -160,4 +185,11 @@ function selectMatchEndRecipients({
   });
 }
 
-module.exports = { detectEvents, describeEvent, selectMatchEndRecipients, SETTING_BY_EVENT };
+module.exports = {
+  SNAPSHOT_FIELDS,
+  eventKey,
+  detectEvents,
+  describeEvent,
+  selectMatchEndRecipients,
+  SETTING_BY_EVENT
+};

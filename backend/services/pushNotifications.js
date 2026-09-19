@@ -36,9 +36,21 @@ console.log('✅ [PUSH SERVICE] Web Push configured successfully');
 console.log('🔔 [PUSH SERVICE] ========================================');
 
 // 🔧 פונקציית עזר - מחזירה את כל ה-subscriptions (תומך בשני המבנים)
+// מכשיר אחד יכול להופיע פעמיים ברשימה אם אותה כתובת נשמרה שוב. שליחה לכל
+// איבר בנפרד הייתה מגיעה לאותו מכשיר פעמיים
+const byEndpoint = (subscriptions) => {
+  const seen = new Set();
+  return subscriptions.filter((sub) => {
+    const endpoint = sub?.endpoint;
+    if (!endpoint || seen.has(endpoint)) return false;
+    seen.add(endpoint);
+    return true;
+  });
+};
+
 function getUserSubscriptions(user) {
   if (user.pushSettings?.subscriptions && Array.isArray(user.pushSettings.subscriptions)) {
-    return user.pushSettings.subscriptions;
+    return byEndpoint(user.pushSettings.subscriptions);
   }
   
   if (user.pushSettings?.subscription) {
@@ -341,7 +353,12 @@ async function sendNotificationToUsers(userIds, title, body, data = {}, imageUrl
       badge: '/logo192.png',
       vibrate: style.vibrate,
       actions: style.actions,
-      tag: `group-${Date.now()}`,
+      // ה-tag מזהה את ההתראה על המכשיר: התראה עם tag קיים מחליפה אותו
+      // במקום להופיע לידו. dedupeKey הוא חתימת האירוע - אותו שער, אותה
+      // שריקת פתיחה - ולכן שליחה כפולה מכל סיבה שהיא נראית כהתראה אחת.
+      // בלעדיו (הודעות אדמין, תזכורות) נשאר מזהה ייחודי, כי שתי הודעות
+      // כאלה הן באמת שתי הודעות
+      tag: data?.dedupeKey ? `evt-${data.dedupeKey}` : `group-${Date.now()}`,
       data: {
         ...(data || {}),
         actionUrls: style.actionUrls,

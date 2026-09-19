@@ -1,6 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { detectEvents, describeEvent, selectMatchEndRecipients } = require('./matchEvents');
+const {
+  detectEvents, describeEvent, selectMatchEndRecipients, eventKey, SNAPSHOT_FIELDS
+} = require('./matchEvents');
 
 const types = (r) => r.events.map((e) => e.type);
 
@@ -163,4 +165,35 @@ test('בול של משתמש אחד אינו משתיק משתמש אחר על �
 
 test('מוחרג מהחודש אינו מקבל התראת סוף משחק', () => {
   assert.deepEqual(pick({ excludedIds: ['u1'] }), []);
+});
+
+test('חתימת אירוע: אותו אירוע נותן אותה חתימה, אירוע אחר נותן אחרת', () => {
+  const start = { type: 'start' };
+  assert.equal(eventKey(start), eventKey({ type: 'start' }));
+
+  // שער ראשון ושני באותו משחק חייבים להיות שתי התראות נפרדות
+  const first = { type: 'goal', scorer: 'team1', team1Goals: 1, team2Goals: 0 };
+  const second = { type: 'goal', scorer: 'team2', team1Goals: 1, team2Goals: 1 };
+  assert.notEqual(eventKey(first), eventKey(second));
+
+  // ושליחה חוזרת של אותו שער - אותה חתימה, ולכן תחליף על המכשיר
+  assert.equal(eventKey(first), eventKey({ ...first }));
+
+  // פתיחה וסיום של אותו משחק אינם מתלכדים
+  assert.notEqual(eventKey(start), eventKey({ type: 'end', team1Goals: 0, team2Goals: 0 }));
+});
+
+test('שני אדומים לאותה קבוצה הם שני אירועים ולא אחד', () => {
+  const prev = { status: 'live', team1Goals: 0, team2Goals: 0, team1Reds: 0, team2Reds: 0 };
+  const one = detectEvents(prev, { status: 'live', team1Goals: 0, team2Goals: 0, team1Reds: 1, team2Reds: 0 });
+  const two = detectEvents(one.next, { status: 'live', team1Goals: 0, team2Goals: 0, team1Reds: 2, team2Reds: 0 });
+
+  assert.equal(one.events[0].type, 'red');
+  assert.equal(two.events[0].type, 'red');
+  assert.notEqual(eventKey(one.events[0]), eventKey(two.events[0]));
+});
+
+test('שדות תמונת המצב הם בדיוק אלה שהזיהוי משווה', () => {
+  const { next } = detectEvents(null, { status: 'live', team1Goals: 1, team2Goals: 0 });
+  assert.deepEqual(SNAPSHOT_FIELDS.slice().sort(), Object.keys(next).sort());
 });

@@ -9,7 +9,7 @@ const { sendNotificationToUsers } = require('../services/pushNotifications');
 const { logAdminAction } = require('../services/auditService');
 const { requireAdmin } = require('../middleware/requireAdmin');
 const { calculateMatchPoints } = require('../services/scoring');
-const { describeEvent, selectMatchEndRecipients } = require('../services/matchEvents');
+const { describeEvent, eventKey, selectMatchEndRecipients } = require('../services/matchEvents');
 const router = express.Router();
 
 // Calculate scores for a week
@@ -156,7 +156,12 @@ router.post('/calculate/:weekId', requireAdmin, async (req, res) => {
           const title = '🎯 דייקת!';
           const matchLines = eu.exactMatches.map((m) => `⚽ ${m.team1} ${m.score} ${m.team2}`).join('\n');
           const body = `ניחשת בול!\n${matchLines}\nכל הכבוד 🔥`;
-          await sendNotificationToUsers([eu.userId], title, body, { type: 'exact_score' });
+          await sendNotificationToUsers([eu.userId], title, body, {
+            type: 'exact_score',
+            // חישוב ניקוד שרץ שוב על אותן תוצאות לא יוסיף התראה שנייה
+            // על המכשיר, אלא יחליף את הקיימת
+            dedupeKey: `exact:${eu.exactMatches.map((m) => `${m.team1}${m.score}${m.team2}`).join('|')}`
+          });
           exactNotifiedUserIds.add(eu.userId.toString());
         }
         if (usersToNotify.length > 0) {
@@ -188,19 +193,17 @@ router.post('/calculate/:weekId', requireAdmin, async (req, res) => {
         });
 
         for (const { userId, match, points } of recipients) {
-          const text = describeEvent(
-            {
-              type: 'end',
-              team1Goals: match.result.team1Goals,
-              team2Goals: match.result.team2Goals,
-              points
-            },
-            match.team1,
-            match.team2
-          );
+          const event = {
+            type: 'end',
+            team1Goals: match.result.team1Goals,
+            team2Goals: match.result.team2Goals,
+            points
+          };
+          const text = describeEvent(event, match.team1, match.team2);
           await sendNotificationToUsers([userId], text.title, text.body, {
             type: 'match_end',
-            matchId: String(match._id)
+            matchId: String(match._id),
+            dedupeKey: `${match.externalId || match._id}:${eventKey(event)}`
           });
         }
         if (recipients.length > 0) {
