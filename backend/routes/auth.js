@@ -103,6 +103,11 @@ router.get('/users', async (req, res) => {
         enabled: !!ps?.enabled,
         hoursBeforeLock: ps?.hoursBeforeLock ?? 2,
         exactScoreAlerts: ps?.exactScoreAlerts !== false,
+        // גם אלה חלק מהסיכום: בלעדיהם כל קורא היה מסיק שהן כבויות
+        goalAlerts: !!ps?.goalAlerts,
+        redCardAlerts: !!ps?.redCardAlerts,
+        matchStartAlerts: !!ps?.matchStartAlerts,
+        matchEndAlerts: !!ps?.matchEndAlerts,
         deviceCount: subs.length,
         // כמה מהמכשירים הם של אפל. מסך שליחת ההתראות משתמש בזה כדי
         // להזהיר שהתמונה לא תוצג להם - WebKit לא מממש את image.

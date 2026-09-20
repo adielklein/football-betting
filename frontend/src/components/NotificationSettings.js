@@ -84,19 +84,16 @@ function NotificationSettings({ user, embedded = false }) {
       const subscription = await syncPushSubscription(user);
       setIsSubscribed(!!subscription);
 
-      if (subscription && user) {
-        const response = await fetch(`${API_URL}/auth/users`);
-        const users = await response.json();
-        const userId = getUserId();
-        const currentUser = users.find(u => u._id === userId || u.id === userId);
-        if (currentUser?.pushSettings?.hoursBeforeLock) {
-          setHoursBeforeLock(currentUser.pushSettings.hoursBeforeLock);
-        }
-        if (currentUser?.pushSettings?.exactScoreAlerts === false) {
-          setExactScoreAlerts(false);
-        }
-        if (currentUser?.pushSettings) {
-          const saved = currentUser.pushSettings;
+      // ההגדרות נקראות מהנתיב הייעודי, שמחזיר בדיוק את מה שהמסך שומר.
+      // קודם הן נשלפו מרשימת כל המשתמשים, שמחזירה סיכום מקוצר בלי
+      // התראות אירועי המשחק - ולכן המתגים נפתחו תמיד ככבויים
+      const userId = getUserId();
+      if (subscription && userId) {
+        const response = await fetch(`${API_URL}/notifications/settings/${userId}`);
+        if (response.ok) {
+          const saved = await response.json();
+          if (saved.hoursBeforeLock) setHoursBeforeLock(saved.hoursBeforeLock);
+          setExactScoreAlerts(saved.exactScoreAlerts !== false);
           setEventAlerts({
             goalAlerts: !!saved.goalAlerts,
             redCardAlerts: !!saved.redCardAlerts,

@@ -314,6 +314,34 @@ router.post('/unsubscribe', requireSelfOrAdmin((req) => req.body?.userId), async
   }
 });
 
+// ההגדרות של משתמש אחד, לקריאה במסך ההגדרות שלו.
+//
+// עד עכשיו המסך שלף את /auth/users - כל המשתמשים - וחיפש את עצמו שם.
+// הנתיב ההוא מחזיר סיכום מקוצר של pushSettings, וההתראות על אירועי משחק
+// לא היו בסיכום - ולכן המתגים נטענו תמיד ככבויים גם כשבמסד הם דלוקים.
+// כאן מוחזר בדיוק מה שהמסך שומר, ורק עבור מי שמבקש.
+router.get('/settings/:userId', requireSelfOrAdmin((req) => req.params.userId), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId).select('pushSettings').lean();
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const ps = user.pushSettings || {};
+    res.json({
+      enabled: !!ps.enabled,
+      hoursBeforeLock: ps.hoursBeforeLock ?? 2,
+      soundEnabled: ps.soundEnabled !== false,
+      exactScoreAlerts: ps.exactScoreAlerts !== false,
+      goalAlerts: !!ps.goalAlerts,
+      redCardAlerts: !!ps.redCardAlerts,
+      matchStartAlerts: !!ps.matchStartAlerts,
+      matchEndAlerts: !!ps.matchEndAlerts
+    });
+  } catch (error) {
+    console.error('Error loading settings:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // עדכן הגדרות
 router.patch('/settings', requireSelfOrAdmin((req) => req.body?.userId), async (req, res) => {
   try {
