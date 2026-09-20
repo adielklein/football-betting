@@ -112,7 +112,7 @@ function Leaderboard({ leaderboard, user }) {
       const weekId = score.weekId && score.weekId._id ? score.weekId._id : score.weekId;
 
       if (!userScores[userId]) {
-        userScores[userId] = { name: userName, monthlyScore: 0, totalScore: score.totalScore || 0 };
+        userScores[userId] = { userId, name: userName, monthlyScore: 0, totalScore: score.totalScore || 0 };
       }
 
       if (monthWeekIds.includes(weekId)) {
@@ -165,7 +165,7 @@ function Leaderboard({ leaderboard, user }) {
       if (excludedByMonth[weekMonth] && excludedByMonth[weekMonth].has(userId)) return;
 
       if (!userScores[userId]) {
-        userScores[userId] = { name: score.userId.name, seasonalScore: 0 };
+        userScores[userId] = { userId, name: score.userId.name, seasonalScore: 0 };
       }
       userScores[userId].seasonalScore += score.weeklyScore || 0;
     });
@@ -219,6 +219,35 @@ function Leaderboard({ leaderboard, user }) {
     { value: '2025-26', label: 'עונת 2025-26' },
     { value: '2026-27', label: 'עונת 2026-27' }
   ];
+
+  // הבסיס שהטבלה החיה מוסיפה עליו: הדירוג של הלשונית שנבחרה, כפי שהוא
+  // מוצג מתחתיה. בלשונית "שבועי" אין בסיס - שם הטבלה החיה בונה את השבוע
+  // בעצמה מהשרת, וזו בדיוק אותה טבלה
+  const liveScope = () => {
+    if (activeTab === 'weekly') return null;
+
+    if (activeTab === 'monthly') {
+      return {
+        label: `דירוג ${months.find((m) => m.value === selectedMonth)?.label || 'החודש'}`,
+        chip: 'חודשי',
+        base: monthlyScores.map((p) => ({ userId: p.userId, name: p.name, score: p.monthlyScore }))
+      };
+    }
+
+    if (activeTab === 'seasonal') {
+      return {
+        label: `הדירוג העונתי (${seasons.find((x) => x.value === selectedSeason)?.label || ''})`,
+        chip: 'עונתי',
+        base: seasonalScores.map((p) => ({ userId: p.userId, name: p.name, score: p.seasonalScore }))
+      };
+    }
+
+    return {
+      label: 'הדירוג הכללי',
+      chip: 'כללי',
+      base: leaderboard.map((e) => ({ userId: e.user._id, name: e.user.name, score: e.totalScore }))
+    };
+  };
 
   const getRankStyle = (index) => {
     // הרקע והטקסט מגיעים כזוג. הצבעים נושאים משמעות ולכן נשארים
@@ -302,7 +331,7 @@ function Leaderboard({ leaderboard, user }) {
     <div>
       {/* הטבלה החיה מציגה את עצמה רק כשבאמת יש משחק שמתנהל, ולכן היא
           יושבת מעל הכל - ברגע שהיא מופיעה היא הדבר שרוצים לראות. */}
-      <LiveTable weekId={selectedWeekId} meUserId={user?.id || user?._id} />
+      <LiveTable weekId={selectedWeekId} meUserId={user?.id || user?._id} scope={liveScope()} />
 
       {/* Tab bar */}
       <div style={{

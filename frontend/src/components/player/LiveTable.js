@@ -2,11 +2,17 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Score from '../Score';
 import RollingNumber from '../RollingNumber';
 
-// טבלה חיה: הדירוג השבועי כפי שהיה נראה אילו הכל היה נגמר עכשיו.
+// טבלה חיה: הדירוג כפי שהיה נראה אילו הכל היה נגמר עכשיו.
 //
 // מה שמעניין כאן אינו הניקוד אלא התנועה. הטבלה הרגילה מראה את מה שכבר
 // סגור; כאן רואים מה המשחקים שמתנהלים ברגע זה עושים לדירוג, ולכן שער אחד
 // במגרש מזיז שורות על המסך.
+//
+// הדירוג הוא זה של הלשונית שנבחרה. עד עכשיו הטבלה הייתה תמיד שבועית, גם
+// כשמתחתיה הוצג דירוג חודשי - כך שהתנועה שהיא הראתה לא הייתה התנועה
+// בטבלה שמסתכלים עליה. השבוע נבנה בשרת; חודשי, עונתי וכללי מקבלים כאן
+// את הדירוג המוצג כבסיס, ועליו נוספות נקודות המשחקים שמתנהלים עכשיו -
+// ולכן הן תמיד מסתדרות עם המספרים שרואים מתחת
 //
 // הרכיב מציג את עצמו רק כשבאמת יש משחק שמתנהל. בשאר הזמן הוא לא מצייר
 // דבר - טבלה "חיה" שזהה לרגילה היא רק רעש.
@@ -83,12 +89,55 @@ const Num = ({ children }) => (
   </span>
 );
 
-function LiveTable({ weekId, meUserId }) {
+const round1 = (n) => Math.round(n * 10) / 10;
+
+// מקום ברשימה לפי ניקוד, עם שוויון: שני שחקנים באותו ניקוד חולקים מקום
+const rankOf = (score, all) => all.filter((s) => s > score).length + 1;
+
+// הדירוג של הלשונית הנבחרת, ועליו מה שהמשחקים החיים מוסיפים כרגע.
+// הבסיס מגיע מהמסך עצמו ולא מחושב מחדש, ולכן המספרים כאן תמיד זהים
+// לאלה שבטבלה שמתחת - גם אם עוד לא חושב ניקוד לשבוע כלשהו
+const scopeRows = (base, liveRows) => {
+  const liveById = new Map(liveRows.map((r) => [String(r.userId), r]));
+
+  const rows = base.map((p) => {
+    const live = liveById.get(String(p.userId));
+    const gained = live ? live.gained : 0;
+    return {
+      userId: String(p.userId),
+      name: p.name,
+      confirmedScore: round1(p.score),
+      liveScore: round1(p.score + gained),
+      gained: round1(gained),
+      gains: live ? live.gains : []
+    };
+  });
+
+  const confirmed = rows.map((r) => r.confirmedScore);
+  const withLive = rows.map((r) => r.liveScore);
+
+  rows.forEach((r) => {
+    r.confirmedRank = rankOf(r.confirmedScore, confirmed);
+    r.liveRank = rankOf(r.liveScore, withLive);
+    r.rankChange = r.confirmedRank - r.liveRank;
+  });
+
+  rows.sort((a, b) => b.liveScore - a.liveScore || a.name.localeCompare(b.name, 'he'));
+  return rows;
+};
+
+function LiveTable({ weekId, meUserId, scope = null }) {
   const [data, setData] = useState(null);
   const [expanded, setExpanded] = useState(null);
-  const rowRef = useSlideOnReorder(
-    (data && data.rows ? data.rows.map((r) => r.userId).join(',') : '')
-  );
+
+  // השורות נגזרות לפני ההוק, כי הוא מנפיש לפי סדר התצוגה - וסדר הדירוג
+  // החודשי אינו סדר השורות שהשרת מחזיר לשבוע
+  const base = scope ? scope.base : null;
+  const rows = data && data.rows
+    ? (base ? scopeRows(base, data.rows) : data.rows)
+    : [];
+
+  const rowRef = useSlideOnReorder(rows.map((r) => r.userId).join(','));
 
   useEffect(() => {
     if (!weekId) { setData(null); return undefined; }
@@ -122,7 +171,11 @@ function LiveTable({ weekId, meUserId }) {
 
   if (!data || data.error || !data.liveMatches) return null;
 
-  const { rows, liveMatches, weekName } = data;
+  // בלשונית שבועית הטבלה מגיעה מהשרת כמו שהיא. בשאר הלשוניות הבסיס הוא
+  // הדירוג המוצג, ואם הוא עוד לא נטען אין על מה להוסיף
+  if (rows.length === 0) return null;
+
+  const { liveMatches, weekName } = data;
 
   return (
     <div style={{
@@ -146,14 +199,24 @@ function LiveTable({ weekId, meUserId }) {
         <span style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text, #333)' }}>
           הטבלה עכשיו
         </span>
+        {scope && (
+          <span style={{
+            fontSize: '10px', fontWeight: 800, padding: '1px 7px', borderRadius: '10px',
+            background: 'var(--surface-3, #f0f2f5)', color: 'var(--text-3, #888)'
+          }}>
+            {scope.chip}
+          </span>
+        )}
         <span style={{ fontSize: '11px', color: 'var(--bad-fg, #b3261e)', fontWeight: 700 }}>
           <Num>{liveMatches}</Num> {liveMatches === 1 ? 'משחק מתנהל' : 'משחקים מתנהלים'}
         </span>
       </div>
 
       <div style={{ fontSize: '10.5px', color: 'var(--text-4, #aaa)', marginBottom: '0.6rem', lineHeight: 1.5 }}>
-        איך {weekName} היה נגמר אילו השריקה הייתה עכשיו. החץ מראה את התנועה
-        מול הדירוג לפי המשחקים שכבר הסתיימו.
+        {scope
+          ? `איך ${scope.label} היה נראה אילו השריקה הייתה עכשיו. `
+          : `איך ${weekName} היה נגמר אילו השריקה הייתה עכשיו. `}
+        החץ מראה את התנועה מול הדירוג לפי המשחקים שכבר הסתיימו.
       </div>
 
       {rows.map((r, i) => {
