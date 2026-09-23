@@ -52,6 +52,9 @@ const toApiDate = (ymd) => {
 // מעגלית, עדיף להפסיק מאשר להיתקע
 const MAX_PAGES = 6;
 
+// מעל זה מניחים שהתשובה היא עמוד ולא הרשימה המלאה, ושווה לבקש גם טווח
+const PAGE_LOOKS_TRUNCATED = 15;
+
 // עמוד ההמשך מגיע בשמות שונים לפי הנתיב, ולפעמים כלל לא
 const nextPageOf = (json) => {
   const next = json?.paging?.nextPage || json?.nextPage || null;
@@ -115,17 +118,26 @@ const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate,
     }
   };
 
+  // הכישלון הראשון נשמר. כשכלום לא נאסף הוא ייזרק, כי "לא הצלחנו לשאול"
+  // אינו "אין משחקים" - וכשנבלע כאן הוא הגיע למסך כרשימה ריקה ותקינה
+  // למראה, שאי אפשר להבדיל בינה לבין שבוע בלי משחקים
+  let firstError = null;
+
   for (const path of paths) {
     // 1. הבקשה שתמיד עבדה
     try {
       collect(await fetchAllPages(path));
     } catch (err) {
+      firstError = firstError || err;
       console.warn(`⚠️ [365] endpoint ${path} failed:`, err.message);
     }
 
     // 2. אותה בקשה עם טווח מפורש, למשחקים שמעבר לעמוד ברירת המחדל.
+    //
+    // רק כשהתשובה הראשונה נראית חתוכה. 365 חוסמים לפי IP על ריבוי בקשות,
+    // ואין סיבה להכפיל את מספרן בליגה שהחזירה שבעה משחקים ממילא.
     // כישלון כאן הוא חסר מידע, לא תקלה: מה שכבר נאסף נשאר
-    if (range) {
+    if (range && byId.size >= PAGE_LOOKS_TRUNCATED) {
       try {
         collect(await fetchAllPages(`${path}${range}`));
       } catch (err) {
@@ -135,6 +147,9 @@ const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate,
   }
   const games = [...byId.values()];
   console.log(`⚽ [365] got ${games.length} games for competition ${scores365CompetitionId} (includePast=${includePast})`);
+
+  // נזרק רק כשאין כלום ביד: תשובה חלקית עדיפה על שגיאה
+  if (games.length === 0 && firstError) throw firstError;
 
   const fromTs = new Date(fromDate + 'T00:00:00Z').getTime();
   const toTs = new Date(toDate + 'T23:59:59Z').getTime();
@@ -168,7 +183,10 @@ const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate,
     .filter(Boolean);
 
   console.log(`⚽ [365] ${fixtures.length} games in window`);
-  cacheSet(cacheKey, fixtures);
+  // תשובה ריקה אינה נשמרת: כשהספק נכשל או חוסם, התוצאה נראית בדיוק כמו
+  // "אין משחקים" - ושמירה שלה לשש שעות הופכת תקלה רגעית לתקלה שנמשכת
+  // גם אחרי שהיא נפתרה
+  if (fixtures.length > 0) cacheSet(cacheKey, fixtures);
   return fixtures;
 };
 

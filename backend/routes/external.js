@@ -109,6 +109,10 @@ router.get('/fixtures', async (req, res) => {
     // זה גם מה שהפך ליגה ריקה למקרה היקר ביותר במשיכה מרובה.
     const activeProvider = provider;
     let fixtures = [];
+    // כישלון מול הספק נבלע כאן והוחזרה רשימה ריקה, בלי הסבר. "אין משחקים
+    // בטווח" ו"הספק חסם אותנו" נראו זהים לחלוטין במסך - וזה בדיוק מה
+    // שהפך תקלה אחת לשעה של ניחושים
+    let providerError = null;
     try {
       fixtures = await provider.api.fetchUpcomingFixtures({
         [provider.codeField]: league[provider.codeField],
@@ -118,6 +122,7 @@ router.get('/fixtures', async (req, res) => {
       });
     } catch (primaryErr) {
       console.warn(`⚠️ [external] provider ${provider.name} failed:`, primaryErr.message);
+      providerError = primaryErr.message;
       fixtures = [];
     }
 
@@ -171,6 +176,9 @@ router.get('/fixtures', async (req, res) => {
       fromDate,
       toDate,
       includeOdds: wantOdds,
+      // null כשהכל תקין. כשיש ערך - הוא ההבדל בין "אין משחקים" ל"לא
+      // הצלחנו לשאול"
+      providerError,
       fixtures: enriched
     });
   } catch (err) {

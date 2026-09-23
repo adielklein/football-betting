@@ -93,6 +93,12 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
                 ...(rangeMode === 'range' ? { fromDate: customFrom, toDate: customTo } : {})
               });
 
+              // הספק נכשל, והתשובה חזרה ריקה ותקינה למראה. בלי זה
+              // "אין משחקים בטווח" ו"365 חסמו אותנו" נראים זהים
+              if (data.providerError) {
+                failures.push({ league: lg.name, message: data.providerError });
+              }
+
               const arrived = (data.fixtures || []).map((f) => ({
                 ...f,
                 selected: false,
@@ -136,6 +142,9 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
       // כשליגה אחת נבחרה וגם היא נכשלה, זו שגיאה של המסך כולו ולא הערה בצד
       if (failures.length > 0 && targets.length === 1) {
         setError(failures[0].message);
+      } else if (failures.length > 0 && failures.length === targets.length) {
+        // כולן נכשלו - זו לא בעיה של ליגה מסוימת אלא של הספק
+        setError(`כל הליגות נכשלו מול הספק: ${failures[0].message}`);
       }
     } catch (err) {
       setError(err.message || 'שגיאה בטעינת משחקים');

@@ -76,18 +76,49 @@ test('טווח שנדחה לא מבטל את המשחקים שכבר נמשכו'
   assert.equal(fixtures[0].apiId, '365_101');
 });
 
-test('משחקים מהטווח מתווספים לאלה של ברירת המחדל, בלי כפילות', async () => {
+// תשובה שנראית כמו עמוד מלא, ולכן שווה לבקש אחריה גם טווח
+const fullPage = Array.from({ length: 16 }, (_, i) => game(200 + i, 24));
+
+test('כשהעמוד נראה חתוך, משחקי הטווח מתווספים בלי כפילות', async () => {
   const fixtures = await withFetch(
     (url) => (url.includes('startDate')
       // הטווח מחזיר גם משחק שכבר נמשך וגם אחד שלא היה בעמוד
-      ? ok([game(101, 24), game(102, 25)])
-      : ok([game(101, 24)])),
+      ? ok([game(200, 24), game(300, 25)])
+      : ok(fullPage)),
     () => fetchUpcomingFixtures({
       scores365CompetitionId: 9002, fromDate: '2026-09-20', toDate: '2026-09-30', refresh: true
     })
   );
 
-  assert.deepEqual(fixtures.map((f) => f.apiId).sort(), ['365_101', '365_102']);
+  assert.equal(fixtures.length, fullPage.length + 1);
+  assert.ok(fixtures.some((f) => f.apiId === '365_300'), 'המשחק שמעבר לעמוד נוסף');
+});
+
+test('בליגה עם מעט משחקים לא נשלחת בקשה נוספת - 365 חוסמים על ריבוי בקשות', async () => {
+  const urls = [];
+  await withFetch(
+    (url) => { urls.push(url); return ok([game(401, 24), game(402, 25)]); },
+    () => fetchUpcomingFixtures({
+      scores365CompetitionId: 9004, fromDate: '2026-09-20', toDate: '2026-09-30', refresh: true
+    })
+  );
+
+  assert.equal(urls.length, 1, urls.join('\n'));
+  assert.ok(!urls[0].includes('startDate'));
+});
+
+test('תשובה ריקה אינה נשמרת בזיכרון, כדי שתקלה רגעית לא תימשך שעות', async () => {
+  const id = 9005;
+  const empty = await withFetch(() => ok([]), () => fetchUpcomingFixtures({
+    scores365CompetitionId: id, fromDate: '2026-09-20', toDate: '2026-09-30'
+  }));
+  assert.equal(empty.length, 0);
+
+  // בלי refresh: אילו הריק היה נשמר, הקריאה הבאה לא הייתה פונה לספק כלל
+  const after = await withFetch(() => ok([game(501, 24)]), () => fetchUpcomingFixtures({
+    scores365CompetitionId: id, fromDate: '2026-09-20', toDate: '2026-09-30'
+  }));
+  assert.equal(after.length, 1);
 });
 
 test('משחק מחוץ לטווח שהספק החזיר בכל זאת - מסונן', async () => {
@@ -99,4 +130,35 @@ test('משחק מחוץ לטווח שהספק החזיר בכל זאת - מסו�
   );
 
   assert.deepEqual(fixtures.map((f) => f.apiId), ['365_103']);
+});
+
+test('כשכל הבקשות נכשלו נזרקת שגיאה, ולא מוחזרת רשימה ריקה', async () => {
+  await assert.rejects(
+    () => withFetch(
+      () => ({ ok: false, status: 429, json: async () => ({}), text: async () => 'too many requests' }),
+      () => fetchUpcomingFixtures({
+        scores365CompetitionId: 9006, fromDate: '2026-09-20', toDate: '2026-09-30', refresh: true
+      })
+    ),
+    /429/
+  );
+});
+
+test('תשובה חלקית עדיפה על שגיאה: מה שנאסף מוחזר', async () => {
+  let call = 0;
+  const fixtures = await withFetch(
+    () => {
+      call += 1;
+      // העמוד הראשון מצליח, וההמשך נכשל
+      return call === 1
+        ? ok([game(601, 24)])
+        : { ok: false, status: 500, json: async () => ({}), text: async () => 'boom' };
+    },
+    () => fetchUpcomingFixtures({
+      scores365CompetitionId: 9007, fromDate: '2026-09-20', toDate: '2026-09-30',
+      refresh: true, includePast: true
+    })
+  );
+
+  assert.equal(fixtures.length, 1);
 });
