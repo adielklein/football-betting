@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { api } from '../../services/api';
 import { getHebrewNameByEnglish } from '../../utils/teamLogos';
 import TeamLogo from '../TeamLogo';
-import { groupLeagues } from '../../utils/leagueGroups';
-import CompetitionPicker from './CompetitionPicker';
+import { groupLeagues, leaguePickerGroups } from '../../utils/leagueGroups';
+import GroupedPicker from './GroupedPicker';
 
 const DAYS_OPTIONS = [3, 7, 14, 30];
 
@@ -65,6 +65,7 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
   const [skipped, setSkipped] = useState(null);
 
   const groups = useMemo(() => groupLeagues(importableLeagues), [importableLeagues]);
+  const pickerGroups = useMemo(() => leaguePickerGroups(importableLeagues), [importableLeagues]);
 
   // הבחירה היא אחת משלוש: הכל, קבוצה שלמה, או תחרות אחת
   const resolveTargets = () => {
@@ -317,14 +318,15 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
             <label>תחרות:</label>
             {/* קבוצה שלמה נבחרת מתוך הקבוצה עצמה, ולא מרשימה נפרדת - כך
                 הקשר בין "כל הגביעים" לגביעים עצמם גלוי לעין */}
-            <CompetitionPicker
-              groups={groups}
-              allLeagues={importableLeagues}
+            <GroupedPicker
+              groups={pickerGroups}
               value={leagueId}
               onChange={setLeagueId}
               disabled={loading || submitting || importableLeagues.length === 0}
-              allValue={ALL_LEAGUES}
-              groupPrefix={GROUP_PREFIX}
+              allOption={importableLeagues.length > 0
+                ? { value: ALL_LEAGUES, label: `🌍 כל התחרויות (${importableLeagues.length})` }
+                : null}
+              groupAllPrefix={GROUP_PREFIX}
               placeholder={importableLeagues.length === 0 ? 'אין תחרויות עם מזהה חיצוני' : 'בחר תחרות'}
             />
           </div>

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import GroupedPicker from './GroupedPicker';
 import { getThemesByCategory, getTheme } from '../../themes';
 import { toast } from '../../services/toast';
 
@@ -24,7 +25,7 @@ function UsersManagement({ users, loadData, user }) {
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
 
-  const themeCategories = getThemesByCategory();
+  const themeCategories = useMemo(() => getThemesByCategory(), []);
 
   const months = [
     { value: 1, label: 'ינואר' }, { value: 2, label: 'פברואר' }, { value: 3, label: 'מרץ' },
@@ -197,20 +198,21 @@ function UsersManagement({ users, loadData, user }) {
     }
   };
 
-  const ThemeSelector = ({ value, onChange, style = {} }) => (
-    <select value={value} onChange={onChange} className="input" style={{ borderRadius: '10px', ...style }}>
-      <option value="default">בחר ערכת נושא</option>
-      {Object.entries(themeCategories).map(([categoryName, themes]) => (
-        <optgroup key={categoryName} label={categoryName}>
-          {themes.map(theme => (
-            <option key={theme.key} value={theme.key}>
-              {theme.logoType === 'emoji' ? theme.logo : '🖼️'} {theme.name}
-            </option>
-          ))}
-        </optgroup>
-      ))}
-    </select>
+  // עשרות ערכות נושא בקטגוריות. אותה רשימה נפתחת כמו בבורר התחרות
+  // והשבוע: הקטגוריות סגורות, ורק זו שנוגעים בה נפרשת
+  const themeGroups = useMemo(
+    () => Object.entries(themeCategories).map(([categoryName, themes]) => ({
+      key: categoryName,
+      label: categoryName,
+      items: themes.map((theme) => ({
+        id: theme.key,
+        name: `${theme.logoType === 'emoji' ? theme.logo : '🖼️'} ${theme.name}`
+      }))
+    })),
+    [themeCategories]
   );
+
+
 
   const ThemeDisplay = ({ themeName }) => {
     const theme = getTheme(themeName);
@@ -323,10 +325,12 @@ function UsersManagement({ users, loadData, user }) {
           </div>
           <div>
             <label style={labelStyle}>ערכת נושא</label>
-            <ThemeSelector
+            <GroupedPicker
+              groups={themeGroups}
               value={newUser.theme}
-              onChange={(e) => setNewUser(prev => ({ ...prev, theme: e.target.value }))}
-              style={inputStyle}
+              onChange={(theme) => setNewUser(prev => ({ ...prev, theme }))}
+              allOption={{ value: 'default', label: 'ברירת מחדל' }}
+              placeholder="בחר ערכת נושא"
             />
           </div>
           <div>
@@ -539,10 +543,12 @@ function UsersManagement({ users, loadData, user }) {
                       </div>
                       <div>
                         <label style={labelStyle}>ערכת נושא</label>
-                        <ThemeSelector
+                        <GroupedPicker
+                          groups={themeGroups}
                           value={editForm.theme || 'default'}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, theme: e.target.value }))}
-                          style={inputStyle}
+                          onChange={(theme) => setEditForm(prev => ({ ...prev, theme }))}
+                          allOption={{ value: 'default', label: 'ברירת מחדל' }}
+                          placeholder="בחר ערכת נושא"
                         />
                       </div>
                       <div>

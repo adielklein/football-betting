@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import TeamLogo from '../TeamLogo';
 import LeagueLogo from '../LeagueLogo';
 import ImportMatchesModal from './ImportMatchesModal';
 import WeekPicker from './WeekPicker';
+import GroupedPicker from './GroupedPicker';
+import { leaguePickerGroups } from '../../utils/leagueGroups';
 import { toast } from '../../services/toast';
 import Score from '../Score';
 
@@ -36,6 +38,9 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
   const [showImportModal, setShowImportModal] = useState(false);
   const [syncingResults, setSyncingResults] = useState(false);
   const [syncingOdds, setSyncingOdds] = useState(false);
+
+  // אותה חלוקה שבמסך הייבוא: ליגות, גביעים, אירופאיות, נבחרות
+  const leagueGroups = useMemo(() => leaguePickerGroups(leagues), [leagues]);
 
   useEffect(() => {
     loadData();
@@ -1026,22 +1031,13 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <div style={{ flex: '1 1 150px' }}>
               <label>ליגה:</label>
-              <select
+              <GroupedPicker
+                groups={leagueGroups}
                 value={newMatch.leagueId}
-                onChange={(e) => setNewMatch({ ...newMatch, leagueId: e.target.value })}
-                className="input"
+                onChange={(id) => setNewMatch({ ...newMatch, leagueId: id })}
                 disabled={loadingLeagues}
-              >
-                {loadingLeagues ? (
-                  <option>טוען ליגות...</option>
-                ) : (
-                  leagues.map(league => (
-                    <option key={league._id} value={league._id}>
-                      {league.name}
-                    </option>
-                  ))
-                )}
-              </select>
+                placeholder={loadingLeagues ? 'טוען ליגות...' : 'בחר ליגה'}
+              />
             </div>
             <div style={{ flex: '1 1 150px' }}>
               <label>קבוצת בית:</label>
@@ -1357,21 +1353,15 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                       }}>
                         <div>
                           <label style={{ fontSize: '12px', color: 'var(--text-3, #666)' }}>ליגה:</label>
-                          <select
+                          <GroupedPicker
+                            groups={leagueGroups}
                             value={editingMatchDetails.leagueId}
-                            onChange={(e) => setEditingMatchDetails({
+                            onChange={(id) => setEditingMatchDetails({
                               ...editingMatchDetails,
-                              leagueId: e.target.value
+                              leagueId: id
                             })}
-                            className="input"
-                          >
-                            <option value="">בחר ליגה</option>
-                            {leagues.map(league => (
-                              <option key={league._id} value={league._id}>
-                                {league.name}
-                              </option>
-                            ))}
-                          </select>
+                            placeholder="בחר ליגה"
+                          />
                         </div>
                         
                         <div style={{ display: 'flex', gap: '0.5rem' }}>

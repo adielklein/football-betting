@@ -33,4 +33,13 @@ const groupLeagues = (leagues = []) =>
     .map((group) => ({ ...group, leagues: leagues.filter((l) => groupOf(l) === group.key) }))
     .filter((group) => group.leagues.length > 0);
 
-export { groupLeagues, groupOf, GROUPS };
+// אותה חלוקה, בצורה שהבורר הגנרי מצפה לה
+const leaguePickerGroups = (leagues = []) =>
+  groupLeagues(leagues).map((group) => ({
+    key: group.key,
+    label: group.label,
+    icon: group.icon,
+    items: group.leagues.map((l) => ({ id: l._id, name: l.name }))
+  }));
+
+export { groupLeagues, leaguePickerGroups, groupOf, GROUPS };
