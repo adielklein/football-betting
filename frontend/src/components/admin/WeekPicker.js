@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { panelStyle, rowStyle, triggerStyle, useDismiss } from './pickerUi';
+import { panelStyle, rowStyle, triggerStyle, useDismiss } from '../pickerUi';
 
 // בורר השבוע במסך ניהול השבועות: עונה ← חודש ← שבוע, בקיפול.
 //

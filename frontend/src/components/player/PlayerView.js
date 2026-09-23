@@ -14,7 +14,7 @@ import useSwipeNav from '../../services/useSwipeNav';
 import { stepTab } from '../../services/swipeNav';
 import { syncPushSubscription } from '../../services/pushSync';
 
-function PlayerView({ user, onLogout }) {
+function PlayerView({ user, onLogout, onThemeChange }) {
   const [weeks, setWeeks] = useState([]);
   const [selectedWeek, setSelectedWeek] = useState(null);
   const [matches, setMatches] = useState([]);
@@ -306,7 +306,7 @@ function PlayerView({ user, onLogout }) {
           )}
 
           {activeTab === 'settings' && (
-            <SettingsView user={user} />
+            <SettingsView user={user} onThemeChange={onThemeChange} />
           )}
         </div>
       </div>

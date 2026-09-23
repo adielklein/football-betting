@@ -3,7 +3,7 @@ import { api } from '../../services/api';
 import { getHebrewNameByEnglish } from '../../utils/teamLogos';
 import TeamLogo from '../TeamLogo';
 import { groupLeagues, leaguePickerGroups } from '../../utils/leagueGroups';
-import GroupedPicker from './GroupedPicker';
+import GroupedPicker from '../GroupedPicker';
 
 const DAYS_OPTIONS = [3, 7, 14, 30];
 

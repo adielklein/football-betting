@@ -134,6 +134,22 @@ function App() {
     }
   }, [currentUser]); // כאשר currentUser משתנה
 
+  // השחקן שינה ערכה בהגדרות שלו. הערכה כבר הוחלה שם מיידית, וכאן היא
+  // נשמרת גם במצב ובאחסון המקומי - אחרת הבדיקה התקופתית מול השרת הייתה
+  // מחזירה אותה לקדמותה
+  const handleThemeChange = (theme) => {
+    setCurrentUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, theme };
+      try {
+        localStorage.setItem('football_betting_user', JSON.stringify(updated));
+      } catch (err) {
+        // אחסון חסום - הערכה עדיין שמורה בשרת
+      }
+      return updated;
+    });
+  };
+
   const handleLogin = (user) => {
     console.log('✅ התחברות מוצלחת:', user.name);
     console.log('🎨 ערכת נושא:', user.theme || 'default');
@@ -218,7 +234,7 @@ function App() {
       ) : currentUser.role === 'admin' ? (
         <AdminView user={currentUser} onLogout={handleLogout} />
       ) : (
-        <PlayerView user={currentUser} onLogout={handleLogout} />
+        <PlayerView user={currentUser} onLogout={handleLogout} onThemeChange={handleThemeChange} />
       )}
 
       <ToastHost />

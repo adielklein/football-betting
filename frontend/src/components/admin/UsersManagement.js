@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import GroupedPicker from './GroupedPicker';
+import GroupedPicker from '../GroupedPicker';
 import { getThemesByCategory, getTheme } from '../../themes';
 import { toast } from '../../services/toast';
 
@@ -206,7 +206,18 @@ function UsersManagement({ users, loadData, user }) {
       label: categoryName,
       items: themes.map((theme) => ({
         id: theme.key,
-        name: `${theme.logoType === 'emoji' ? theme.logo : '🖼️'} ${theme.name}`
+        name: theme.name,
+        // הצבעים עצמם, ולא אייקון כללי: בוחרים ערכה לפי איך שהיא נראית
+        preview: (
+          <span
+            aria-hidden="true"
+            style={{
+              width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0,
+              background: theme.colors.headerBg,
+              border: '1px solid var(--border, #e6e9ee)'
+            }}
+          />
+        )
       }))
     })),
     [themeCategories]

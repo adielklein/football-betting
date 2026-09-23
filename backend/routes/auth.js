@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const { logAdminAction } = require('../services/auditService');
-const { requireAdmin } = require('../middleware/requireAdmin');
+const { requireAdmin, requireSelfOrAdmin } = require('../middleware/requireAdmin');
 const router = express.Router();
 
 // אוטומטית צור אדמין בהפעלת השרת
@@ -167,6 +167,32 @@ router.post('/users', requireAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating user:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ערכת הנושא של המשתמש עצמו.
+//
+// עד עכשיו רק אדמין יכול היה לשנות אותה, דרך הנתיב הכללי של עדכון
+// משתמש - כלומר העדפה אישית לגמרי, איזו קבוצה אני אוהד, הצריכה לבקש
+// ממנהל. כאן המשתמש משנה את שלו בלבד, ורק את השדה הזה: התפקיד, השם
+// והסיסמה אינם נגישים מכאן.
+router.patch('/users/:id/theme', requireSelfOrAdmin((req) => req.params.id), async (req, res) => {
+  try {
+    const theme = String(req.body?.theme || '').trim().slice(0, 60);
+    if (!theme) return res.status(400).json({ message: 'חסרה ערכת נושא' });
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { theme },
+      { new: true }
+    ).select('name username role theme');
+
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.json({ theme: user.theme });
+  } catch (error) {
+    console.error('Error updating theme:', error);
     res.status(500).json({ message: error.message });
   }
 });

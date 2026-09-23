@@ -49,6 +49,16 @@ function GroupedPicker({
     return placeholder;
   };
 
+  // התצוגה המקדימה של הבחירה הנוכחית, כשיש כזו. בבורר ערכות נושא היא
+  // אומרת יותר מהשם: רואים את הצבעים במקום לדמיין אותם
+  const selectedPreview = () => {
+    for (const group of groups) {
+      const item = group.items.find((i) => i.id === value);
+      if (item) return item.preview || null;
+    }
+    return null;
+  };
+
   const pick = (next) => {
     onChange(next);
     setOpen(false);
@@ -68,8 +78,11 @@ function GroupedPicker({
         }}
         style={triggerStyle(disabled)}
       >
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {label()}
+        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+          {selectedPreview()}
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {label()}
+          </span>
         </span>
         <span style={{ fontSize: '11px', color: 'var(--text-4, #aaa)', flexShrink: 0 }}>
           {open ? '▲' : '▼'}
@@ -125,6 +138,7 @@ function GroupedPicker({
                         onClick={() => pick(item.id)}
                         style={rowStyle(value === item.id)}
                       >
+                        {item.preview}
                         <span style={{ flex: 1 }}>{item.name}</span>
                       </button>
                     ))}

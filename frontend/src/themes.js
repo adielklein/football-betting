@@ -1,4 +1,5 @@
 import { isDark } from './services/colorScheme';
+import { getTeamLogoUrl } from './utils/teamLogos';
 import { readableOn } from './services/readableColor';
 
 // src/themes.js - קובץ ערכות נושא עם תאימות מלאה ל-iOS Safari
@@ -345,6 +346,116 @@ export const THEMES = {
 }
 };
 
+// ערכות לפי מועדון, לכל הקבוצות בארבע הליגות.
+//
+// שורה אחת לכל קבוצה: שם, צבע ראשי, צבע משני. הצבעים הם צבעי הבית
+// המוכרים, והשם הוא זה שהאפליקציה כבר מכירה - ולכן הסמל מגיע מאותו
+// מקור שממנו מגיעים הסמלים בכל שאר המסכים, ולא מקישור חיצוני נוסף.
+const team = (name, primary, secondary, category) => ({
+  name,
+  colors: {
+    primary,
+    secondary,
+    accent: primary,
+    background: '#ffffff',
+    headerBg: `linear-gradient(135deg, ${primary} 0%, ${secondary} 100%)`
+  },
+  // הסמל נפתר בזמן ריצה לפי שם הקבוצה
+  logo: name,
+  logoType: 'team',
+  category
+});
+
+const TEAM_THEMES = {
+  // פרמיירליג
+  arsenal: team('ארסנל', '#EF0107', '#023474', 'פרמיירליג'),
+  aston_villa: team('אסטון וילה', '#670E36', '#95BFE5', 'פרמיירליג'),
+  bournemouth: team('בורנמות\'', '#DA291C', '#000000', 'פרמיירליג'),
+  brentford: team('ברנטפורד', '#D20000', '#FBB800', 'פרמיירליג'),
+  brighton: team('ברייטון', '#0057B8', '#FFCD00', 'פרמיירליג'),
+  burnley: team('ברנלי', '#6C1D45', '#99D6EA', 'פרמיירליג'),
+  chelsea: team('צ\'לסי', '#034694', '#DBA111', 'פרמיירליג'),
+  crystal_palace: team('קריסטל פאלאס', '#1B458F', '#C4122E', 'פרמיירליג'),
+  everton: team('אברטון', '#003399', '#FFFFFF', 'פרמיירליג'),
+  fulham: team('פולהאם', '#000000', '#CC0000', 'פרמיירליג'),
+  leeds: team('לידס', '#FFCD00', '#1D428A', 'פרמיירליג'),
+  liverpool: team('ליברפול', '#C8102E', '#F6EB61', 'פרמיירליג'),
+  manchester_city: team('מנצ\'סטר סיטי', '#6CABDD', '#1C2C5B', 'פרמיירליג'),
+  manchester_united: team('מנצ\'סטר יונייטד', '#DA020E', '#FFE500', 'פרמיירליג'),
+  newcastle: team('ניוקאסל', '#241F20', '#FFFFFF', 'פרמיירליג'),
+  nottingham_forest: team('נוטינגהאם פורסט', '#DD0000', '#FFFFFF', 'פרמיירליג'),
+  sunderland: team('סנדרלנד', '#EB172B', '#211E1F', 'פרמיירליג'),
+  tottenham: team('טוטנהאם', '#132257', '#FFFFFF', 'פרמיירליג'),
+  west_ham: team('ווסטהאם', '#7A263A', '#1BB1E7', 'פרמיירליג'),
+  wolves: team('וולבס', '#FDB913', '#231F20', 'פרמיירליג'),
+
+  // לה ליגה
+  alaves: team('אלאבס', '#0761AF', '#FFFFFF', 'לה ליגה'),
+  athletic_bilbao: team('אתלטיק בילבאו', '#EE2523', '#FFFFFF', 'לה ליגה'),
+  atletico_madrid: team('אטלטיקו מדריד', '#CE3524', '#FFFFFF', 'לה ליגה'),
+  barcelona: team('ברצלונה', '#A50044', '#004D98', 'לה ליגה'),
+  betis: team('בטיס', '#0BB363', '#FFFFFF', 'לה ליגה'),
+  celta_vigo: team('סלטה ויגו', '#8AC3EE', '#E5254E', 'לה ליגה'),
+  elche: team('אלצ\'ה', '#00913F', '#FFFFFF', 'לה ליגה'),
+  espanyol: team('אספניול', '#0072CE', '#FFFFFF', 'לה ליגה'),
+  getafe: team('חטאפה', '#005999', '#FFFFFF', 'לה ליגה'),
+  girona: team('ג\'ירונה', '#CD2534', '#FFFFFF', 'לה ליגה'),
+  levante: team('לבאנטה', '#0055A5', '#B4001E', 'לה ליגה'),
+  mallorca: team('מיורקה', '#E20613', '#000000', 'לה ליגה'),
+  osasuna: team('אוססונה', '#D91A21', '#0A346F', 'לה ליגה'),
+  rayo: team('ראיו', '#E53027', '#FFFFFF', 'לה ליגה'),
+  real_madrid: team('ריאל מדריד', '#FEBE10', '#00529F', 'לה ליגה'),
+  real_sociedad: team('ריאל סוסיאדד', '#0067B1', '#FFFFFF', 'לה ליגה'),
+  sevilla: team('סביליה', '#D80027', '#FFFFFF', 'לה ליגה'),
+  valencia: team('ולנסיה', '#FF7F00', '#000000', 'לה ליגה'),
+  villarreal: team('ויאריאל', '#FFE667', '#005187', 'לה ליגה'),
+  las_palmas: team('לאס פלמאס', '#FFE400', '#0067B2', 'לה ליגה'),
+  oviedo: team('אוביידו', '#0033A0', '#FFFFFF', 'לה ליגה'),
+
+  // סרייה א
+  atalanta: team('אטאלנטה', '#1D428A', '#000000', 'סרייה א'),
+  bologna: team('בולוניה', '#1A2F48', '#A21C26', 'סרייה א'),
+  cagliari: team('קליארי', '#B5001F', '#12295B', 'סרייה א'),
+  como: team('קומו', '#0B4EA2', '#FFFFFF', 'סרייה א'),
+  fiorentina: team('פיורנטינה', '#6B2C91', '#FFFFFF', 'סרייה א'),
+  genoa: team('ג\'נואה', '#A21C26', '#12295B', 'סרייה א'),
+  inter: team('אינטר', '#0068A8', '#000000', 'סרייה א'),
+  juventus: team('יובנטוס', '#000000', '#FFFFFF', 'סרייה א'),
+  lazio: team('לאציו', '#87D8F7', '#1A2F48', 'סרייה א'),
+  lecce: team('לצ\'ה', '#F8D000', '#D2001C', 'סרייה א'),
+  milan: team('מילאן', '#FB090B', '#000000', 'סרייה א'),
+  napoli: team('נאפולי', '#12A0D7', '#003C82', 'סרייה א'),
+  parma: team('פארמה', '#FFD700', '#004B87', 'סרייה א'),
+  roma: team('רומא', '#8E1F2F', '#F0BC42', 'סרייה א'),
+  sassuolo: team('סאסואולו', '#00A752', '#000000', 'סרייה א'),
+  torino: team('טורינו', '#881600', '#FFFFFF', 'סרייה א'),
+  udinese: team('אודינזה', '#000000', '#FFFFFF', 'סרייה א'),
+  verona: team('ורונה', '#1A2F48', '#FFD700', 'סרייה א'),
+  cremonese: team('קרמונזה', '#B4131E', '#9D9D9C', 'סרייה א'),
+  pisa: team('פיזה', '#0B3D91', '#000000', 'סרייה א'),
+
+  // ליגת העל הישראלית
+  maccabi_tel_aviv: team('מכבי תל אביב', '#FFD700', '#004B87', 'ליגת העל הישראלית'),
+  maccabi_haifa: team('מכבי חיפה', '#00A650', '#FFFFFF', 'ליגת העל הישראלית'),
+  hapoel_tel_aviv: team('הפועל תל אביב', '#E30613', '#FFFFFF', 'ליגת העל הישראלית'),
+  hapoel_beer_sheva: team('הפועל באר שבע', '#E30613', '#FFFFFF', 'ליגת העל הישראלית'),
+  beitar_jerusalem: team('בית"ר ירושלים', '#FFD700', '#000000', 'ליגת העל הישראלית'),
+  hapoel_jerusalem: team('הפועל ירושלים', '#E30613', '#000000', 'ליגת העל הישראלית'),
+  maccabi_netanya: team('מכבי נתניה', '#FFD700', '#000000', 'ליגת העל הישראלית'),
+  hapoel_haifa: team('הפועל חיפה', '#E30613', '#000000', 'ליגת העל הישראלית'),
+  bnei_sakhnin: team('בני סכנין', '#E30613', '#FFFFFF', 'ליגת העל הישראלית'),
+  ironi_kiryat_shmona: team('עירוני קרית שמונה', '#E30613', '#FFFFFF', 'ליגת העל הישראלית'),
+  ironi_tiberias: team('עירוני טבריה', '#0B6E4F', '#FFFFFF', 'ליגת העל הישראלית'),
+  ms_ashdod: team('מ.ס. אשדוד', '#E30613', '#FFD700', 'ליגת העל הישראלית'),
+  hapoel_petah_tikva: team('הפועל פתח תקווה', '#0B4EA2', '#FFFFFF', 'ליגת העל הישראלית'),
+  maccabi_bnei_reineh: team('מכבי בני ריינה', '#00A650', '#FFFFFF', 'ליגת העל הישראלית'),
+};
+
+// ערכה שכבר מוגדרת ידנית גוברת: יש לה סמל שנבחר בקפידה וצבעים מכוונים
+for (const [key, value] of Object.entries(TEAM_THEMES)) {
+  if (!THEMES[key]) THEMES[key] = value;
+}
+
 // פונקציה לקבלת ערכת נושא
 export const getTheme = (themeName = 'default') => {
   return THEMES[themeName] || THEMES.default;
@@ -384,6 +495,29 @@ const isIOSSafari = () => {
 };
 
 // 🍎 פונקציה מעודכנת להחלת ערכת נושא עם תמיכה מלאה ב-iOS
+// כתובת הסמל של הערכה, או null כשהסמל הוא אמוג'י.
+//
+// ערכה מסוג 'team' נושאת שם קבוצה ולא כתובת: הסמל נפתר מאותו מקור
+// שממנו מגיעים כל הסמלים באפליקציה, כדי שערכה חדשה לא תוסיף תלות
+// באתר חיצוני נוסף
+const themeLogoUrl = (theme) => {
+  if (theme.logoType === 'image') return theme.logo || null;
+  if (theme.logoType === 'team') return getTeamLogoUrl(theme.logoTeam || theme.logo, 128);
+  return null;
+};
+
+// כשאין סמל תמונה - כדור. עדיף על כותרת בלי כלום
+const FALLBACK_EMOJI = '⚽';
+
+const applyEmojiLogo = (root, body, emoji) => {
+  root.style.setProperty('--theme-icon', `"${emoji}"`);
+  root.style.setProperty('--theme-icon-image', 'none');
+  body.classList.remove('has-image-logo');
+  document.querySelectorAll('.header').forEach((header) => {
+    header.classList.remove('has-image-logo');
+  });
+};
+
 export const applyTheme = (user) => {
   const themeName = user?.theme || 'default';
   const theme = getTheme(themeName);
@@ -444,42 +578,34 @@ export const applyTheme = (user) => {
   }
   
   // החל סמל בheader וברקע
-  if (theme.logoType === 'image') {
-    console.log('🖼️ מחיל תמונה:', theme.logo);
-    root.style.setProperty('--theme-icon', '""');
-    root.style.setProperty('--theme-icon-image', `url('${theme.logo}')`);
-    
-    // הוסף קלאס לbody (לסמל הרקע)
-    body.classList.add('has-image-logo');
-    
-    // הוסף קלאס לכל הheader elements (לסמל בheader)
-    const headerElements = document.querySelectorAll('.header');
-    headerElements.forEach((header) => {
-      header.classList.add('has-image-logo');
-      
-      // 🍎 תיקון ספציפי ל-iOS Safari
-      if (isIOSSafariDevice) {
-        header.style.webkitBackfaceVisibility = 'hidden';
-        header.style.backfaceVisibility = 'hidden';
-      }
-    });
-    
-    console.log('✅ הוחל לוגו תמונה:', theme.logo);
+  const imageUrl = themeLogoUrl(theme);
+  if (imageUrl) {
+    const showImage = () => {
+      root.style.setProperty('--theme-icon', '""');
+      root.style.setProperty('--theme-icon-image', `url('${imageUrl}')`);
+      body.classList.add('has-image-logo');
+
+      document.querySelectorAll('.header').forEach((header) => {
+        header.classList.add('has-image-logo');
+
+        // 🍎 תיקון ספציפי ל-iOS Safari
+        if (isIOSSafariDevice) {
+          header.style.webkitBackfaceVisibility = 'hidden';
+          header.style.backfaceVisibility = 'hidden';
+        }
+      });
+    };
+
+    // התמונה נטענת קודם, ורק אם הצליחה היא מוחלת. סמל שמגיע מאתר חיצוני
+    // יכול להיעלם יום אחד, ובלי הבדיקה הזו הכותרת פשוט נשארת בלי סמל -
+    // בלי שאיש יידע למה
+    applyEmojiLogo(root, body, FALLBACK_EMOJI);
+    const probe = new Image();
+    probe.onload = showImage;
+    probe.onerror = () => console.warn('🖼️ סמל הערכה לא נטען, נשאר אמוג\'י:', imageUrl);
+    probe.src = imageUrl;
   } else {
-    console.log('😀 מחיל אמוג\'י:', theme.logo);
-    root.style.setProperty('--theme-icon', `"${theme.logo}"`);
-    root.style.setProperty('--theme-icon-image', 'none');
-    
-    // הסר קלאס מbody (לסמל הרקע)
-    body.classList.remove('has-image-logo');
-    
-    // הסר קלאס מכל הheader elements (לסמל בheader)
-    const headerElements = document.querySelectorAll('.header');
-    headerElements.forEach((header) => {
-      header.classList.remove('has-image-logo');
-    });
-    
-    console.log('✅ הוחל לוגו אמוג\'י:', theme.logo);
+    applyEmojiLogo(root, body, theme.logoType === 'emoji' ? theme.logo : FALLBACK_EMOJI);
   }
   
   // 🍎 תיקונים נוספים ל-iOS אחרי החלת הערכת נושא

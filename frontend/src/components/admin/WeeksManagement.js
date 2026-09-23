@@ -3,7 +3,7 @@ import TeamLogo from '../TeamLogo';
 import LeagueLogo from '../LeagueLogo';
 import ImportMatchesModal from './ImportMatchesModal';
 import WeekPicker from './WeekPicker';
-import GroupedPicker from './GroupedPicker';
+import GroupedPicker from '../GroupedPicker';
 import { leaguePickerGroups } from '../../utils/leagueGroups';
 import { toast } from '../../services/toast';
 import Score from '../Score';

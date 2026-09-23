@@ -28,6 +28,7 @@ const TEAM_DOMAINS = {
   'ויאדוליד': 'realvalladolid.es',
   'אלאבס': 'deportivoalaves.com',
   'לגאנס': 'cdleganes.com',
+  'אוביידו': 'realoviedo.es',
 
   // אנגליה
   'ליברפול': 'liverpoolfc.com',
@@ -46,6 +47,9 @@ const TEAM_DOMAINS = {
   'נוטינגהאם פורסט': 'nottinghamforest.co.uk',
   'בורנמות\'': 'afcb.co.uk',
   'וולבס': 'wolves.co.uk',
+  'ברייטון': 'brightonandhovealbion.com',
+  'אברטון': 'evertonfc.com',
+  'פולהאם': 'fulhamfc.com',
   'ברנטפורד': 'brentfordfc.com',
 
   // איטליה - Serie A
@@ -71,6 +75,8 @@ const TEAM_DOMAINS = {
   'ונציה': 'veneziafc.it',
   'סאסואולו': 'sassuolocalcio.it',
   'סמפדוריה': 'sampdoria.it',
+  'קרמונזה': 'uscremonese.it',
+  'פיזה': 'pisasportingclub.com',
 
   // גרמניה - Bundesliga
   'באיירן מינכן': 'fcbayern.com',
@@ -392,6 +398,9 @@ const TEAM_ENGLISH = {
   'סנדרלנד': 'Sunderland',
   'נוטינגהאם פורסט': 'Nottingham Forest',
   'בורנמות\'': 'Bournemouth',
+  'ברייטון': 'Brighton',
+  'אברטון': 'Everton',
+  'פולהאם': 'Fulham',
   'וולבס': 'Wolverhampton',
   'ברנטפורד': 'Brentford',
   'אינטר': 'Inter Milan',
