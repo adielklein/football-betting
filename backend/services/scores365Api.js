@@ -86,37 +86,51 @@ const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate,
     if (hit) return hit;
   }
 
-  // הטווח נשלח ל-365 ולא רק מסונן אצלנו.
+  // הבקשה הרגילה היא העיקר, ובקשת הטווח היא תוספת בלבד.
   //
-  // בקשה בלי טווח מחזירה עמוד ברירת מחדל, וזה הספיק כל עוד מדובר בליגה
+  // הבקשה בלי טווח מחזירה עמוד ברירת מחדל, וזה הספיק כל עוד מדובר בליגה
   // עם עשרה משחקים בשבוע. בליגת האומות יש עשרות משחקים באותו ערב, והם
-  // פשוט לא נכנסו לעמוד - כך נעלמה ישראל מול אירלנד. עכשיו מבקשים את
-  // הטווח במפורש, ואם התשובה מחולקת לעמודים ממשיכים אחריהם.
-  const range = `&startDate=${toApiDate(fromDate)}&endDate=${toApiDate(toDate)}`;
+  // לא נכנסו לעמוד - כך נעלמה ישראל מול אירלנד. לכן מבקשים גם את הטווח
+  // במפורש.
+  //
+  // הסדר הזה נלמד בדרך הקשה: כשבקשת הטווח הייתה ראשונה והספק דחה את
+  // הפרמטרים, החריגה קפצה מעל הניסיון החוזר ולא נמשך כלום. תוספת חייבת
+  // להיות תוספת - היא לא יכולה להפיל את מה שעבד.
   const base = `appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&competitions=${scores365CompetitionId}`;
+  const start = toApiDate(fromDate);
+  const end = toApiDate(toDate);
+  // בלי שני התאריכים אין טווח לבקש, ו-"startDate=" ריק רק מזמין דחייה
+  const range = start && end ? `&startDate=${start}&endDate=${end}` : null;
 
   // עתידיים מ-fixtures, ואם includePast גם משחקים שנגמרו מ-results
   const paths = [`/games/fixtures/?${base}`];
   if (includePast) paths.push(`/games/results/?${base}`);
 
-  // לפי מזהה: אותו משחק יכול לחזור גם מ-fixtures וגם מ-results, וגם
-  // בשני עמודים עוקבים
+  // לפי מזהה: אותו משחק יכול לחזור גם מ-fixtures וגם מ-results, גם משתי
+  // הבקשות וגם בשני עמודים עוקבים
   const byId = new Map();
+  const collect = (games) => {
+    for (const game of games) {
+      if (game && game.id != null) byId.set(game.id, game);
+    }
+  };
+
   for (const path of paths) {
+    // 1. הבקשה שתמיד עבדה
     try {
-      // עם הטווח קודם. אם הוא חוזר ריק - ייתכן שהספק לא מכיר את
-      // הפרמטרים האלה - מנסים שוב בלעדיו, כדי שהמצב לא יהיה גרוע
-      // ממה שהיה לפני התוספת
-      let games = await fetchAllPages(`${path}${range}`);
-      if (games.length === 0) {
-        games = await fetchAllPages(path);
-        if (games.length > 0) console.warn(`⚠️ [365] הטווח לא נתמך ב-${path}, נשלפה תשובת ברירת המחדל`);
-      }
-      for (const game of games) {
-        if (game && game.id != null) byId.set(game.id, game);
-      }
+      collect(await fetchAllPages(path));
     } catch (err) {
       console.warn(`⚠️ [365] endpoint ${path} failed:`, err.message);
+    }
+
+    // 2. אותה בקשה עם טווח מפורש, למשחקים שמעבר לעמוד ברירת המחדל.
+    // כישלון כאן הוא חסר מידע, לא תקלה: מה שכבר נאסף נשאר
+    if (range) {
+      try {
+        collect(await fetchAllPages(`${path}${range}`));
+      } catch (err) {
+        console.warn(`⚠️ [365] הטווח לא נתמך ב-${path}: ${err.message}`);
+      }
     }
   }
   const games = [...byId.values()];
