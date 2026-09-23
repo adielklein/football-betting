@@ -12,7 +12,9 @@
 // של כלי הבנייה (CRA כותב asset-manifest.json, Vite כותב משהו אחר לגמרי)
 // בעוד index.html קיים תמיד ומצביע על מה שבאמת נטען.
 
-const CHECK_INTERVAL_MS = 5 * 60 * 1000;
+// שתי דקות ולא חמש: ביום של כמה דיפלויים, חמש דקות של קוד ישן הן
+// חמש דקות של "תיקנתי" מול "אצלי זה עדיין ככה"
+const CHECK_INTERVAL_MS = 2 * 60 * 1000;
 
 // מזהה את קובץ ה-JS הראשי לפי שם עם hash. CRA: main.<hash>.js תחת
 // /static/js, Vite: index-<hash>.js תחת /assets.
@@ -95,4 +97,12 @@ export const applyUpdate = async () => {
     // לא קריטי - הריענון עצמו הוא מה שחשוב
   }
   window.location.reload();
+};
+
+// חתימת הקוד שרץ עכשיו, כפי שנחתמה בבנייה. לתצוגה במסך הניהול: השאלה
+// "האם אני מריץ את הגרסה החדשה" צריכה תשובה במבט, לא בניחוש
+export const runningCommit = () => {
+  const meta = document.querySelector('meta[name="app-commit"]');
+  const value = meta && meta.getAttribute('content');
+  return value && value !== 'dev' ? value.slice(0, 7) : null;
 };

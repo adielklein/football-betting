@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { runningCommit } from '../../services/appVersion';
 import { api } from '../../services/api';
 import AdminHeader from './AdminHeader';
 import WeeksManagement from './WeeksManagement';
@@ -243,6 +244,18 @@ function AdminView({ user, onLogout }) {
           {activeTab === 'stats' && <AdminStats />}
           {activeTab === 'audit' && <AuditLog />}
         </div>
+
+        {/* חתימת הגרסה שרצה. אחרי דיפלוי, זו התשובה ל"האם אני כבר על
+            הקוד החדש" - במקום לנחש לפי התנהגות */}
+        {runningCommit() && (
+          <div style={{
+            textAlign: 'center', marginTop: '0.75rem',
+            fontSize: '10px', color: 'var(--text-4, #c3c8d0)',
+            fontFamily: 'monospace'
+          }}>
+            {runningCommit()}
+          </div>
+        )}
       </div>
     </div>
   );
