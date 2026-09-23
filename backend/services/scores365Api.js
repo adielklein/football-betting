@@ -42,6 +42,41 @@ const apiGet = async (path) => {
   return res.json();
 };
 
+// 365 מצפים ל-DD/MM/YYYY בפרמטרי הטווח, ואנחנו עובדים ב-YYYY-MM-DD
+const toApiDate = (ymd) => {
+  const [y, m, d] = String(ymd || '').split('-');
+  return y && m && d ? `${d}/${m}/${y}` : '';
+};
+
+// כמה עמודים לכל היותר. תקרה ולא לולאה פתוחה: אם הספק יחזיר הפניה
+// מעגלית, עדיף להפסיק מאשר להיתקע
+const MAX_PAGES = 6;
+
+// עמוד ההמשך מגיע בשמות שונים לפי הנתיב, ולפעמים כלל לא
+const nextPageOf = (json) => {
+  const next = json?.paging?.nextPage || json?.nextPage || null;
+  if (!next || typeof next !== 'string') return null;
+  // כתובת מלאה, נתיב, או רק מחרוזת שאילתה
+  if (next.startsWith('http')) return next.replace(/^https?:\/\/[^/]+/, '');
+  if (next.startsWith('/')) return next;
+  return null;
+};
+
+const fetchAllPages = async (firstPath) => {
+  const collected = [];
+  let path = firstPath;
+
+  for (let page = 0; page < MAX_PAGES && path; page++) {
+    const json = await apiGet(path);
+    const games = Array.isArray(json?.games) ? json.games : [];
+    collected.push(...games);
+    if (games.length === 0) break;
+    path = nextPageOf(json);
+  }
+
+  return collected;
+};
+
 const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate, refresh = false, includePast = false }) => {
   if (!scores365CompetitionId) throw new Error('scores365CompetitionId is required');
 
@@ -51,20 +86,40 @@ const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate,
     if (hit) return hit;
   }
 
+  // הטווח נשלח ל-365 ולא רק מסונן אצלנו.
+  //
+  // בקשה בלי טווח מחזירה עמוד ברירת מחדל, וזה הספיק כל עוד מדובר בליגה
+  // עם עשרה משחקים בשבוע. בליגת האומות יש עשרות משחקים באותו ערב, והם
+  // פשוט לא נכנסו לעמוד - כך נעלמה ישראל מול אירלנד. עכשיו מבקשים את
+  // הטווח במפורש, ואם התשובה מחולקת לעמודים ממשיכים אחריהם.
+  const range = `&startDate=${toApiDate(fromDate)}&endDate=${toApiDate(toDate)}`;
+  const base = `appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&competitions=${scores365CompetitionId}`;
+
   // עתידיים מ-fixtures, ואם includePast גם משחקים שנגמרו מ-results
-  const endpoints = [`/games/fixtures/?appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&competitions=${scores365CompetitionId}`];
-  if (includePast) {
-    endpoints.push(`/games/results/?appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&competitions=${scores365CompetitionId}`);
-  }
-  const games = [];
-  for (const ep of endpoints) {
+  const paths = [`/games/fixtures/?${base}`];
+  if (includePast) paths.push(`/games/results/?${base}`);
+
+  // לפי מזהה: אותו משחק יכול לחזור גם מ-fixtures וגם מ-results, וגם
+  // בשני עמודים עוקבים
+  const byId = new Map();
+  for (const path of paths) {
     try {
-      const json = await apiGet(ep);
-      (json.games || []).forEach(g => games.push(g));
+      // עם הטווח קודם. אם הוא חוזר ריק - ייתכן שהספק לא מכיר את
+      // הפרמטרים האלה - מנסים שוב בלעדיו, כדי שהמצב לא יהיה גרוע
+      // ממה שהיה לפני התוספת
+      let games = await fetchAllPages(`${path}${range}`);
+      if (games.length === 0) {
+        games = await fetchAllPages(path);
+        if (games.length > 0) console.warn(`⚠️ [365] הטווח לא נתמך ב-${path}, נשלפה תשובת ברירת המחדל`);
+      }
+      for (const game of games) {
+        if (game && game.id != null) byId.set(game.id, game);
+      }
     } catch (err) {
-      console.warn(`⚠️ [365] endpoint ${ep} failed:`, err.message);
+      console.warn(`⚠️ [365] endpoint ${path} failed:`, err.message);
     }
   }
+  const games = [...byId.values()];
   console.log(`⚽ [365] got ${games.length} games for competition ${scores365CompetitionId} (includePast=${includePast})`);
 
   const fromTs = new Date(fromDate + 'T00:00:00Z').getTime();
@@ -600,6 +655,10 @@ const searchCompetitions = async (query, { refresh = false } = {}) => {
 };
 
 module.exports = {
+  // מיוצאים לבדיקה: המרת התאריך ופענוח עמוד ההמשך הם בדיוק מה שנשבר
+  // בשקט - פורמט שגוי מחזיר רשימה ריקה, לא שגיאה
+  toApiDate,
+  nextPageOf,
   isConfigured,
   fetchUpcomingFixtures,
   fetchOddsForFixture,
