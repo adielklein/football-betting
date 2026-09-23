@@ -500,11 +500,24 @@ const isIOSSafari = () => {
 // ערכה מסוג 'team' נושאת שם קבוצה ולא כתובת: הסמל נפתר מאותו מקור
 // שממנו מגיעים כל הסמלים באפליקציה, כדי שערכה חדשה לא תוסיף תלות
 // באתר חיצוני נוסף
-export const themeLogoUrl = (theme) => {
-  if (theme.logoType === 'image') return theme.logo || null;
-  if (theme.logoType === 'team') return getTeamLogoUrl(theme.logoTeam || theme.logo, 128);
-  return null;
+export const themeIconSources = (theme) => {
+  const sources = [];
+
+  // הסמל שנבחר ידנית, כשיש כזה
+  if (theme.logoType === 'image' && theme.logo) sources.push(theme.logo);
+
+  // הסמל לפי שם הקבוצה. גם ערכה ישנה עם אמוג'י מקבלת אותו: "ולנסיה"
+  // היא קבוצה, וסמל עדיף על עיגול כתום ועטלף. וגם כשהסמל הידני מת -
+  // וזה קרה - יש למה ליפול חוץ מכדור
+  const teamName = theme.logoType === 'team' ? (theme.logoTeam || theme.logo) : theme.name;
+  const crest = getTeamLogoUrl(teamName, 128);
+  if (crest && !sources.includes(crest)) sources.push(crest);
+
+  return sources;
 };
+
+// הראשון ברשימה, או null. למי שצריך כתובת אחת (החלת הערכה על הכותרת)
+export const themeLogoUrl = (theme) => themeIconSources(theme)[0] || null;
 
 // כשאין סמל תמונה - כדור. עדיף על כותרת בלי כלום
 const FALLBACK_EMOJI = '⚽';
@@ -578,35 +591,43 @@ export const applyTheme = (user) => {
   }
   
   // החל סמל בheader וברקע
-  const imageUrl = themeLogoUrl(theme);
-  if (imageUrl) {
-    const showImage = () => {
-      root.style.setProperty('--theme-icon', '""');
-      root.style.setProperty('--theme-icon-image', `url('${imageUrl}')`);
-      body.classList.add('has-image-logo');
+  const sources = themeIconSources(theme);
 
-      document.querySelectorAll('.header').forEach((header) => {
-        header.classList.add('has-image-logo');
+  // כל מקור נטען קודם, ורק אם הצליח הוא מוחל. סמל שמגיע מאתר חיצוני
+  // יכול להיעלם יום אחד - וכבר קרה - ואז מנסים את הסמל לפי שם הקבוצה.
+  // עד שאחד מצליח, מוצג האמוג'י
+  applyEmojiLogo(root, body, theme.logoType === 'emoji' ? theme.logo : FALLBACK_EMOJI);
 
-        // 🍎 תיקון ספציפי ל-iOS Safari
-        if (isIOSSafariDevice) {
-          header.style.webkitBackfaceVisibility = 'hidden';
-          header.style.backfaceVisibility = 'hidden';
-        }
-      });
-    };
+  const showImage = (url) => {
+    root.style.setProperty('--theme-icon', '""');
+    root.style.setProperty('--theme-icon-image', `url('${url}')`);
+    body.classList.add('has-image-logo');
 
-    // התמונה נטענת קודם, ורק אם הצליחה היא מוחלת. סמל שמגיע מאתר חיצוני
-    // יכול להיעלם יום אחד, ובלי הבדיקה הזו הכותרת פשוט נשארת בלי סמל -
-    // בלי שאיש יידע למה
-    applyEmojiLogo(root, body, FALLBACK_EMOJI);
+    document.querySelectorAll('.header').forEach((header) => {
+      header.classList.add('has-image-logo');
+
+      // 🍎 תיקון ספציפי ל-iOS Safari
+      if (isIOSSafariDevice) {
+        header.style.webkitBackfaceVisibility = 'hidden';
+        header.style.backfaceVisibility = 'hidden';
+      }
+    });
+  };
+
+  const trySource = (index) => {
+    const url = sources[index];
+    if (!url) return;
+
     const probe = new Image();
-    probe.onload = showImage;
-    probe.onerror = () => console.warn('🖼️ סמל הערכה לא נטען, נשאר אמוג\'י:', imageUrl);
-    probe.src = imageUrl;
-  } else {
-    applyEmojiLogo(root, body, theme.logoType === 'emoji' ? theme.logo : FALLBACK_EMOJI);
-  }
+    probe.onload = () => showImage(url);
+    probe.onerror = () => {
+      console.warn('🖼️ סמל הערכה לא נטען:', url);
+      trySource(index + 1);
+    };
+    probe.src = url;
+  };
+
+  trySource(0);
   
   // 🍎 תיקונים נוספים ל-iOS אחרי החלת הערכת נושא
   if (isIOSDevice) {
