@@ -63,34 +63,39 @@ router.get('/health', (req, res) => {
   });
 });
 
-// 🩺 מצב הנתיבים של 365.
+// 🩺 מה כל נתיב של 365 באמת מחזיר.
 //
-// לספק הזה אין תיעוד ואין הבטחת יציבות: נתיב שעבד שנה שלמה החזיר יום
-// אחד 404, והייבוא הפסיק לעבוד בלי שאיש ידע למה. הבדיקה הזו פונה לכל
-// נתיב שאנחנו תלויים בו ומדווחת את הקוד שחזר - כך שהשאלה "מה 365
-// שינו" נענית בלחיצה, ולא בשעה של ניחושים.
+// לספק אין תיעוד, והניסיון לימד שאי אפשר להניח דבר: נתיב אחד החזיר
+// 404 אחרי שעבד שנה, ואחר התעלם ממסנן התחרות והחזיר 814 משחקים מכל
+// העולם. השאלות היחידות שחשובות הן שלוש - האם הנתיב עונה, האם הוא
+// מכבד את התחרות שביקשנו, והאם הוא מכבד את טווח התאריכים - ולכן
+// הבדיקה עונה בדיוק עליהן, לכל נתיב.
 router.get('/365-health', requireAdmin, async (req, res) => {
   const League = require('../models/League');
 
   // תחרות אמיתית מהמערכת, כדי שהבדיקה תהיה על משהו שבאמת מבקשים
-  const league = await League.findOne({ scores365CompetitionId: { $ne: null } })
-    .sort({ order: 1 })
-    .lean();
-  const competitionId = league?.scores365CompetitionId || 7;
+  const league = req.query.leagueId
+    ? await League.findById(req.query.leagueId).lean()
+    : await League.findOne({ scores365CompetitionId: { $ne: null } }).sort({ order: 1 }).lean();
+  const competitionId = Number(league?.scores365CompetitionId) || 7;
 
   const two = (n) => String(n).padStart(2, '0');
   const asApiDate = (d) => `${two(d.getDate())}/${two(d.getMonth() + 1)}/${d.getFullYear()}`;
-  const range = `&startDate=${asApiDate(new Date())}&endDate=${asApiDate(new Date(Date.now() + 7 * 864e5))}`;
-  const base = `appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6`;
+  const days = Math.min(Math.max(parseInt(req.query.days, 10) || 7, 1), 30);
+  const from = new Date();
+  const to = new Date(Date.now() + days * 864e5);
+  const range = `&startDate=${asApiDate(from)}&endDate=${asApiDate(to)}`;
+  const base = 'appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6';
 
   const probes = [
-    { name: 'לוח משחקים (allscores)', path: `/games/allscores/?${base}&sports=1&competitions=${competitionId}${range}` },
-    { name: 'משחקים עתידיים (fixtures)', path: `/games/fixtures/?${base}&competitions=${competitionId}` },
+    { name: 'לוח משחקים + תחרות + טווח', path: `/games/allscores/?${base}&competitions=${competitionId}${range}` },
+    { name: 'לוח משחקים + תחרות בלבד', path: `/games/allscores/?${base}&competitions=${competitionId}` },
+    { name: 'לוח משחקים + טווח בלבד', path: `/games/allscores/?${base}${range}` },
+    { name: 'עתידיים (fixtures)', path: `/games/fixtures/?${base}&competitions=${competitionId}` },
     { name: 'תוצאות (results)', path: `/games/results/?${base}&competitions=${competitionId}` },
     { name: 'מצב חי (current)', path: `/games/current/?${base}&competitions=${competitionId}` },
-    { name: 'רשימת תחרויות', path: `/competitions/?${base}` },
-    { name: 'חיפוש תחרויות', path: `/search/?${base}&filter=competitions&query=${encodeURIComponent('ליגה')}` },
-    { name: 'טבלה (standings)', path: `/standings/?${base}&competitions=${competitionId}` }
+    { name: 'משחקי תחרות (competitions/games)', path: `/competitions/games/?${base}&competitions=${competitionId}${range}` },
+    { name: 'רשימת תחרויות', path: `/competitions/?${base}` }
   ];
 
   const check = async ({ name, path }) => {
@@ -105,36 +110,64 @@ router.get('/365-health', requireAdmin, async (req, res) => {
         }
       });
 
-      let games = null;
-      let competitions = null;
-      if (response.ok) {
-        const json = await response.json().catch(() => ({}));
-        games = Array.isArray(json?.games) ? json.games.length : null;
-        competitions = Array.isArray(json?.competitions) ? json.competitions.length : null;
-      }
-
-      return {
+      const row = {
         name,
         path: path.split('?')[0],
         status: response.status,
         ok: response.ok,
-        games,
-        competitions,
         ms: Date.now() - started
       };
+
+      if (!response.ok) return row;
+
+      const json = await response.json().catch(() => ({}));
+      const games = Array.isArray(json?.games) ? json.games : [];
+      row.games = games.length;
+      row.competitions = Array.isArray(json?.competitions) ? json.competitions.length : null;
+
+      if (games.length > 0) {
+        // האם המסנן כובד: כמה מהמשחקים שייכים לתחרות שביקשנו
+        row.inCompetition = games.filter((g) => {
+          const id = g?.competitionId ?? g?.competition?.id;
+          return id != null && Number(id) === competitionId;
+        }).length;
+
+        // האם הטווח כובד: באילו תאריכים המשחקים שחזרו
+        const times = games
+          .map((g) => new Date(g.startTime).getTime())
+          .filter((t) => Number.isFinite(t))
+          .sort((a, b) => a - b);
+        if (times.length > 0) {
+          row.firstDate = new Date(times[0]).toISOString().slice(0, 10);
+          row.lastDate = new Date(times[times.length - 1]).toISOString().slice(0, 10);
+        }
+
+        // שלושה שמות, כדי לראות על מה בכלל מדובר
+        row.samples = games.slice(0, 3).map((g) =>
+          `${g.homeCompetitor?.name || '?'} - ${g.awayCompetitor?.name || '?'}`
+        );
+      }
+
+      return row;
     } catch (err) {
       return { name, path: path.split('?')[0], status: 0, ok: false, error: err.message, ms: Date.now() - started };
     }
   };
 
-  // בזה אחר זה: בדיקה שמציפה את הספק בשבע בקשות במקביל עלולה לייצר
-  // בדיוק את התקלה שהיא באה לאבחן
+  // בזה אחר זה: בדיקה שמציפה את הספק בבקשות במקביל עלולה לייצר בדיוק
+  // את התקלה שהיא באה לאבחן
   const results = [];
   for (const probe of probes) {
     results.push(await check(probe));
   }
 
-  res.json({ competitionId, checkedAt: new Date(), probes: results });
+  res.json({
+    competitionId,
+    league: league ? league.name : null,
+    days,
+    checkedAt: new Date(),
+    probes: results
+  });
 });
 
 const isValidYmd = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);

@@ -322,7 +322,12 @@ function LeaguesManagement() {
   const handleHealth = async () => {
     setVerifying(true);
     try {
-      const response = await fetch(`${API_URL}/external/365-health`);
+      // על התחרות שבאמת מעניינת: הליגה הראשונה ברשימה אינה בהכרח זו
+      // שהבעיה בה
+      const target = leagues.find((l) => l.scores365CompetitionId && l.type === 'national')
+        || leagues.find((l) => l.scores365CompetitionId);
+      const query = target ? `?leagueId=${target._id}` : '';
+      const response = await fetch(`${API_URL}/external/365-health${query}`);
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'failed');
       setHealth(data);
@@ -445,26 +450,50 @@ function LeaguesManagement() {
       {health && (
         <div className="card" style={{ marginBottom: '0.75rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-            <h2 style={{ fontSize: '0.95rem', margin: 0, fontWeight: '700' }}>🩺 נתיבי 365</h2>
+            <h2 style={{ fontSize: '0.95rem', margin: 0, fontWeight: '700' }}>
+              🩺 נתיבי 365 {health.league ? `· ${health.league} (#${health.competitionId})` : ''}
+            </h2>
             <button onClick={() => setHealth(null)} className="btn" style={{ background: 'transparent', fontSize: '16px', padding: '0 0.3rem' }}>✖</button>
           </div>
-          {health.probes.map((probe) => (
-            <div key={probe.path} style={{
-              display: 'flex', alignItems: 'center', gap: '0.5rem',
-              padding: '0.35rem 0.2rem', fontSize: '12px',
+          <div style={{ fontSize: '11px', color: 'var(--text-3, #888)', marginBottom: '0.4rem', lineHeight: 1.5 }}>
+            לכל נתיב: האם הוא עונה, כמה משחקים החזיר, כמה מהם בתחרות שביקשנו,
+            ובאילו תאריכים. זה מה שאומר אם הספק מכבד את המסננים - ואם לא, מה
+            בדיוק הוא מתעלם ממנו.
+          </div>
+
+          {health.probes.map((probe, i) => (
+            <div key={`${probe.path}-${i}`} style={{
+              padding: '0.4rem 0.2rem', fontSize: '12px',
               borderTop: '1px dashed var(--border, #eef1f4)'
             }}>
-              <span style={{ fontSize: '13px' }}>{probe.ok ? '✅' : '❌'}</span>
-              <span style={{ fontWeight: 600, flex: 1, minWidth: 0 }}>{probe.name}</span>
-              <span style={{ fontFamily: 'monospace', fontSize: '10px', color: 'var(--text-4, #aaa)' }}>{probe.path}</span>
-              <span style={{
-                fontWeight: 800,
-                color: probe.ok ? 'var(--good-fg, #1a6b35)' : 'var(--bad-fg, #b3261e)'
-              }}>
-                {probe.status || '—'}
-              </span>
-              {probe.games != null && (
-                <span style={{ fontSize: '11px', color: 'var(--text-3, #888)' }}>{probe.games} משחקים</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '13px' }}>{probe.ok ? '✅' : '❌'}</span>
+                <span style={{ fontWeight: 600, flex: 1, minWidth: 0 }}>{probe.name}</span>
+                <span style={{
+                  fontWeight: 800,
+                  color: probe.ok ? 'var(--good-fg, #1a6b35)' : 'var(--bad-fg, #b3261e)'
+                }}>
+                  {probe.status || '—'}
+                </span>
+              </div>
+
+              {probe.ok && (
+                <div style={{ fontSize: '11px', color: 'var(--text-3, #888)', marginTop: '2px' }}>
+                  {probe.games != null && `${probe.games} משחקים`}
+                  {probe.inCompetition != null && ` · ${probe.inCompetition} בתחרות`}
+                  {probe.firstDate && ` · ${probe.firstDate} → ${probe.lastDate}`}
+                  {probe.competitions != null && ` · ${probe.competitions} תחרויות`}
+                </div>
+              )}
+
+              {probe.samples && probe.samples.length > 0 && (
+                <div style={{ fontSize: '10.5px', color: 'var(--text-4, #aaa)', marginTop: '1px' }}>
+                  {probe.samples.join(' · ')}
+                </div>
+              )}
+
+              {probe.error && (
+                <div style={{ fontSize: '11px', color: 'var(--bad-fg, #b3261e)', marginTop: '2px' }}>{probe.error}</div>
               )}
             </div>
           ))}
