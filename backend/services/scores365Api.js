@@ -503,6 +503,16 @@ const asArray = (v) => (Array.isArray(v) ? v : []);
 const extractCompetitions = (json) =>
   asArray(json?.competitions).length ? asArray(json.competitions) : asArray(json?.results?.competitions);
 
+const toCompetition = (json) => {
+  const countryById = new Map(asArray(json?.countries).map((c) => [c.id, c.name]));
+  return extractCompetitions(json).map((c) => ({
+    id: c.id,
+    name: c.name,
+    country: c.countryId != null ? countryById.get(c.countryId) || null : null,
+    sportId: c.sportId ?? null
+  }));
+};
+
 const fetchAllCompetitions = async (refresh = false) => {
   const cacheKey = '365_competitions';
   if (!refresh) {
@@ -516,16 +526,7 @@ const fetchAllCompetitions = async (refresh = false) => {
       const json = await apiGet(path);
       const competitions = extractCompetitions(json);
       if (competitions.length > 0) {
-        const countryById = new Map(asArray(json.countries).map((c) => [c.id, c.name]));
-        const value = {
-          source: path,
-          competitions: competitions.map((c) => ({
-            id: c.id,
-            name: c.name,
-            country: c.countryId != null ? countryById.get(c.countryId) || null : null,
-            sportId: c.sportId ?? null
-          }))
-        };
+        const value = { source: path, competitions: toCompetition(json) };
         cacheSet(cacheKey, value);
         return value;
       }
@@ -538,15 +539,40 @@ const fetchAllCompetitions = async (refresh = false) => {
   return { source: null, competitions: [], diagnostics };
 };
 
+// חיפוש אצל 365 עצמם, ולא בתוך הרשימה השמורה.
+//
+// הרשימה הכללית מחזירה את התחרויות המובילות בלבד. גביע הטוטו, מוקדמות
+// המונדיאל ואליפות אירופה אינם בה - ולכן חיפוש בתוכה החזיר אפס תוצאות
+// לתחרויות שקיימות אצל 365 היטב. נקודת החיפוש מכירה גם אותן.
+const searchCompetitionsLive = async (query) => {
+  const term = String(query || '').trim();
+  if (!term) return [];
+  try {
+    const json = await apiGet(
+      `/search/?${COMMON_QUERY}&filter=competitions&query=${encodeURIComponent(term)}`
+    );
+    return toCompetition(json);
+  } catch (err) {
+    // החיפוש הוא הרחבה של הרשימה השמורה, לא תחליף לה
+    console.warn(`⚠️ [365] חיפוש תחרויות נכשל (${term}): ${err.message}`);
+    return [];
+  }
+};
+
 // חיפוש לפי שם התחרות או שם המדינה. 365 מחזירים עברית (langId=2), ולכן
-// "גביע" ו-"אנגליה" עובדים כמו שהם
+// "גביע" ו-"אנגליה" עובדים כמו שהם.
+//
+// שני מקורות שמאוחדים לרשימה אחת: החיפוש החי אצל 365, שמכיר גם תחרויות
+// שאינן ברשימה הכללית, והרשימה השמורה - שממשיכה לענות גם כשהחיפוש נכשל
 const searchCompetitions = async (query, { refresh = false } = {}) => {
   const all = await fetchAllCompetitions(refresh);
   const needle = String(query || '').trim().toLowerCase();
 
+  const isFootball = (c) => c.sportId == null || c.sportId === 1;
+
   // sportId 1 = כדורגל. כשהשדה חסר לא מסננים, כדי לא לאבד תוצאות
-  const football = all.competitions.filter((c) => c.sportId == null || c.sportId === 1);
-  const matched = needle
+  const football = all.competitions.filter(isFootball);
+  const local = needle
     ? football.filter(
         (c) =>
           (c.name || '').toLowerCase().includes(needle) ||
@@ -554,9 +580,19 @@ const searchCompetitions = async (query, { refresh = false } = {}) => {
       )
     : football;
 
+  const live = needle ? (await searchCompetitionsLive(query)).filter(isFootball) : [];
+
+  // החיפוש החי קודם - הוא הספציפי יותר - ובלי כפילויות לפי מזהה
+  const byId = new Map();
+  for (const c of [...live, ...local]) {
+    if (c && c.id != null && !byId.has(c.id)) byId.set(c.id, c);
+  }
+  const matched = [...byId.values()];
+
   return {
     source: all.source,
     total: all.competitions.length,
+    liveCount: live.length,
     count: matched.length,
     competitions: matched.slice(0, 50),
     ...(all.diagnostics ? { diagnostics: all.diagnostics } : {})

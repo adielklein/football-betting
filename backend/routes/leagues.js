@@ -250,7 +250,7 @@ router.post('/seed-european', requireAdmin, async (req, res) => {
       { name: 'גביע המדינה', key: 'israeli-cup', color: '#5a32a3', type: 'club', region: 'ישראל', order: 2, apiFootballId: 384, footballDataCode: null, espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 49 },
       // גביע הטוטו - התחרות הישראלית השלישית, והפער הבולט ברשימה. המזהה
       // מתאתר בסנכרון מול 365, כמו בגביע הליגה האנגלי
-      { name: 'גביע הטוטו', key: 'israeli-toto-cup', color: '#4b2a86', type: 'club', region: 'ישראל', order: 3, apiFootballId: null, footballDataCode: null, espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['טוטו'], country: 'ישראל' } },
+      { name: 'גביע הטוטו', key: 'israeli-toto-cup', color: '#4b2a86', type: 'club', region: 'ישראל', order: 3, apiFootballId: null, footballDataCode: null, espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['גביע הטוטו', 'טוטו'], country: 'ישראל', exact: ['גביע הטוטו'] } },
       // ספרד
       { name: 'לה ליגה', key: 'spanish', color: '#007bff', type: 'club', region: 'ספרד', order: 10, apiFootballId: 140, footballDataCode: 'PD', espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 11 },
       { name: 'קופה דל ריי', key: 'spanish-cup', color: '#0056b3', type: 'club', region: 'ספרד', order: 11, apiFootballId: 143, footballDataCode: null, espnLeagueCode: 'esp.copa_del_rey', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 13 },
@@ -286,10 +286,10 @@ router.post('/seed-european', requireAdmin, async (req, res) => {
       // footballDataCode נשאר ריק בכוונה גם למונדיאל וליורו, שיש להם קוד
       // כזה: football-data דורש מפתח, ובסדר העדיפויות הוא קודם ל-ESPN -
       // כך שבלי מפתח הייבוא היה נעצר בשגיאה במקום ליפול ל-ESPN
-      { name: 'ליגת האומות', key: 'nations-league', color: '#0b3d91', type: 'national', region: 'אירופה', order: 70, apiFootballId: 5, footballDataCode: null, espnLeagueCode: 'uefa.nations', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['ליגת האומות', 'Nations League'], exact: ['ליגת האומות', 'ליגת האומות של אופ"א', 'UEFA Nations League'] } },
-      { name: 'מוקדמות המונדיאל (אירופה)', key: 'world-cup-qual-uefa', color: '#146b3a', type: 'national', region: 'אירופה', order: 71, apiFootballId: 32, footballDataCode: null, espnLeagueCode: 'fifa.worldq.uefa', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['מוקדמות מונדיאל אירופה', 'מוקדמות מונדיאל, אירופה', 'מוקדמות המונדיאל אירופה', 'מוקדמות מונדיאל'], country: 'אירופה', exact: ['מוקדמות מונדיאל אירופה', 'מוקדמות מונדיאל, אירופה', 'מוקדמות המונדיאל, אירופה', 'מוקדמות מונדיאל - אירופה', 'World Cup Qualification, UEFA'] } },
+      { name: 'ליגת האומות', key: 'nations-league', color: '#0b3d91', type: 'national', region: 'אירופה', order: 70, apiFootballId: 5, footballDataCode: null, espnLeagueCode: 'uefa.nations', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['ליגת האומות', 'ליגת האומות של אופא', 'Nations League'], exact: ['ליגת האומות', 'ליגת האומות של אופ"א', 'UEFA Nations League'] } },
+      { name: 'מוקדמות המונדיאל (אירופה)', key: 'world-cup-qual-uefa', color: '#146b3a', type: 'national', region: 'אירופה', order: 71, apiFootballId: 32, footballDataCode: null, espnLeagueCode: 'fifa.worldq.uefa', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['מוקדמות מונדיאל אירופה', 'מוקדמות מונדיאל', 'מוקדמות המונדיאל', 'מוקדמות גביע העולם', 'מוקדמות', 'World Cup Qualification'], country: 'אירופה', exact: ['מוקדמות מונדיאל אירופה', 'מוקדמות מונדיאל, אירופה', 'מוקדמות המונדיאל, אירופה', 'מוקדמות מונדיאל - אירופה', 'World Cup Qualification, UEFA'] } },
       { name: 'מונדיאל', key: 'world-cup', color: '#b8860b', type: 'national', region: 'עולם', order: 72, apiFootballId: 1, footballDataCode: null, espnLeagueCode: 'fifa.world', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['מונדיאל', 'גביע העולם', 'World Cup'], exact: ['מונדיאל', 'גביע העולם', 'מונדיאל 2026', 'גביע העולם 2026', 'FIFA World Cup'] } },
-      { name: 'אליפות אירופה (יורו)', key: 'euro', color: '#1d4ed8', type: 'national', region: 'אירופה', order: 73, apiFootballId: 4, footballDataCode: null, espnLeagueCode: 'uefa.euro', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['אליפות אירופה', 'יורו', 'European Championship'], exact: ['אליפות אירופה', 'יורו 2028', 'אליפות אירופה 2028', 'UEFA European Championship'] } }
+      { name: 'אליפות אירופה (יורו)', key: 'euro', color: '#1d4ed8', type: 'national', region: 'אירופה', order: 73, apiFootballId: 4, footballDataCode: null, espnLeagueCode: 'uefa.euro', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['אליפות אירופה', 'יורו', 'EURO', 'European Championship'], exact: ['אליפות אירופה', 'יורו 2028', 'אליפות אירופה 2028', 'UEFA European Championship'] } }
     ];
 
     const created = [];
@@ -379,7 +379,13 @@ router.post('/seed-european', requireAdmin, async (req, res) => {
           country: candidates[0].country
         });
       } else {
-        unresolved365.push({ league: doc.name, candidates: candidates.slice(0, 8) });
+        // כולל את מה שחיפשנו: כשאין תוצאה בכלל, השאלה הבאה היא תמיד
+        // "ומה בדיוק חיפשת", וממנה ממשיכים לחיפוש הידני
+        unresolved365.push({
+          league: doc.name,
+          tried: seek.names,
+          candidates: candidates.slice(0, 8)
+        });
       }
     }
 

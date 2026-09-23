@@ -269,11 +269,14 @@ function LeaguesManagement() {
 
         // לא הוכרע לבד - נשאר לאדמין, עם המועמדים שנמצאו
         (data.unresolved365 || []).forEach((u) => {
+          const tried = (u.tried || []).slice(0, 3).join(', ');
           const detail = u.error
             ? u.error
             : u.candidates && u.candidates.length > 0
               ? `${u.candidates.length} מועמדים - בחר ידנית בעריכת הליגה`
-              : 'לא נמצאה תחרות תואמת ב-365';
+              // בלי לומר מה חיפשנו, "לא נמצאה" הוא מבוי סתום. עם זה, אפשר
+              // להמשיך משם בחיפוש הידני שבעריכת הליגה
+              : `לא נמצאה ב-365 (חיפשתי: ${tried || '—'}) - חפש ידנית בעריכת הליגה`;
           toast.warning(`${u.league}: ${detail}`);
         });
       } else {
