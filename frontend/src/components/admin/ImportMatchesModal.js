@@ -453,7 +453,14 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
 
           {!loading && fixtures.length === 0 && !error && (
             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-3, #666)' }}>
-              אין משחקים זמינים בטווח הנבחר
+              {/* הטווח מוצג במפורש: טורניר שאינו בעונתו נראה בדיוק כמו תקלה,
+                  וההבדל היחיד הוא הידיעה מה בכלל נבדק */}
+              אין משחקים בטווח {rangeMode === 'range'
+                ? `${customFrom} עד ${customTo}`
+                : `${days} הימים הקרובים`}
+              <div style={{ fontSize: '11px', color: 'var(--text-4, #aaa)', marginTop: '0.4rem' }}>
+                תחרות שאינה בעונתה תחזור ריקה. אפשר להרחיב את הטווח או לבחור תאריכים.
+              </div>
             </div>
           )}
 
