@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import TeamLogo from '../TeamLogo';
 import LeagueLogo from '../LeagueLogo';
 import ImportMatchesModal from './ImportMatchesModal';
+import WeekPicker from './WeekPicker';
 import { toast } from '../../services/toast';
 import Score from '../Score';
 
@@ -36,27 +37,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
   const [syncingResults, setSyncingResults] = useState(false);
   const [syncingOdds, setSyncingOdds] = useState(false);
 
-  // State עבור ה-dropdown המקונן
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [hoveredSeason, setHoveredSeason] = useState(null);
-  const [hoveredMonth, setHoveredMonth] = useState(null);
-  const dropdownRef = useRef(null);
-
   useEffect(() => {
     loadData();
-  }, []);
-
-  // סגירת dropdown בלחיצה מחוץ לרכיב
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false);
-        setHoveredSeason(null);
-        setHoveredMonth(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // סנכרון עם השבוע הנבחר מהאב
@@ -889,176 +871,13 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
       <div className="card" style={{ position: 'relative', zIndex: 100 }}>
         <h3>בחר שבוע לניהול</h3>
         
-        <div ref={dropdownRef} style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
-          <div
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            style={{
-              padding: '0.75rem',
-              border: '1px solid var(--border-2, #dee2e6)',
-              borderRadius: '4px',
-              backgroundColor: 'var(--surface, #fff)',
-              cursor: 'pointer',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              userSelect: 'none'
-            }}
-          >
-            <span>{getSelectedWeekDisplay()}</span>
-            <span style={{ 
-              fontSize: '12px',
-              transition: 'transform 0.2s',
-              transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)'
-            }}>
-              ▼
-            </span>
-          </div>
-
-          {isDropdownOpen && (
-            <div style={{
-              position: 'absolute',
-              top: '100%',
-              right: 0,
-              width: '100%',
-              marginTop: '4px',
-              backgroundColor: 'var(--surface, #fff)',
-              border: '1px solid var(--border-2, #dee2e6)',
-              borderRadius: '4px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              zIndex: 10000,
-              maxHeight: 'none',
-              overflow: 'visible'
-            }}>
-              {Object.keys(organizedWeeks).sort().reverse().map(season => (
-                <div
-                  key={season}
-                  style={{ position: 'relative' }}
-                  onMouseEnter={() => setHoveredSeason(season)}
-                  onMouseLeave={() => setHoveredSeason(null)}
-                >
-                  <div style={{
-                    padding: '0.75rem',
-                    borderBottom: '1px solid var(--border, #f0f0f0)',
-                    backgroundColor: hoveredSeason === season ? 'var(--surface-2, #f8f9fa)' : 'white',
-                    cursor: 'pointer',
-                    fontWeight: '500',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}>
-                    <span>עונה {season}</span>
-                    <span style={{ fontSize: '12px' }}>◀</span>
-                  </div>
-
-                  {hoveredSeason === season && (
-                    <div 
-                      style={{
-                        position: 'absolute',
-                        right: '100%',
-                        top: 0,
-                        width: '200px',
-                        marginRight: '-2px',
-                        backgroundColor: 'var(--surface, #fff)',
-                        border: '1px solid var(--border-2, #dee2e6)',
-                        borderRadius: '4px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                        zIndex: 10001,
-                        maxHeight: 'none',
-                        overflow: 'visible'
-                      }}
-                      onMouseEnter={() => setHoveredSeason(season)}
-                    >
-                      {Object.keys(organizedWeeks[season])
-                        .sort((a, b) => parseInt(b) - parseInt(a))
-                        .map(monthNum => {
-                          const monthLabel = months.find(m => m.value === parseInt(monthNum))?.label || monthNum;
-                          const monthKey = `${season}-${monthNum}`;
-                          
-                          return (
-                            <div
-                              key={monthKey}
-                              style={{ position: 'relative' }}
-                              onMouseEnter={() => setHoveredMonth(monthKey)}
-                              onMouseLeave={() => setHoveredMonth(null)}
-                            >
-                              <div style={{
-                                padding: '0.65rem 0.75rem',
-                                borderBottom: '1px solid var(--border, #f0f0f0)',
-                                backgroundColor: hoveredMonth === monthKey ? 'var(--surface-2, #f8f9fa)' : 'white',
-                                cursor: 'pointer',
-                                fontSize: '14px',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center'
-                              }}>
-                                <span>{monthLabel}</span>
-                                <span style={{ fontSize: '11px' }}>◀</span>
-                              </div>
-
-                              {hoveredMonth === monthKey && (
-                                <div 
-                                  style={{
-                                    position: 'absolute',
-                                    right: '100%',
-                                    top: 0,
-                                    width: '250px',
-                                    marginRight: '-2px',
-                                    backgroundColor: 'var(--surface, #fff)',
-                                    border: '1px solid var(--border-2, #dee2e6)',
-                                    borderRadius: '4px',
-                                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                                    zIndex: 10002,
-                                    maxHeight: 'none',
-                                    overflow: 'visible'
-                                  }}
-                                  onMouseEnter={() => setHoveredMonth(monthKey)}
-                                >
-                                  {organizedWeeks[season][monthNum].map(week => (
-                                    <div
-                                      key={week._id}
-                                      onClick={() => handleSelectWeek(week)}
-                                      style={{
-                                        padding: '0.65rem 0.75rem',
-                                        borderBottom: '1px solid var(--border, #f0f0f0)',
-                                        backgroundColor: selectedWeek?._id === week._id ? 'var(--accent-color)' : 'white',
-                                        color: selectedWeek?._id === week._id ? 'white' : '#495057',
-                                        cursor: 'pointer',
-                                        fontSize: '14px',
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        transition: 'background-color 0.2s'
-                                      }}
-                                      onMouseEnter={(e) => {
-                                        if (selectedWeek?._id !== week._id) {
-                                          e.currentTarget.style.backgroundColor = 'var(--surface-2, #f8f9fa)';
-                                        }
-                                      }}
-                                      onMouseLeave={(e) => {
-                                        if (selectedWeek?._id !== week._id) {
-                                          e.currentTarget.style.backgroundColor = 'white';
-                                        }
-                                      }}
-                                    >
-                                      <span>{week.name}</span>
-                                      <div style={{ display: 'flex', gap: '4px' }}>
-                                        {week.locked && <span style={{ fontSize: '11px' }}>🔒</span>}
-                                        {week.active && !week.locked && <span style={{ fontSize: '11px' }}>🟢</span>}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <WeekPicker
+          organizedWeeks={organizedWeeks}
+          months={months}
+          selectedWeek={selectedWeek}
+          onSelect={handleSelectWeek}
+          label={getSelectedWeekDisplay()}
+        />
 
         {selectedWeek && (
           <div style={{ 

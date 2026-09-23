@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
+import { panelStyle, rowStyle, triggerStyle, useDismiss } from './pickerUi';
 
 // בורר התחרות בייבוא: רשימה נפתחת, סגורה כברירת מחדל.
 //
@@ -10,68 +11,13 @@ import React, { useEffect, useRef, useState } from 'react';
 // הקבוצה של הבחירה הנוכחית נפרשת מעצמה בפתיחה, כדי שהמצב הקיים יהיה
 // גלוי בלי לחפש אותו.
 
-const panelStyle = {
-  position: 'absolute',
-  top: 'calc(100% + 4px)',
-  right: 0,
-  left: 0,
-  zIndex: 30,
-  background: 'var(--surface, #fff)',
-  border: '1px solid var(--border, #e6e9ee)',
-  borderRadius: '12px',
-  boxShadow: '0 8px 28px rgba(0,0,0,0.14)',
-  // החלון שמעליו חתוך ב-overflow: hidden, ולכן הרשימה נשארת בגובה
-  // שנכנס בתוכו במקום להיחתך באמצע שורה
-  maxHeight: '260px',
-  overflowY: 'auto',
-  padding: '0.25rem'
-};
-
-const rowStyle = (selected) => ({
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.5rem',
-  width: '100%',
-  padding: '0.5rem 0.6rem',
-  border: 'none',
-  borderRadius: '8px',
-  background: selected ? 'var(--me-bg, #dbeafe)' : 'transparent',
-  color: selected ? 'var(--me-fg, #14508f)' : 'var(--text, #333)',
-  fontWeight: selected ? 800 : 600,
-  fontSize: '13px',
-  textAlign: 'right',
-  cursor: 'pointer',
-  font: 'inherit',
-  WebkitTapHighlightColor: 'transparent'
-});
-
 function CompetitionPicker({
   groups, allLeagues, value, onChange, disabled,
   allValue, groupPrefix, placeholder = 'בחר תחרות'
 }) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(null);
-  const boxRef = useRef(null);
-
-  // סגירה בלחיצה בחוץ וב-Escape. בלעדיהן רשימה פתוחה נשארת מרחפת מעל
-  // המסך וחוסמת את מה שמתחתיה
-  useEffect(() => {
-    if (!open) return undefined;
-
-    const onPointer = (e) => {
-      if (boxRef.current && !boxRef.current.contains(e.target)) setOpen(false);
-    };
-    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
-
-    document.addEventListener('mousedown', onPointer);
-    document.addEventListener('touchstart', onPointer);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onPointer);
-      document.removeEventListener('touchstart', onPointer);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
+  const boxRef = useDismiss(open, () => setOpen(false));
 
   const groupOfValue = () => {
     if (!value || value === allValue) return null;
@@ -108,12 +54,7 @@ function CompetitionPicker({
           // הקבוצה של הבחירה הנוכחית נפרשת מעצמה
           if (next) setExpanded(groupOfValue());
         }}
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          width: '100%', cursor: disabled ? 'default' : 'pointer',
-          font: 'inherit', fontSize: '13px', fontWeight: 700,
-          color: 'var(--text, #333)', textAlign: 'right'
-        }}
+        style={triggerStyle(disabled)}
       >
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {label()}
