@@ -246,6 +246,20 @@ export const THEMES = {
     category: 'נבחרות'
   },
 
+  israel: {
+    name: 'ישראל',
+    colors: {
+      primary: '#0038B8',
+      secondary: '#ffffff',
+      accent: '#0038B8',
+      background: '#ffffff',
+      headerBg: 'linear-gradient(135deg, #0038B8 0%, #ffffff 100%)'
+    },
+    logo: '🇮🇱',
+    logoType: 'emoji',
+    category: 'נבחרות'
+  },
+
   spain: {
     name: 'ספרד',
     colors: {
