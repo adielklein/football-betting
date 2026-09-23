@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import TeamLogo from '../TeamLogo';
+import LeagueLogo from '../LeagueLogo';
 import ImportMatchesModal from './ImportMatchesModal';
 import { toast } from '../../services/toast';
 import Score from '../Score';
@@ -1432,6 +1433,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                     marginBottom: '0.5rem'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <LeagueLogo league={match.leagueId} size={16} />
                       <span
                         style={{
                           padding: '2px 8px',

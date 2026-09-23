@@ -91,6 +91,15 @@ const leagueSchema = new mongoose.Schema({
     default: null
   },
 
+  // שם התחרות אצל 365, כפי שהוחזר כשהמזהה נקבע. לתצוגה בלבד: מזהה לבדו
+  // אינו מגלה שהתחברנו ל"ליגת האומות" של קונקקאף במקום של אופ"א, והשם
+  // הופך התאמה שגויה לגלויה במקום להתגלות רק כשמייבאים משחקים
+  scores365Name: {
+    type: String,
+    default: null,
+    trim: true
+  },
+
   createdAt: {
     type: Date, 
     default: Date.now 

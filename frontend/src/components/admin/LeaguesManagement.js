@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from '../../services/toast';
+import LeagueLogo from '../LeagueLogo';
 import { api } from '../../services/api';
 
 // הספק שבו הליגה תשתמש בפועל, באותו סדר עדיפויות של pickProvider בשרת.
@@ -131,7 +132,7 @@ function LeaguesManagement() {
   const [editForm, setEditForm] = useState({});
   const [newLeague, setNewLeague] = useState({
     name: '', key: '', color: '#6c757d', type: 'club', region: '', active: true, order: 0, apiFootballId: '',
-    footballDataCode: '', espnLeagueCode: '', sofaScoreTournamentId: '', scores365CompetitionId: ''
+    footballDataCode: '', espnLeagueCode: '', sofaScoreTournamentId: '', scores365CompetitionId: '', scores365Name: ''
   });
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
@@ -174,7 +175,7 @@ function LeaguesManagement() {
       if (response.ok) {
         setNewLeague({
           name: '', key: '', color: '#6c757d', type: 'club', region: '', active: true, order: 0, apiFootballId: '',
-          footballDataCode: '', espnLeagueCode: '', sofaScoreTournamentId: '', scores365CompetitionId: ''
+          footballDataCode: '', espnLeagueCode: '', sofaScoreTournamentId: '', scores365CompetitionId: '', scores365Name: ''
         });
         await loadLeagues();
         toast.success('ליגה נוצרה בהצלחה!');
@@ -302,7 +303,8 @@ function LeaguesManagement() {
       footballDataCode: league.footballDataCode ?? '',
       espnLeagueCode: league.espnLeagueCode ?? '',
       sofaScoreTournamentId: league.sofaScoreTournamentId ?? '',
-      scores365CompetitionId: league.scores365CompetitionId ?? ''
+      scores365CompetitionId: league.scores365CompetitionId ?? '',
+      scores365Name: league.scores365Name ?? ''
     });
   };
 
@@ -458,7 +460,11 @@ function LeaguesManagement() {
         </div>
 
         <Competition365Search
-          onPick={(c) => setNewLeague(prev => ({ ...prev, scores365CompetitionId: String(c.id) }))}
+          onPick={(c) => setNewLeague(prev => ({
+            ...prev,
+            scores365CompetitionId: String(c.id),
+            scores365Name: c.name || ''
+          }))}
         />
 
         <button onClick={handleCreateLeague} style={{
@@ -504,8 +510,11 @@ function LeaguesManagement() {
                     backgroundColor: league.color,
                     borderRadius: '8px',
                     flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                     boxShadow: `0 2px 6px ${league.color}44`
-                  }}></div>
+                  }}>
+                    <LeagueLogo league={league} size={20} />
+                  </div>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text, #333)' }}>
                       {league.name}
@@ -514,6 +523,20 @@ function LeaguesManagement() {
                       <span style={{ fontFamily: 'monospace', fontSize: '10px', color: 'var(--text-4, #aaa)' }}>
                         {league.key}
                       </span>
+                      {/* השם אצל 365. התאמה שגויה - "ליגת האומות" של קונקקאף
+                          במקום של אופ"א - נראית כאן מיד, במקום להתגלות רק
+                          כשמייבאים משחקים של נבחרות אחרות לגמרי */}
+                      {league.scores365Name && (
+                        <span
+                          title="שם התחרות אצל 365scores"
+                          style={{
+                            padding: '1px 6px', borderRadius: '10px', fontSize: '10px',
+                            background: 'var(--surface-3, #f0f2f5)', color: 'var(--text-3, #888)'
+                          }}
+                        >
+                          365: {league.scores365Name}
+                        </span>
+                      )}
                       <span style={{
                         padding: '1px 6px',
                         backgroundColor: league.type === 'club' ? 'var(--info-bg, #e3f2fd)' : league.type === 'national' ? 'var(--warn-bg, #fff3cd)' : 'var(--surface-2, #f8f9fa)',
@@ -675,7 +698,11 @@ function LeaguesManagement() {
                     title="אפשר למצוא אותו בחיפוש שמתחת" />
                 </div>
                 <Competition365Search
-                  onPick={(c) => setEditForm(prev => ({ ...prev, scores365CompetitionId: String(c.id) }))}
+                  onPick={(c) => setEditForm(prev => ({
+                    ...prev,
+                    scores365CompetitionId: String(c.id),
+                    scores365Name: c.name || ''
+                  }))}
                 />
               </div>
             </div>

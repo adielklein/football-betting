@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import TeamLogo from '../TeamLogo';
+import LeagueLogo from '../LeagueLogo';
 import LiveScore from './LiveScore';
 import GoalFlash from './GoalFlash';
 import useLiveScores from '../../services/useLiveScores';
@@ -252,11 +253,14 @@ function AllBetsViewer({ weeks, user }) {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         <span style={{ fontSize: '12px', color: 'var(--text-4, #999)', transition: 'transform 0.2s', transform: expandedMatches[match._id] ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
-                        <span style={{
-                          padding: '2px 8px', backgroundColor: getLeagueColor(match), color: 'white',
-                          borderRadius: '6px', fontSize: '10px', fontWeight: '700',
-                          boxShadow: `0 2px 4px ${getLeagueColor(match)}33`
-                        }}>{getLeagueName(match)}</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <LeagueLogo league={match.leagueId} size={14} />
+                          <span style={{
+                            padding: '2px 8px', backgroundColor: getLeagueColor(match), color: 'white',
+                            borderRadius: '6px', fontSize: '10px', fontWeight: '700',
+                            boxShadow: `0 2px 4px ${getLeagueColor(match)}33`
+                          }}>{getLeagueName(match)}</span>
+                        </span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         {myBet && match.result && match.result.team1Goals !== undefined && (

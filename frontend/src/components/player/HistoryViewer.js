@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import TeamLogo from '../TeamLogo';
+import LeagueLogo from '../LeagueLogo';
 import Score from '../Score';
 
 function HistoryViewer({ weeks, user }) {
@@ -253,11 +254,14 @@ function HistoryViewer({ weeks, user }) {
                       animation: `slideUp 0.25s ease ${index * 0.04}s both`
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                        <span style={{
-                          padding: '2px 8px', backgroundColor: getLeagueColor(match), color: 'white',
-                          borderRadius: '6px', fontSize: '10px', fontWeight: '700',
-                          boxShadow: `0 2px 4px ${getLeagueColor(match)}33`
-                        }}>{getLeagueName(match)}</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <LeagueLogo league={match.leagueId} size={14} />
+                          <span style={{
+                            padding: '2px 8px', backgroundColor: getLeagueColor(match), color: 'white',
+                            borderRadius: '6px', fontSize: '10px', fontWeight: '700',
+                            boxShadow: `0 2px 4px ${getLeagueColor(match)}33`
+                          }}>{getLeagueName(match)}</span>
+                        </span>
                         <span style={{ fontSize: '11px', color: 'var(--text-4, #aaa)', fontWeight: '500' }}>{match.date} • {match.time}</span>
                       </div>
 

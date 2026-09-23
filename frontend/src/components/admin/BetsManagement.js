@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import TeamLogo from '../TeamLogo';
+import LeagueLogo from '../LeagueLogo';
 import { toast } from '../../services/toast';
 import Score from '../Score';
 
@@ -238,6 +239,12 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                         <TeamLogo name={match.team2} src={match.team2LogoUrl} />
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-3, #888)', marginTop: '1px' }}>
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center',
+                          marginLeft: '4px', verticalAlign: 'middle'
+                        }}>
+                          <LeagueLogo league={match.leagueId} size={14} />
+                        </span>
                         <span style={{
                           display: 'inline-block', width: '8px', height: '8px',
                           backgroundColor: leagueColor, borderRadius: '50%',

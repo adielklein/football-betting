@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import TeamLogo from '../TeamLogo';
+import LeagueLogo from '../LeagueLogo';
 import MatchInsightsModal from './MatchInsightsModal';
 import LiveScore from './LiveScore';
 import GoalFlash from './GoalFlash';
@@ -11,7 +12,7 @@ import Score from '../Score';
 
 // שם קבוצה לחיץ - פותח את חלון הנתונים. התג על הלוגו מסמן שאפשר ללחוץ
 // בלי להוסיף גובה לשורה הצפופה.
-function TeamPicker({ name, onClick }) {
+function TeamPicker({ name, logo, onClick }) {
   return (
     <button
       type="button"
@@ -47,7 +48,9 @@ function TeamPicker({ name, onClick }) {
       {/* הסימון יושב ליד השם ולא על הלוגו. כשהוא היה מוצמד לפינת הלוגו הוא
           כיסה חלק ממנו, והסמל של הקבוצה הוא בדיוק מה שמזהים לפיו בסריקה
           מהירה של שלושה-עשר משחקים. */}
-      <TeamLogo name={name} />
+      {/* הסמל שנשמר בייבוא מ-365 הוא של הקבוצה הנכונה. בלעדיו הרכיב
+          מנחש לפי השם מול מקור אחר, וזה מה שהיה כאן עד עכשיו */}
+      <TeamLogo name={name} src={logo} />
       <span style={{
         display: 'inline-flex', alignItems: 'center', gap: '3px',
         fontWeight: 700, maxWidth: '100%'
@@ -437,6 +440,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   }}>
                     #{index + 1}
                   </span>
+                  <LeagueLogo league={match.leagueId} size={16} />
                   <span style={{
                     padding: '2px 8px',
                     backgroundColor: getLeagueColor(match),
@@ -498,6 +502,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
               }}>
                 <TeamPicker
                   name={match.team1}
+                  logo={match.team1LogoUrl}
                   onClick={() => setInsightsFor({ match, focusTeam: 1 })}
                 />
 
@@ -579,6 +584,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
 
                 <TeamPicker
                   name={match.team2}
+                  logo={match.team2LogoUrl}
                   onClick={() => setInsightsFor({ match, focusTeam: 2 })}
                 />
               </div>

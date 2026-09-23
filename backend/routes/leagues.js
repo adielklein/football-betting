@@ -45,7 +45,8 @@ router.post('/', requireAdmin, async (req, res) => {
   try {
     const {
       name, key, color, type, region, active, order, apiFootballId,
-      footballDataCode, espnLeagueCode, sofaScoreTournamentId, scores365CompetitionId
+      footballDataCode, espnLeagueCode, sofaScoreTournamentId, scores365CompetitionId,
+      scores365Name
     } = req.body;
 
     // בדיקת שדות חובה
@@ -73,7 +74,8 @@ router.post('/', requireAdmin, async (req, res) => {
       footballDataCode: footballDataCode == null || footballDataCode === '' ? null : footballDataCode,
       espnLeagueCode: espnLeagueCode == null || espnLeagueCode === '' ? null : espnLeagueCode,
       sofaScoreTournamentId: toIntOrNull(sofaScoreTournamentId),
-      scores365CompetitionId: toIntOrNull(scores365CompetitionId)
+      scores365CompetitionId: toIntOrNull(scores365CompetitionId),
+      scores365Name: scores365Name || null
     });
     
     await league.save();
@@ -98,7 +100,8 @@ router.patch('/:id', requireAdmin, async (req, res) => {
   try {
     const {
       name, key, color, type, region, active, order, apiFootballId,
-      footballDataCode, espnLeagueCode, sofaScoreTournamentId, scores365CompetitionId
+      footballDataCode, espnLeagueCode, sofaScoreTournamentId, scores365CompetitionId,
+      scores365Name
     } = req.body;
 
     // אם משנים מפתח, בדוק שהוא ייחודי
@@ -127,7 +130,12 @@ router.patch('/:id', requireAdmin, async (req, res) => {
     if (footballDataCode !== undefined) updateData.footballDataCode = footballDataCode === '' ? null : footballDataCode;
     if (espnLeagueCode !== undefined) updateData.espnLeagueCode = espnLeagueCode === '' ? null : espnLeagueCode;
     if (sofaScoreTournamentId !== undefined) updateData.sofaScoreTournamentId = toIntOrNull(sofaScoreTournamentId);
-    if (scores365CompetitionId !== undefined) updateData.scores365CompetitionId = toIntOrNull(scores365CompetitionId);
+    if (scores365CompetitionId !== undefined) {
+      updateData.scores365CompetitionId = toIntOrNull(scores365CompetitionId);
+      // השם מתלווה למזהה: כשנבחרה תחרות מהחיפוש הוא מגיע איתה, וכשהמזהה
+      // הוחלף או נמחק ביד השם הישן כבר לא מתאר דבר
+      updateData.scores365Name = scores365Name || null;
+    }
 
     const league = await League.findByIdAndUpdate(
       req.params.id,
@@ -286,10 +294,10 @@ router.post('/seed-european', requireAdmin, async (req, res) => {
       // footballDataCode נשאר ריק בכוונה גם למונדיאל וליורו, שיש להם קוד
       // כזה: football-data דורש מפתח, ובסדר העדיפויות הוא קודם ל-ESPN -
       // כך שבלי מפתח הייבוא היה נעצר בשגיאה במקום ליפול ל-ESPN
-      { name: 'ליגת האומות', key: 'nations-league', color: '#0b3d91', type: 'national', region: 'אירופה', order: 70, apiFootballId: 5, footballDataCode: null, espnLeagueCode: 'uefa.nations', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['ליגת האומות', 'ליגת האומות של אופא', 'Nations League'], exact: ['ליגת האומות', 'ליגת האומות של אופ"א', 'UEFA Nations League'] } },
-      { name: 'מוקדמות המונדיאל (אירופה)', key: 'world-cup-qual-uefa', color: '#146b3a', type: 'national', region: 'אירופה', order: 71, apiFootballId: 32, footballDataCode: null, espnLeagueCode: 'fifa.worldq.uefa', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['מוקדמות מונדיאל אירופה', 'מוקדמות מונדיאל', 'מוקדמות המונדיאל', 'מוקדמות גביע העולם', 'מוקדמות', 'World Cup Qualification'], country: 'אירופה', exact: ['מוקדמות מונדיאל אירופה', 'מוקדמות מונדיאל, אירופה', 'מוקדמות המונדיאל, אירופה', 'מוקדמות מונדיאל - אירופה', 'World Cup Qualification, UEFA'] } },
-      { name: 'מונדיאל', key: 'world-cup', color: '#b8860b', type: 'national', region: 'עולם', order: 72, apiFootballId: 1, footballDataCode: null, espnLeagueCode: 'fifa.world', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['מונדיאל', 'גביע העולם', 'World Cup'], exact: ['מונדיאל', 'גביע העולם', 'מונדיאל 2026', 'גביע העולם 2026', 'FIFA World Cup'] } },
-      { name: 'אליפות אירופה (יורו)', key: 'euro', color: '#1d4ed8', type: 'national', region: 'אירופה', order: 73, apiFootballId: 4, footballDataCode: null, espnLeagueCode: 'uefa.euro', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['אליפות אירופה', 'יורו', 'EURO', 'European Championship'], exact: ['אליפות אירופה', 'יורו 2028', 'אליפות אירופה 2028', 'UEFA European Championship'] } }
+      { name: 'ליגת האומות', key: 'nations-league', color: '#0b3d91', type: 'national', region: 'אירופה', order: 70, apiFootballId: 5, footballDataCode: null, espnLeagueCode: 'uefa.nations', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['ליגת האומות של אופ"א', 'ליגת האומות אופא', 'ליגת האומות', 'Nations League'], country: 'אירופה', exact: ['ליגת האומות של אופ"א', 'ליגת האומות - אופ"א', 'ליגת האומות', 'UEFA Nations League'], exclude: ['קונקקאף', 'קונקאקף', 'concacaf', 'אסיה', 'אפריקה', 'נשים', 'women', 'נוער', 'עד גיל', 'u2', 'u1'] } },
+      { name: 'מוקדמות המונדיאל (אירופה)', key: 'world-cup-qual-uefa', color: '#146b3a', type: 'national', region: 'אירופה', order: 71, apiFootballId: 32, footballDataCode: null, espnLeagueCode: 'fifa.worldq.uefa', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['מוקדמות מונדיאל אירופה', 'מוקדמות מונדיאל', 'מוקדמות המונדיאל', 'מוקדמות גביע העולם', 'מוקדמות', 'World Cup Qualification'], country: 'אירופה', exclude: ['נשים', 'women', 'נוער', 'עד גיל', 'u2', 'u1'], exact: ['מוקדמות מונדיאל אירופה', 'מוקדמות מונדיאל, אירופה', 'מוקדמות המונדיאל, אירופה', 'מוקדמות מונדיאל - אירופה', 'World Cup Qualification, UEFA'] } },
+      { name: 'מונדיאל', key: 'world-cup', color: '#b8860b', type: 'national', region: 'עולם', order: 72, apiFootballId: 1, footballDataCode: null, espnLeagueCode: 'fifa.world', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['מונדיאל', 'גביע העולם', 'World Cup'], exclude: ['נשים', 'women', 'מועדונים', 'club', 'נוער', 'עד גיל', 'u2', 'u1', 'חופים', 'futsal', 'מוקדמות'], exact: ['מונדיאל', 'גביע העולם', 'מונדיאל 2026', 'גביע העולם 2026', 'FIFA World Cup'] } },
+      { name: 'אליפות אירופה (יורו)', key: 'euro', color: '#1d4ed8', type: 'national', region: 'אירופה', order: 73, apiFootballId: 4, footballDataCode: null, espnLeagueCode: 'uefa.euro', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['אליפות אירופה', 'יורו', 'EURO', 'European Championship'], exclude: ['נשים', 'women', 'נוער', 'עד גיל', 'u2', 'u1', 'futsal', 'מוקדמות'], exact: ['אליפות אירופה', 'יורו 2028', 'אליפות אירופה 2028', 'UEFA European Championship'] } }
     ];
 
     const created = [];
@@ -352,6 +360,19 @@ router.post('/seed-european', requireAdmin, async (req, res) => {
             if (inCountry.length > 0) list = inCountry;
           }
 
+          // פסילה מפורשת. "ליגת האומות" היא גם של קונקקאף, "מונדיאל" הוא
+          // גם של נשים ושל נבחרות נוער - וכל אלה תחרויות אחרות לגמרי
+          // שנראות כמו התאמה מצוינת לפי השם
+          if (Array.isArray(seek.exclude)) {
+            const banned = seek.exclude.map(normalizeName);
+            const kept = list.filter((c) => {
+              const name = normalizeName(c.name);
+              return !banned.some((word) => name.includes(word));
+            });
+            // אם הפסילה מחקה הכול, עדיף לדווח על המועמדים מאשר לאבד אותם
+            if (kept.length > 0) list = kept;
+          }
+
           // שם מלא ומדויק הוא הצמצום החלופי, וכאן הוא הכרחי: "מונדיאל"
           // מוכל גם ב"מוקדמות מונדיאל", והשוואה מלאה מפרידה ביניהם בלי
           // לנחש
@@ -371,6 +392,9 @@ router.post('/seed-european', requireAdmin, async (req, res) => {
 
       if (candidates.length === 1) {
         doc.scores365CompetitionId = candidates[0].id;
+        // השם נשמר כדי שיהיה אפשר לראות במסך למה התחברנו. מזהה לבדו לא
+        // מגלה שהתחברנו לליגת האומות של קונקקאף במקום של אופ"א
+        doc.scores365Name = candidates[0].name || null;
         await doc.save();
         resolved365.push({
           league: doc.name,
