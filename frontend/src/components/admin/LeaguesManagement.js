@@ -140,6 +140,7 @@ function LeaguesManagement() {
   // בדיקה מול 365: לא מה ששמרנו, אלא מה שהמשחקים עצמם אומרים
   const [verifying, setVerifying] = useState(false);
   const [verification, setVerification] = useState(null);
+  const [health, setHealth] = useState(null);
 
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
@@ -318,6 +319,23 @@ function LeaguesManagement() {
     }
   };
 
+  const handleHealth = async () => {
+    setVerifying(true);
+    try {
+      const response = await fetch(`${API_URL}/external/365-health`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'failed');
+      setHealth(data);
+      const down = (data.probes || []).filter((p) => !p.ok);
+      if (down.length === 0) toast.success('כל הנתיבים של 365 עונים');
+      else toast.warning(`${down.length} נתיבים לא עונים: ${down.map((p) => p.name).join(', ')}`);
+    } catch (error) {
+      toast.error('שגיאה בבדיקת הנתיבים');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   const startEditing = (league) => {
     setEditingLeague(league);
     setEditForm({
@@ -393,6 +411,19 @@ function LeaguesManagement() {
             >
               {verifying ? '⏳ בודק...' : '🔍 בדוק מול 365'}
             </button>
+            <button
+              onClick={handleHealth}
+              disabled={verifying}
+              title="בודק את כל הנתיבים של 365 שאנחנו תלויים בהם ומדווח מה עונה ומה לא"
+              style={{
+                padding: '0.4rem 0.8rem',
+                background: verifying ? '#9e9e9e' : 'linear-gradient(135deg, #495057, #6c757d)',
+                color: 'white', border: 'none', borderRadius: '8px',
+                fontSize: '12px', fontWeight: '700', cursor: verifying ? 'default' : 'pointer'
+              }}
+            >
+              🩺 נתיבי 365
+            </button>
             {leagues.length === 0 && (
               <button
                 onClick={handleInitializeDefaultLeagues}
@@ -409,6 +440,36 @@ function LeaguesManagement() {
           </div>
         </div>
       </div>
+
+      {/* מצב הנתיבים עצמם. נתיב שמחזיר 404 הוא ההסבר לכל השאר */}
+      {health && (
+        <div className="card" style={{ marginBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+            <h2 style={{ fontSize: '0.95rem', margin: 0, fontWeight: '700' }}>🩺 נתיבי 365</h2>
+            <button onClick={() => setHealth(null)} className="btn" style={{ background: 'transparent', fontSize: '16px', padding: '0 0.3rem' }}>✖</button>
+          </div>
+          {health.probes.map((probe) => (
+            <div key={probe.path} style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              padding: '0.35rem 0.2rem', fontSize: '12px',
+              borderTop: '1px dashed var(--border, #eef1f4)'
+            }}>
+              <span style={{ fontSize: '13px' }}>{probe.ok ? '✅' : '❌'}</span>
+              <span style={{ fontWeight: 600, flex: 1, minWidth: 0 }}>{probe.name}</span>
+              <span style={{ fontFamily: 'monospace', fontSize: '10px', color: 'var(--text-4, #aaa)' }}>{probe.path}</span>
+              <span style={{
+                fontWeight: 800,
+                color: probe.ok ? 'var(--good-fg, #1a6b35)' : 'var(--bad-fg, #b3261e)'
+              }}>
+                {probe.status || '—'}
+              </span>
+              {probe.games != null && (
+                <span style={{ fontSize: '11px', color: 'var(--text-3, #888)' }}>{probe.games} משחקים</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* תוצאות הבדיקה מול 365 - מה שהמשחקים עצמם אומרים */}
       {verification && (

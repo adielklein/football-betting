@@ -63,6 +63,80 @@ router.get('/health', (req, res) => {
   });
 });
 
+// 🩺 מצב הנתיבים של 365.
+//
+// לספק הזה אין תיעוד ואין הבטחת יציבות: נתיב שעבד שנה שלמה החזיר יום
+// אחד 404, והייבוא הפסיק לעבוד בלי שאיש ידע למה. הבדיקה הזו פונה לכל
+// נתיב שאנחנו תלויים בו ומדווחת את הקוד שחזר - כך שהשאלה "מה 365
+// שינו" נענית בלחיצה, ולא בשעה של ניחושים.
+router.get('/365-health', requireAdmin, async (req, res) => {
+  const League = require('../models/League');
+
+  // תחרות אמיתית מהמערכת, כדי שהבדיקה תהיה על משהו שבאמת מבקשים
+  const league = await League.findOne({ scores365CompetitionId: { $ne: null } })
+    .sort({ order: 1 })
+    .lean();
+  const competitionId = league?.scores365CompetitionId || 7;
+
+  const two = (n) => String(n).padStart(2, '0');
+  const asApiDate = (d) => `${two(d.getDate())}/${two(d.getMonth() + 1)}/${d.getFullYear()}`;
+  const range = `&startDate=${asApiDate(new Date())}&endDate=${asApiDate(new Date(Date.now() + 7 * 864e5))}`;
+  const base = `appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6`;
+
+  const probes = [
+    { name: 'לוח משחקים (allscores)', path: `/games/allscores/?${base}&sports=1&competitions=${competitionId}${range}` },
+    { name: 'משחקים עתידיים (fixtures)', path: `/games/fixtures/?${base}&competitions=${competitionId}` },
+    { name: 'תוצאות (results)', path: `/games/results/?${base}&competitions=${competitionId}` },
+    { name: 'מצב חי (current)', path: `/games/current/?${base}&competitions=${competitionId}` },
+    { name: 'רשימת תחרויות', path: `/competitions/?${base}` },
+    { name: 'חיפוש תחרויות', path: `/search/?${base}&filter=competitions&query=${encodeURIComponent('ליגה')}` },
+    { name: 'טבלה (standings)', path: `/standings/?${base}&competitions=${competitionId}` }
+  ];
+
+  const check = async ({ name, path }) => {
+    const started = Date.now();
+    try {
+      const response = await fetch(`https://webws.365scores.com/web${path}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          Accept: 'application/json',
+          'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8',
+          Referer: 'https://www.365scores.com/'
+        }
+      });
+
+      let games = null;
+      let competitions = null;
+      if (response.ok) {
+        const json = await response.json().catch(() => ({}));
+        games = Array.isArray(json?.games) ? json.games.length : null;
+        competitions = Array.isArray(json?.competitions) ? json.competitions.length : null;
+      }
+
+      return {
+        name,
+        path: path.split('?')[0],
+        status: response.status,
+        ok: response.ok,
+        games,
+        competitions,
+        ms: Date.now() - started
+      };
+    } catch (err) {
+      return { name, path: path.split('?')[0], status: 0, ok: false, error: err.message, ms: Date.now() - started };
+    }
+  };
+
+  // בזה אחר זה: בדיקה שמציפה את הספק בשבע בקשות במקביל עלולה לייצר
+  // בדיוק את התקלה שהיא באה לאבחן
+  const results = [];
+  for (const probe of probes) {
+    results.push(await check(probe));
+  }
+
+  res.json({ competitionId, checkedAt: new Date(), probes: results });
+});
+
 const isValidYmd = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
 
 router.get('/fixtures', async (req, res) => {

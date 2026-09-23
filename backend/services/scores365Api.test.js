@@ -64,11 +64,19 @@ const ok = (games) => ({
 
 const fail = () => ({ ok: false, status: 400, json: async () => ({}), text: async () => 'bad request' });
 
-test('טווח שנדחה לא מבטל את המשחקים שכבר נמשכו', async () => {
+test('נתיב שנפל מוחלף בנתיב אחר, והמשחקים נמשכים בכל זאת', async () => {
+  const urls = [];
   const fixtures = await withFetch(
-    (url) => (url.includes('startDate') ? fail() : ok([game(101, 24)])),
+    (url) => {
+      urls.push(url);
+      // כך נראה מה שקרה בפועל: הנתיב הישן התחיל להחזיר 404
+      if (url.includes('/games/fixtures/')) {
+        return { ok: false, status: 404, json: async () => ({}), text: async () => 'HTTP Error 404' };
+      }
+      return ok([game(101, 24)]);
+    },
     () => fetchUpcomingFixtures({
-      scores365CompetitionId: 9001, fromDate: '2026-09-20', toDate: '2026-09-30', refresh: true
+      scores365CompetitionId: 9101, fromDate: '2026-09-20', toDate: '2026-09-30', refresh: true
     })
   );
 
@@ -76,39 +84,45 @@ test('טווח שנדחה לא מבטל את המשחקים שכבר נמשכו'
   assert.equal(fixtures[0].apiId, '365_101');
 });
 
-// תשובה שנראית כמו עמוד מלא, ולכן שווה לבקש אחריה גם טווח
-const fullPage = Array.from({ length: 16 }, (_, i) => game(200 + i, 24));
-
-test('כשהעמוד נראה חתוך, משחקי הטווח מתווספים בלי כפילות', async () => {
-  const fixtures = await withFetch(
-    (url) => (url.includes('startDate')
-      // הטווח מחזיר גם משחק שכבר נמשך וגם אחד שלא היה בעמוד
-      ? ok([game(200, 24), game(300, 25)])
-      : ok(fullPage)),
-    () => fetchUpcomingFixtures({
-      scores365CompetitionId: 9002, fromDate: '2026-09-20', toDate: '2026-09-30', refresh: true
-    })
-  );
-
-  assert.equal(fixtures.length, fullPage.length + 1);
-  assert.ok(fixtures.some((f) => f.apiId === '365_300'), 'המשחק שמעבר לעמוד נוסף');
-});
-
-test('בליגה עם מעט משחקים לא נשלחת בקשה נוספת - 365 חוסמים על ריבוי בקשות', async () => {
+test('הנתיב הראשון הוא זה של אתר 365, והוא נושא את הטווח', async () => {
   const urls = [];
   await withFetch(
-    (url) => { urls.push(url); return ok([game(401, 24), game(402, 25)]); },
+    (url) => { urls.push(url); return ok([game(102, 24)]); },
     () => fetchUpcomingFixtures({
-      scores365CompetitionId: 9004, fromDate: '2026-09-20', toDate: '2026-09-30', refresh: true
+      scores365CompetitionId: 9102, fromDate: '2026-09-20', toDate: '2026-09-30', refresh: true
     })
   );
 
+  // נתיב אחד שעובד - בקשה אחת. 365 חוסמים לפי IP על ריבוי בקשות
   assert.equal(urls.length, 1, urls.join('\n'));
-  assert.ok(!urls[0].includes('startDate'));
+  assert.match(urls[0], /\/games\/allscores\//);
+  assert.match(urls[0], /startDate=20\/09\/2026&endDate=30\/09\/2026/);
+});
+
+test('כשכל הנתיבים נכשלו נזרקת שגיאה, ולא מוחזרת רשימה ריקה', async () => {
+  await assert.rejects(
+    () => withFetch(
+      () => ({ ok: false, status: 404, json: async () => ({}), text: async () => 'HTTP Error 404' }),
+      () => fetchUpcomingFixtures({
+        scores365CompetitionId: 9103, fromDate: '2026-09-20', toDate: '2026-09-30', refresh: true
+      })
+    ),
+    /404/
+  );
+});
+
+test('נתיב שענה בלי משחקים הוא תשובה, לא תקלה - שבוע ריק אינו שגיאה', async () => {
+  const fixtures = await withFetch(
+    () => ok([]),
+    () => fetchUpcomingFixtures({
+      scores365CompetitionId: 9104, fromDate: '2026-09-20', toDate: '2026-09-30', refresh: true
+    })
+  );
+  assert.deepEqual(fixtures, []);
 });
 
 test('תשובה ריקה אינה נשמרת בזיכרון, כדי שתקלה רגעית לא תימשך שעות', async () => {
-  const id = 9005;
+  const id = 9105;
   const empty = await withFetch(() => ok([]), () => fetchUpcomingFixtures({
     scores365CompetitionId: id, fromDate: '2026-09-20', toDate: '2026-09-30'
   }));
@@ -130,18 +144,6 @@ test('משחק מחוץ לטווח שהספק החזיר בכל זאת - מסו�
   );
 
   assert.deepEqual(fixtures.map((f) => f.apiId), ['365_103']);
-});
-
-test('כשכל הבקשות נכשלו נזרקת שגיאה, ולא מוחזרת רשימה ריקה', async () => {
-  await assert.rejects(
-    () => withFetch(
-      () => ({ ok: false, status: 429, json: async () => ({}), text: async () => 'too many requests' }),
-      () => fetchUpcomingFixtures({
-        scores365CompetitionId: 9006, fromDate: '2026-09-20', toDate: '2026-09-30', refresh: true
-      })
-    ),
-    /429/
-  );
 });
 
 test('תשובה חלקית עדיפה על שגיאה: מה שנאסף מוחזר', async () => {

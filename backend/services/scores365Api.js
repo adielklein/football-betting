@@ -52,9 +52,6 @@ const toApiDate = (ymd) => {
 // מעגלית, עדיף להפסיק מאשר להיתקע
 const MAX_PAGES = 6;
 
-// מעל זה מניחים שהתשובה היא עמוד ולא הרשימה המלאה, ושווה לבקש גם טווח
-const PAGE_LOOKS_TRUNCATED = 15;
-
 // עמוד ההמשך מגיע בשמות שונים לפי הנתיב, ולפעמים כלל לא
 const nextPageOf = (json) => {
   const next = json?.paging?.nextPage || json?.nextPage || null;
@@ -89,28 +86,18 @@ const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate,
     if (hit) return hit;
   }
 
-  // הבקשה הרגילה היא העיקר, ובקשת הטווח היא תוספת בלבד.
+  // כמה נתיבים, לפי הסדר, עד שאחד מחזיר משחקים.
   //
-  // הבקשה בלי טווח מחזירה עמוד ברירת מחדל, וזה הספיק כל עוד מדובר בליגה
-  // עם עשרה משחקים בשבוע. בליגת האומות יש עשרות משחקים באותו ערב, והם
-  // לא נכנסו לעמוד - כך נעלמה ישראל מול אירלנד. לכן מבקשים גם את הטווח
-  // במפורש.
-  //
-  // הסדר הזה נלמד בדרך הקשה: כשבקשת הטווח הייתה ראשונה והספק דחה את
-  // הפרמטרים, החריגה קפצה מעל הניסיון החוזר ולא נמשך כלום. תוספת חייבת
-  // להיות תוספת - היא לא יכולה להפיל את מה שעבד.
+  // /games/fixtures/ עבד עד שיום אחד החזיר 404 - והייבוא הפסיק למשוך
+  // כל משחק, מכל הליגות. לספק הזה אין תיעוד ואין הבטחה, ולכן נתיב יחיד
+  // הוא נקודת כשל יחידה. הראשון ברשימה הוא זה שאתר 365 עצמו מבקש ללוח
+  // המשחקים שלו, והוא גם היחיד שמקבל טווח תאריכים כפרמטר - כך שהוא פותר
+  // גם את המשחקים שנחתכו מעמוד ברירת המחדל.
   const base = `appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&competitions=${scores365CompetitionId}`;
   const start = toApiDate(fromDate);
   const end = toApiDate(toDate);
-  // בלי שני התאריכים אין טווח לבקש, ו-"startDate=" ריק רק מזמין דחייה
-  const range = start && end ? `&startDate=${start}&endDate=${end}` : null;
+  const range = start && end ? `&startDate=${start}&endDate=${end}` : '';
 
-  // עתידיים מ-fixtures, ואם includePast גם משחקים שנגמרו מ-results
-  const paths = [`/games/fixtures/?${base}`];
-  if (includePast) paths.push(`/games/results/?${base}`);
-
-  // לפי מזהה: אותו משחק יכול לחזור גם מ-fixtures וגם מ-results, גם משתי
-  // הבקשות וגם בשני עמודים עוקבים
   const byId = new Map();
   const collect = (games) => {
     for (const game of games) {
@@ -118,38 +105,51 @@ const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate,
     }
   };
 
-  // הכישלון הראשון נשמר. כשכלום לא נאסף הוא ייזרק, כי "לא הצלחנו לשאול"
-  // אינו "אין משחקים" - וכשנבלע כאן הוא הגיע למסך כרשימה ריקה ותקינה
-  // למראה, שאי אפשר להבדיל בינה לבין שבוע בלי משחקים
+  // reached = לפחות נתיב אחד ענה כמו שצריך. בלעדיו אי אפשר להבדיל בין
+  // "אין משחקים בטווח" לבין "אף נתיב לא עבד", וזה ההבדל שעלה שעות
+  let reached = false;
   let firstError = null;
 
-  for (const path of paths) {
-    // 1. הבקשה שתמיד עבדה
+  const tryPath = async (path) => {
     try {
-      collect(await fetchAllPages(path));
+      const games = await fetchAllPages(path);
+      reached = true;
+      collect(games);
+      return games.length;
     } catch (err) {
       firstError = firstError || err;
-      console.warn(`⚠️ [365] endpoint ${path} failed:`, err.message);
+      console.warn(`⚠️ [365] ${path.split('?')[0]} נכשל: ${err.message}`);
+      return -1;
     }
+  };
 
-    // 2. אותה בקשה עם טווח מפורש, למשחקים שמעבר לעמוד ברירת המחדל.
-    //
-    // רק כשהתשובה הראשונה נראית חתוכה. 365 חוסמים לפי IP על ריבוי בקשות,
-    // ואין סיבה להכפיל את מספרן בליגה שהחזירה שבעה משחקים ממילא.
-    // כישלון כאן הוא חסר מידע, לא תקלה: מה שכבר נאסף נשאר
-    if (range && byId.size >= PAGE_LOOKS_TRUNCATED) {
-      try {
-        collect(await fetchAllPages(`${path}${range}`));
-      } catch (err) {
-        console.warn(`⚠️ [365] הטווח לא נתמך ב-${path}: ${err.message}`);
-      }
+  const attempts = [];
+  if (range) attempts.push({ coversPast: true, path: `/games/allscores/?${base}&sports=1${range}` });
+  attempts.push({ coversPast: false, path: `/games/fixtures/?${base}${range}` });
+  if (range) attempts.push({ coversPast: false, path: `/games/fixtures/?${base}` });
+
+  let covered = false;
+  for (const attempt of attempts) {
+    if (await tryPath(attempt.path) > 0) {
+      covered = attempt.coversPast;
+      break;
     }
   }
+
+  // תוצאות עבר, אלא אם הנתיב שהצליח כולל אותן ממילא
+  if (includePast && !covered) {
+    for (const path of [`/games/results/?${base}${range}`, `/games/results/?${base}`]) {
+      if (await tryPath(path) > 0) break;
+      if (!range) break;
+    }
+  }
+
   const games = [...byId.values()];
   console.log(`⚽ [365] got ${games.length} games for competition ${scores365CompetitionId} (includePast=${includePast})`);
 
-  // נזרק רק כשאין כלום ביד: תשובה חלקית עדיפה על שגיאה
-  if (games.length === 0 && firstError) throw firstError;
+  // נזרק רק כששום נתיב לא ענה. נתיב שענה ואין בו משחקים הוא תשובה
+  // לגיטימית - שבוע בלי משחקים - ולא תקלה
+  if (games.length === 0 && !reached && firstError) throw firstError;
 
   const fromTs = new Date(fromDate + 'T00:00:00Z').getTime();
   const toTs = new Date(toDate + 'T23:59:59Z').getTime();
