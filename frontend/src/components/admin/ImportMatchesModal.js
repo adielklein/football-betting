@@ -38,7 +38,10 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
     [leagues]
   );
 
-  const [leagueId, setLeagueId] = useState(importableLeagues[0]?._id || '');
+  // ריק בכוונה: המסך נפתח בלי בחירה ובלי למשוך דבר. בחירה אוטומטית של
+  // הליגה הראשונה שלחה בקשה לספק בכל פתיחה של החלון, על תחרות שאיש לא
+  // ביקש - וגם הציגה רשימה שנראית כמו תשובה לשאלה שלא נשאלה
+  const [leagueId, setLeagueId] = useState('');
   const [days, setDays] = useState(7);
   // 'days' - X ימים קדימה מהיום (ברירת המחדל). 'range' - טווח תאריכים מפורש,
   // לשבוע ספציפי שלא בהכרח מתחיל היום (למשל מתכננים שבוע הבא מראש)
@@ -74,12 +77,6 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
   };
 
   const isMulti = leagueId === ALL_LEAGUES || leagueId.startsWith(GROUP_PREFIX);
-
-  useEffect(() => {
-    if (!leagueId && importableLeagues.length > 0) {
-      setLeagueId(importableLeagues[0]._id);
-    }
-  }, [importableLeagues, leagueId]);
 
   const loadFixtures = async ({ refresh = false } = {}) => {
     if (!leagueId) return;
@@ -467,7 +464,13 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
             </div>
           )}
 
-          {!loading && fixtures.length === 0 && !error && (
+          {!loading && !leagueId && (
+            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-3, #666)' }}>
+              בחר תחרות כדי למשוך משחקים
+            </div>
+          )}
+
+          {!loading && leagueId && fixtures.length === 0 && !error && (
             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-3, #666)' }}>
               {/* הטווח מוצג במפורש: טורניר שאינו בעונתו נראה בדיוק כמו תקלה,
                   וההבדל היחיד הוא הידיעה מה בכלל נבדק */}
