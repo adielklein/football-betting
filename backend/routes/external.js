@@ -70,6 +70,10 @@ router.get('/health', (req, res) => {
 // העולם. השאלות היחידות שחשובות הן שלוש - האם הנתיב עונה, האם הוא
 // מכבד את התחרות שביקשנו, והאם הוא מכבד את טווח התאריכים - ולכן
 // הבדיקה עונה בדיוק עליהן, לכל נתיב.
+//
+// רק נתיבים שהמערכת באמת משתמשת בהם. נתיב משוער שמחזיר 404 מוסיף
+// אזהרה אדומה על משהו שאיש לא תלוי בו, וזה בדיוק הרעש שהבדיקה הזו
+// אמורה לחסוך.
 router.get('/365-health', requireAdmin, async (req, res) => {
   const League = require('../models/League');
 
@@ -94,8 +98,8 @@ router.get('/365-health', requireAdmin, async (req, res) => {
     { name: 'עתידיים (fixtures)', path: `/games/fixtures/?${base}&competitions=${competitionId}` },
     { name: 'תוצאות (results)', path: `/games/results/?${base}&competitions=${competitionId}` },
     { name: 'מצב חי (current)', path: `/games/current/?${base}&competitions=${competitionId}` },
-    { name: 'משחקי תחרות (competitions/games)', path: `/competitions/games/?${base}&competitions=${competitionId}${range}` },
-    { name: 'רשימת תחרויות', path: `/competitions/?${base}` }
+    { name: 'רשימת תחרויות', path: `/competitions/?${base}` },
+    { name: 'חיפוש תחרויות', path: `/search/?${base}&filter=competitions&query=${encodeURIComponent('ליגה')}` }
   ];
 
   const check = async ({ name, path }) => {
