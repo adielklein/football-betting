@@ -2,11 +2,16 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { api } from '../../services/api';
 import { getHebrewNameByEnglish } from '../../utils/teamLogos';
 import TeamLogo from '../TeamLogo';
+import { groupLeagues } from '../../utils/leagueGroups';
 
 const DAYS_OPTIONS = [3, 7, 14, 30];
 
-// ערך דמה בבורר הליגה: מושך מכל הליגות המוגדרות במקום אחת-אחת
+// ערך דמה בבורר הליגה: מושך מכל התחרויות המוגדרות במקום אחת-אחת
 const ALL_LEAGUES = '__all__';
+
+// ובחירה של קבוצה שלמה - כל הגביעים, כל תחרויות הנבחרות. זה מה שבאמת
+// עושים כשבונים שבוע: לא ליגה אחת ולא הכל, אלא סוג אחד
+const GROUP_PREFIX = '__group__:';
 
 // 365 חוסמים לפי IP על ריבוי בקשות בו-זמנית, ולכן מושכים כמה ליגות במקביל
 // ולא את כולן יחד. חמש ולא שלוש: 16 ליגות בשלישיות היו כחצי דקה של המתנה
@@ -55,6 +60,20 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
   // כדי שהאדמין יראה מה בדיוק לא נוסף במקום שהחלון ייסגר כאילו הכל עבר
   const [skipped, setSkipped] = useState(null);
 
+  const groups = useMemo(() => groupLeagues(importableLeagues), [importableLeagues]);
+
+  // הבחירה היא אחת משלוש: הכל, קבוצה שלמה, או תחרות אחת
+  const resolveTargets = () => {
+    if (leagueId === ALL_LEAGUES) return importableLeagues;
+    if (leagueId.startsWith(GROUP_PREFIX)) {
+      const key = leagueId.slice(GROUP_PREFIX.length);
+      return (groups.find((g) => g.key === key)?.leagues) || [];
+    }
+    return importableLeagues.filter((l) => l._id === leagueId);
+  };
+
+  const isMulti = leagueId === ALL_LEAGUES || leagueId.startsWith(GROUP_PREFIX);
+
   useEffect(() => {
     if (!leagueId && importableLeagues.length > 0) {
       setLeagueId(importableLeagues[0]._id);
@@ -70,9 +89,7 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
     setFixtures([]);
     setFailedLeagues([]);
 
-    const targets = leagueId === ALL_LEAGUES
-      ? importableLeagues
-      : importableLeagues.filter((l) => l._id === leagueId);
+    const targets = resolveTargets();
 
     const failures = [];
     let cursor = 0;
@@ -220,7 +237,7 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
         adminId,
         // ליגה ברמת הבקשה היא רשת ביטחון למשחק שאיבד את שלו. במצב "כל הליגות"
         // אין ערך כזה, וכל משחק נושא את הליגה שלו
-        ...(leagueId !== ALL_LEAGUES ? { leagueId } : {}),
+        ...(isMulti ? {} : { leagueId }),
         matches: chosen.map((f) => {
           const obj = {
             team1: f.team1.trim(),
@@ -299,19 +316,29 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'flex-end', marginBottom: '1rem', flexShrink: 0 }}>
           <div style={{ flex: '1 1 200px' }}>
-            <label>ליגה:</label>
+            <label>תחרות:</label>
             <select
               value={leagueId}
               onChange={(e) => setLeagueId(e.target.value)}
               className="input"
               disabled={loading || submitting}
             >
-              {importableLeagues.length === 0 && <option value="">אין ליגות עם מזהה חיצוני</option>}
+              {importableLeagues.length === 0 && <option value="">אין תחרויות עם מזהה חיצוני</option>}
               {importableLeagues.length > 0 && (
-                <option value={ALL_LEAGUES}>🌍 כל הליגות ({importableLeagues.length})</option>
+                <option value={ALL_LEAGUES}>🌍 כל התחרויות ({importableLeagues.length})</option>
               )}
-              {importableLeagues.map((l) => (
-                <option key={l._id} value={l._id}>{l.name}</option>
+              {/* קבוצה שלמה נבחרת מתוך הקבוצה עצמה, ולא מרשימה נפרדת -
+                  כך הבורר נשאר אחד והקשר בין "כל הגביעים" לגביעים עצמם
+                  גלוי לעין */}
+              {groups.map((group) => (
+                <optgroup key={group.key} label={`${group.icon} ${group.label}`}>
+                  <option value={`${GROUP_PREFIX}${group.key}`}>
+                    כל ה{group.label} ({group.leagues.length})
+                  </option>
+                  {group.leagues.map((l) => (
+                    <option key={l._id} value={l._id}>{l.name}</option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </div>
@@ -391,7 +418,7 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
           }}>
             ℹ️ ווינר מפרסמים יחסים רק למחזור הקרוב. משחקים רחוקים יותר ייובאו בלי יחסים —
             אפשר להשלים אותם אחר כך בכפתור <strong>"💰 עדכן יחסי ווינר"</strong> במסך השבוע.
-            {leagueId === ALL_LEAGUES && ' משיכת יחסים לכל הליגות יחד אורכת זמן — כל משחק הוא פנייה נפרדת לספק.'}
+            {isMulti && ' משיכת יחסים לכמה תחרויות יחד אורכת זמן — כל משחק הוא פנייה נפרדת לספק.'}
           </div>
         )}
 
@@ -533,7 +560,7 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
                     <div style={{ fontSize: '14px', color: 'var(--text-2, #444)', whiteSpace: 'nowrap' }}>
                       📅 {f.date} | 🕒 {f.time}
                     </div>
-                    {leagueId === ALL_LEAGUES && f.leagueName && (
+                    {isMulti && f.leagueName && (
                       <span style={{
                         fontSize: '11px', fontWeight: '700', whiteSpace: 'nowrap',
                         padding: '2px 8px', borderRadius: '10px',
