@@ -27,6 +27,78 @@ router.get('/active', async (req, res) => {
 });
 
 // 🔍 קבלת ליגה לפי ID
+// 🔍 בדיקה מול 365: האם כל ליגה באמת מחוברת לתחרות שהיא טוענת שהיא.
+//
+// מזהה מספרי ושם שמור אינם ראיה - שניהם נכתבו על סמך אותו חיפוש. הראיה
+// היחידה היא המשחקים עצמם: שם התחרות כפי ש-365 מחזירים אותו על המשחק,
+// ושמות הקבוצות. "ליגת האומות" שמחזירה את טורקס וקאיקוס מול מונטסראט
+// עונה על השאלה מיד, בלי לסמוך על אף שם ששמרנו.
+//
+// חלון רחב ועם תוצאות עבר, כדי שגם תחרות שאינה בעונתה תראה משהו.
+router.get('/verify365', requireAdmin, async (req, res) => {
+  try {
+    const leagues = await League.find({ scores365CompetitionId: { $ne: null } })
+      .sort({ order: 1, name: 1 })
+      .lean();
+
+    const ymd = (d) => d.toISOString().slice(0, 10);
+    const fromDate = ymd(new Date(Date.now() - 45 * 24 * 60 * 60 * 1000));
+    const toDate = ymd(new Date(Date.now() + 75 * 24 * 60 * 60 * 1000));
+
+    const check = async (league) => {
+      const row = {
+        _id: String(league._id),
+        name: league.name,
+        key: league.key,
+        competitionId: league.scores365CompetitionId,
+        storedName: league.scores365Name || null,
+        liveName: null,
+        samples: [],
+        count: 0,
+        error: null
+      };
+
+      try {
+        const fixtures = await scores365Api.fetchUpcomingFixtures({
+          scores365CompetitionId: league.scores365CompetitionId,
+          fromDate,
+          toDate,
+          includePast: true
+        });
+
+        row.count = fixtures.length;
+        // שם התחרות כפי שהוא מגיע על המשחקים עצמם
+        const names = [...new Set(fixtures.map((f) => f.leagueName).filter(Boolean))];
+        row.liveName = names.join(' / ') || null;
+        row.samples = fixtures
+          .slice(0, 3)
+          .map((f) => `${f.team1He || f.team1En} - ${f.team2He || f.team2En}`);
+      } catch (err) {
+        row.error = err.message;
+      }
+
+      return row;
+    };
+
+    // בקבוצות קטנות: 21 בקשות בבת אחת מול 365 זו דרך טובה להיחסם
+    const rows = [];
+    const queue = [...leagues];
+    const workers = Array.from({ length: 4 }, async () => {
+      while (queue.length > 0) {
+        const league = queue.shift();
+        rows.push(await check(league));
+      }
+    });
+    await Promise.all(workers);
+
+    rows.sort((a, b) => a.name.localeCompare(b.name, 'he'));
+    res.json({ checked: rows.length, fromDate, toDate, rows });
+  } catch (error) {
+    console.error('Error verifying 365 competitions:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const league = await League.findById(req.params.id);

@@ -137,6 +137,10 @@ function LeaguesManagement() {
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
 
+  // בדיקה מול 365: לא מה ששמרנו, אלא מה שהמשחקים עצמם אומרים
+  const [verifying, setVerifying] = useState(false);
+  const [verification, setVerification] = useState(null);
+
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
@@ -297,6 +301,23 @@ function LeaguesManagement() {
     }
   };
 
+  const handleVerify365 = async () => {
+    setVerifying(true);
+    try {
+      const response = await fetch(`${API_URL}/leagues/verify365`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'failed');
+      setVerification(data);
+      const broken = (data.rows || []).filter((r) => r.error || r.count === 0).length;
+      if (broken === 0) toast.success(`נבדקו ${data.checked} ליגות - לכולן יש משחקים ב-365`);
+      else toast.warning(`נבדקו ${data.checked} ליגות, ${broken} בלי משחקים בטווח`);
+    } catch (error) {
+      toast.error('שגיאה בבדיקה מול 365');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   const startEditing = (league) => {
     setEditingLeague(league);
     setEditForm({
@@ -359,6 +380,19 @@ function LeaguesManagement() {
             >
               {seeding ? '⏳ מסנכרן...' : '🌍 סנכרן ליגות אירופאיות'}
             </button>
+            <button
+              onClick={handleVerify365}
+              disabled={verifying}
+              title="מושך משחקים אמיתיים מ-365 לכל ליגה ומראה את שם התחרות ואת הקבוצות, כדי לוודא שהחיבור נכון"
+              style={{
+                padding: '0.4rem 0.8rem',
+                background: verifying ? '#9e9e9e' : 'linear-gradient(135deg, #6f42c1, #8e5ad6)',
+                color: 'white', border: 'none', borderRadius: '8px',
+                fontSize: '12px', fontWeight: '700', cursor: verifying ? 'default' : 'pointer'
+              }}
+            >
+              {verifying ? '⏳ בודק...' : '🔍 בדוק מול 365'}
+            </button>
             {leagues.length === 0 && (
               <button
                 onClick={handleInitializeDefaultLeagues}
@@ -375,6 +409,75 @@ function LeaguesManagement() {
           </div>
         </div>
       </div>
+
+      {/* תוצאות הבדיקה מול 365 - מה שהמשחקים עצמם אומרים */}
+      {verification && (
+        <div className="card" style={{ marginBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+            <h2 style={{ fontSize: '0.95rem', margin: 0, fontWeight: '700' }}>
+              🔍 בדיקה מול 365 ({verification.checked})
+            </h2>
+            <button
+              onClick={() => setVerification(null)}
+              className="btn"
+              style={{ background: 'transparent', fontSize: '16px', padding: '0 0.3rem' }}
+            >
+              ✖
+            </button>
+          </div>
+
+          <div style={{ fontSize: '11px', color: 'var(--text-3, #888)', marginBottom: '0.5rem', lineHeight: 1.5 }}>
+            שם התחרות והקבוצות כפי ש-365 מחזירים אותם על המשחקים עצמם, בטווח
+            {' '}{verification.fromDate} עד {verification.toDate}. זו הראיה היחידה
+            שהחיבור נכון - שם ששמרנו אצלנו רק חוזר על מה שהנחנו.
+          </div>
+
+          {verification.rows.map((row) => {
+            const bad = !!row.error || row.count === 0;
+            return (
+              <div key={row._id} style={{
+                padding: '0.45rem 0.5rem',
+                borderTop: '1px dashed var(--border, #eef1f4)',
+                background: bad ? 'var(--warn-bg, #fffaf0)' : 'transparent'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontWeight: 700, fontSize: '13px' }}>{row.name}</span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', fontFamily: 'monospace' }}>
+                    #{row.competitionId}
+                  </span>
+                  {row.liveName && (
+                    <span style={{
+                      padding: '1px 6px', borderRadius: '10px', fontSize: '10px', fontWeight: 700,
+                      background: 'var(--good-bg, #e8f6ec)', color: 'var(--good-fg, #1a6b35)'
+                    }}>
+                      365: {row.liveName}
+                    </span>
+                  )}
+                  {bad && (
+                    <span style={{
+                      padding: '1px 6px', borderRadius: '10px', fontSize: '10px', fontWeight: 700,
+                      background: 'var(--warn-bg, #fff3cd)', color: 'var(--warn-fg, #9a7b3f)'
+                    }}>
+                      {row.error ? 'שגיאה' : 'אין משחקים בטווח'}
+                    </span>
+                  )}
+                </div>
+
+                {row.samples.length > 0 && (
+                  <div style={{ fontSize: '11px', color: 'var(--text-3, #888)', marginTop: '2px' }}>
+                    {row.samples.join(' · ')}
+                  </div>
+                )}
+                {row.error && (
+                  <div style={{ fontSize: '11px', color: 'var(--bad-fg, #b3261e)', marginTop: '2px' }}>
+                    {row.error}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Add league form */}
       <div className="card" style={{ marginBottom: '0.75rem' }}>
