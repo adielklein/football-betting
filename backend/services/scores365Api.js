@@ -81,11 +81,27 @@ const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate,
   let reached = false;
   let firstError = null;
 
+  // הנתיב של לוח המשחקים אינו מכבד את מסנן התחרות: הוא החזיר 814 משחקים
+  // מכל העולם, כולל נבחרות עד גיל 23 באסיה, על בקשה לליגת האומות. לכן
+  // הסינון נעשה כאן, לפי מזהה התחרות שעל המשחק עצמו.
+  //
+  // משחק בלי מזהה תחרות נשמר: יש נתיבים שכבר מסוננים ואינם טורחים
+  // לציין אותו, ועדיף לא לאבד משחק מאשר לסנן בעיוורון
+  const wanted = Number(scores365CompetitionId);
+  const inCompetition = (g) => {
+    const id = g?.competitionId ?? g?.competition?.id;
+    return id == null || Number(id) === wanted;
+  };
+
   const tryPath = async (path) => {
     try {
       const json = await apiGet(path);
       reached = true;
-      const games = Array.isArray(json?.games) ? json.games : [];
+      const all = Array.isArray(json?.games) ? json.games : [];
+      const games = all.filter(inCompetition);
+      if (all.length !== games.length) {
+        console.log(`🔎 [365] ${all.length} משחקים חזרו, ${games.length} בתחרות ${wanted}`);
+      }
       collect(games);
       return games.length;
     } catch (err) {
@@ -100,7 +116,7 @@ const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate,
   // של נתיב ישן עם פרמטרים שמעולם לא ראיתי אותו מקבל הוא ניחוש, ולא
   // גיבוי
   const attempts = [];
-  if (range) attempts.push({ coversPast: true, path: `/games/allscores/?${base}&sports=1${range}` });
+  if (range) attempts.push({ coversPast: true, path: `/games/allscores/?${base}${range}` });
   attempts.push({ coversPast: false, path: `/games/fixtures/?${base}` });
 
   let covered = false;

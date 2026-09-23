@@ -22,8 +22,9 @@ test('תאריך חסר או פגום לא מייצר טווח שבור', () => 
 
 const { fetchUpcomingFixtures } = require('./scores365Api');
 
-const game = (id, day) => ({
+const game = (id, day, competitionId = null) => ({
   id,
+  competitionId,
   startTime: `2026-09-${String(day).padStart(2, '0')}T18:00:00Z`,
   homeCompetitor: { id: id * 10, name: `בית ${id}` },
   awayCompetitor: { id: id * 10 + 1, name: `חוץ ${id}` }
@@ -141,4 +142,52 @@ test('תשובה חלקית עדיפה על שגיאה: מה שנאסף מוחז
   );
 
   assert.equal(fixtures.length, 1);
+});
+
+test('משחקים של תחרויות אחרות מסוננים, גם כשהספק מתעלם מהמסנן', async () => {
+  // כך זה חזר בפועל: בקשה לליגת האומות והתשובה מלאה במשחקי נבחרות
+  // עד גיל 23 מאסיה
+  const fixtures = await withFetch(
+    () => ok([
+      game(701, 24, 9200),
+      game(702, 25, 9999),
+      game(703, 26, 9200),
+      game(704, 27, 1234)
+    ]),
+    () => fetchUpcomingFixtures({
+      scores365CompetitionId: 9200, fromDate: '2026-09-20', toDate: '2026-09-30', refresh: true
+    })
+  );
+
+  assert.deepEqual(fixtures.map((f) => f.apiId), ['365_701', '365_703']);
+});
+
+test('משחק בלי מזהה תחרות נשמר - נתיב מסונן אינו חייב לציין אותו', async () => {
+  const fixtures = await withFetch(
+    () => ok([game(801, 24), game(802, 25)]),
+    () => fetchUpcomingFixtures({
+      scores365CompetitionId: 9201, fromDate: '2026-09-20', toDate: '2026-09-30', refresh: true
+    })
+  );
+
+  assert.equal(fixtures.length, 2);
+});
+
+test('כשבתשובה אין אף משחק של התחרות, מנסים את הנתיב הבא', async () => {
+  const urls = [];
+  const fixtures = await withFetch(
+    (url) => {
+      urls.push(url);
+      // הלוח מחזיר המון משחקים, אף אחד מהם לא שלנו
+      return url.includes('allscores')
+        ? ok([game(901, 24, 5), game(902, 25, 6)])
+        : ok([game(903, 26, 9202)]);
+    },
+    () => fetchUpcomingFixtures({
+      scores365CompetitionId: 9202, fromDate: '2026-09-20', toDate: '2026-09-30', refresh: true
+    })
+  );
+
+  assert.equal(urls.length, 2);
+  assert.deepEqual(fixtures.map((f) => f.apiId), ['365_903']);
 });
