@@ -3,6 +3,7 @@ import { api } from '../../services/api';
 import { getHebrewNameByEnglish } from '../../utils/teamLogos';
 import TeamLogo from '../TeamLogo';
 import { groupLeagues } from '../../utils/leagueGroups';
+import CompetitionPicker from './CompetitionPicker';
 
 const DAYS_OPTIONS = [3, 7, 14, 30];
 
@@ -317,30 +318,18 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'flex-end', marginBottom: '1rem', flexShrink: 0 }}>
           <div style={{ flex: '1 1 200px' }}>
             <label>תחרות:</label>
-            <select
+            {/* קבוצה שלמה נבחרת מתוך הקבוצה עצמה, ולא מרשימה נפרדת - כך
+                הקשר בין "כל הגביעים" לגביעים עצמם גלוי לעין */}
+            <CompetitionPicker
+              groups={groups}
+              allLeagues={importableLeagues}
               value={leagueId}
-              onChange={(e) => setLeagueId(e.target.value)}
-              className="input"
-              disabled={loading || submitting}
-            >
-              {importableLeagues.length === 0 && <option value="">אין תחרויות עם מזהה חיצוני</option>}
-              {importableLeagues.length > 0 && (
-                <option value={ALL_LEAGUES}>🌍 כל התחרויות ({importableLeagues.length})</option>
-              )}
-              {/* קבוצה שלמה נבחרת מתוך הקבוצה עצמה, ולא מרשימה נפרדת -
-                  כך הבורר נשאר אחד והקשר בין "כל הגביעים" לגביעים עצמם
-                  גלוי לעין */}
-              {groups.map((group) => (
-                <optgroup key={group.key} label={`${group.icon} ${group.label}`}>
-                  <option value={`${GROUP_PREFIX}${group.key}`}>
-                    כל ה{group.label} ({group.leagues.length})
-                  </option>
-                  {group.leagues.map((l) => (
-                    <option key={l._id} value={l._id}>{l.name}</option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+              onChange={setLeagueId}
+              disabled={loading || submitting || importableLeagues.length === 0}
+              allValue={ALL_LEAGUES}
+              groupPrefix={GROUP_PREFIX}
+              placeholder={importableLeagues.length === 0 ? 'אין תחרויות עם מזהה חיצוני' : 'בחר תחרות'}
+            />
           </div>
           <div style={{ flex: '0 0 120px' }}>
             <label>טווח:</label>
