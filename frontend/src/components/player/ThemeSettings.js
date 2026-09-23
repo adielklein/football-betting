@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import GroupedPicker from '../GroupedPicker';
 import { getThemesByCategory, getTheme, applyTheme } from '../../themes';
+import ThemeIcon from '../ThemeIcon';
 import { toast } from '../../services/toast';
 
 // בחירת ערכת נושא על ידי השחקן עצמו.
@@ -15,24 +16,6 @@ const API_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:5000/api'
   : 'https://football-betting-backend.onrender.com/api';
 
-const Swatch = ({ themeKey }) => {
-  const theme = getTheme(themeKey);
-  return (
-    <span
-      aria-hidden="true"
-      style={{
-        width: '22px',
-        height: '22px',
-        borderRadius: '50%',
-        flexShrink: 0,
-        background: theme.colors.headerBg,
-        border: '1px solid var(--border, #e6e9ee)',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
-      }}
-    />
-  );
-};
-
 function ThemeSettings({ user, onThemeChange }) {
   const [saving, setSaving] = useState(false);
   const [theme, setTheme] = useState(user?.theme || 'default');
@@ -45,7 +28,7 @@ function ThemeSettings({ user, onThemeChange }) {
       items: themes.map((t) => ({
         id: t.key,
         name: t.name,
-        preview: <Swatch themeKey={t.key} />
+        preview: <ThemeIcon themeKey={t.key} />
       }))
     }));
   }, []);
@@ -83,12 +66,8 @@ function ThemeSettings({ user, onThemeChange }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-        <Swatch themeKey={theme} />
-        <span style={{ fontSize: '13px', fontWeight: 700 }}>{getTheme(theme).name}</span>
-        {saving && <span style={{ fontSize: '11px', color: 'var(--text-4, #aaa)' }}>שומר…</span>}
-      </div>
-
+      {/* הבחירה הנוכחית מופיעה בבורר עצמו - שורה נוספת מעליו רק חוזרת
+          על אותו דבר */}
       <GroupedPicker
         groups={groups}
         value={theme}
@@ -98,7 +77,7 @@ function ThemeSettings({ user, onThemeChange }) {
       />
 
       <div style={{ fontSize: '11px', color: 'var(--text-4, #aaa)', marginTop: '0.5rem', lineHeight: 1.5 }}>
-        הערכה נשמרת למשתמש שלך ומופיעה בכל מכשיר שתתחבר ממנו.
+        {saving ? 'שומר…' : 'הערכה נשמרת למשתמש שלך ומופיעה בכל מכשיר שתתחבר ממנו.'}
       </div>
     </div>
   );

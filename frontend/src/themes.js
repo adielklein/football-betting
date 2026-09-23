@@ -500,7 +500,7 @@ const isIOSSafari = () => {
 // ערכה מסוג 'team' נושאת שם קבוצה ולא כתובת: הסמל נפתר מאותו מקור
 // שממנו מגיעים כל הסמלים באפליקציה, כדי שערכה חדשה לא תוסיף תלות
 // באתר חיצוני נוסף
-const themeLogoUrl = (theme) => {
+export const themeLogoUrl = (theme) => {
   if (theme.logoType === 'image') return theme.logo || null;
   if (theme.logoType === 'team') return getTeamLogoUrl(theme.logoTeam || theme.logo, 128);
   return null;

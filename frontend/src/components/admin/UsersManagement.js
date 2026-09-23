@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import GroupedPicker from '../GroupedPicker';
+import ThemeIcon from '../ThemeIcon';
 import { getThemesByCategory, getTheme } from '../../themes';
 import { toast } from '../../services/toast';
 
@@ -207,17 +208,8 @@ function UsersManagement({ users, loadData, user }) {
       items: themes.map((theme) => ({
         id: theme.key,
         name: theme.name,
-        // הצבעים עצמם, ולא אייקון כללי: בוחרים ערכה לפי איך שהיא נראית
-        preview: (
-          <span
-            aria-hidden="true"
-            style={{
-              width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0,
-              background: theme.colors.headerBg,
-              border: '1px solid var(--border, #e6e9ee)'
-            }}
-          />
-        )
+        // הסמל עצמו: שתי קבוצות בצבע דומה נראות זהות בעיגול צבע
+        preview: <ThemeIcon themeKey={theme.key} size={20} />
       }))
     })),
     [themeCategories]
