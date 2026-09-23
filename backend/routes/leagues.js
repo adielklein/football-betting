@@ -274,7 +274,22 @@ router.post('/seed-european', requireAdmin, async (req, res) => {
       // אירופאיות
       { name: 'ליגת האלופות', key: 'champions-league', color: '#001f5b', type: 'club', region: 'אירופה', order: 60, apiFootballId: 2, footballDataCode: 'CL', espnLeagueCode: null, sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 572 },
       { name: 'הליגה האירופית', key: 'europa-league', color: '#ff6600', type: 'club', region: 'אירופה', order: 61, apiFootballId: 3, footballDataCode: null, espnLeagueCode: 'uefa.europa', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 573 },
-      { name: 'קונפרנס ליג', key: 'conference-league', color: '#00a651', type: 'club', region: 'אירופה', order: 62, apiFootballId: 848, footballDataCode: null, espnLeagueCode: 'uefa.europa.conf', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 7685 }
+      { name: 'קונפרנס ליג', key: 'conference-league', color: '#00a651', type: 'club', region: 'אירופה', order: 62, apiFootballId: 848, footballDataCode: null, espnLeagueCode: 'uefa.europa.conf', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: 7685 },
+
+      // נבחרות. בשבועות של הפסקת נבחרות אין מה לייבא בלי אלה, והן היו
+      // חסרות לגמרי. כמו בגביע הליגה האנגלי - בלי מזהה 365 כתוב מראש
+      // (מספר מנוחש לא נכשל, הוא מצביע בשקט על תחרות אחרת), אלא seek365
+      // שמאתר אותו מול 365 עצמם. קוד ESPN קיים כגיבוי, כדי שהתחרות תופיע
+      // בייבוא כבר עכשיו גם לפני שהמזהה אותר - אבל רק 365 נותן עברית,
+      // יחסי ווינר ותובנות, ולכן שווה להריץ סנכרון.
+      //
+      // footballDataCode נשאר ריק בכוונה גם למונדיאל וליורו, שיש להם קוד
+      // כזה: football-data דורש מפתח, ובסדר העדיפויות הוא קודם ל-ESPN -
+      // כך שבלי מפתח הייבוא היה נעצר בשגיאה במקום ליפול ל-ESPN
+      { name: 'ליגת האומות', key: 'nations-league', color: '#0b3d91', type: 'national', region: 'אירופה', order: 70, apiFootballId: 5, footballDataCode: null, espnLeagueCode: 'uefa.nations', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['ליגת האומות', 'Nations League'], exact: ['ליגת האומות', 'ליגת האומות של אופ"א', 'UEFA Nations League'] } },
+      { name: 'מוקדמות המונדיאל (אירופה)', key: 'world-cup-qual-uefa', color: '#146b3a', type: 'national', region: 'אירופה', order: 71, apiFootballId: 32, footballDataCode: null, espnLeagueCode: 'fifa.worldq.uefa', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['מוקדמות מונדיאל אירופה', 'מוקדמות מונדיאל, אירופה', 'מוקדמות המונדיאל אירופה', 'מוקדמות מונדיאל'], country: 'אירופה', exact: ['מוקדמות מונדיאל אירופה', 'מוקדמות מונדיאל, אירופה', 'מוקדמות המונדיאל, אירופה', 'מוקדמות מונדיאל - אירופה', 'World Cup Qualification, UEFA'] } },
+      { name: 'מונדיאל', key: 'world-cup', color: '#b8860b', type: 'national', region: 'עולם', order: 72, apiFootballId: 1, footballDataCode: null, espnLeagueCode: 'fifa.world', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['מונדיאל', 'גביע העולם', 'World Cup'], exact: ['מונדיאל', 'גביע העולם', 'מונדיאל 2026', 'גביע העולם 2026', 'FIFA World Cup'] } },
+      { name: 'אליפות אירופה (יורו)', key: 'euro', color: '#1d4ed8', type: 'national', region: 'אירופה', order: 73, apiFootballId: 4, footballDataCode: null, espnLeagueCode: 'uefa.euro', sofaScoreTournamentId: null, sportsDbLeagueId: null, scores365CompetitionId: null, seek365: { names: ['אליפות אירופה', 'יורו', 'European Championship'], exact: ['אליפות אירופה', 'יורו 2028', 'אליפות אירופה 2028', 'UEFA European Championship'] } }
     ];
 
     const created = [];
@@ -284,6 +299,10 @@ router.post('/seed-european', requireAdmin, async (req, res) => {
     // הניהול. בלי זה, לחיצה על "סנכרן" כדי לקלוט תחרות חדשה הייתה מוחקת
     // בשקט מזהים שהאדמין השלים בעצמו
     const keep = (current, fromSeed) => (fromSeed == null ? current : fromSeed);
+
+    // השוואת שמות תחרויות: גרשיים, רווחים כפולים ואותיות גדולות אינם הבדל
+    const normalizeName = (value) =>
+      String(value || '').trim().toLowerCase().replace(/["'`׳״]/g, '').replace(/\s+/g, ' ');
 
     for (const item of seedLeagues) {
       // seek365 הוא הנחיה לסנכרון, לא שדה של הליגה
@@ -322,9 +341,27 @@ router.post('/seed-european', requireAdmin, async (req, res) => {
       try {
         for (const name of seek.names) {
           const found = await scores365Api.searchCompetitions(name);
-          candidates = found.competitions.filter(
-            (c) => !seek.country || (c.country && c.country.includes(seek.country))
-          );
+          let list = found.competitions;
+
+          // המדינה מצמצמת, אך אינה פוסלת: תחרות נבחרות אינה שייכת למדינה
+          // ואצל 365 השדה הזה עשוי להיות ריק. כשהסינון מותיר כלום נשארים
+          // עם הרשימה המלאה - הכרעה עדיין דורשת מועמד יחיד, ולכן זה לא
+          // פותח פתח לניחוש
+          if (seek.country) {
+            const inCountry = list.filter((c) => c.country && c.country.includes(seek.country));
+            if (inCountry.length > 0) list = inCountry;
+          }
+
+          // שם מלא ומדויק הוא הצמצום החלופי, וכאן הוא הכרחי: "מונדיאל"
+          // מוכל גם ב"מוקדמות מונדיאל", והשוואה מלאה מפרידה ביניהם בלי
+          // לנחש
+          if (list.length > 1 && Array.isArray(seek.exact)) {
+            const wanted = seek.exact.map(normalizeName);
+            const exact = list.filter((c) => wanted.includes(normalizeName(c.name)));
+            if (exact.length > 0) list = exact;
+          }
+
+          candidates = list;
           if (candidates.length > 0) break;
         }
       } catch (err) {
