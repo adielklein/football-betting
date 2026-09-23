@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { applyTheme } from '../../themes';
 import ColorSchemeToggle from '../ColorSchemeToggle';
 
-function PlayerHeader({ user, selectedWeek, userScore, onLogout, onOpenSettings }) {
+function PlayerHeader({ user, selectedWeek, userScore, onLogout, onOpenSettings, settingsOpen }) {
 
   useEffect(() => {
     if (user) {
@@ -65,16 +65,28 @@ function PlayerHeader({ user, selectedWeek, userScore, onLogout, onOpenSettings 
             </div>
             <ColorSchemeToggle />
             {onOpenSettings && (
-              <button onClick={onOpenSettings} className="btn" aria-label="הגדרות" title="הגדרות" style={{
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.08) 100%)',
-                color: 'white',
-                padding: '0.4rem 0.6rem',
-                fontSize: '15px',
-                margin: 0,
-                lineHeight: 1,
-                borderRadius: '10px',
-                border: '1px solid rgba(255,255,255,0.15)'
-              }}>
+              <button
+                onClick={onOpenSettings}
+                className="btn"
+                aria-label={settingsOpen ? 'סגור הגדרות' : 'הגדרות'}
+                title={settingsOpen ? 'סגור הגדרות' : 'הגדרות'}
+                aria-pressed={settingsOpen}
+                style={{
+                  // כשההגדרות פתוחות הכפתור נראה לחוץ: הוא גם הדרך לצאת,
+                  // ובלי הסימון לא ברור שלחיצה נוספת תסגור
+                  background: settingsOpen
+                    ? 'rgba(255,255,255,0.85)'
+                    : 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.08) 100%)',
+                  color: settingsOpen ? 'var(--theme-primary, #007bff)' : 'white',
+                  padding: '0.4rem 0.6rem',
+                  fontSize: '15px',
+                  margin: 0,
+                  lineHeight: 1,
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  transition: 'background 0.2s ease'
+                }}
+              >
                 ⚙️
               </button>
             )}

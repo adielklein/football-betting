@@ -32,6 +32,17 @@ function PlayerView({ user, onLogout, onThemeChange }) {
     { onBeforeChange: () => confirmLeave() }
   );
 
+  // מאיפה נכנסנו להגדרות, כדי שגלגל השיניים יחזיר לשם. אין במסך הזה
+  // כפתור חזרה, ולחיצה שנייה על אותו כפתור היא הדרך הטבעית לצאת
+  const lastVisibleTab = useRef('betting');
+  useEffect(() => {
+    if (activeTab !== 'settings') lastVisibleTab.current = activeTab;
+  }, [activeTab]);
+
+  const toggleSettings = () => {
+    setActiveTab(activeTab === 'settings' ? lastVisibleTab.current : 'settings');
+  };
+
   // החלקה בין לשוניות. עוברת דרך setActiveTab ולא דרך הניווט ישירות, ולכן
   // אזהרת "הימור לא שמור" חלה עליה בדיוק כמו על לחיצה על לשונית.
   const swipe = useSwipeNav((intent) => {
@@ -208,7 +219,8 @@ function PlayerView({ user, onLogout, onThemeChange }) {
         selectedWeek={selectedWeek}
         userScore={getUserTotalScore()}
         onLogout={onLogout}
-        onOpenSettings={() => setActiveTab('settings')}
+        onOpenSettings={toggleSettings}
+        settingsOpen={activeTab === 'settings'}
       />
 
       <div className="container">

@@ -238,7 +238,9 @@ function NotificationSettings({ user, embedded = false }) {
   if (!isSupported) return null;
 
   return (
-    <div style={{
+    // בתוך דף ההגדרות הרכיב כבר יושב בכרטיס, ומסגרת נוספת סביבו היא
+    // קופסה בתוך קופסה. מחוץ לו הוא עומד בזכות עצמו וצריך אותה
+    <div style={embedded ? { margin: 0 } : {
       marginBottom: '0.6rem',
       borderRadius: '14px',
       overflow: 'hidden',
@@ -288,7 +290,7 @@ function NotificationSettings({ user, embedded = false }) {
       {/* Expandable settings */}
       {showSettings && (
         <div style={{
-          padding: '0 0.85rem 0.75rem',
+          padding: embedded ? 0 : '0 0.85rem 0.75rem',
           animation: 'slideUp 0.25s ease'
         }}>
           <div style={{
