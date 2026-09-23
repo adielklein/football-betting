@@ -312,6 +312,13 @@ router.post('/seed-european', requireAdmin, async (req, res) => {
     const normalizeName = (value) =>
       String(value || '').trim().toLowerCase().replace(/["'`׳״]/g, '').replace(/\s+/g, ' ');
 
+    // האם שם התחרות נושא מילה פוסלת
+    const isExcluded = (name, exclude) => {
+      if (!Array.isArray(exclude) || exclude.length === 0) return false;
+      const normalized = normalizeName(name);
+      return exclude.map(normalizeName).some((word) => word && normalized.includes(word));
+    };
+
     for (const item of seedLeagues) {
       // seek365 הוא הנחיה לסנכרון, לא שדה של הליגה
       const { seek365, ...fields } = item;
@@ -332,75 +339,136 @@ router.post('/seed-european', requireAdmin, async (req, res) => {
       }
     }
 
-    // השלמת מזהי 365 חסרים מול 365 עצמם, במקום לכתוב מספר מנוחש בקוד.
-    // התנאי המחמיר הוא הבטיחות כאן: משלימים אך ורק כשיש התאמה יחידה
-    // לשם ולמדינה. ריבוי מועמדים או אפס מועמדים מדווחים ולא מוכרעים לבד.
+    // מזהי 365 מול 365 עצמם, במקום מספר מנוחש בקוד.
+    //
+    // לא רק השלמה של חסר: גם בדיקה של מה שכבר שמור. מזהה שגוי לא מתגלה
+    // בשום מסך - ליגת האומות הייתה מחוברת לתחרות של קונקקאף, וזה התגלה
+    // רק כשיובאו משחקים של נבחרות האיים הקריביים. לכן לחיצה אחת על
+    // "סנכרן" צריכה גם לתקן, ולא להשאיר עבודה ידנית.
+    //
+    // הזהירות נשמרת: מחליפים מזהה קיים רק כשהוא מוכר לחיפוש ונפסל
+    // מפורשות (קונקקאף, נשים, נוער), ורק כשיש מועמד תקין יחיד להחליף בו.
+    // מזהה שהחיפוש אינו מכיר - למשל כזה שהוזן ידנית - לא נגעים בו.
     const seekByKey = new Map(
       seedLeagues.filter((i) => i.seek365).map((i) => [i.key, i.seek365])
     );
     const resolved365 = [];
+    const replaced365 = [];
     const unresolved365 = [];
+
+    // כל מה שהחיפוש החזיר (raw), ומה שנשאר אחרי מדינה/פסילה/שם מדויק
+    // (accepted). ההפרדה היא מה שמאפשר גם לזהות מזהה שמור שנפסל
+    const lookup365 = async (seek) => {
+      let raw = [];
+      let accepted = [];
+
+      for (const name of seek.names) {
+        const found = await scores365Api.searchCompetitions(name);
+        raw = found.competitions;
+        let list = raw;
+
+        // המדינה מצמצמת, אך אינה פוסלת: תחרות נבחרות אינה שייכת למדינה
+        // ואצל 365 השדה הזה עשוי להיות ריק. כשהסינון מותיר כלום נשארים
+        // עם הרשימה המלאה - הכרעה עדיין דורשת מועמד יחיד
+        if (seek.country) {
+          const inCountry = list.filter((c) => c.country && c.country.includes(seek.country));
+          if (inCountry.length > 0) list = inCountry;
+        }
+
+        // פסילה מפורשת. "ליגת האומות" היא גם של קונקקאף, "מונדיאל" הוא
+        // גם של נשים ושל נבחרות נוער - תחרויות אחרות לגמרי שנראות כמו
+        // התאמה מצוינת לפי השם
+        if (Array.isArray(seek.exclude)) {
+          list = list.filter((c) => !isExcluded(c.name, seek.exclude));
+        }
+
+        // שם מלא ומדויק הוא הצמצום האחרון, וכאן הוא הכרחי: "מונדיאל"
+        // מוכל גם ב"מוקדמות מונדיאל"
+        if (list.length > 1 && Array.isArray(seek.exact)) {
+          const wanted = seek.exact.map(normalizeName);
+          const exact = list.filter((c) => wanted.includes(normalizeName(c.name)));
+          if (exact.length > 0) list = exact;
+        }
+
+        accepted = list;
+        if (accepted.length > 0) break;
+      }
+
+      return { raw, accepted };
+    };
 
     for (const doc of [...created, ...updated]) {
       const seek = seekByKey.get(doc.key);
-      if (!seek || doc.scores365CompetitionId != null) continue;
+      if (!seek) continue;
 
-      let candidates = [];
+      let raw = [];
+      let accepted = [];
       try {
-        for (const name of seek.names) {
-          const found = await scores365Api.searchCompetitions(name);
-          let list = found.competitions;
-
-          // המדינה מצמצמת, אך אינה פוסלת: תחרות נבחרות אינה שייכת למדינה
-          // ואצל 365 השדה הזה עשוי להיות ריק. כשהסינון מותיר כלום נשארים
-          // עם הרשימה המלאה - הכרעה עדיין דורשת מועמד יחיד, ולכן זה לא
-          // פותח פתח לניחוש
-          if (seek.country) {
-            const inCountry = list.filter((c) => c.country && c.country.includes(seek.country));
-            if (inCountry.length > 0) list = inCountry;
-          }
-
-          // פסילה מפורשת. "ליגת האומות" היא גם של קונקקאף, "מונדיאל" הוא
-          // גם של נשים ושל נבחרות נוער - וכל אלה תחרויות אחרות לגמרי
-          // שנראות כמו התאמה מצוינת לפי השם
-          if (Array.isArray(seek.exclude)) {
-            const banned = seek.exclude.map(normalizeName);
-            const kept = list.filter((c) => {
-              const name = normalizeName(c.name);
-              return !banned.some((word) => name.includes(word));
-            });
-            // אם הפסילה מחקה הכול, עדיף לדווח על המועמדים מאשר לאבד אותם
-            if (kept.length > 0) list = kept;
-          }
-
-          // שם מלא ומדויק הוא הצמצום החלופי, וכאן הוא הכרחי: "מונדיאל"
-          // מוכל גם ב"מוקדמות מונדיאל", והשוואה מלאה מפרידה ביניהם בלי
-          // לנחש
-          if (list.length > 1 && Array.isArray(seek.exact)) {
-            const wanted = seek.exact.map(normalizeName);
-            const exact = list.filter((c) => wanted.includes(normalizeName(c.name)));
-            if (exact.length > 0) list = exact;
-          }
-
-          candidates = list;
-          if (candidates.length > 0) break;
-        }
+        ({ raw, accepted } = await lookup365(seek));
       } catch (err) {
         unresolved365.push({ league: doc.name, error: err.message });
         continue;
       }
 
-      if (candidates.length === 1) {
-        doc.scores365CompetitionId = candidates[0].id;
+      const current = doc.scores365CompetitionId;
+
+      if (current != null) {
+        const confirmed = accepted.find((c) => c.id === current);
+        if (confirmed) {
+          // תקין. שומרים את השם כדי שגם ליגה שאותרה פעם תציג אותו
+          if (doc.scores365Name !== confirmed.name) {
+            doc.scores365Name = confirmed.name || null;
+            await doc.save();
+          }
+          continue;
+        }
+
+        const known = raw.find((c) => c.id === current);
+
+        // מזהה שמור נחשב שגוי כששם התחרות נושא מילה פוסלת, או כשהתחרות
+        // שייכת מפורשות לאזור אחר מזה שביקשנו. "ליגת האומות" של קונקקאף
+        // נופלת באחד מהשניים גם אם השם שלה זהה לחלוטין
+        const wrongRegion = !!(seek.country && known?.country && !known.country.includes(seek.country));
+        const wrongName = !!(known && isExcluded(known.name, seek.exclude));
+
+        if (!known || (!wrongName && !wrongRegion)) {
+          // לא מוכר לחיפוש, או מוכר ותקין - אולי בחירה מכוונת של האדמין.
+          // לא נוגעים, ולא מרעישים
+          continue;
+        }
+
+        if (accepted.length === 1) {
+          doc.scores365CompetitionId = accepted[0].id;
+          doc.scores365Name = accepted[0].name || null;
+          await doc.save();
+          replaced365.push({
+            league: doc.name,
+            from: known.name,
+            id: accepted[0].id,
+            matchedName: accepted[0].name
+          });
+        } else {
+          unresolved365.push({
+            league: doc.name,
+            wrong: known.name,
+            tried: seek.names,
+            candidates: accepted.slice(0, 8)
+          });
+        }
+        continue;
+      }
+
+      if (accepted.length === 1) {
+        doc.scores365CompetitionId = accepted[0].id;
         // השם נשמר כדי שיהיה אפשר לראות במסך למה התחברנו. מזהה לבדו לא
         // מגלה שהתחברנו לליגת האומות של קונקקאף במקום של אופ"א
-        doc.scores365Name = candidates[0].name || null;
+        doc.scores365Name = accepted[0].name || null;
         await doc.save();
         resolved365.push({
           league: doc.name,
-          id: candidates[0].id,
-          matchedName: candidates[0].name,
-          country: candidates[0].country
+          id: accepted[0].id,
+          matchedName: accepted[0].name,
+          country: accepted[0].country
         });
       } else {
         // כולל את מה שחיפשנו: כשאין תוצאה בכלל, השאלה הבאה היא תמיד
@@ -408,15 +476,17 @@ router.post('/seed-european', requireAdmin, async (req, res) => {
         unresolved365.push({
           league: doc.name,
           tried: seek.names,
-          candidates: candidates.slice(0, 8)
+          candidates: accepted.slice(0, 8)
         });
       }
     }
 
     const resolvedNote = resolved365.length > 0 ? `, אותרו ${resolved365.length} מזהי 365` : '';
+    const replacedNote = replaced365.length > 0 ? `, תוקנו ${replaced365.length}` : '';
     res.status(201).json({
-      message: `נוצרו ${created.length} ליגות, עודכנו ${updated.length}${resolvedNote}`,
+      message: `נוצרו ${created.length} ליגות, עודכנו ${updated.length}${resolvedNote}${replacedNote}`,
       resolved365,
+      replaced365,
       unresolved365,
       created: created.length,
       updated: updated.length,

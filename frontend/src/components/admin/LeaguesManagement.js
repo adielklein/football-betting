@@ -268,13 +268,20 @@ function LeaguesManagement() {
           toast.success(`${r.league} → 365 #${r.id} (${r.matchedName}${r.country ? `, ${r.country}` : ''})`);
         });
 
+        // מזהה שגוי שתוקן - זה השינוי שהכי חשוב לראות, כי הוא מחליף
+        // נתונים שכבר היו במערכת
+        (data.replaced365 || []).forEach((r) => {
+          toast.success(`${r.league}: תוקן מ"${r.from}" ל"${r.matchedName}" (365 #${r.id})`);
+        });
+
         // לא הוכרע לבד - נשאר לאדמין, עם המועמדים שנמצאו
         (data.unresolved365 || []).forEach((u) => {
           const tried = (u.tried || []).slice(0, 3).join(', ');
+          const wrong = u.wrong ? `מחובר כרגע ל"${u.wrong}" - ` : '';
           const detail = u.error
             ? u.error
             : u.candidates && u.candidates.length > 0
-              ? `${u.candidates.length} מועמדים - בחר ידנית בעריכת הליגה`
+              ? `${wrong}${u.candidates.length} מועמדים - בחר ידנית בעריכת הליגה`
               // בלי לומר מה חיפשנו, "לא נמצאה" הוא מבוי סתום. עם זה, אפשר
               // להמשיך משם בחיפוש הידני שבעריכת הליגה
               : `לא נמצאה ב-365 (חיפשתי: ${tried || '—'}) - חפש ידנית בעריכת הליגה`;
