@@ -11,9 +11,36 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+
+  // עותק קריא של הסיסמה, כדי שמנהל יוכל לעזור למי ששכח.
+  //
+  // זו החלשה מודעת: bcrypt הוא חד-כיווני בדיוק כדי שדליפת מסד לא תחשוף
+  // סיסמאות, והשדה הזה מבטל את ההגנה הזו. לכן select: false - הוא לא
+  // נשלף באף שאילתה רגילה, אלא רק בבקשה ייעודית של מנהל, וכל צפייה בו
+  // נרשמת ביומן הפעולות.
+  passwordPlain: {
+    type: String,
+    select: false,
+    default: null
+  },
+
   name: {
     type: String,
     required: true
+  },
+
+  // שם נעול - רק מנהל יכול לשנות אותו. לשימוש כשמישהו משנה את השם שלו
+  // לדברים שלא צריך, או כששם מסוים חשוב לקבוצה
+  nameLocked: {
+    type: Boolean,
+    default: false
+  },
+
+  // המסך שנפתח בכניסה לאפליקציה. נשמר למשתמש ולא למכשיר, כדי שיהיה
+  // זהה בטלפון ובמחשב
+  defaultTab: {
+    type: String,
+    default: 'betting'
   },
   role: {
     type: String,

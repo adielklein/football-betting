@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import NotificationSettings from '../NotificationSettings';
 import ThemeSettings from './ThemeSettings';
+import AccountSettings from './AccountSettings';
 
 // דף ההגדרות של השחקן.
 //
@@ -11,10 +12,11 @@ import ThemeSettings from './ThemeSettings';
 
 const TABS = [
   { key: 'notifications', label: 'התראות', icon: '🔔' },
-  { key: 'theme', label: 'ערכת נושא', icon: '🎨' }
+  { key: 'theme', label: 'ערכת נושא', icon: '🎨' },
+  { key: 'account', label: 'חשבון', icon: '👤' }
 ];
 
-function SettingsView({ user, onThemeChange }) {
+function SettingsView({ user, onThemeChange, onProfileChange }) {
   const [tab, setTab] = useState('notifications');
 
   const isSupported =
@@ -89,6 +91,8 @@ function SettingsView({ user, onThemeChange }) {
         )}
 
         {tab === 'theme' && <ThemeSettings user={user} onThemeChange={onThemeChange} />}
+
+        {tab === 'account' && <AccountSettings user={user} onProfileChange={onProfileChange} />}
       </div>
     </div>
   );

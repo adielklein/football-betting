@@ -74,7 +74,9 @@ router.post('/login', async (req, res) => {
         name: user.name,
         username: user.username,
         role: user.role,
-        theme: user.theme || 'default'
+        theme: user.theme || 'default',
+        defaultTab: user.defaultTab || 'betting',
+        nameLocked: !!user.nameLocked
       }
     });
 
@@ -87,7 +89,9 @@ router.post('/login', async (req, res) => {
 // Get all users (for admin)
 router.get('/users', async (req, res) => {
   try {
-    const users = await User.find().select('name username role theme pushSettings').lean();
+    const users = await User.find()
+      .select('name username role theme pushSettings nameLocked defaultTab')
+      .lean();
 
     // הנתיב הזה פתוח - האפליקציה צריכה את שמות השחקנים כדי להציג טבלאות.
     // עד עכשיו הוא החזיר גם את אובייקטי המנוי המלאים של כולם, כולל
@@ -144,6 +148,8 @@ router.post('/users', requireAdmin, async (req, res) => {
       name, 
       username, 
       password: hashedPassword,
+      // העותק הקריא, כדי שמנהל יוכל לעזור למי ששכח. ראו הערה במודל
+      passwordPlain: password,
       role,
       theme
     });
@@ -197,13 +203,120 @@ router.patch('/users/:id/theme', requireSelfOrAdmin((req) => req.params.id), asy
   }
 });
 
+// פרופיל המשתמש עצמו: שם תצוגה ומסך פתיחה.
+//
+// שניהם היו עד עכשיו מאחורי נתיב ניהולי - כלומר כדי לתקן ניקוד בשם או
+// להיכנס ישר לטבלה היה צריך לבקש ממנהל. שם נעול (nameLocked) נשאר
+// בשליטת המנהל בלבד.
+router.patch('/users/:id/profile', requireSelfOrAdmin((req) => req.params.id), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const isAdminRequest = !!req.adminUser;
+    const updates = {};
+
+    if (req.body.name !== undefined) {
+      const name = String(req.body.name).trim().slice(0, 40);
+      if (!name) return res.status(400).json({ message: 'השם לא יכול להיות ריק' });
+      if (user.nameLocked && !isAdminRequest) {
+        return res.status(403).json({ message: 'השם שלך נעול לשינוי. פנה למנהל' });
+      }
+      updates.name = name;
+    }
+
+    if (req.body.defaultTab !== undefined) {
+      updates.defaultTab = String(req.body.defaultTab).trim().slice(0, 20) || 'betting';
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ message: 'אין מה לעדכן' });
+    }
+
+    Object.assign(user, updates);
+    await user.save();
+
+    res.json({ name: user.name, defaultTab: user.defaultTab, nameLocked: user.nameLocked });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// החלפת סיסמה על ידי המשתמש עצמו.
+//
+// המשתמש חייב לדעת את הסיסמה הנוכחית; מנהל שמאפס למי ששכח אינו חייב.
+// בשני המקרים מתעדכן גם העותק הקריא, אחרת הוא היה מציג סיסמה ישנה -
+// וזה גרוע יותר מלא להציג כלום.
+router.patch('/users/:id/password', requireSelfOrAdmin((req) => req.params.id), async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body || {};
+    const password = String(newPassword || '');
+
+    if (password.length < 4) {
+      return res.status(400).json({ message: 'הסיסמה החדשה קצרה מדי (לפחות 4 תווים)' });
+    }
+
+    const user = await User.findById(req.params.id).select('+passwordPlain');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const isAdminRequest = !!req.adminUser;
+    if (!isAdminRequest) {
+      const valid = await bcrypt.compare(String(currentPassword || ''), user.password);
+      if (!valid) return res.status(403).json({ message: 'הסיסמה הנוכחית שגויה' });
+    }
+
+    user.password = await bcrypt.hash(password, 10);
+    user.passwordPlain = password;
+    await user.save();
+
+    if (isAdminRequest && req.adminUser) {
+      logAdminAction(req.adminUser._id, 'איפוס סיסמה', user.name, { userId: user._id });
+    }
+
+    res.json({ message: 'הסיסמה עודכנה' });
+  } catch (error) {
+    console.error('Error updating password:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// הצגת סיסמה למנהל, למי ששכח.
+//
+// נתיב נפרד ולא שדה ברשימת המשתמשים: סיסמה קריאה לא צריכה לנסוע ברשת
+// בכל טעינת מסך, אלא רק כשמישהו באמת ביקש לראות אותה - וכל בקשה כזו
+// נרשמת ביומן הפעולות, כדי שצפייה בסיסמה של מישהו תשאיר עקבות.
+router.get('/users/:id/password', requireAdmin, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('+passwordPlain name username');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (req.adminUser) {
+      logAdminAction(req.adminUser._id, 'צפייה בסיסמה', user.name, { userId: user._id });
+    }
+
+    res.json({
+      // סיסמה שנקבעה לפני שהשדה הזה קיים אינה שמורה בשום מקום קריא
+      password: user.passwordPlain || null,
+      username: user.username
+    });
+  } catch (error) {
+    console.error('Error reading password:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Update user (admin only)
 router.patch('/users/:id', requireAdmin, async (req, res) => {
   try {
     console.log(`Updating user ${req.params.id}:`, req.body);
-    const { name, username, role, password, theme, adminId } = req.body;
+    const { name, username, role, password, theme, adminId, nameLocked } = req.body;
     
     const updateData = { name, username, role };
+
+    if (nameLocked !== undefined) {
+      updateData.nameLocked = !!nameLocked;
+    }
     
     if (theme !== undefined) {
       updateData.theme = theme;
@@ -213,6 +326,8 @@ router.patch('/users/:id', requireAdmin, async (req, res) => {
     // If password is provided, hash it
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);
+      // גם העותק הקריא, אחרת הוא יישאר על הסיסמה הקודמת
+      updateData.passwordPlain = password;
     }
     
     const user = await User.findByIdAndUpdate(

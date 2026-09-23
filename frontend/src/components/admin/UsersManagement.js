@@ -14,6 +14,9 @@ function UsersManagement({ users, loadData, user }) {
   });
   const [editingUser, setEditingUser] = useState(null);
   const [editForm, setEditForm] = useState({});
+  // סיסמאות שהמנהל ביקש לראות. נשלפות אחת-אחת ולא מגיעות עם הרשימה,
+  // וכל בקשה נרשמת ביומן הפעולות
+  const [revealed, setRevealed] = useState({});
   const [exclusionMonth, setExclusionMonth] = useState(null);
   const [exclusionSeason, setExclusionSeason] = useState('2026-27');
   const [excludedUserIds, setExcludedUserIds] = useState([]);
@@ -114,6 +117,21 @@ function UsersManagement({ users, loadData, user }) {
     }
   };
 
+  const revealPassword = async (userItem) => {
+    try {
+      const response = await fetch(`${API_URL}/auth/users/${userItem._id}/password`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'failed');
+
+      setRevealed((prev) => ({ ...prev, [userItem._id]: data.password || null }));
+      if (!data.password) {
+        toast.warning('הסיסמה נקבעה לפני שהתחלנו לשמור עותק קריא - אפשר לאפס אותה כאן');
+      }
+    } catch (error) {
+      toast.error('לא ניתן להציג את הסיסמה');
+    }
+  };
+
   const startEditing = (userItem) => {
     setEditingUser(userItem._id);
     setEditForm({
@@ -121,6 +139,7 @@ function UsersManagement({ users, loadData, user }) {
       username: userItem.username,
       role: userItem.role,
       theme: userItem.theme || 'default',
+      nameLocked: !!userItem.nameLocked,
       password: ''
     });
   };
@@ -136,7 +155,8 @@ function UsersManagement({ users, loadData, user }) {
         name: editForm.name,
         username: editForm.username,
         role: editForm.role,
-        theme: editForm.theme
+        theme: editForm.theme,
+        nameLocked: !!editForm.nameLocked
       };
 
       if (editForm.password && editForm.password.trim()) {
@@ -534,6 +554,24 @@ function UsersManagement({ users, loadData, user }) {
                         />
                       </div>
                       <div>
+                        <label style={labelStyle}>שם נעול</label>
+                        <button
+                          type="button"
+                          onClick={() => setEditForm(prev => ({ ...prev, nameLocked: !prev.nameLocked }))}
+                          className="btn"
+                          style={{
+                            ...inputStyle,
+                            textAlign: 'right',
+                            background: editForm.nameLocked ? 'var(--warn-bg, #fff3cd)' : 'var(--surface-2, #f8f9fa)',
+                            color: editForm.nameLocked ? 'var(--warn-fg, #9a7b3f)' : 'var(--text-3, #888)',
+                            fontWeight: 700
+                          }}
+                          title="כשנעול, המשתמש אינו יכול לשנות את שם התצוגה שלו"
+                        >
+                          {editForm.nameLocked ? '🔒 נעול - רק מנהל ישנה' : '🔓 המשתמש יכול לשנות'}
+                        </button>
+                      </div>
+                      <div>
                         <label style={labelStyle}>סיסמה חדשה</label>
                         <input
                           type="password"
@@ -643,9 +681,58 @@ function UsersManagement({ users, loadData, user }) {
                         @{userItem.username}
                       </span>
                       <ThemeDisplay themeName={userItem.theme || 'default'} />
+                      {userItem.nameLocked && (
+                        <span title="השם נעול לשינוי על ידי המשתמש" style={{ fontSize: '11px' }}>🔒</span>
+                      )}
                     </div>
+
+                    {revealed[userItem._id] !== undefined && (
+                      <div style={{
+                        marginTop: '0.3rem',
+                        padding: '0.3rem 0.5rem',
+                        borderRadius: '8px',
+                        background: 'var(--warn-bg, #fff3cd)',
+                        color: 'var(--warn-fg, #9a7b3f)',
+                        fontSize: '12px',
+                        fontFamily: 'monospace',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem'
+                      }}>
+                        <span>{revealed[userItem._id] || 'לא שמורה - אפשר לאפס בעריכה'}</span>
+                        <button
+                          onClick={() => setRevealed((prev) => {
+                            const next = { ...prev };
+                            delete next[userItem._id];
+                            return next;
+                          })}
+                          className="btn"
+                          style={{ background: 'transparent', padding: '0 0.2rem', fontSize: '12px' }}
+                        >
+                          ✖
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div style={{ display: 'flex', gap: '0.3rem', flexShrink: 0 }}>
+                    {/* סיסמה - למי ששכח. נשלפת בלחיצה ולא מגיעה עם הרשימה,
+                        וכל בקשה כזו נרשמת ביומן הפעולות */}
+                    <button
+                      onClick={() => revealPassword(userItem)}
+                      title="הצג סיסמה"
+                      style={{
+                        padding: '0.3rem 0.6rem',
+                        background: 'linear-gradient(135deg, #6c757d, #495057)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🔑
+                    </button>
                     <button
                       onClick={() => startEditing(userItem)}
                       style={{

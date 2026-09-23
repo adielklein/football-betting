@@ -94,7 +94,14 @@ function App() {
       const users = await response.json();
       const serverUser = users.find(u => u._id === localUser.id);
       
-      if (serverUser && serverUser.theme !== localUser.theme) {
+      const changed = serverUser && (
+        serverUser.theme !== localUser.theme ||
+        serverUser.name !== localUser.name ||
+        serverUser.defaultTab !== localUser.defaultTab ||
+        !!serverUser.nameLocked !== !!localUser.nameLocked
+      );
+
+      if (changed) {
         console.log('🎨 נמצא עדכון ערכת נושא!');
         console.log('🔄 מטמון:', localUser.theme, '→ שרת:', serverUser.theme);
         
@@ -104,7 +111,9 @@ function App() {
           theme: serverUser.theme,
           name: serverUser.name || localUser.name,
           username: serverUser.username || localUser.username,
-          role: serverUser.role || localUser.role
+          role: serverUser.role || localUser.role,
+          defaultTab: serverUser.defaultTab || localUser.defaultTab || 'betting',
+          nameLocked: !!serverUser.nameLocked
         };
         
         // שמור ב-localStorage
@@ -145,6 +154,21 @@ function App() {
         localStorage.setItem('football_betting_user', JSON.stringify(updated));
       } catch (err) {
         // אחסון חסום - הערכה עדיין שמורה בשרת
+      }
+      return updated;
+    });
+  };
+
+  // שינוי פרופיל (שם, מסך פתיחה) מהגדרות המשתמש. נשמר מקומית מיד, כדי
+  // שלא יידרס בבדיקה התקופתית מול השרת
+  const handleProfileChange = (changes) => {
+    setCurrentUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...changes };
+      try {
+        localStorage.setItem('football_betting_user', JSON.stringify(updated));
+      } catch (err) {
+        // אחסון חסום - השינוי עדיין שמור בשרת
       }
       return updated;
     });
@@ -234,7 +258,12 @@ function App() {
       ) : currentUser.role === 'admin' ? (
         <AdminView user={currentUser} onLogout={handleLogout} />
       ) : (
-        <PlayerView user={currentUser} onLogout={handleLogout} onThemeChange={handleThemeChange} />
+        <PlayerView
+          user={currentUser}
+          onLogout={handleLogout}
+          onThemeChange={handleThemeChange}
+          onProfileChange={handleProfileChange}
+        />
       )}
 
       <ToastHost />

@@ -14,7 +14,7 @@ import useSwipeNav from '../../services/useSwipeNav';
 import { stepTab } from '../../services/swipeNav';
 import { syncPushSubscription } from '../../services/pushSync';
 
-function PlayerView({ user, onLogout, onThemeChange }) {
+function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
   const [weeks, setWeeks] = useState([]);
   const [selectedWeek, setSelectedWeek] = useState(null);
   const [matches, setMatches] = useState([]);
@@ -26,9 +26,12 @@ function PlayerView({ user, onLogout, onThemeChange }) {
   // מגלגל השיניים בכותרת, ולכן אין סיבה שיגזלו מקום בסרגל צר ממילא
   const VISIBLE_TABS = ['betting', 'allbets', 'leaderboard', 'history', 'stats'];
   const TAB_KEYS = [...VISIBLE_TABS, 'settings'];
+  // מסך הפתיחה הוא העדפה של המשתמש. לשונית שנשמרה ואינה קיימת יותר
+  // נופלת להימורים, כדי שהעדפה ישנה לא תוביל למסך ריק
+  const preferredTab = VISIBLE_TABS.includes(user?.defaultTab) ? user.defaultTab : 'betting';
   const [activeTab, setActiveTab] = useTabRoute(
     TAB_KEYS,
-    'betting',
+    preferredTab,
     { onBeforeChange: () => confirmLeave() }
   );
 
@@ -318,7 +321,11 @@ function PlayerView({ user, onLogout, onThemeChange }) {
           )}
 
           {activeTab === 'settings' && (
-            <SettingsView user={user} onThemeChange={onThemeChange} />
+            <SettingsView
+              user={user}
+              onThemeChange={onThemeChange}
+              onProfileChange={onProfileChange}
+            />
           )}
         </div>
       </div>
