@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { toApiDate, nextPageOf } = require('./scores365Api');
+const { toApiDate } = require('./scores365Api');
 
 test('הטווח נשלח בפורמט ש-365 מצפים לו', () => {
   assert.equal(toApiDate('2026-09-23'), '23/09/2026');
@@ -14,27 +14,11 @@ test('תאריך חסר או פגום לא מייצר טווח שבור', () => 
   }
 });
 
-test('עמוד המשך מזוהה בכל הצורות שהספק מחזיר', () => {
-  assert.equal(nextPageOf({ paging: { nextPage: '/games/fixtures/?page=2' } }), '/games/fixtures/?page=2');
-  assert.equal(nextPageOf({ nextPage: '/games/results/?page=3' }), '/games/results/?page=3');
-  // כתובת מלאה נחתכת לנתיב, כי apiGet מוסיף את הבסיס בעצמו
-  assert.equal(
-    nextPageOf({ paging: { nextPage: 'https://webws.365scores.com/web/games/fixtures/?page=4' } }),
-    '/web/games/fixtures/?page=4'
-  );
-});
-
-test('כשאין עמוד המשך מוחזר null, ולא ערך שיגרום לבקשה נוספת', () => {
-  for (const json of [{}, null, { paging: {} }, { paging: { nextPage: '' } }, { nextPage: 7 }, { nextPage: 'page=2' }]) {
-    assert.equal(nextPageOf(json), null, JSON.stringify(json));
-  }
-});
-
 // ── הבקשה מול 365, עם fetch מוחלף ─────────────────────────────────
 //
-// הבדיקות האלה קיימות בגלל תקלה אמיתית: בקשת הטווח נשלחה ראשונה, הספק
-// דחה את הפרמטרים, והחריגה קפצה מעל הניסיון החוזר - כך שלא נמשך שום
-// משחק. תוספת שיכולה להפיל את מה שעבד אינה תוספת.
+// הבדיקות האלה קיימות בגלל תקלות אמיתיות: נתיב שהחזיר 404 והפיל את כל
+// הייבוא, ותשובה ריקה שנשמרה לשש שעות. שתיהן נראו במסך בדיוק כמו
+// "אין משחקים בטווח".
 
 const { fetchUpcomingFixtures } = require('./scores365Api');
 
@@ -61,8 +45,6 @@ const ok = (games) => ({
   json: async () => ({ games }),
   text: async () => ''
 });
-
-const fail = () => ({ ok: false, status: 400, json: async () => ({}), text: async () => 'bad request' });
 
 test('נתיב שנפל מוחלף בנתיב אחר, והמשחקים נמשכים בכל זאת', async () => {
   const urls = [];
@@ -147,17 +129,13 @@ test('משחק מחוץ לטווח שהספק החזיר בכל זאת - מסו�
 });
 
 test('תשובה חלקית עדיפה על שגיאה: מה שנאסף מוחזר', async () => {
-  let call = 0;
   const fixtures = await withFetch(
-    () => {
-      call += 1;
-      // העמוד הראשון מצליח, וההמשך נכשל
-      return call === 1
-        ? ok([game(601, 24)])
-        : { ok: false, status: 500, json: async () => ({}), text: async () => 'boom' };
-    },
+    (url) => (url.includes('/games/results/')
+      // נתיב אחד מצליח והשני נכשל - מה שנאסף נשאר
+      ? { ok: false, status: 500, json: async () => ({}), text: async () => 'boom' }
+      : ok([game(601, 24)])),
     () => fetchUpcomingFixtures({
-      scores365CompetitionId: 9007, fromDate: '2026-09-20', toDate: '2026-09-30',
+      scores365CompetitionId: 9107, fromDate: '2026-09-20', toDate: '2026-09-30',
       refresh: true, includePast: true
     })
   );

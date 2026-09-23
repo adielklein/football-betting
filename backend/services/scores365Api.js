@@ -48,35 +48,6 @@ const toApiDate = (ymd) => {
   return y && m && d ? `${d}/${m}/${y}` : '';
 };
 
-// כמה עמודים לכל היותר. תקרה ולא לולאה פתוחה: אם הספק יחזיר הפניה
-// מעגלית, עדיף להפסיק מאשר להיתקע
-const MAX_PAGES = 6;
-
-// עמוד ההמשך מגיע בשמות שונים לפי הנתיב, ולפעמים כלל לא
-const nextPageOf = (json) => {
-  const next = json?.paging?.nextPage || json?.nextPage || null;
-  if (!next || typeof next !== 'string') return null;
-  // כתובת מלאה, נתיב, או רק מחרוזת שאילתה
-  if (next.startsWith('http')) return next.replace(/^https?:\/\/[^/]+/, '');
-  if (next.startsWith('/')) return next;
-  return null;
-};
-
-const fetchAllPages = async (firstPath) => {
-  const collected = [];
-  let path = firstPath;
-
-  for (let page = 0; page < MAX_PAGES && path; page++) {
-    const json = await apiGet(path);
-    const games = Array.isArray(json?.games) ? json.games : [];
-    collected.push(...games);
-    if (games.length === 0) break;
-    path = nextPageOf(json);
-  }
-
-  return collected;
-};
-
 const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate, refresh = false, includePast = false }) => {
   if (!scores365CompetitionId) throw new Error('scores365CompetitionId is required');
 
@@ -112,8 +83,9 @@ const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate,
 
   const tryPath = async (path) => {
     try {
-      const games = await fetchAllPages(path);
+      const json = await apiGet(path);
       reached = true;
+      const games = Array.isArray(json?.games) ? json.games : [];
       collect(games);
       return games.length;
     } catch (err) {
@@ -123,10 +95,13 @@ const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate,
     }
   };
 
+  // שניים בלבד: זה שאתר 365 משתמש בו, וזה שעבד כאן עד ה-404. הנתיב
+  // הישן נשלח בלי טווח - כך הוא תמיד נשלח, וזה מה שידוע שעבד. צירוף
+  // של נתיב ישן עם פרמטרים שמעולם לא ראיתי אותו מקבל הוא ניחוש, ולא
+  // גיבוי
   const attempts = [];
   if (range) attempts.push({ coversPast: true, path: `/games/allscores/?${base}&sports=1${range}` });
-  attempts.push({ coversPast: false, path: `/games/fixtures/?${base}${range}` });
-  if (range) attempts.push({ coversPast: false, path: `/games/fixtures/?${base}` });
+  attempts.push({ coversPast: false, path: `/games/fixtures/?${base}` });
 
   let covered = false;
   for (const attempt of attempts) {
@@ -138,10 +113,7 @@ const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate,
 
   // תוצאות עבר, אלא אם הנתיב שהצליח כולל אותן ממילא
   if (includePast && !covered) {
-    for (const path of [`/games/results/?${base}${range}`, `/games/results/?${base}`]) {
-      if (await tryPath(path) > 0) break;
-      if (!range) break;
-    }
+    await tryPath(`/games/results/?${base}`);
   }
 
   const games = [...byId.values()];
@@ -687,10 +659,9 @@ const searchCompetitions = async (query, { refresh = false } = {}) => {
 };
 
 module.exports = {
-  // מיוצאים לבדיקה: המרת התאריך ופענוח עמוד ההמשך הם בדיוק מה שנשבר
-  // בשקט - פורמט שגוי מחזיר רשימה ריקה, לא שגיאה
+  // מיוצא לבדיקה: פורמט תאריך שגוי בטווח מחזיר רשימה ריקה ולא שגיאה,
+  // וזה נשבר בשקט
   toApiDate,
-  nextPageOf,
   isConfigured,
   fetchUpcomingFixtures,
   fetchOddsForFixture,
