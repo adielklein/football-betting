@@ -211,7 +211,52 @@ const getLiveForWeek = async (weekId, matches) => {
 
 const invalidate = (weekId) => cache.delete(String(weekId));
 
+// ── פרטי משחק: מי כבש, ולמה השער נפסל ───────────────────────────
+//
+// הרשימות מחזירות תוצאה בלבד, ולכן "השער בוטל" היה כל מה שיכולנו לומר -
+// מספר שירד, בלי סיבה. הנתיב של משחק בודד מחזיר מערך אירועים שבו 365
+// אומרים את זה במפורש: eventType.name = "השער נפסל", subTypeName = "Var",
+// לצד הדקה, הקבוצה והשחקן.
+//
+// נקרא רק כשזוהה אירוע ויש למי לשלוח - לא בכל סריקה.
+const fetchGameDetails = async (externalId) => {
+  if (!is365Id(externalId)) return null;
+
+  try {
+    const json = await apiGet(`/game/?${COMMON_QUERY}&gameId=${stripPrefix(externalId)}`);
+    const game = json?.game;
+    if (!game) return null;
+
+    // members הוא רשימת השחקנים של שתי הקבוצות; ממנה השם לפי מזהה
+    const nameById = new Map(
+      (Array.isArray(game.members) ? game.members : [])
+        .map((m) => [m.id, m.name || m.shortName || null])
+    );
+
+    const events = (Array.isArray(game.events) ? game.events : []).map((e) => ({
+      competitorId: e.competitorId ?? null,
+      playerId: e.playerId ?? null,
+      playerName: nameById.get(e.playerId) || null,
+      minute: e.gameTimeDisplay || (e.gameTime != null ? `${e.gameTime}'` : null),
+      order: e.order ?? 0,
+      typeName: e.eventType?.name || null,
+      subTypeName: e.eventType?.subTypeName || null
+    }));
+
+    return {
+      homeCompetitorId: game.homeCompetitor?.id ?? null,
+      awayCompetitorId: game.awayCompetitor?.id ?? null,
+      events
+    };
+  } catch (err) {
+    // העשרה, לא תלות: בלעדיה ההתראה עדיין נשלחת, רק בלי הפרטים
+    console.warn(`⚠️ [365] פרטי משחק ${externalId} לא נטענו: ${err.message}`);
+    return null;
+  }
+};
+
 module.exports = {
+  fetchGameDetails,
   getLiveForWeek,
   fetchLiveFor,
   inBroadcastWindow,

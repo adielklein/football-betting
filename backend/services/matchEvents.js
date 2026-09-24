@@ -115,6 +115,56 @@ function detectEvents(prev, live) {
   return { events, next, changed };
 }
 
+// ── פרטים מתוך אירועי המשחק ──────────────────────────────────────
+//
+// 365 מדווחים על אירוע שער שנפסל עם eventType.name = "השער נפסל"
+// ו-subTypeName = "Var". זה מה שהופך "השער בוטל" ל"VAR פסל את השער
+// של רומא בדקה 14".
+const CANCELLED_EVENT = /נפסל|בוטל|disallow|cancel|annul/i;
+const GOAL_EVENT = /שער|goal/i;
+const VAR_EVENT = /var/i;
+
+// האירוע האחרון שמתאים, לפי order. הרשימה מסודרת לפי מהלך המשחק, ולכן
+// האחרון הוא זה שהרגע קרה - וזה שההתראה מדברת עליו
+const latestEvent = (events, { pattern, exclude = null, competitorId = null }) => {
+  const matches = (events || []).filter((e) => {
+    if (competitorId != null && e.competitorId !== competitorId) return false;
+    const text = `${e.typeName || ''} ${e.subTypeName || ''}`;
+    // "השער נפסל" מכיל את המילה "שער", ולכן חיפוש שער תופס גם אותו.
+    // בלי ההחרגה, שער שנפסל היה מדווח ככובש של הקבוצה שהשער נלקח ממנה
+    if (exclude && exclude.test(text)) return false;
+    return pattern.test(text);
+  });
+
+  if (matches.length === 0) return null;
+  return matches.reduce((best, e) => ((e.order ?? 0) >= (best.order ?? 0) ? e : best));
+};
+
+/**
+ * פרטי האירוע שיש לצרף להתראה: מי, מתי, ולמה.
+ * מחזיר אובייקט ריק כשאין פרטים - ההתראה תישלח בלעדיהם.
+ */
+const eventDetails = (type, side, details) => {
+  if (!details || !Array.isArray(details.events)) return {};
+
+  // הצד שעליו מדובר, לפי מזהה הקבוצה אצל הספק
+  const competitorId = side === 'team1' ? details.homeCompetitorId
+    : side === 'team2' ? details.awayCompetitorId
+      : null;
+
+  const found = type === 'goalCancelled'
+    ? latestEvent(details.events, { pattern: CANCELLED_EVENT, competitorId })
+    : latestEvent(details.events, { pattern: GOAL_EVENT, exclude: CANCELLED_EVENT, competitorId });
+
+  if (!found) return {};
+
+  return {
+    scorer: found.playerName || null,
+    minute: found.minute || null,
+    byVar: VAR_EVENT.test(`${found.subTypeName || ''} ${found.typeName || ''}`)
+  };
+};
+
 // שדות תמונת המצב, בסדר אחד ויחיד. הכתיבה המותנית בסריקה בונה מהם את
 // התנאי, ולכן הם חיים כאן ליד ההגדרה ולא משוכפלים שם
 const SNAPSHOT_FIELDS = Object.keys(EMPTY);
@@ -170,18 +220,25 @@ function describeEvent(event, team1, team2) {
       return { title: '🏁 המשחק התחיל', body: pair };
     case 'goal': {
       const who = event.scorer === 'team1' ? team1 : event.scorer === 'team2' ? team2 : null;
+      // הכובש והדקה, כשהספק מספר אותם
+      const by = event.details?.scorer ? ` (${event.details.scorer}${event.details.minute ? `, ${event.details.minute}` : ''})` : '';
       return {
         title: '⚽ שער!',
-        body: who ? `${who} כבשה · ${pair} ${score}` : `${pair} ${score}`
+        body: who ? `${who} כבשה${by} · ${pair} ${score}` : `${pair} ${score}`
       };
     }
     case 'goalCancelled': {
       // הקבוצה שהשער נמחק לה, לא זו שנהנתה מהביטול: זו הקבוצה שהמידע
       // הקודם היה עליה, ולכן היא מה שמחפשים בהתראה
       const who = event.side === 'team1' ? team1 : event.side === 'team2' ? team2 : null;
+      const details = event.details || {};
+      const when = details.minute ? ` בדקה ${details.minute.replace(/'/g, '')}` : '';
+      const reason = details.byVar ? 'VAR פסל את השער' : 'השער נפסל';
       return {
-        title: '❌ השער בוטל',
-        body: who ? `השער של ${who} בוטל · ${pair} ${score}` : `${pair} ${score}`
+        title: details.byVar ? '📺 VAR - השער נפסל' : '❌ השער נפסל',
+        body: who
+          ? `${reason} של ${who}${when} · ${pair} ${score}`
+          : `${reason}${when} · ${pair} ${score}`
       };
     }
     case 'red': {
@@ -223,6 +280,8 @@ function selectMatchEndRecipients({
 }
 
 module.exports = {
+  eventDetails,
+  latestEvent,
   SNAPSHOT_FIELDS,
   eventKey,
   detectEvents,

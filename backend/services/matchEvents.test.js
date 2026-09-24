@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const {
   detectEvents, describeEvent, selectMatchEndRecipients, eventKey, SNAPSHOT_FIELDS,
-  SETTING_BY_EVENT
+  SETTING_BY_EVENT, eventDetails
 } = require('./matchEvents');
 
 const types = (r) => r.events.map((e) => e.type);
@@ -210,7 +210,8 @@ test('שער שבוטל מזוהה כביטול, ולא כשער', () => {
   assert.equal(r.events[0].side, 'team1');
 
   const text = describeEvent(r.events[0], 'רומא', 'אינטר');
-  assert.match(text.title, /בוטל/);
+  // הנוסח עודכן ל"נפסל" כשהתברר שזה בדיוק מה ש-365 קוראים לזה
+  assert.match(text.title, /נפסל/);
   assert.match(text.body, /רומא/);
 });
 
@@ -246,4 +247,58 @@ test('ביטול נושא חתימה משלו, ולא זו של שער באות�
 
 test('ביטול שער נשלט באותו מתג של שערים', () => {
   assert.equal(SETTING_BY_EVENT.goalCancelled, SETTING_BY_EVENT.goal);
+});
+
+// ── פרטי אירוע מתוך הנתיב של משחק בודד ───────────────────────────
+
+const details = {
+  homeCompetitorId: 100,
+  awayCompetitorId: 200,
+  events: [
+    { competitorId: 100, order: 1, typeName: 'שער', subTypeName: null, playerName: 'חקימי', minute: "12'" },
+    { competitorId: 200, order: 2, typeName: 'השער נפסל', subTypeName: 'Var', playerName: 'קיין', minute: "14'" },
+    { competitorId: 100, order: 3, typeName: 'שער', subTypeName: null, playerName: 'ויניסיוס', minute: "61'" }
+  ]
+};
+
+test('שער נפסל: מזוהה לפי סוג האירוע, עם הדקה והסימון של VAR', () => {
+  const d = eventDetails('goalCancelled', 'team2', details);
+  assert.equal(d.byVar, true);
+  assert.equal(d.minute, "14'");
+
+  const text = describeEvent(
+    { type: 'goalCancelled', side: 'team2', team1Goals: 1, team2Goals: 0, details: d },
+    'ריאל', 'טוטנהאם'
+  );
+  assert.match(text.title, /VAR/);
+  assert.match(text.body, /טוטנהאם/);
+  assert.match(text.body, /14/);
+});
+
+test('שער: נלקח האחרון של אותה קבוצה, ולא הראשון', () => {
+  const d = eventDetails('goal', 'team1', details);
+  assert.equal(d.scorer, 'ויניסיוס');
+  assert.equal(d.minute, "61'");
+
+  const text = describeEvent(
+    { type: 'goal', scorer: 'team1', team1Goals: 2, team2Goals: 0, details: d },
+    'ריאל', 'טוטנהאם'
+  );
+  assert.match(text.body, /ויניסיוס/);
+});
+
+test('אירוע של הקבוצה השנייה אינו נספר לצד הזה', () => {
+  // לטוטנהאם אין שער, רק שער שנפסל
+  assert.equal(eventDetails('goal', 'team2', details).scorer, undefined);
+});
+
+test('בלי פרטים מהספק ההתראה נשלחת כרגיל, בלי שם ובלי דקה', () => {
+  assert.deepEqual(eventDetails('goal', 'team1', null), {});
+
+  const text = describeEvent(
+    { type: 'goalCancelled', side: 'team1', team1Goals: 0, team2Goals: 0, details: {} },
+    'רומא', 'אינטר'
+  );
+  assert.match(text.title, /נפסל/);
+  assert.ok(!text.title.includes('VAR'), text.title);
 });

@@ -306,7 +306,7 @@ const liveScores = require('./services/liveScores');
 // כל ארבעת הסוגים כבויים כברירת מחדל, ולכן ברוב המקרים אין למי לשלוח
 // ואפילו לא נשלפת רשימת משתמשים.
 const {
-  detectEvents, describeEvent, eventKey, SETTING_BY_EVENT, SNAPSHOT_FIELDS
+  detectEvents, describeEvent, eventDetails, eventKey, SETTING_BY_EVENT, SNAPSHOT_FIELDS
 } = require('./services/matchEvents');
 
 // sentInThisPoll מגיע מהסבב ולא נוצר כאן: אותו משחק יכול להיות שמור בשני
@@ -377,6 +377,10 @@ const notifyLiveEvents = async (matches, games, sentInThisPoll = new Set()) => {
     }
     match.liveSnapshot = next;
 
+    // undefined = עוד לא ניסינו, null = ניסינו ואין. כך לא מנסים פעמיים
+    // באותה סריקה
+    let details;
+
     for (const event of events) {
       // סוף משחק נשלח מחישוב הניקוד (routes/scores.js) ולא מכאן, כי שם
       // כבר ידוע כמה נקודות כל אחד הרוויח ומי קלע בול. שליחה גם כאן הייתה
@@ -402,7 +406,18 @@ const notifyLiveEvents = async (matches, games, sentInThisPoll = new Set()) => {
         );
         if (recipients.length === 0) continue;
 
-        const text = describeEvent(event, match.team1, match.team2);
+        // פרטי האירוע - מי כבש, באיזו דקה, והאם VAR פסל - מגיעים מנתיב
+        // נפרד, ולכן נטענים רק כשיש אירוע ויש למי לשלוח. פעם אחת למשחק
+        // בסריקה, גם כששני אירועים קרו יחד
+        if ((event.type === 'goal' || event.type === 'goalCancelled') && details === undefined) {
+          details = await liveScores.fetchGameDetails(match.externalId);
+        }
+
+        const enriched = (event.type === 'goal' || event.type === 'goalCancelled')
+          ? { ...event, details: eventDetails(event.type, event.scorer || event.side, details) }
+          : event;
+
+        const text = describeEvent(enriched, match.team1, match.team2);
         if (!text) continue;
 
         // ההתראה נתפסת לפני שהיא נשלחת, בכתיבה אחת אטומית: התנאי הוא
