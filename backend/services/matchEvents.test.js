@@ -1,7 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const {
-  detectEvents, describeEvent, selectMatchEndRecipients, eventKey, SNAPSHOT_FIELDS
+  detectEvents, describeEvent, selectMatchEndRecipients, eventKey, SNAPSHOT_FIELDS,
+  SETTING_BY_EVENT
 } = require('./matchEvents');
 
 const types = (r) => r.events.map((e) => e.type);
@@ -56,8 +57,11 @@ test('שתי קבוצות שכבשו בין סריקות מדווחות כאיר
   assert.equal(r.events[0].scorer, 'both');
 });
 
-test('תיקון תוצאה כלפי מטה אינו שער', () => {
-  assert.deepEqual(types(detectEvents(live({ team1Goals: 2 }), live({ team1Goals: 1 }))), []);
+test('תיקון תוצאה כלפי מטה אינו שער אלא ביטול', () => {
+  // היה כאן "ואינו כלום". מאז נוספה התראת ביטול, וירידה של אחד היא
+  // בדיוק מה שהיא מזהה - אבל שער היא עדיין לא
+  const r = detectEvents(live({ team1Goals: 2 }), live({ team1Goals: 1 }));
+  assert.deepEqual(types(r), ['goalCancelled']);
 });
 
 test('כרטיס אדום מזוהה מעלייה במונה', () => {
@@ -196,4 +200,50 @@ test('שני אדומים לאותה קבוצה הם שני אירועים ול�
 test('שדות תמונת המצב הם בדיוק אלה שהזיהוי משווה', () => {
   const { next } = detectEvents(null, { status: 'live', team1Goals: 1, team2Goals: 0 });
   assert.deepEqual(SNAPSHOT_FIELDS.slice().sort(), Object.keys(next).sort());
+});
+
+test('שער שבוטל מזוהה כביטול, ולא כשער', () => {
+  const prev = live({ team1Goals: 1, team2Goals: 0 });
+  const r = detectEvents(prev, live({ team1Goals: 0, team2Goals: 0 }));
+
+  assert.deepEqual(types(r), ['goalCancelled']);
+  assert.equal(r.events[0].side, 'team1');
+
+  const text = describeEvent(r.events[0], 'רומא', 'אינטר');
+  assert.match(text.title, /בוטל/);
+  assert.match(text.body, /רומא/);
+});
+
+test('ירידה של יותר משער אחד אינה ביטול - זו תקלה בנתונים', () => {
+  const prev = live({ team1Goals: 3, team2Goals: 0 });
+  const r = detectEvents(prev, live({ team1Goals: 0, team2Goals: 0 }));
+  assert.deepEqual(types(r), []);
+});
+
+test('ירידה בתוצאה כשהמשחק אינו מתנהל אינה ביטול', () => {
+  const prev = live({ team1Goals: 1, team2Goals: 0 });
+  const finished = detectEvents(prev, live({ status: 'finished', team1Goals: 0, team2Goals: 0 }));
+  assert.ok(!types(finished).includes('goalCancelled'), types(finished).join(','));
+
+  const started = detectEvents(
+    live({ status: 'scheduled', team1Goals: 1, team2Goals: 0 }),
+    live({ team1Goals: 0, team2Goals: 0 })
+  );
+  assert.ok(!types(started).includes('goalCancelled'), types(started).join(','));
+});
+
+test('ביטול ושער באותה סריקה - שניהם מדווחים', () => {
+  const prev = live({ team1Goals: 1, team2Goals: 0 });
+  const r = detectEvents(prev, live({ team1Goals: 0, team2Goals: 1 }));
+  assert.deepEqual(types(r).sort(), ['goal', 'goalCancelled']);
+});
+
+test('ביטול נושא חתימה משלו, ולא זו של שער באותה תוצאה', () => {
+  const goal = { type: 'goal', scorer: 'team1', team1Goals: 1, team2Goals: 0 };
+  const cancel = { type: 'goalCancelled', side: 'team2', team1Goals: 1, team2Goals: 0 };
+  assert.notEqual(eventKey(goal), eventKey(cancel));
+});
+
+test('ביטול שער נשלט באותו מתג של שערים', () => {
+  assert.equal(SETTING_BY_EVENT.goalCancelled, SETTING_BY_EVENT.goal);
 });

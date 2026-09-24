@@ -42,7 +42,7 @@ function ToggleRow({ label, hint, checked, onChange }) {
 
 // התראות אירועים במשחק חי. כולן כבויות כברירת מחדל - נדלקות רק בבחירה
 const MATCH_EVENT_ALERTS = [
-  { key: 'goalAlerts', label: '⚽ שערים', hint: 'התראה על כל שער במשחקי השבוע' },
+  { key: 'goalAlerts', label: '⚽ שערים', hint: 'כל שער במשחקי השבוע, וגם שער שבוטל' },
   { key: 'redCardAlerts', label: '🟥 כרטיסים אדומים', hint: 'התראה על הרחקה' },
   { key: 'matchStartAlerts', label: '🏁 תחילת משחק', hint: 'שריקת פתיחה' },
   { key: 'matchEndAlerts', label: '🔚 סיום משחק', hint: 'שריקת סיום והתוצאה' }

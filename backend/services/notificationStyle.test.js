@@ -9,7 +9,7 @@ test('לשער יש קצב רטט משלו, שונה מברירת המחדל', (
 });
 
 test('כל סוג אירוע מקבל קצב שונה מהאחרים', () => {
-  const patterns = ['match_goal', 'match_red', 'match_start', 'match_end', 'exact_score']
+  const patterns = ['match_goal', 'match_goalCancelled', 'match_red', 'match_start', 'match_end', 'exact_score']
     .map((t) => JSON.stringify(styleFor(t).vibrate));
   assert.equal(new Set(patterns).size, patterns.length);
 });

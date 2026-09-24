@@ -13,6 +13,7 @@ const START = [150];                     // נקישה אחת קצרה
 const END = [200, 100, 200];             // שתיים מדודות
 const EXACT = [70, 50, 70, 50, 70, 50, 450]; // חגיגי: שלוש קצרות ואז החזקה
 const NUDGE = [120, 80, 120, 80, 120];   // דפיקה מתמשכת בדלת
+const CANCELLED = [60, 40, 60, 40, 60, 40, 60];  // גמגום קצר - משהו נלקח בחזרה
 const DEFAULT = [200, 100, 200];
 
 // כפתור על ההתראה עצמה. ה-url נשלח לצדו כדי שה-service worker יישאר
@@ -22,6 +23,8 @@ const toBet = { action: 'bet', title: '⚽ להמר עכשיו', url: '/#/bettin
 
 const STYLES = {
   match_goal: { vibrate: GOAL, actions: [toLive] },
+  // רטט הפוך במובן מסוים לשער: קצר ומקוטע, כדי שההבדל יורגש בכיס
+  match_goalCancelled: { vibrate: CANCELLED, actions: [toLive] },
   match_red: { vibrate: RED, actions: [toLive] },
   match_start: { vibrate: START, actions: [toLive] },
   match_end: { vibrate: END, actions: [toLive] },

@@ -26,6 +26,15 @@ const rise = (before, after) => {
   return after > before ? after - before : 0;
 };
 
+// וכמה ירד. שער שבוטל אחרי VAR הוא בדיוק זה: התוצאה יורדת באחד.
+//
+// אחד בלבד: ירידה של שניים ומעלה היא כמעט תמיד תקלה בנתונים ולא ביטול,
+// והתראה על ביטול שלא היה גרועה מאשר שתיקה
+const cancelled = (before, after) => {
+  if (before == null || after == null) return 0;
+  return before - after === 1 ? 1 : 0;
+};
+
 /**
  * @param prev תמונת המצב השמורה על המשחק, או null אם זו הפעם הראשונה
  * @param live מה שהסריקה החיה מחזירה עכשיו
@@ -69,6 +78,21 @@ function detectEvents(prev, live) {
     });
   }
 
+  // ביטול שער. רק בזמן שהמשחק מתנהל: ירידה בתוצאה בזמן שהמצב עצמו
+  // משתנה - למשל נתונים שנטענים מחדש בסוף המשחק - אינה ביטול
+  if (next.status === 'live' && before.status === 'live') {
+    const team1Cancelled = cancelled(before.team1Goals, next.team1Goals);
+    const team2Cancelled = cancelled(before.team2Goals, next.team2Goals);
+    if (team1Cancelled > 0 || team2Cancelled > 0) {
+      events.push({
+        type: 'goalCancelled',
+        side: team1Cancelled > 0 && team2Cancelled > 0 ? 'both' : team1Cancelled > 0 ? 'team1' : 'team2',
+        team1Goals: next.team1Goals,
+        team2Goals: next.team2Goals
+      });
+    }
+  }
+
   const team1Reds = rise(before.team1Reds, next.team1Reds);
   const team2Reds = rise(before.team2Reds, next.team2Reds);
   if (team1Reds > 0 || team2Reds > 0) {
@@ -105,6 +129,8 @@ const eventKey = (event) => {
       return 'start';
     case 'goal':
       return `goal:${event.team1Goals}-${event.team2Goals}`;
+    case 'goalCancelled':
+      return `cancel:${event.team1Goals}-${event.team2Goals}`;
     case 'red':
       return `red:${event.team1Reds}-${event.team2Reds}`;
     case 'end':
@@ -118,6 +144,8 @@ const eventKey = (event) => {
 // כבויה, ולכן משתמש שלא בחר דבר לא יקבל שום התראה חדשה
 const SETTING_BY_EVENT = {
   goal: 'goalAlerts',
+  // אותו מתג כמו שער: מי שרוצה לדעת על שער רוצה לדעת גם כשהוא נמחק
+  goalCancelled: 'goalAlerts',
   red: 'redCardAlerts',
   start: 'matchStartAlerts',
   end: 'matchEndAlerts'
@@ -145,6 +173,15 @@ function describeEvent(event, team1, team2) {
       return {
         title: '⚽ שער!',
         body: who ? `${who} כבשה · ${pair} ${score}` : `${pair} ${score}`
+      };
+    }
+    case 'goalCancelled': {
+      // הקבוצה שהשער נמחק לה, לא זו שנהנתה מהביטול: זו הקבוצה שהמידע
+      // הקודם היה עליה, ולכן היא מה שמחפשים בהתראה
+      const who = event.side === 'team1' ? team1 : event.side === 'team2' ? team2 : null;
+      return {
+        title: '❌ השער בוטל',
+        body: who ? `השער של ${who} בוטל · ${pair} ${score}` : `${pair} ${score}`
       };
     }
     case 'red': {
