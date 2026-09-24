@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import TeamLogo from '../TeamLogo';
 import LeagueLogo from '../LeagueLogo';
 import ResultNote from '../ResultNote';
@@ -16,6 +17,15 @@ function AllBetsViewer({ weeks, user }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedMatches, setExpandedMatches] = useState({});
+
+  // הגעה מהתראה: "?week=...&match=..." פותח את השבוע ואת המשחק עצמו.
+  // לחיצה על התראת בול הובילה עד עכשיו ללשונית ההימורים, שהיא בדיוק
+  // המקום שבו אין מה לראות - מי שקלע בול רוצה לראות מה כולם ניחשו
+  const { search } = useLocation();
+  const focus = new URLSearchParams(search);
+  const focusWeekId = focus.get('week');
+  const focusMatchId = focus.get('match');
+  const focusApplied = useRef(false);
 
   const { liveByMatchId, goalAtByMatchId } = useLiveScores(selectedWeek?._id);
   const [insightsFor, setInsightsFor] = useState(null);
@@ -84,6 +94,36 @@ function AllBetsViewer({ weeks, user }) {
       setSelectedWeek(null); setMatches([]); setAllBets([]); setUsers([]);
     }
   }, [weeks, selectedSeason, selectedMonth]);
+
+  // השבוע שאליו הפנתה ההתראה גובר על ברירת המחדל, וגם על הסינון: אם
+  // הוא בחודש אחר, הסינון היה מסתיר אותו
+  useEffect(() => {
+    if (focusApplied.current || !focusWeekId || !weeks || weeks.length === 0) return;
+
+    const target = weeks.find((w) => w._id === focusWeekId);
+    if (!target) return;
+
+    focusApplied.current = true;
+    setSelectedSeason(target.season || '2025-26');
+    setSelectedMonth(target.month);
+    setSelectedWeek(target);
+    loadWeekData(target._id);
+  }, [weeks, focusWeekId]);
+
+  // ואחרי שהמשחקים נטענו - פתיחה וגלילה אליו
+  useEffect(() => {
+    if (!focusMatchId || matches.length === 0) return;
+    if (!matches.some((m) => m._id === focusMatchId)) return;
+
+    setExpandedMatches((prev) => (prev[focusMatchId] ? prev : { ...prev, [focusMatchId]: true }));
+
+    // אחרי הציור, אחרת האלמנט עוד לא במקומו
+    const timer = setTimeout(() => {
+      document.getElementById(`match-${focusMatchId}`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 120);
+    return () => clearTimeout(timer);
+  }, [matches, focusMatchId]);
 
   const loadWeekData = async (weekId) => {
     if (!weekId) { setMatches([]); setAllBets([]); setUsers([]); return; }
@@ -233,10 +273,14 @@ function AllBetsViewer({ weeks, user }) {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {matches.map((match, matchIndex) => (
-                <div key={match._id} className="card" style={{
+                <div key={match._id} id={`match-${match._id}`} className="card" style={{
                   padding: '0.65rem',
                   position: 'relative',
-                  animation: `slideUp 0.25s ease ${matchIndex * 0.04}s both`
+                  animation: `slideUp 0.25s ease ${matchIndex * 0.04}s both`,
+                  // המשחק שהגענו אליו מהתראה, כדי שיהיה ברור לאן נחתנו
+                  boxShadow: focusMatchId === match._id
+                    ? '0 0 0 2px var(--theme-primary, #007bff)'
+                    : undefined
                 }}>
                   <GoalFlash at={goalAtByMatchId[match._id]} />
                   {/* כותרת משחק - לחיץ */}

@@ -92,6 +92,7 @@ router.post('/calculate/:weekId', requireAdmin, async (req, res) => {
           const entry = exactByUser.get(userId);
           entry.exactCount++;
           entry.exactMatches.push({
+            matchId: String(match._id),
             team1: match.team1,
             team2: match.team2,
             // רווחים סביב המקף בכוונה: בשורה עברית זו הצורה היחידה
@@ -156,8 +157,17 @@ router.post('/calculate/:weekId', requireAdmin, async (req, res) => {
           const title = '🎯 דייקת!';
           const matchLines = eu.exactMatches.map((m) => `⚽ ${m.team1} ${m.score} ${m.team2}`).join('\n');
           const body = `ניחשת בול!\n${matchLines}\nכל הכבוד 🔥`;
+          // לחיצה על ההתראה מובילה למשחק עצמו בכל ההימורים, ולא ללשונית
+          // ההימורים: מי שקלע בול רוצה לראות מה כולם ניחשו, לא להמר שוב.
+          // כשיש כמה משחקים אין משחק אחד לפתוח, ולכן רק השבוע
+          const single = eu.exactMatches.length === 1 ? eu.exactMatches[0] : null;
+          const url = single
+            ? `/#/allbets?week=${weekId}&match=${single.matchId}`
+            : `/#/allbets?week=${weekId}`;
+
           await sendNotificationToUsers([eu.userId], title, body, {
             type: 'exact_score',
+            url,
             // חישוב ניקוד שרץ שוב על אותן תוצאות לא יוסיף התראה שנייה
             // על המכשיר, אלא יחליף את הקיימת
             dedupeKey: `exact:${eu.exactMatches.map((m) => `${m.team1}${m.score}${m.team2}`).join('|')}`
@@ -203,6 +213,8 @@ router.post('/calculate/:weekId', requireAdmin, async (req, res) => {
           await sendNotificationToUsers([userId], text.title, text.body, {
             type: 'match_end',
             matchId: String(match._id),
+            // אותו היגיון: סוף משחק עם הניקוד מוביל למשחק עצמו
+            url: `/#/allbets?week=${weekId}&match=${String(match._id)}`,
             dedupeKey: `${match.externalId || match._id}:${eventKey(event)}`
           });
         }
