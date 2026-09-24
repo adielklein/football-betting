@@ -130,6 +130,22 @@ router.get('/365-health', requireAdmin, async (req, res) => {
       row.competitions = Array.isArray(json?.competitions) ? json.competitions.length : null;
 
       if (games.length > 0) {
+        // מה בכלל יש באובייקט המשחק.
+        //
+        // אנחנו קוראים משם חמישה שדות, ואין שום תיעוד לשאר. השאלה
+        // "אפשר לדעת אם שער בוטל בגלל VAR" נענית רק מכאן: אם יש מערך
+        // אירועים או דגל כזה, השמות יופיעו ברשימה הזו
+        const sample = games.find((g) => g?.statusGroup === 3) || games[0];
+        row.gameKeys = Object.keys(sample || {}).sort();
+
+        // ומה בתוך מערך האירועים, אם קיים כזה
+        const eventsKey = row.gameKeys.find((k) => /event/i.test(k));
+        const eventList = eventsKey && Array.isArray(sample[eventsKey]) ? sample[eventsKey] : null;
+        if (eventList && eventList.length > 0) {
+          row.eventKeys = Object.keys(eventList[0] || {}).sort();
+          row.eventSample = JSON.stringify(eventList[0]).slice(0, 300);
+        }
+
         // האם המסנן כובד: כמה מהמשחקים שייכים לתחרות שביקשנו
         row.inCompetition = games.filter((g) => {
           const id = g?.competitionId ?? g?.competition?.id;

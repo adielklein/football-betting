@@ -486,6 +486,25 @@ function LeaguesManagement() {
                 </div>
               )}
 
+              {/* מבנה אובייקט המשחק: זה מה שאומר אילו נתונים בכלל אפשר
+                  להוציא מהספק - למשל אם יש שדה שמסביר ביטול שער */}
+              {probe.gameKeys && (
+                <details style={{ marginTop: '3px' }}>
+                  <summary style={{ fontSize: '10.5px', color: 'var(--text-4, #aaa)', cursor: 'pointer' }}>
+                    שדות באובייקט המשחק ({probe.gameKeys.length})
+                  </summary>
+                  <div style={{ fontSize: '10px', color: 'var(--text-3, #888)', fontFamily: 'monospace', marginTop: '2px', wordBreak: 'break-all' }}>
+                    {probe.gameKeys.join(', ')}
+                  </div>
+                  {probe.eventKeys && (
+                    <div style={{ fontSize: '10px', color: 'var(--text-3, #888)', fontFamily: 'monospace', marginTop: '4px', wordBreak: 'break-all' }}>
+                      אירועים: {probe.eventKeys.join(', ')}
+                      <div style={{ marginTop: '2px', opacity: 0.8 }}>{probe.eventSample}</div>
+                    </div>
+                  )}
+                </details>
+              )}
+
               {probe.samples && probe.samples.length > 0 && (
                 <div style={{ fontSize: '10.5px', color: 'var(--text-4, #aaa)', marginTop: '1px' }}>
                   {probe.samples.join(' · ')}
