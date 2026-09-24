@@ -245,6 +245,8 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
             time: f.time,
             externalId: f.apiId,
             externalProvider: f.provider,
+            // הסיבוב אצל הספק: "מחזור 5", "שלב הבתים"
+            round: f.round || null,
             // כל משחק נושא את הליגה שלו, כדי ש"כל הליגות" ייובא נכון בבקשה אחת
             leagueId: f.leagueId,
             // הסמל והמזהה שהספק כבר החזיר - נשמרים במקום להתגלות מחדש אחר כך

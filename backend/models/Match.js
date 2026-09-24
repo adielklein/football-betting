@@ -40,6 +40,15 @@ const matchSchema = new mongoose.Schema({
   // תמונת המצב האחרונה שנראתה בסריקה החיה. ממנה נגזרים אירועי שער/אדום/
   // פתיחה/סיום, והיא נשמרת כאן ולא בזיכרון כדי שהפעלה מחדש של השרת לא
   // תשלח שוב התראה שכבר יצאה
+  // הסיבוב אצל הספק: "מחזור 5", "שלב הבתים", "רבע גמר". בגביע שני
+  // משחקים של אותן קבוצות נראים זהים בלעדיו
+  round: { type: String, default: null },
+
+  // המשחק נדחה או ננטש לפי הספק. סימון ולא מחיקה: ההחלטה מה לעשות עם
+  // משחק דחוי היא של המנהל, והמסך רק צריך לומר לו שזה המצב
+  postponed: { type: Boolean, default: false },
+  postponedText: { type: String, default: null },
+
   liveSnapshot: {
     status: { type: String, default: null },
     team1Goals: { type: Number, default: null },

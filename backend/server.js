@@ -325,6 +325,19 @@ const notifyLiveEvents = async (matches, games, sentInThisPoll = new Set()) => {
       ? match.liveSnapshot.toObject()
       : match.liveSnapshot;
 
+    // דחייה או נטישה: הספק אומר את זה בטקסט הסטטוס בלבד, ובלעדיו המשחק
+    // נשאר "טרם החל" לנצח - בלי תוצאה, בלי ניקוד, ובלי שאף מסך יסביר
+    // למה השבוע לא נסגר
+    if (!!match.postponed !== !!live.postponed) {
+      await Match.updateOne({ _id: match._id }, {
+        $set: {
+          postponed: !!live.postponed,
+          postponedText: live.postponed ? (live.statusText || 'נדחה') : null
+        }
+      });
+      console.log(`📅 [LIVE] ${match.team1} - ${match.team2}: ${live.postponed ? `סומן כדחוי (${live.statusText})` : 'כבר אינו דחוי'}`);
+    }
+
     const { events, next, changed } = detectEvents(prev, live);
     if (!changed) continue;
 
@@ -458,7 +471,7 @@ const runLivePoll = async () => {
     const to = new Date(now + 10 * 60 * 1000);
     const candidates = await Match.find(
       { fullDate: { $gte: from, $lte: to }, externalId: { $ne: null } },
-      'weekId externalId fullDate result team1 team2 liveSnapshot'
+      'weekId externalId fullDate result team1 team2 liveSnapshot postponed'
     );
     const inWindow = candidates.filter((m) => liveScores.inBroadcastWindow(m, now));
     if (inWindow.length === 0) return;

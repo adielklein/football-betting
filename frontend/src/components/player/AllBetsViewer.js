@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import TeamLogo from '../TeamLogo';
 import LeagueLogo from '../LeagueLogo';
+import ResultNote from '../ResultNote';
 import LiveScore from './LiveScore';
 import GoalFlash from './GoalFlash';
 import useLiveScores from '../../services/useLiveScores';
@@ -332,6 +333,9 @@ function AllBetsViewer({ weeks, user }) {
                         fontSize: '13px', fontWeight: '700', color: 'var(--good-fg, #2e7d32)'
                       }}>
                         תוצאה: <Score home={match.result.team1Goals} away={match.result.team2Goals} />
+                        {/* המסך היחיד שלא אמר שהמשחק נמשך מעבר ל-90, ולכן
+                            כאן התוצאה נראתה פשוט שגויה מול הטלוויזיה */}
+                        <ResultNote result={match.result} />
                       </div>
                     )}
                   </div>

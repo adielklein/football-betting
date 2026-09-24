@@ -142,12 +142,20 @@ router.get('/365-health', requireAdmin, async (req, res) => {
         const sample = games.find((g) => g?.statusGroup === 3) || games[0];
         row.gameKeys = Object.keys(sample || {}).sort();
 
-        // ומה בתוך מערך האירועים, אם קיים כזה
-        const eventsKey = row.gameKeys.find((k) => /event/i.test(k));
-        const eventList = eventsKey && Array.isArray(sample[eventsKey]) ? sample[eventsKey] : null;
-        if (eventList && eventList.length > 0) {
-          row.eventKeys = Object.keys(eventList[0] || {}).sort();
-          row.eventSample = JSON.stringify(eventList[0]).slice(0, 300);
+        // ומה בתוך מערכי האירועים.
+        //
+        // events קודם ובמפורש: חיפוש "המפתח הראשון שמכיל event" ברשימה
+        // ממוינת מוצא דווקא את chartEvents, וזה מה שהסתיר את מה שחיפשנו
+        for (const key of ['events', 'chartEvents', 'stages']) {
+          const list = Array.isArray(sample?.[key]) ? sample[key] : null;
+          if (!list || list.length === 0) continue;
+
+          row.arrays = row.arrays || {};
+          row.arrays[key] = {
+            count: list.length,
+            keys: Object.keys(list[0] || {}).sort(),
+            sample: JSON.stringify(list[0]).slice(0, 400)
+          };
         }
 
         // האם המסנן כובד: כמה מהמשחקים שייכים לתחרות שביקשנו

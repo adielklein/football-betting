@@ -1264,6 +1264,27 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                       <span style={{ fontSize: '14px', color: 'var(--text-3, #666)' }}>
                         📅 {match.date} ⏰ {match.time}
                       </span>
+                      {match.round && (
+                        <span style={{
+                          padding: '1px 6px', borderRadius: '10px', fontSize: '11px',
+                          background: 'var(--surface-3, #f0f2f5)', color: 'var(--text-3, #888)'
+                        }}>
+                          {match.round}
+                        </span>
+                      )}
+                      {/* משחק דחוי לא ייתן תוצאה לעולם, והשבוע לא ייסגר
+                          בלי שמישהו יטפל בו */}
+                      {match.postponed && (
+                        <span
+                          title="הספק מדווח שהמשחק נדחה או ננטש"
+                          style={{
+                            padding: '1px 7px', borderRadius: '10px', fontSize: '11px', fontWeight: 700,
+                            background: 'var(--warn-bg, #fff3cd)', color: 'var(--warn-fg, #9a7b3f)'
+                          }}
+                        >
+                          🚫 {match.postponedText || 'נדחה'}
+                        </span>
+                      )}
                       {match.odds && (match.odds.homeWin || match.odds.draw || match.odds.awayWin) && (
                         <span style={{ 
                           fontSize: '12px', 

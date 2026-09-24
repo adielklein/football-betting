@@ -256,6 +256,7 @@ router.post('/bulk', requireAdmin, async (req, res) => {
       if (m.externalProvider) data.externalProvider = String(m.externalProvider);
 
       // סמל ומזהה הקבוצה כפי שהספק החזיר אותם, כדי שלא נחפש אותם שוב במקום אחר
+      if (m.round) data.round = String(m.round).slice(0, 40);
       if (m.team1LogoUrl) data.team1LogoUrl = String(m.team1LogoUrl);
       if (m.team2LogoUrl) data.team2LogoUrl = String(m.team2LogoUrl);
       if (m.team1ExternalId) data.team1ExternalId = String(m.team1ExternalId);

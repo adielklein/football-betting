@@ -496,12 +496,12 @@ function LeaguesManagement() {
                   <div style={{ fontSize: '10px', color: 'var(--text-3, #888)', fontFamily: 'monospace', marginTop: '2px', wordBreak: 'break-all' }}>
                     {probe.gameKeys.join(', ')}
                   </div>
-                  {probe.eventKeys && (
-                    <div style={{ fontSize: '10px', color: 'var(--text-3, #888)', fontFamily: 'monospace', marginTop: '4px', wordBreak: 'break-all' }}>
-                      אירועים: {probe.eventKeys.join(', ')}
-                      <div style={{ marginTop: '2px', opacity: 0.8 }}>{probe.eventSample}</div>
+                  {probe.arrays && Object.entries(probe.arrays).map(([key, info]) => (
+                    <div key={key} style={{ fontSize: '10px', color: 'var(--text-3, #888)', fontFamily: 'monospace', marginTop: '4px', wordBreak: 'break-all' }}>
+                      {key} ({info.count}): {info.keys.join(', ')}
+                      <div style={{ marginTop: '2px', opacity: 0.8 }}>{info.sample}</div>
                     </div>
-                  )}
+                  ))}
                 </details>
               )}
 

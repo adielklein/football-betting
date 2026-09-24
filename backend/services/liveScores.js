@@ -98,6 +98,11 @@ const noteStatusGroup = (game) => {
   console.log(`⚪ [LIVE] statusGroup לא מוכר מ-365: ${group} ("${game?.shortStatusText || game?.statusText || ''}")`);
 };
 
+// משחק שנדחה או ננטש. statusGroup אינו מבדיל אותו מ"טרם החל", ולכן הוא
+// היה נשאר אצלנו "עתיד להתחיל" לנצח: בלי תוצאה, בלי ניקוד, ובלי שאף
+// מסך יאמר למה השבוע לא נסגר. הטקסט של הספק כן אומר
+const POSTPONED = /דחוי|נדחה|בוטל|מבוטל|ננטש|הופסק|postpon|abandon|cancel|suspend/i;
+
 const toLiveEntry = (match, game) => {
   noteStatusGroup(game);
   const finished = game.statusGroup === STATUS_FINISHED;
@@ -108,6 +113,7 @@ const toLiveEntry = (match, game) => {
     matchId: String(match._id),
     status: finished ? 'finished' : game.statusGroup === STATUS_LIVE ? 'live' : 'scheduled',
     statusText: game.shortStatusText || game.statusText || null,
+    postponed: POSTPONED.test(`${game.statusText || ''} ${game.shortStatusText || ''}`),
     // "45+1'" בזמן משחק, ריק לפני ואחרי
     minute: game.gameTimeDisplay || null,
     team1Goals: scoreOf(game.homeCompetitor),
