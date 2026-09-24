@@ -125,7 +125,11 @@ router.get('/365-health', requireAdmin, async (req, res) => {
       if (!response.ok) return row;
 
       const json = await response.json().catch(() => ({}));
-      const games = Array.isArray(json?.games) ? json.games : [];
+
+      // נתיב המשחק הבודד מחזיר game ולא games. אותה בדיקה משרתת את שניהם
+      const games = Array.isArray(json?.games)
+        ? json.games
+        : (json?.game ? [json.game] : []);
       row.games = games.length;
       row.competitions = Array.isArray(json?.competitions) ? json.competitions.length : null;
 
@@ -162,6 +166,9 @@ router.get('/365-health', requireAdmin, async (req, res) => {
           row.lastDate = new Date(times[times.length - 1]).toISOString().slice(0, 10);
         }
 
+        // מזהה משחק לדגימת הנתיב של משחק בודד
+        row.sampleGameId = sample?.id || games[0]?.id || null;
+
         // שלושה שמות, כדי לראות על מה בכלל מדובר
         row.samples = games.slice(0, 3).map((g) =>
           `${g.homeCompetitor?.name || '?'} - ${g.awayCompetitor?.name || '?'}`
@@ -179,6 +186,20 @@ router.get('/365-health', requireAdmin, async (req, res) => {
   const results = [];
   for (const probe of probes) {
     results.push(await check(probe));
+  }
+
+  // אובייקט משחק בודד.
+  //
+  // הרשימות מחזירות סיכום: 44 שדות, בלי אירועים ובלי VAR. הדגלים שכן
+  // יש בהן - hasLineups, hasStats, hasMissingPlayers - מתארים מה אפשר
+  // לקבל בנתיב של משחק בודד, ולכן התשובה לשאלה "אפשר לדעת למה שער
+  // בוטל" נמצאת שם, אם בכלל. נבדק על משחק אמיתי מהתשובות שחזרו
+  const sampleGameId = results.map((row) => row.sampleGameId).find(Boolean);
+  if (sampleGameId) {
+    results.push(await check({
+      name: 'משחק בודד (game)',
+      path: `/game/?${base}&gameId=${sampleGameId}`
+    }));
   }
 
   res.json({
@@ -268,6 +289,8 @@ router.get('/fixtures', async (req, res) => {
         team1ExternalId: f.team1ExternalId || null,
         team2ExternalId: f.team2ExternalId || null,
         kickoffIso: f.kickoffIso,
+        // הסיבוב אצל הספק ("מחזור 5", "שלב הבתים"), כשיש
+        round: f.round || null,
         date: israelTs.date,
         time: israelTs.time,
         year: israelTs.year
@@ -277,11 +300,29 @@ router.get('/fixtures', async (req, res) => {
     // משיכת יחסים - כל משחק דורש קריאה נפרדת לספק, לכן מגבילים מקביליות
     // כדי לא להיחסם (365scores חוסם לפי IP על ריבוי בקשות בו-זמנית)
     if (wantOdds) {
+      // מי שהספק אמר עליו במפורש שאין לו יחסים. רק false מפורש - שדה
+      // חסר אינו "אין", והוא עדיין נבדק
+      const skipped = new Set(
+        fixtures.filter((f) => f.hasOdds === false).map((f) => f.apiId)
+      );
+      if (skipped.size > 0) {
+        console.log(`💰 [external] ${skipped.size} משחקים ללא יחסים לפי הספק - לא נבדקו`);
+      }
+
       const CONCURRENCY = 4;
       let cursor = 0;
       const workers = Array.from({ length: Math.min(CONCURRENCY, enriched.length) }, async () => {
         while (cursor < enriched.length) {
           const item = enriched[cursor++];
+
+          // הספק מסמן בעצמו למי יש יחסים. דילוג על מי שאין לו חוסך
+          // פנייה נפרדת לכל משחק כזה - וזה בדיוק מה שהאט את "טען יחסי
+          // ווינר" בליגה שלמה, מול ספק שחוסם על ריבוי בקשות
+          if (skipped.has(item.apiId)) {
+            item.odds = null;
+            continue;
+          }
+
           try {
             item.odds = await activeProvider.api.fetchOddsForFixture(item.apiId, forceRefresh);
           } catch (oddsErr) {

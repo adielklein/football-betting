@@ -154,7 +154,15 @@ const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate,
         apiId: `365_${g.id}`,
         kickoffIso: new Date(ts).toISOString(),
         statusShort: g.statusText || g.statusGroup || null,
-        leagueName: g.competition?.name || null,
+        // competitionDisplayName, ולא competition.name: אובייקט המשחק
+        // ברשימות אינו נושא אובייקט תחרות מקונן כלל, ולכן השדה הזה היה
+        // null תמיד - וזה מה שהשאיר את מסך הבדיקה בלי שם התחרות
+        leagueName: g.competitionDisplayName || g.competition?.name || null,
+        // שלב וסיבוב, כפי שהספק קורא להם: "מחזור 5", "שלב הבתים"
+        round: g.roundName || g.groupName || null,
+        // האם לספק יש בכלל יחסים למשחק הזה. חוסך פנייה נפרדת למשחק
+        // שאין עליו מה להביא
+        hasOdds: g.hasBets !== false,
         // 365scores מחזירים שמות בעברית כי langId=2. ה-He שדה ישתמש בו ישירות.
         team1En: g.homeCompetitor?.name || 'Unknown',
         team1He: g.homeCompetitor?.name || null,
