@@ -9,6 +9,7 @@ const { buildNearMissReport } = require('../services/nearMissReport');
 const { buildLuckTable } = require('../services/luckTable');
 const { buildCourageTable } = require('../services/courageTable');
 const { buildParticipation } = require('../services/participation');
+const { buildWeeklyTimeline } = require('../services/weeklyTimeline');
 const User = require('../models/User');
 
 // GET /api/stats/user/:userId - סטטיסטיקות של שחקן
@@ -18,7 +19,7 @@ router.get('/user/:userId', async (req, res) => {
 
     // שליפת כל ההימורים של המשתמש עם פרטי משחק
     const bets = await Bet.find({ userId }).populate('matchId').populate('weekId');
-    const scores = await Score.find({ userId }).populate('weekId').sort({ 'weekId.createdAt': 1 });
+    const scores = await Score.find({ userId }).populate('weekId');
 
     // סינון הימורים עם משחקים שיש להם תוצאות
     const completedBets = bets.filter(bet => {
@@ -96,13 +97,7 @@ router.get('/user/:userId', async (req, res) => {
     }
 
     // === סטטיסטיקות לפי שבוע (ציר זמן) ===
-    const weeklyTimeline = scores
-      .filter(s => s.weekId)
-      .map(s => ({
-        weekName: s.weekId.name || '',
-        weeklyScore: s.weeklyScore || 0,
-        totalScore: s.totalScore || 0,
-      }));
+    const weeklyTimeline = buildWeeklyTimeline(scores);
 
     // === קבוצות מובילות (לפי אחוז דיוק) ===
     const teamStatsArray = Object.entries(teamStats)

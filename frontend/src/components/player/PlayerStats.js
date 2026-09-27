@@ -1,11 +1,236 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import NearMissView from './NearMissView';
 import TeamLogo from '../TeamLogo';
+
+// נקודות יכולות להיות שבריות (ניקוד לפי יחסים), ולכן ספרה אחת אחרי הנקודה
+const pts = (n) => Math.round((n || 0) * 10) / 10;
+
+// גרף העמודות השבועי.
+//
+// שמות השבועות באורכים שונים לחלוטין ("סופ״ש 2" מול "שלב הבתים בליגת
+// האלופות"), ולכן על הציר מופיע רק המספר הסידורי של השבוע - תווית באורך
+// אחיד שלא מתנגשת בעמודות. השם המלא נקרא מהכתובית שמתחת לגרף (בלחיצה על
+// עמודה) ומהטבלה "פירוט לפי שבוע", שבה לכל שורה אותו מספר.
+const PLOT_HEIGHT = 110;
+
+const WeeklyBarChart = ({ weeks, activeIndex, onSelect }) => {
+  // כשיש הרבה שבועות הגרף נגלל, ולכן השבוע הנבחר נגרר למרכז התצוגה
+  const activeRef = useRef(null);
+  useEffect(() => {
+    const el = activeRef.current;
+    if (el && el.scrollIntoView) el.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }, [activeIndex]);
+
+  if (!weeks || weeks.length === 0) {
+    return <p style={{ color: 'var(--text-4, #999)', fontSize: '13px', textAlign: 'center' }}>אין נתונים עדיין</p>;
+  }
+
+  const maxScore = Math.max(...weeks.map((w) => w.weeklyScore || 0), 1);
+  const barWidth = weeks.length > 12 ? 22 : weeks.length > 8 ? 30 : 38;
+  const gap = weeks.length > 12 ? 5 : 6;
+  const active = weeks[activeIndex] || weeks[weeks.length - 1];
+
+  const column = (week, i, children, ref) => (
+    <div
+      key={week.weekId || i}
+      ref={ref}
+      onClick={() => onSelect(i)}
+      role="button"
+      title={week.weekName}
+      style={{ width: barWidth + 'px', flexShrink: 0, cursor: 'pointer' }}
+    >
+      {children}
+    </div>
+  );
+
+  return (
+    <div>
+      <div style={{ overflowX: 'auto', paddingBottom: '2px' }}>
+        <div style={{ minWidth: 'min-content' }}>
+          {/* אזור העמודות - כולן יושבות על אותו קו בסיס */}
+          <div style={{
+            display: 'flex', gap: gap + 'px', alignItems: 'flex-end',
+            borderBottom: '1px solid var(--border, #e9edf2)'
+          }}>
+            {weeks.map((week, i) => {
+              const score = week.weeklyScore || 0;
+              const height = Math.max(score > 0 ? 6 : 3, (score / maxScore) * PLOT_HEIGHT);
+              const isActive = i === activeIndex;
+              return column(week, i, (
+                <>
+                  <div style={{
+                    height: '15px', textAlign: 'center',
+                    fontSize: '10px', fontWeight: '700',
+                    color: isActive ? 'var(--theme-primary, #007bff)' : 'var(--text-4, #aaa)'
+                  }}>
+                    {pts(score)}
+                  </div>
+                  <div style={{ height: PLOT_HEIGHT + 'px', display: 'flex', alignItems: 'flex-end' }}>
+                    <div style={{
+                      width: '100%', height: height + 'px',
+                      borderRadius: '6px 6px 0 0',
+                      background: score > 0
+                        ? 'linear-gradient(180deg, var(--theme-primary, #007bff), var(--theme-secondary, #6c757d))'
+                        : 'var(--surface-3, #e9edf2)',
+                      opacity: isActive || score === 0 ? 1 : 0.55,
+                      transition: 'height 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease',
+                      transitionDelay: (i * 40) + 'ms'
+                    }} />
+                  </div>
+                </>
+              ), isActive ? activeRef : null);
+            })}
+          </div>
+
+          {/* שורת התוויות - גובה אחיד, בלי סיבוב */}
+          <div style={{ display: 'flex', gap: gap + 'px', marginTop: '5px' }}>
+            {weeks.map((week, i) => {
+              const isActive = i === activeIndex;
+              return column(week, i, (
+                <div style={{
+                  textAlign: 'center', fontSize: '10px', lineHeight: '16px',
+                  height: '16px', borderRadius: '8px',
+                  fontWeight: isActive ? '800' : '600',
+                  color: isActive ? '#fff' : 'var(--text-4, #aaa)',
+                  background: isActive ? 'var(--theme-primary, #007bff)' : 'transparent'
+                }}>
+                  {week.weekIndex}
+                </div>
+              ));
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* הכתובית - כאן מופיע השם המלא של השבוע הנבחר */}
+      {active && (
+        <div style={{
+          marginTop: '10px', padding: '8px 10px', borderRadius: '10px',
+          background: 'var(--surface-2, #f8f9fc)',
+          display: 'flex', alignItems: 'center', gap: '8px'
+        }}>
+          <span style={{
+            minWidth: '20px', height: '20px', borderRadius: '6px',
+            background: 'var(--theme-primary, #007bff)', color: '#fff',
+            fontSize: '11px', fontWeight: '800', lineHeight: '20px', textAlign: 'center'
+          }}>
+            {active.weekIndex}
+          </span>
+          <span style={{
+            flex: 1, fontSize: '12px', fontWeight: '700', color: 'var(--text, #333)',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+          }}>
+            {active.weekName}
+          </span>
+          <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--theme-primary, #007bff)' }}>
+            {pts(active.weeklyScore)} נק׳
+          </span>
+          <span style={{ fontSize: '11px', color: 'var(--text-4, #aaa)', fontWeight: '500' }}>
+            מצטבר {pts(active.cumulativeScore)}
+          </span>
+        </div>
+      )}
+      <p style={{ margin: '6px 2px 0', fontSize: '10px', color: 'var(--text-4, #bbb)' }}>
+        לחיצה על עמודה מציגה את שם השבוע
+      </p>
+    </div>
+  );
+};
+
+// הגרף המצטבר. הסכום הרץ מחושב מהניקוד השבועי ולא מ-totalScore שנשמר על
+// הרשומה: זה הסך הכולל של כל העונות, זהה בכל השבועות, ולכן הקו יצא שטוח
+const CumulativeChart = ({ weeks, activeIndex, onSelect }) => {
+  if (!weeks || weeks.length === 0) return null;
+
+  const maxTotal = Math.max(...weeks.map((w) => w.cumulativeScore || 0), 1);
+  const chartHeight = 120;
+  const axisPad = 32; // מקום למספרים בציר. הוא מימין, כמו בכל שאר האפליקציה
+  const step = Math.max(24, Math.min(60, (window.innerWidth - 110) / Math.max(weeks.length - 1, 1)));
+  const chartWidth = Math.max(step * Math.max(weeks.length - 1, 1) + axisPad + 14, 280);
+
+  // הזמן זורם מימין לשמאל, בדיוק כמו בגרף העמודות שמעליו
+  const points = weeks.map((w, i) => {
+    const x = chartWidth - axisPad - i * step;
+    const y = chartHeight - ((w.cumulativeScore || 0) / maxTotal) * (chartHeight - 22) - 10;
+    return { x, y, week: w };
+  });
+
+  const pathD = points.map((p, i) => (i === 0 ? 'M' : 'L') + p.x + ' ' + p.y).join(' ');
+  const last = points[points.length - 1];
+
+  // תוויות הציר: הראשון, האחרון והנבחר תמיד, והשאר רק אם נשאר להם מקום
+  const labelled = new Set([0, points.length - 1, activeIndex].filter((i) => i >= 0 && i < points.length));
+  const taken = [...labelled].map((i) => points[i].x);
+  for (let i = 0; i < points.length; i++) {
+    if (labelled.has(i)) continue;
+    if (taken.every((x) => Math.abs(x - points[i].x) >= 26)) {
+      labelled.add(i);
+      taken.push(points[i].x);
+    }
+  }
+
+  return (
+    <div style={{ overflowX: 'auto' }}>
+      <svg width={chartWidth} height={chartHeight + 26} style={{ display: 'block' }}>
+        {[0, 0.5, 1].map((pct, i) => {
+          const y = chartHeight - pct * (chartHeight - 22) - 10;
+          return (
+            <g key={i}>
+              <line x1="8" y1={y} x2={chartWidth - axisPad + 6} y2={y} stroke="#f0f2f5" strokeWidth="1" />
+              <text x={chartWidth - axisPad + 10} y={y + 3} fontSize="9" fill="#bbb" textAnchor="start">
+                {pts(maxTotal * pct)}
+              </text>
+            </g>
+          );
+        })}
+
+        {points.length > 1 && (
+          <path
+            d={pathD + ' L' + last.x + ' ' + (chartHeight - 10) + ' L' + points[0].x + ' ' + (chartHeight - 10) + ' Z'}
+            fill="url(#areaGradient)" opacity="0.3"
+          />
+        )}
+        <path d={pathD} fill="none" stroke="var(--theme-primary, #007bff)" strokeWidth="2.5"
+          strokeLinecap="round" strokeLinejoin="round" />
+
+        {points.map((p, i) => (
+          <g key={i} onClick={() => onSelect(i)} style={{ cursor: 'pointer' }}>
+            <circle cx={p.x} cy={p.y} r="9" fill="transparent" />
+            <circle cx={p.x} cy={p.y} r={i === activeIndex ? '5' : '3.5'}
+              fill={i === activeIndex ? 'var(--theme-primary, #007bff)' : '#fff'}
+              stroke="var(--theme-primary, #007bff)" strokeWidth="2" />
+          </g>
+        ))}
+
+        {/* מספרי השבועות על הציר - רק אלה שיש להם מקום, כדי שלא יתנגשו */}
+        {points.map((p, i) => {
+          if (!labelled.has(i)) return null;
+          return (
+            <text key={'l' + i} x={p.x} y={chartHeight + 18} fontSize="9" textAnchor="middle"
+              fontWeight={i === activeIndex ? '800' : '500'}
+              fill={i === activeIndex ? 'var(--theme-primary, #007bff)' : '#bbb'}>
+              {p.week.weekIndex}
+            </text>
+          );
+        })}
+
+        <defs>
+          <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--theme-primary, #007bff)" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="var(--theme-primary, #007bff)" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+};
 
 function PlayerStats({ user }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('overview');
+  // השבוע שהכתובית בגרפים מציגה. null = השבוע האחרון
+  const [selectedWeek, setSelectedWeek] = useState(null);
 
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
@@ -58,6 +283,21 @@ function PlayerStats({ user }) {
   }
 
   const { overview, weeklyTimeline, predictionDistribution, topPredictions, bestTeams, worstTeams, bestHitStreak, currentHitStreak, nearMisses } = stats;
+
+  // סכום רץ אמיתי לכל שבוע. גם אם השרת עדיין לא שולח cumulativeScore
+  // (גרסה קודמת), הגרף המצטבר לא נשאר שטוח
+  let runningTotal = 0;
+  const timelineWeeks = (weeklyTimeline || []).map((w, i) => {
+    runningTotal += w.weeklyScore || 0;
+    return {
+      ...w,
+      weekIndex: w.weekIndex || i + 1,
+      cumulativeScore: w.cumulativeScore != null ? w.cumulativeScore : Math.round(runningTotal * 10) / 10,
+    };
+  });
+  const activeWeek = timelineWeeks.length === 0
+    ? -1
+    : Math.min(selectedWeek == null ? timelineWeeks.length - 1 : selectedWeek, timelineWeeks.length - 1);
 
   const sections = [
     { key: 'overview', label: 'סקירה', icon: '📊' },
@@ -164,112 +404,6 @@ function PlayerStats({ user }) {
       </div>
     </div>
   );
-
-  // === Timeline Bar Chart ===
-  const TimelineChart = () => {
-    if (!weeklyTimeline || weeklyTimeline.length === 0) {
-      return <p style={{ color: 'var(--text-4, #999)', fontSize: '13px', textAlign: 'center' }}>אין נתונים עדיין</p>;
-    }
-
-    const maxScore = Math.max(...weeklyTimeline.map(w => w.weeklyScore), 1);
-    const barWidth = Math.max(20, Math.min(40, (window.innerWidth - 80) / weeklyTimeline.length));
-
-    return (
-      <div style={{ overflowX: 'auto', paddingBottom: '0.5rem' }}>
-        <div style={{
-          display: 'flex', alignItems: 'flex-end', gap: '4px',
-          minHeight: '140px', padding: '0.5rem 0',
-          minWidth: weeklyTimeline.length * (barWidth + 4)
-        }}>
-          {weeklyTimeline.map((week, i) => {
-            const height = maxScore > 0 ? (week.weeklyScore / maxScore) * 100 : 0;
-            return (
-              <div key={i} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                width: barWidth + 'px', flexShrink: 0
-              }}>
-                <span style={{
-                  fontSize: '10px', fontWeight: '700', color: 'var(--theme-primary-text, #007bff)',
-                  marginBottom: '4px'
-                }}>
-                  {week.weeklyScore}
-                </span>
-                <div style={{
-                  width: '100%', borderRadius: '6px 6px 2px 2px',
-                  height: Math.max(4, height) + 'px',
-                  background: `linear-gradient(180deg, var(--theme-primary, #007bff), var(--theme-secondary, #6c757d))`,
-                  opacity: 0.75 + (height / 400),
-                  transition: 'height 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-                  transitionDelay: (i * 50) + 'ms'
-                }} />
-                <span style={{
-                  fontSize: '9px', color: 'var(--text-4, #aaa)', marginTop: '4px',
-                  writingMode: weeklyTimeline.length > 15 ? 'vertical-rl' : 'horizontal-tb',
-                  textOrientation: 'mixed',
-                  whiteSpace: 'nowrap', fontWeight: '500'
-                }}>
-                  {week.weekName.replace('שבוע ', '')}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  // === Cumulative Line (using bars with line effect) ===
-  const CumulativeChart = () => {
-    if (!weeklyTimeline || weeklyTimeline.length === 0) return null;
-
-    const maxTotal = Math.max(...weeklyTimeline.map(w => w.totalScore), 1);
-    const chartHeight = 120;
-    const chartWidth = Math.max(weeklyTimeline.length * 28, 300);
-
-    const points = weeklyTimeline.map((w, i) => {
-      const x = (i / Math.max(weeklyTimeline.length - 1, 1)) * (chartWidth - 20) + 10;
-      const y = chartHeight - (w.totalScore / maxTotal) * (chartHeight - 20) - 10;
-      return { x, y, score: w.totalScore, name: w.weekName };
-    });
-
-    const pathD = points.map((p, i) => (i === 0 ? 'M' : 'L') + p.x + ' ' + p.y).join(' ');
-
-    return (
-      <div style={{ overflowX: 'auto' }}>
-        <svg width={chartWidth} height={chartHeight + 20} style={{ display: 'block' }}>
-          {/* Grid lines */}
-          {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
-            const y = chartHeight - pct * (chartHeight - 20) - 10;
-            return (
-              <g key={i}>
-                <line x1="10" y1={y} x2={chartWidth - 10} y2={y} stroke="#f0f2f5" strokeWidth="1" />
-                <text x="4" y={y + 3} fontSize="8" fill="#ccc">{Math.round(maxTotal * pct)}</text>
-              </g>
-            );
-          })}
-          {/* Area fill */}
-          <path
-            d={pathD + ` L${points[points.length - 1].x} ${chartHeight - 10} L${points[0].x} ${chartHeight - 10} Z`}
-            fill="url(#areaGradient)" opacity="0.3"
-          />
-          {/* Line */}
-          <path d={pathD} fill="none" stroke="var(--theme-primary, #007bff)" strokeWidth="2.5"
-            strokeLinecap="round" strokeLinejoin="round" />
-          {/* Dots */}
-          {points.map((p, i) => (
-            <circle key={i} cx={p.x} cy={p.y} r="3.5"
-              fill="#fff" stroke="var(--theme-primary, #007bff)" strokeWidth="2" />
-          ))}
-          <defs>
-            <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--theme-primary, #007bff)" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="var(--theme-primary, #007bff)" stopOpacity="0.02" />
-            </linearGradient>
-          </defs>
-        </svg>
-      </div>
-    );
-  };
 
   // === Team Row ===
   const TeamRow = ({ team, rank, isBest }) => {
@@ -433,41 +567,56 @@ function PlayerStats({ user }) {
       {activeSection === 'timeline' && (
         <div style={{ animation: 'scaleIn 0.2s ease' }}>
           <Card title="ניקוד שבועי" icon="📊">
-            <TimelineChart />
+            <WeeklyBarChart weeks={timelineWeeks} activeIndex={activeWeek} onSelect={setSelectedWeek} />
           </Card>
 
           <Card title="ניקוד מצטבר" icon="📈">
-            <CumulativeChart />
+            <CumulativeChart weeks={timelineWeeks} activeIndex={activeWeek} onSelect={setSelectedWeek} />
           </Card>
 
           {/* Weekly Table */}
           <Card title="פירוט לפי שבוע" icon="📋">
             <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-              {weeklyTimeline.map((week, i) => (
-                <div key={i} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '8px 10px', borderRadius: '8px',
-                  background: i % 2 === 0 ? 'var(--surface-2, #fafbfc)' : 'transparent',
-                }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-2, #555)', fontWeight: '600' }}>
-                    {week.weekName}
-                  </span>
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              {timelineWeeks.map((week, i) => {
+                const isActive = i === activeWeek;
+                return (
+                  <div key={week.weekId || i} onClick={() => setSelectedWeek(i)} style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    padding: '8px 10px', borderRadius: '8px', cursor: 'pointer',
+                    background: isActive
+                      ? 'var(--info-bg, #eff6ff)'
+                      : (i % 2 === 0 ? 'var(--surface-2, #fafbfc)' : 'transparent'),
+                  }}>
+                    {/* אותו מספר שמופיע על הציר בגרפים */}
+                    <span style={{
+                      minWidth: '18px', height: '18px', borderRadius: '5px', textAlign: 'center',
+                      fontSize: '10px', fontWeight: '800', lineHeight: '18px',
+                      background: isActive ? 'var(--theme-primary, #007bff)' : 'var(--surface-3, #eef1f5)',
+                      color: isActive ? '#fff' : 'var(--text-4, #aaa)'
+                    }}>
+                      {week.weekIndex}
+                    </span>
+                    <span style={{
+                      flex: 1, fontSize: '12px', color: 'var(--text-2, #555)', fontWeight: '600',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                    }}>
+                      {week.weekName}
+                    </span>
                     <span style={{
                       fontSize: '13px', fontWeight: '800',
                       color: week.weeklyScore > 0 ? 'var(--theme-primary, #007bff)' : 'var(--text-4, #ccc)'
                     }}>
-                      {week.weeklyScore} נק׳
+                      {pts(week.weeklyScore)} נק׳
                     </span>
                     <span style={{
                       fontSize: '11px', color: 'var(--text-4, #aaa)', fontWeight: '500',
-                      minWidth: '50px', textAlign: 'left'
+                      minWidth: '58px', textAlign: 'left'
                     }}>
-                      סה״כ {week.totalScore}
+                      מצטבר {pts(week.cumulativeScore)}
                     </span>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
         </div>
