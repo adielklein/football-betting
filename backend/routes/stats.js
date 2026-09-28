@@ -10,6 +10,7 @@ const { buildLuckTable } = require('../services/luckTable');
 const { buildCourageTable } = require('../services/courageTable');
 const { buildParticipation } = require('../services/participation');
 const { buildWeeklyTimeline } = require('../services/weeklyTimeline');
+const { buildBettingTwins } = require('../services/bettingTwins');
 const User = require('../models/User');
 
 // GET /api/stats/user/:userId - סטטיסטיקות של שחקן
@@ -185,6 +186,25 @@ router.get('/user/:userId', async (req, res) => {
       weeklyRivals
     );
 
+    // === התאום בהימורים ===
+    // רק שבועות נעולים - אותו כלל של "כל ההימורים". בשבוע פתוח ההשוואה
+    // הייתה מסגירה מה אחרים הימרו לפני שההימורים נסגרו
+    const now = new Date();
+    const isClosed = (w) => w && (w.locked || (w.lockTime && now >= new Date(w.lockTime)));
+    const closedBets = bets.filter((b) => b.matchId && isClosed(b.weekId));
+    const closedMatchIds = closedBets.map((b) => b.matchId._id);
+    const [otherBets, comparablePlayers] = closedMatchIds.length === 0
+      ? [[], []]
+      : await Promise.all([
+          Bet.find({ matchId: { $in: closedMatchIds }, userId: { $ne: userId } }, 'userId matchId prediction').lean(),
+          User.find({ role: { $ne: 'admin' }, _id: { $ne: userId } }, 'name').lean(),
+        ]);
+    const bettingTwins = buildBettingTwins(
+      closedBets.map((b) => ({ matchId: b.matchId._id, prediction: b.prediction })),
+      otherBets,
+      comparablePlayers
+    );
+
     res.json({
       overview: {
         totalBets: completedBets.length,
@@ -205,6 +225,7 @@ router.get('/user/:userId', async (req, res) => {
       bestHitStreak,
       currentHitStreak,
       nearMisses,
+      bettingTwins,
     });
 
   } catch (error) {

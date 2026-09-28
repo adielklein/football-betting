@@ -225,6 +225,82 @@ const CumulativeChart = ({ weeks, activeIndex, onSelect }) => {
   );
 };
 
+// "התאום בהימורים" - מי שמהמר הכי הרבה אותה תוצאה בדיוק כמוך.
+// האחוז מחושב מתוך המשחקים ששניכם הימרתם עליהם, בשבועות נעולים בלבד
+const BettingTwins = ({ data }) => {
+  const twins = (data && data.twins) || [];
+  if (twins.length === 0) {
+    return (
+      <p style={{ color: 'var(--text-4, #999)', fontSize: '12px', textAlign: 'center', margin: '0.3rem 0' }}>
+        עוד אין מספיק משחקים משותפים עם שחקן אחר (צריך לפחות {(data && data.minCommon) || 10})
+      </p>
+    );
+  }
+
+  const [twin, ...rest] = twins;
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{
+          width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'linear-gradient(135deg, var(--theme-primary, #007bff), var(--theme-secondary, #6c757d))',
+          color: '#fff', fontSize: '18px', fontWeight: '800'
+        }}>
+          {(twin.name || '?').trim().charAt(0)}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: '16px', fontWeight: '800', color: 'var(--text, #333)',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+          }}>
+            {twin.name}
+          </div>
+          <div style={{ fontSize: '11px', color: 'var(--text-3, #888)', marginTop: '1px' }}>
+            אותה תוצאה בדיוק ב-{twin.same} מתוך {twin.common} משחקים משותפים
+          </div>
+        </div>
+        <div style={{ textAlign: 'center', flexShrink: 0 }}>
+          <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--theme-primary, #007bff)', lineHeight: 1.1 }}>
+            {twin.sameRate}%
+          </div>
+          <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', fontWeight: '600' }}>זהים</div>
+        </div>
+      </div>
+
+      <div style={{
+        marginTop: '8px', fontSize: '11px', color: 'var(--text-3, #888)',
+        background: 'var(--surface-2, #f8f9fc)', borderRadius: '8px', padding: '6px 10px'
+      }}>
+        ובאותו כיוון (מי מנצח או תיקו): <b style={{ color: 'var(--text-2, #555)' }}>{twin.directionRate}%</b> מהמשחקים
+      </div>
+
+      {rest.length > 0 && (
+        <div style={{ marginTop: '8px' }}>
+          {rest.map((t, i) => (
+            <div key={t.userId} style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '5px 4px', fontSize: '12px'
+            }}>
+              <span style={{ width: '16px', textAlign: 'center', color: 'var(--text-4, #aaa)', fontWeight: '700' }}>{i + 2}</span>
+              <span style={{
+                flex: 1, fontWeight: '600', color: 'var(--text-2, #555)',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+              }}>
+                {t.name}
+              </span>
+              <span dir="ltr" style={{ fontSize: '11px', color: 'var(--text-4, #aaa)' }}>{t.same}/{t.common}</span>
+              <span style={{ minWidth: '36px', textAlign: 'left', fontWeight: '800', color: 'var(--text-2, #555)' }}>
+                {t.sameRate}%
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 function PlayerStats({ user }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -282,7 +358,7 @@ function PlayerStats({ user }) {
     );
   }
 
-  const { overview, weeklyTimeline, predictionDistribution, topPredictions, bestTeams, worstTeams, bestHitStreak, currentHitStreak, nearMisses } = stats;
+  const { overview, weeklyTimeline, predictionDistribution, topPredictions, bestTeams, worstTeams, bestHitStreak, currentHitStreak, nearMisses, bettingTwins } = stats;
 
   // סכום רץ אמיתי לכל שבוע. גם אם השרת עדיין לא שולח cumulativeScore
   // (גרסה קודמת), הגרף המצטבר לא נשאר שטוח
@@ -519,6 +595,13 @@ function PlayerStats({ user }) {
               </div>
             </div>
           </Card>
+
+          {/* התאום בהימורים. לא מוצג מול שרת ישן שעוד לא שולח את הנתון */}
+          {bettingTwins && (
+            <Card title="התאום שלך בהימורים" icon="👯">
+              <BettingTwins data={bettingTwins} />
+            </Card>
+          )}
 
           {/* Prediction Distribution */}
           <Card title="התפלגות ניחושים" icon="🎲">
