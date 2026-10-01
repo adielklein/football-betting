@@ -209,8 +209,20 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
         throw new Error(error.message || 'Failed to create week');
       }
 
+      const created = await response.json();
       setNewWeek({ name: '', month: '', season: '2026-27' });
       await loadWeeks();
+
+      // עוברים מיד לשבוע החדש ופותחים את "הוסף משחק", כדי שאפשר יהיה
+      // להתחיל להוסיף לו משחקים בלי לחפש אותו קודם ברשימת השבועות
+      if (created && created._id) {
+        await handleSelectWeek(created);
+        setCreateWeekOpen(false);
+        setAddMatchOpen(true);
+        setTimeout(() => {
+          document.getElementById('add-match-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 50);
+      }
       toast.success('שבוע חדש נוצר בהצלחה!');
     } catch (error) {
       console.error('Error creating week:', error);
@@ -1008,7 +1020,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
 
       {/* הוסף משחק */}
       {selectedWeek && (
-        <div className="card">
+        <div className="card" id="add-match-section" style={{ scrollMarginTop: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
             <div onClick={() => setAddMatchOpen(prev => !prev)} style={{
               display: 'flex', alignItems: 'center', gap: '0.5rem',
