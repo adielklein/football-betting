@@ -103,9 +103,30 @@ const noteStatusGroup = (game) => {
 // מסך יאמר למה השבוע לא נסגר. הטקסט של הספק כן אומר
 const POSTPONED = /דחוי|נדחה|בוטל|מבוטל|ננטש|הופסק|postpon|abandon|cancel|suspend/i;
 
+// הפסקת המחצית. השעון של 365 נשאר בה על "45'" (או "45+3'"), ולכן בלי
+// הזיהוי הזה המשחק נראה כאילו נתקע בדקה 45. מזהים לפי טקסט הסטטוס, בהתאמה
+// מלאה בלבד: "מחצית" לבדה היא ההפסקה, אבל "מחצית ראשונה" / "מחצית 2" הן זמן
+// משחק, וגם הפסקה לפני הארכה היא לא מחצית
+const HALFTIME = /^(?:מחצית|הפסקת מחצית|half[\s-]?time|HT)$/i;
+const isHalftime = (game) =>
+  [game?.shortStatusText, game?.statusText].some((t) => HALFTIME.test(String(t || '').trim()));
+
+// כל טקסט סטטוס חי מודפס ללוג פעם אחת, כדי שאם 365 מנסחים את המחצית אחרת
+// ממה שמצופה כאן, יהיה אפשר לראות מה בדיוק הם שולחים
+const seenLiveTexts = new Set();
+const noteLiveText = (game) => {
+  if (game?.statusGroup !== STATUS_LIVE) return;
+  const text = `${game.shortStatusText || ''} | ${game.statusText || ''}`;
+  if (seenLiveTexts.has(text)) return;
+  seenLiveTexts.add(text);
+  console.log(`⏱️ [LIVE] טקסט סטטוס חי מ-365: "${text}" (דקה: ${game.gameTimeDisplay || '-'})`);
+};
+
 const toLiveEntry = (match, game) => {
   noteStatusGroup(game);
+  noteLiveText(game);
   const finished = game.statusGroup === STATUS_FINISHED;
+  const halftime = game.statusGroup === STATUS_LIVE && isHalftime(game);
   noteRedCardSupport(game.homeCompetitor);
   return {
     team1Reds: redCardsOf(game.homeCompetitor),
@@ -114,8 +135,9 @@ const toLiveEntry = (match, game) => {
     status: finished ? 'finished' : game.statusGroup === STATUS_LIVE ? 'live' : 'scheduled',
     statusText: game.shortStatusText || game.statusText || null,
     postponed: POSTPONED.test(`${game.statusText || ''} ${game.shortStatusText || ''}`),
-    // "45+1'" בזמן משחק, ריק לפני ואחרי
-    minute: game.gameTimeDisplay || null,
+    // "45+1'" בזמן משחק, ריק לפני ואחרי, ו"מחצית" בהפסקה
+    halftime,
+    minute: halftime ? 'מחצית' : (game.gameTimeDisplay || null),
     team1Goals: scoreOf(game.homeCompetitor),
     team2Goals: scoreOf(game.awayCompetitor),
     justEnded: !!game.justEnded
@@ -260,6 +282,8 @@ module.exports = {
   getLiveForWeek,
   fetchLiveFor,
   inBroadcastWindow,
+  toLiveEntry,
+  isHalftime,
   invalidate,
   inBackoff,
   backoffDelay,

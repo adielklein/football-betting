@@ -35,3 +35,48 @@ test('משחק בלי תאריך לא נסרק', () => {
   assert.equal(inBroadcastWindow({ fullDate: null }), false);
   assert.equal(inBroadcastWindow({}), false);
 });
+
+// === מחצית ===
+const { toLiveEntry, isHalftime, STATUS_LIVE: LIVE } = require('./liveScores');
+const liveGame = (shortStatusText, statusText, gameTimeDisplay = "45+2'", statusGroup = LIVE) => ({
+  statusGroup, shortStatusText, statusText, gameTimeDisplay,
+  homeCompetitor: { score: 1 }, awayCompetitor: { score: 0 }
+});
+const entry = (game) => toLiveEntry({ _id: 'm1' }, game);
+
+test('בהפסקת המחצית מוצג "מחצית" במקום הדקה הקפואה', () => {
+  const e = entry(liveGame('מחצית', 'מחצית'));
+  assert.equal(e.minute, 'מחצית');
+  assert.equal(e.halftime, true);
+  assert.equal(e.status, 'live');
+});
+
+test('מזהה גם את הניסוחים באנגלית', () => {
+  for (const t of ['HT', 'Halftime', 'Half Time', 'half-time']) {
+    assert.equal(isHalftime({ shortStatusText: t }), true, t);
+  }
+});
+
+test('מחצית ראשונה או שנייה הן זמן משחק - הדקה נשארת', () => {
+  for (const t of ['מחצית ראשונה', 'מחצית שנייה', 'מחצית 1', '2nd Half', '1st Half']) {
+    const e = entry(liveGame(t, t, "38'"));
+    assert.equal(e.minute, "38'", t);
+    assert.equal(e.halftime, false, t);
+  }
+});
+
+test('הפסקה לפני הארכה איננה מחצית', () => {
+  assert.equal(isHalftime({ statusText: 'הפסקה לפני הארכה' }), false);
+  assert.equal(isHalftime({ statusText: 'Break Time' }), false);
+});
+
+test('מספיק שאחד משני הטקסטים אומר מחצית', () => {
+  assert.equal(entry(liveGame('HT', "45'")).minute, 'מחצית');
+  assert.equal(entry(liveGame(null, ' מחצית ')).minute, 'מחצית');
+});
+
+test('משחק שלא מתנהל לא מסומן כמחצית גם אם הטקסט מתאים', () => {
+  const e = entry(liveGame('HT', 'HT', null, 2));
+  assert.equal(e.halftime, false);
+  assert.equal(e.minute, null);
+});
