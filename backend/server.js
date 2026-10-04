@@ -448,6 +448,10 @@ const notifyLiveEvents = async (matches, games, sentInThisPoll = new Set()) => {
           {
             type: `match_${event.type}`,
             matchId: String(match._id),
+            // לחיצה על ההתראה פותחת את "כל ההימורים" על המשחק עצמו - בזמן
+            // משחק לשונית ההימורים ממילא ריקה. האירוע נכנס לכתובת כדי שגם
+            // התראה שנייה על אותו משחק תגלול אליו כשהאפליקציה כבר פתוחה שם
+            url: `/#/allbets?week=${match.weekId}&match=${match._id}&e=${encodeURIComponent(key)}`,
             // החתימה נושאת את המזהה החיצוני ולא את מזהה המסמך, כדי ששני
             // מסמכים לאותו משחק יישאו את אותו tag ויתלכדו על המכשיר
             dedupeKey: `${match.externalId}:${key}`

@@ -25,7 +25,13 @@ function AllBetsViewer({ weeks, user }) {
   const focus = new URLSearchParams(search);
   const focusWeekId = focus.get('week');
   const focusMatchId = focus.get('match');
-  const focusApplied = useRef(false);
+  // הכתובת האחרונה שהמיקוד הוחל עליה. לא דגל בוליאני: כשהאפליקציה כבר
+  // פתוחה על הלשונית הזו, התראה נוספת משנה רק את הכתובת ולא טוענת מחדש את
+  // הקומפוננטה - ודגל היה מתעלם ממנה
+  const focusApplied = useRef(null);
+  // כל טעינת שבוע מקבלת מספר, ורק האחרונה רשאית לכתוב למסך. אחרת טעינת
+  // ברירת המחדל שחזרה מאוחר דורסת את השבוע שההתראה הפנתה אליו
+  const loadSeq = useRef(0);
 
   const { liveByMatchId, goalAtByMatchId } = useLiveScores(selectedWeek?._id);
   const [insightsFor, setInsightsFor] = useState(null);
@@ -98,17 +104,21 @@ function AllBetsViewer({ weeks, user }) {
   // השבוע שאליו הפנתה ההתראה גובר על ברירת המחדל, וגם על הסינון: אם
   // הוא בחודש אחר, הסינון היה מסתיר אותו
   useEffect(() => {
-    if (focusApplied.current || !focusWeekId || !weeks || weeks.length === 0) return;
+    if (focusApplied.current === search || !focusWeekId || !weeks || weeks.length === 0) return;
 
+    // רק שבוע נעול - אותו כלל שקובע אילו שבועות מופיעים כאן בכלל. בלעדיו
+    // קישור היה יכול לחשוף הימורים של שבוע שעוד פתוח להימורים
     const target = weeks.find((w) => w._id === focusWeekId);
-    if (!target) return;
+    const isLocked = target && target.active &&
+      (target.locked || (target.lockTime && new Date() >= new Date(target.lockTime)));
+    if (!isLocked) return;
 
-    focusApplied.current = true;
+    focusApplied.current = search;
     setSelectedSeason(target.season || '2025-26');
     setSelectedMonth(target.month);
     setSelectedWeek(target);
     loadWeekData(target._id);
-  }, [weeks, focusWeekId]);
+  }, [weeks, focusWeekId, search]);
 
   // ואחרי שהמשחקים נטענו - פתיחה וגלילה אליו
   useEffect(() => {
@@ -123,9 +133,10 @@ function AllBetsViewer({ weeks, user }) {
         ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 120);
     return () => clearTimeout(timer);
-  }, [matches, focusMatchId]);
+  }, [matches, focusMatchId, search]);
 
   const loadWeekData = async (weekId) => {
+    const seq = ++loadSeq.current;
     if (!weekId) { setMatches([]); setAllBets([]); setUsers([]); return; }
     try {
       setLoading(true);
@@ -150,13 +161,15 @@ function AllBetsViewer({ weeks, user }) {
         } catch (e) { /* ignore */ }
       }
 
+      if (seq !== loadSeq.current) return; // נטען בינתיים שבוע אחר
       setMatches(Array.isArray(matchesData) ? matchesData : []);
       setAllBets(Array.isArray(betsData) ? betsData : []);
       setUsers(usersData.filter(u => u.role !== 'admin' && !excludedIds.includes(u._id)));
     } catch (error) {
       console.error('Error loading week data:', error);
+      if (seq !== loadSeq.current) return;
       setMatches([]); setAllBets([]); setUsers([]);
-    } finally { setLoading(false); }
+    } finally { if (seq === loadSeq.current) setLoading(false); }
   };
 
   const getLeagueColor = (match) => {
