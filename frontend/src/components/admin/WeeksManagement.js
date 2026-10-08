@@ -129,10 +129,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
 
   const handleSelectWeek = async (week) => {
     setSelectedWeek(week);
-    setIsDropdownOpen(false);
-    setHoveredSeason(null);
-    setHoveredMonth(null);
-    
+
     if (onWeekSelect) {
       onWeekSelect(week);
     }
