@@ -1,4 +1,6 @@
 // 365scores - חברה ישראלית, מחזירים שמות בעברית, כוללים את כל ליגות ישראל
+const providerHealth = require('./providerHealth');
+
 const API_BASE = 'https://webws.365scores.com/web';
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
@@ -22,23 +24,32 @@ const cacheSet = (key, value) => {
 
 const apiGet = async (path) => {
   const url = `${API_BASE}${path}`;
+  const started = Date.now();
   console.log(`📡 [365] GET ${url}`);
-  const res = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Accept': 'application/json',
-      'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8',
-      'Referer': 'https://www.365scores.com/'
-    }
-  });
+  let res;
+  try {
+    res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+        'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8',
+        'Referer': 'https://www.365scores.com/'
+      }
+    });
+  } catch (err) {
+    providerHealth.record('365 ייבוא ונתונים', { ok: false, message: `אין חיבור: ${err.message}`, path, ms: Date.now() - started });
+    throw err;
+  }
   console.log(`📡 [365] status=${res.status}`);
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     const err = new Error(`365scores error ${res.status}: ${text.slice(0, 200)}`);
     err.code = 'API_ERROR';
     err.status = res.status;
+    providerHealth.record('365 ייבוא ונתונים', { ok: false, status: res.status, message: err.message, path, ms: Date.now() - started });
     throw err;
   }
+  providerHealth.record('365 ייבוא ונתונים', { ok: true, status: res.status, path, ms: Date.now() - started });
   return res.json();
 };
 

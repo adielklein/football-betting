@@ -8,6 +8,8 @@
 // המחיר האמיתי הוא לא הבקשות אלא הזמן שהשרת ער, ולכן הסריקה רצה אך ורק
 // כשבאמת יש משחק בחלון שידור. מחוץ לחלון: אפס בקשות.
 
+const providerHealth = require('./providerHealth');
+
 const API_BASE = 'https://webws.365scores.com/web';
 const COMMON_QUERY = 'appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6';
 
@@ -35,17 +37,38 @@ const stripPrefix = (externalId) =>
 // מזהה זר אחד היה מסכן את המצב החי של כל השבוע, לא רק של עצמו.
 const is365Id = (externalId) => !!externalId && !/^(espn|sofa|tsdb)_/.test(externalId);
 
+// כל קריאה נרשמת במצב הספק (הצלחה, או הסטטוס והטקסט שהוחזרו), כדי שמסך
+// הלוגים יראה למה 365 לא עונה - ולא רק שהוא לא עונה
 const apiGet = async (path) => {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      Accept: 'application/json',
-      'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8',
-      Referer: 'https://www.365scores.com/'
-    }
-  });
-  if (!res.ok) throw new Error(`365scores live error ${res.status}`);
-  return res.json();
+  const started = Date.now();
+  let res;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        Accept: 'application/json',
+        'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8',
+        Referer: 'https://www.365scores.com/'
+      }
+    });
+  } catch (err) {
+    providerHealth.record('365 חי', { ok: false, message: `אין חיבור: ${err.message}`, path, ms: Date.now() - started });
+    throw err;
+  }
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    const message = `365scores live error ${res.status}${text ? `: ${text.slice(0, 200)}` : ''}`;
+    providerHealth.record('365 חי', { ok: false, status: res.status, message, path, ms: Date.now() - started });
+    throw new Error(message);
+  }
+  try {
+    const json = await res.json();
+    providerHealth.record('365 חי', { ok: true, status: res.status, path, ms: Date.now() - started });
+    return json;
+  } catch (err) {
+    providerHealth.record('365 חי', { ok: false, status: res.status, message: `תשובה שאינה JSON: ${err.message}`, path, ms: Date.now() - started });
+    throw err;
+  }
 };
 
 // האם המשחק נמצא עכשיו בחלון שבו יכול להיות משהו לראות
@@ -201,6 +224,25 @@ const noteSuccess = () => {
   nextAttemptAt = 0;
 };
 
+// מצב הנסיגה, למסך הלוגים: כמה כישלונות ברצף ועד מתי לא פונים
+const backoffStatus = (now = Date.now()) => ({
+  consecutiveFailures,
+  until: nextAttemptAt > now ? new Date(nextAttemptAt) : null
+});
+
+// בדיקה יזומה מהמסך: קריאה אחת ל-365, גם בזמן נסיגה, עם התשובה כפי שהיא
+const probe = async () => {
+  const started = Date.now();
+  try {
+    // הנתיב שידוע שעובד בלי פרמטרים נוספים: כל המשחקים של היום
+    const json = await apiGet(`/games/allscores/?${COMMON_QUERY}&sports=1`);
+    noteSuccess();
+    return { ok: true, ms: Date.now() - started, games: (json.games || []).length };
+  } catch (err) {
+    return { ok: false, ms: Date.now() - started, message: err.message };
+  }
+};
+
 // לבדיקות בלבד
 const resetBackoff = () => { consecutiveFailures = 0; nextAttemptAt = 0; };
 
@@ -282,6 +324,8 @@ module.exports = {
   getLiveForWeek,
   fetchLiveFor,
   inBroadcastWindow,
+  backoffStatus,
+  probe,
   toLiveEntry,
   isHalftime,
   invalidate,

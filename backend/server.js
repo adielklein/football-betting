@@ -1,3 +1,6 @@
+// ראשון: כל שורה שהשרת כותב נשמרת גם בזיכרון, למסך "לוגים" של האדמין
+require('./services/logBuffer').install();
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -71,6 +74,29 @@ app.use('/api/exclusions', exclusionsRoutes);
 app.use('/api/external', externalRoutes);
 
 // Audit log endpoint - רק לאדמין הראשי
+// 📜 לוגים: השורות האחרונות שהשרת כתב, ומצב החיבור ל-365
+app.get('/api/logs', requireAdmin, (req, res) => {
+  const logBuffer = require('./services/logBuffer');
+  const providerHealth = require('./services/providerHealth');
+  const liveScores = require('./services/liveScores');
+  const { level, q, limit } = req.query;
+  res.json({
+    ...logBuffer.read({ level, q, limit }),
+    providers: providerHealth.snapshot(),
+    liveBackoff: liveScores.backoffStatus(),
+    now: new Date()
+  });
+});
+
+// בדיקה יזומה: קריאה אחת ל-365 עכשיו, והתשובה כפי שהיא
+app.post('/api/logs/probe-365', requireAdmin, async (req, res) => {
+  const liveScores = require('./services/liveScores');
+  const result = await liveScores.probe();
+  if (result.ok) console.log(`🩺 [365] בדיקה יזומה: תקין (${result.games} משחקים, ${result.ms}ms)`);
+  else console.warn(`🩺 [365] בדיקה יזומה: נכשל - ${result.message}`);
+  res.json(result);
+});
+
 app.get('/api/audit', requireAdmin, async (req, res) => {
   try {
     const AuditLog = require('./models/AuditLog');

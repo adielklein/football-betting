@@ -9,6 +9,7 @@ import LeaguesManagement from './LeaguesManagement';
 import PushManagement from './PushManagement';
 import AdminStats from './AdminStats';
 import AuditLog from './AuditLog';
+import ServerLogs from './ServerLogs';
 import LoadingSpinner from './LoadingSpinner';
 import useTabRoute from '../../services/useTabRoute';
 import { syncPushSubscription } from '../../services/pushSync';
@@ -21,7 +22,7 @@ function AdminView({ user, onLogout }) {
   const [users, setUsers] = useState([]);
   // בקידומת admin כדי שלשוניות הניהול לא יתנגשו באלה של השחקן
   const [activeTab, setActiveTab] = useTabRoute(
-    ['weeks', 'leagues', 'users', 'bets', 'push', 'stats', 'audit'],
+    ['weeks', 'leagues', 'users', 'bets', 'push', 'stats', 'audit', 'logs'],
     'weeks',
     { prefix: 'admin' }
   );
@@ -158,12 +159,15 @@ function AdminView({ user, onLogout }) {
     { key: 'bets', label: 'הימורים', icon: '🎯' },
     { key: 'push', label: 'התראות', icon: '📢' },
     { key: 'stats', label: 'סטטיסטיקה', icon: '📊' },
-    { key: 'audit', label: 'פעולות', icon: '🔍' }
+    { key: 'audit', label: 'פעולות', icon: '🔍' },
+    { key: 'logs', label: 'לוגים', icon: '📜' }
   ];
 
+  // לוגים של השרת עלולים להכיל פרטים על משתמשים ומכשירים - כמו "פעולות",
+  // רק למנהל הראשי
   const tabs = isPrimaryAdmin
     ? allTabs
-    : allTabs.filter(t => t.key !== 'stats' && t.key !== 'audit');
+    : allTabs.filter(t => t.key !== 'stats' && t.key !== 'audit' && t.key !== 'logs');
 
   return (
     <div>
@@ -173,7 +177,9 @@ function AdminView({ user, onLogout }) {
         {/* iOS-style segmented tab bar */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: `repeat(${tabs.length}, 1fr)`,
+          // עד שש לשוניות בשורה אחת; מעבר לזה שתי שורות, אחרת בטלפון
+          // התוויות נדחסות ונכנסות זו בזו
+          gridTemplateColumns: `repeat(${tabs.length > 6 ? Math.ceil(tabs.length / 2) : tabs.length}, 1fr)`,
           gap: '3px',
           marginBottom: '0.75rem',
           padding: '3px',
@@ -243,6 +249,7 @@ function AdminView({ user, onLogout }) {
           {activeTab === 'push' && <PushManagement />}
           {activeTab === 'stats' && <AdminStats />}
           {activeTab === 'audit' && <AuditLog />}
+          {activeTab === 'logs' && isPrimaryAdmin && <ServerLogs />}
         </div>
 
         {/* חתימת הגרסה שרצה. אחרי דיפלוי, זו התשובה ל"האם אני כבר על
