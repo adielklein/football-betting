@@ -22,7 +22,24 @@ const cacheSet = (key, value) => {
   cache.set(key, { value, savedAt: Date.now() });
 };
 
+// תקלה חולפת בצד של 365 (שער שלא ענה בזמן, ניתוק) - ניסיון אחד נוסף אחרי
+// הפסקה קצרה. 504 בודד מ-365 קורה, ובלי זה הוא הפיל חלק מחלון הנתונים
+const TRANSIENT_STATUS = new Set([502, 503, 504]);
+const RETRY_DELAY_MS = 600;
+
 const apiGet = async (path) => {
+  try {
+    return await apiGetOnce(path);
+  } catch (err) {
+    const transient = err.code === 'NETWORK' || TRANSIENT_STATUS.has(err.status);
+    if (!transient) throw err;
+    console.warn(`🔁 [365] ${err.status || 'ניתוק'} - ניסיון נוסף: ${path.slice(0, 120)}`);
+    await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+    return apiGetOnce(path);
+  }
+};
+
+const apiGetOnce = async (path) => {
   const url = `${API_BASE}${path}`;
   const started = Date.now();
   console.log(`📡 [365] GET ${url}`);
@@ -38,6 +55,7 @@ const apiGet = async (path) => {
     });
   } catch (err) {
     providerHealth.record('365 ייבוא ונתונים', { ok: false, message: `אין חיבור: ${err.message}`, path, ms: Date.now() - started });
+    err.code = 'NETWORK';
     throw err;
   }
   console.log(`📡 [365] status=${res.status}`);
@@ -348,7 +366,7 @@ const fetchTeamGamesPage = async (competitorId) => {
     return { games: finishedNewestFirst(json.games), nextPath: olderPagePath(json) };
   } catch (err) {
     console.warn(`⚠️ [365] fetchTeamGames failed for ${competitorId}:`, err.message);
-    return { games: [], nextPath: null };
+    return { games: [], nextPath: null, failed: true };
   }
 };
 
@@ -376,7 +394,7 @@ const H2H_HARD_BUDGET_MS = 20000;
 const fetchHeadToHead = async (
   teamId,
   opponentId,
-  { seedGames = [], seedNextPath = null, excludeGameId = null } = {}
+  { seedGames = [], seedNextPath = null, excludeGameId = null, onError = null } = {}
 ) => {
   if (!teamId || !opponentId) return [];
 
@@ -408,6 +426,7 @@ const fetchHeadToHead = async (
     }
   } catch (err) {
     console.warn(`⚠️ [365] fetchHeadToHead ${teamId} vs ${opponentId} failed:`, err.message);
+    if (onError) onError(err);
   }
 
   if (meetings.length < MIN_H2H) {
@@ -525,6 +544,10 @@ const fetchTeamInsights = async (externalId, { refresh = false, formSize = 5 } =
   const homeGames = homePage.games;
   const awayGames = awayPage.games;
 
+  // חלון שחסר בו חלק בגלל תקלה אצל 365 מוצג, אבל לא נשמר ל-cache: אחרת
+  // 504 בודד היה משאיר את כל הצופים בלי הנתונים של אותה קבוצה לשש שעות
+  let partial = Boolean(homePage.failed || awayPage.failed);
+
   const home = buildTeamBlock(homeC, homeGames, standingsRows, formSize);
   const away = buildTeamBlock(awayC, awayGames, standingsRows, formSize);
 
@@ -533,7 +556,8 @@ const fetchTeamInsights = async (externalId, { refresh = false, formSize = 5 } =
   const h2hGames = await fetchHeadToHead(homeC?.id, awayC?.id, {
     seedGames: homeGames,
     seedNextPath: homePage.nextPath,
-    excludeGameId: game.id
+    excludeGameId: game.id,
+    onError: () => { partial = true; }
   });
 
   const h2h = h2hGames
@@ -573,7 +597,11 @@ const fetchTeamInsights = async (externalId, { refresh = false, formSize = 5 } =
     prediction: predictScore(home, away)
   };
 
-  cacheSet(cacheKey, insights);
+  if (partial) {
+    console.warn(`⚠️ [365] insights ${id}: חסר חלק בגלל תקלה ב-365 - מוצג בלי לשמור, הצופה הבא ינסה שוב`);
+  } else {
+    cacheSet(cacheKey, insights);
+  }
   return insights;
 };
 

@@ -191,3 +191,64 @@ test('כשבתשובה אין אף משחק של התחרות, מנסים את �
   assert.equal(urls.length, 2);
   assert.deepEqual(fixtures.map((f) => f.apiId), ['365_903']);
 });
+
+// === תקלות חולפות של 365 בחלון הנתונים ===
+const { fetchTeamInsights } = require('./scores365Api');
+
+// 365 מדומה לחלון נתונים: המשחק, טבלה ריקה ותוצאות לכל קבוצה. resultsFor
+// מחליט מה מחזירה קבוצה, ומונה הקריאות נשמר לפי סוג
+const insightsServer = (gameId, resultsFor) => {
+  const calls = { game: 0, results: {} };
+  const handler = (url) => {
+    if (url.includes('/game/?')) {
+      calls.game++;
+      return { ok: true, status: 200, json: async () => ({ game: {
+        id: gameId, competitionId: 5,
+        homeCompetitor: { id: 131, name: 'בית' }, awayCompetitor: { id: 7171, name: 'חוץ' }
+      } }) };
+    }
+    const m = url.match(/\/games\/results\/\?.*competitors=(\d+)/);
+    if (m) {
+      calls.results[m[1]] = (calls.results[m[1]] || 0) + 1;
+      return resultsFor(m[1], calls.results[m[1]]);
+    }
+    return { ok: true, status: 200, json: async () => ({ games: [], standings: [] }), text: async () => '' };
+  };
+  return { calls, handler };
+};
+const timeout504 = { ok: false, status: 504, text: async () => '<html>504 Gateway Time-out</html>' };
+const emptyOk = { ok: true, status: 200, json: async () => ({ games: [] }), text: async () => '' };
+
+test('504 חולף מ-365 מקבל ניסיון נוסף, והחלון נשלם', async () => {
+  const { calls, handler } = insightsServer(9001, (team, n) => (team === '131' && n === 1 ? timeout504 : emptyOk));
+  await withFetch(handler, async () => {
+    const insights = await fetchTeamInsights('365_9001', { refresh: true });
+    assert.ok(insights);
+    assert.equal(calls.results['131'], 2, 'נוסה פעם שנייה');
+  });
+});
+
+test('חלון שחסר בו חלק לא נשמר - הצופה הבא מנסה שוב', async () => {
+  let down = true;
+  const { calls, handler } = insightsServer(9002, (team) => (team === '131' && down ? timeout504 : emptyOk));
+  await withFetch(handler, async () => {
+    await fetchTeamInsights('365_9002');
+    await fetchTeamInsights('365_9002');
+    // התוצאות של קבוצת החוץ נשלפות פעם אחת בכל בנייה של החלון
+    assert.equal(calls.results['7171'], 2, 'החלון החלקי לא הוגש מה-cache');
+
+    down = false; // 365 חזר
+    await fetchTeamInsights('365_9002');
+    await fetchTeamInsights('365_9002');
+    assert.equal(calls.results['7171'], 3, 'חלון שלם נשמר כרגיל');
+  });
+});
+
+test('שגיאה שאינה חולפת (404) לא מנוסה שוב', async () => {
+  const notFound = { ok: false, status: 404, text: async () => 'not found' };
+  const { calls, handler } = insightsServer(9003, (team) => (team === '131' ? notFound : emptyOk));
+  await withFetch(handler, async () => {
+    await fetchTeamInsights('365_9003', { refresh: true });
+    assert.equal(calls.results['131'], 1);
+  });
+});
