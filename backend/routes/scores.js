@@ -244,6 +244,38 @@ router.post('/calculate/:weekId', requireAdmin, async (req, res) => {
 });
 
 // Get leaderboard - תיקון: ללא אדמינים
+// 🧮 בדיקת ניקוד לחודש: כל הימור מחושב מחדש ומושווה למה שנשמר. קריאה בלבד
+router.get('/audit', requireAdmin, async (req, res) => {
+  try {
+    const { buildScoreAudit } = require('../services/scoreAudit');
+    const month = parseInt(req.query.month, 10);
+    const season = String(req.query.season || '');
+    if (!month || month < 1 || month > 12 || !season) {
+      return res.status(400).json({ message: 'צריך חודש ועונה' });
+    }
+
+    const weeks = await Week.find({ month, season }).lean();
+    const weekIds = weeks.map((w) => w._id);
+    const matches = await Match.find({ weekId: { $in: weekIds } }).lean();
+    const [bets, scores, users, exclusions] = await Promise.all([
+      Bet.find({ matchId: { $in: matches.map((m) => m._id) } }).lean(),
+      Score.find({ weekId: { $in: weekIds } }).lean(),
+      User.find({}, 'name role').lean(),
+      MonthExclusion.find({ month, season }, 'userId').lean()
+    ]);
+
+    const report = buildScoreAudit({ weeks, matches, bets, scores, users, exclusions });
+    console.log(
+      `🧮 [audit] ${month}/${season}: ${report.summary.betsChecked} הימורים, ` +
+      `${report.summary.errors} שגיאות, ${report.summary.warnings} אזהרות`
+    );
+    res.json({ month, season, at: new Date(), ...report });
+  } catch (error) {
+    console.error('❌ [audit] error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 router.get('/leaderboard', async (req, res) => {
   try {
     const scores = await Score.aggregate([

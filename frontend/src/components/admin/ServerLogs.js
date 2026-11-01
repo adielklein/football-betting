@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from '../../services/toast';
+import ScoreAudit from './ScoreAudit';
 
 const API_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:5000/api'
@@ -168,6 +169,8 @@ function ServerLogs() {
   return (
     <div>
       <h2>לוגים</h2>
+
+      <ScoreAudit />
 
       {/* === חיבור ל-365 === */}
       <div style={cardStyle}>
