@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const { logAdminAction } = require('../services/auditService');
 const { requireAdmin, requireSelfOrAdmin } = require('../middleware/requireAdmin');
+const { normalizeUsername } = require('../utils/username');
 const router = express.Router();
 
 // אוטומטית צור אדמין בהפעלת השרת
@@ -53,8 +54,11 @@ router.post('/login', async (req, res) => {
 
     console.log('Login attempt:', username);
 
-    // Find user by username
-    const user = await User.findOne({ username });
+    // השם המנורמל (בלי תווי כיווניות, גרש אחיד), וגם המקורי - כדי ששמות
+    // שנשמרו לפני הנרמול ימשיכו להתאים בדיוק כמו קודם
+    const user = await User.findOne({
+      username: { $in: [...new Set([String(username).trim(), normalizeUsername(username)])] }
+    });
     if (!user) {
       return res.status(401).json({ message: 'שם משתמש או סיסמה שגויים' });
     }
@@ -130,7 +134,8 @@ router.get('/users', async (req, res) => {
 router.post('/users', requireAdmin, async (req, res) => {
   try {
     console.log('Creating new user:', req.body);
-    const { name, username, password, role = 'player', theme = 'default', adminId } = req.body;
+    const { name, password, role = 'player', theme = 'default', adminId } = req.body;
+    const username = normalizeUsername(req.body.username);
     
     if (!name || !username || !password) {
       return res.status(400).json({ message: 'שם, שם משתמש וסיסמה נדרשים' });
@@ -310,7 +315,18 @@ router.get('/users/:id/password', requireAdmin, async (req, res) => {
 router.patch('/users/:id', requireAdmin, async (req, res) => {
   try {
     console.log(`Updating user ${req.params.id}:`, req.body);
-    const { name, username, role, password, theme, adminId, nameLocked } = req.body;
+    const { name, role, password, theme, adminId, nameLocked } = req.body;
+    const username = req.body.username === undefined ? undefined : normalizeUsername(req.body.username);
+
+    if (username === '') {
+      return res.status(400).json({ message: 'שם משתמש לא יכול להיות ריק' });
+    }
+
+    // שם משתמש תפוס היה נופל על האינדקס הייחודי כשגיאת שרת לא מובנת
+    if (username) {
+      const taken = await User.findOne({ username, _id: { $ne: req.params.id } }).select('_id');
+      if (taken) return res.status(400).json({ message: 'שם משתמש כבר קיים' });
+    }
     
     const updateData = { name, username, role };
 

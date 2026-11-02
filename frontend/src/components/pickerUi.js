@@ -54,6 +54,8 @@ const triggerStyle = (disabled) => ({
  * סגירה בלחיצה בחוץ וב-Escape. בלעדיהן רשימה פתוחה נשארת מרחפת מעל
  * המסך וחוסמת את מה שמתחתיה. מחזיר ref לעטיפה.
  */
+const LIFT_Z = 50;
+
 const useDismiss = (open, close) => {
   const boxRef = useRef(null);
 
@@ -74,6 +76,25 @@ const useDismiss = (open, close) => {
       document.removeEventListener('keydown', onKey);
     };
   }, [open, close]);
+
+  // כל .card הוא שכבה משלו (position: relative; z-index: 1), ולכן רשימה
+  // שנפתחת בתוך כרטיס נבלעת מתחת לכרטיס הבא - לא משנה כמה גבוה ה-z-index
+  // שלה, כי הוא נמדד רק בתוך הכרטיס. כל עוד הרשימה פתוחה, כל שכבה שעוטפת
+  // אותה ונמוכה מ-LIFT_Z עולה אליו. שכבה שכבר גבוהה יותר (חלון קופץ) לא
+  // נוגעים בה, כדי לא להוריד אותה מתחת למה שהיא אמורה לכסות.
+  useEffect(() => {
+    if (!open || !boxRef.current) return undefined;
+
+    const lifted = [];
+    for (let el = boxRef.current.parentElement; el && el !== document.body; el = el.parentElement) {
+      const cs = window.getComputedStyle(el);
+      if (cs.position === 'static' || cs.zIndex === 'auto') continue;
+      if ((parseInt(cs.zIndex, 10) || 0) >= LIFT_Z) continue;
+      lifted.push([el, el.style.zIndex]);
+      el.style.zIndex = String(LIFT_Z);
+    }
+    return () => lifted.forEach(([el, previous]) => { el.style.zIndex = previous; });
+  }, [open]);
 
   return boxRef;
 };

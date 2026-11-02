@@ -331,6 +331,9 @@ function UsersManagement({ users, loadData, user }) {
               placeholder="שם משתמש"
               value={newUser.username}
               onChange={(e) => setNewUser(prev => ({ ...prev, username: e.target.value }))}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               className="input"
               style={inputStyle}
             />
@@ -549,6 +552,9 @@ function UsersManagement({ users, loadData, user }) {
                           type="text"
                           value={editForm.username || ''}
                           onChange={(e) => setEditForm(prev => ({ ...prev, username: e.target.value }))}
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          spellCheck={false}
                           className="input"
                           style={inputStyle}
                         />

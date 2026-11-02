@@ -98,10 +98,16 @@ function Login({ onLogin }) {
             }}>
               שם משתמש
             </label>
+            {/* בלי תיקון אוטומטי: המקלדת "מתקנת" שמות בעברית למילים אחרות,
+                ושם משתמש צריך להגיע בדיוק כמו שהוקלד */}
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               className="input"
               style={{
                 width: '100%',
