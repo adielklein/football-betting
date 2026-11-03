@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { applyTheme } from '../themes';
 import { hapticError } from '../services/haptics';
-import { play } from '../services/motion';
+import { play, reducedMotion } from '../services/motion';
+import { createGoalScene } from './goalScene';
 
 function Login({ onLogin, notice = null }) {
   const [username, setUsername] = useState('');
@@ -27,6 +28,23 @@ function Login({ onLogin, notice = null }) {
   useEffect(() => {
     applyTheme(null);
   }, []);
+
+  // פתיחה: פנדל באצטדיון (goalScene.js). כרטיס הכניסה עולה מיד אחרי הגול,
+  // "דלג" או לחיצה על המסך מביאים אותו מיד, והשדות פעילים כל הזמן
+  const canvasRef = useRef(null);
+  const sceneRef = useRef(null);
+  const [cardUp, setCardUp] = useState(false);
+  useEffect(() => {
+    if (!canvasRef.current) return undefined;
+    const scene = createGoalScene(canvasRef.current, {
+      reduced: reducedMotion(),
+      onDone: () => setCardUp(true)
+    });
+    sceneRef.current = scene;
+    scene.play();
+    return () => scene.destroy();
+  }, []);
+  const skipIntro = () => sceneRef.current && sceneRef.current.skip();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -66,41 +84,59 @@ function Login({ onLogin, notice = null }) {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'var(--theme-header-bg, linear-gradient(135deg, #1e3a8a 0%, #059669 100%))',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px'
-    }}>
-      <div ref={cardRef} style={{
+    <div
+      className="login-stage"
+      onPointerDown={(e) => { if (!cardRef.current || !cardRef.current.contains(e.target)) skipIntro(); }}
+      style={{
+        minHeight: '100dvh',
+        background: '#02040a',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        padding: '16px 16px max(18px, env(safe-area-inset-bottom, 0px))',
+        position: 'relative',
+        overflow: 'hidden'
+      }}
+    >
+      {/* האצטדיון. קבוע למסך, כך שהמקלדת יכולה לגלול את הכרטיס בלי להזיז אותו */}
+      <canvas ref={canvasRef} aria-hidden="true" style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', display: 'block' }} />
+
+      {!cardUp && (
+        <button type="button" onClick={skipIntro} style={{
+          position: 'fixed', zIndex: 2,
+          top: 'max(14px, env(safe-area-inset-top, 0px))', left: '14px',
+          font: 'inherit', fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'rgba(255,255,255,.9)',
+          background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.2)',
+          WebkitBackdropFilter: 'blur(6px)', backdropFilter: 'blur(6px)',
+          padding: '6px 14px', minHeight: '32px', borderRadius: '999px', cursor: 'pointer'
+        }}>
+          דלג
+        </button>
+      )}
+
+      <div ref={cardRef} className={`login-card${cardUp ? ' up' : ''}`} style={{
+        position: 'relative',
+        zIndex: 1,
         width: '100%',
-        maxWidth: '380px',
-        background: 'rgba(255,255,255,0.97)',
-        borderRadius: '20px',
-        padding: '2rem 1.5rem',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.1)',
-        animation: 'scaleIn 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)'
+        maxWidth: '400px',
+        borderRadius: '26px',
+        padding: '1.25rem 1.15rem 1.1rem',
+        boxShadow: '0 -10px 40px rgba(0,0,0,0.35)'
       }}>
         {/* לוגו */}
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
           <img
             src="/gamball-logo.jpeg"
-            alt="GAMBALL Logo"
-            style={{
-              width: '140px',
-              height: 'auto',
-              marginBottom: '0.75rem',
-              filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.15))',
-              borderRadius: '12px'
-            }}
+            alt=""
+            style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '13px', boxShadow: '0 4px 12px rgba(0,0,0,0.25)' }}
           />
-          <p style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-sm)', fontWeight: '500' }}>
-            פרמיירליג • לה ליגה • ליגת העל
-          </p>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 'var(--fs-lg)', fontWeight: 800, letterSpacing: '0.5px', color: 'var(--text, #1f2430)' }}>GAMBALL</h1>
+            <p style={{ margin: 0, color: 'var(--text-2, #4a505c)', fontSize: 'var(--fs-xs)', fontWeight: 500 }}>
+              פרמיירליג • לה ליגה • ליגת העל
+            </p>
+          </div>
         </div>
 
         {/* למה מבקשים להתחבר שוב - בלי הסבר זה נראה כמו תקלה */}
@@ -157,7 +193,7 @@ function Login({ onLogin, notice = null }) {
             />
           </div>
 
-          <div style={{ marginBottom: '1.25rem' }}>
+          <div style={{ marginBottom: '1rem' }}>
             <label style={{
               display: 'block', marginBottom: '0.35rem',
               fontWeight: '600', fontSize: 'var(--fs-sm)', color: 'var(--text-2, #555)'
@@ -237,13 +273,12 @@ function Login({ onLogin, notice = null }) {
           </div>
         )}
 
-        <div style={{
-          textAlign: 'center', marginTop: '1.25rem',
-          color: 'var(--text-4, #aaa)', fontSize: 'var(--fs-xs)', lineHeight: 1.6
+        <p style={{
+          textAlign: 'center', margin: '0.85rem 0 0',
+          color: 'var(--text-2, #4a505c)', fontSize: 'var(--fs-xs)', lineHeight: 1.6
         }}>
-          <p>פנה למנהל המערכת לקבלת פרטי התחברות</p>
-          <p style={{ marginTop: '0.25rem' }}>📱 מכל מכשיר • 💻 כל דפדפן</p>
-        </div>
+          פנה למנהל המערכת לקבלת פרטי התחברות
+        </p>
       </div>
     </div>
   );
