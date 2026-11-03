@@ -414,12 +414,12 @@ function PlayerStats({ user }) {
           strokeDashoffset={-(wrongLen + dirLen)} strokeLinecap="round" />
         {/* Center text */}
         <text x={center} y={center - 6} textAnchor="middle" dominantBaseline="middle"
-          style={{ transform: 'rotate(90deg)', transformOrigin: `${center}px ${center}px`, fontSize: 'var(--fs-xl)', fontWeight: '800', fill: '#333' }}>
+          style={{ transform: 'rotate(90deg)', transformOrigin: `${center}px ${center}px`, fontSize: 'var(--fs-xl)', fontWeight: '800', fill: 'var(--text, #333)' }}>
           {overview.accuracy}%
         </text>
         <text x={center} y={center + 14} textAnchor="middle" dominantBaseline="middle"
-          style={{ transform: 'rotate(90deg)', transformOrigin: `${center}px ${center}px`, fontSize: 'var(--fs-xs)', fill: '#999', fontWeight: '500' }}>
-          דיוק
+          style={{ transform: 'rotate(90deg)', transformOrigin: `${center}px ${center}px`, fontSize: 'var(--fs-xs)', fill: 'var(--text-3, #5f6670)', fontWeight: '500' }}>
+          פגיעה
         </text>
       </svg>
     );

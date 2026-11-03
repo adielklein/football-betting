@@ -293,6 +293,53 @@ function NotificationSettings({ user, embedded = false }) {
           padding: embedded ? 0 : '0 0.85rem 0.75rem',
           animation: 'slideUp 0.25s ease'
         }}>
+          {!isSubscribed && (
+            <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-2, #444)', margin: '0 0 0.5rem' }}>
+              תזכורת לפני שההימורים נסגרים, ועדכונים על שערים ותוצאות במשחקים של השבוע.
+            </p>
+          )}
+          {/* Subscribe/Unsubscribe */}
+          <div style={{ display: 'flex', gap: '0.3rem', justifyContent: 'center', alignItems: 'center' }}>
+            {!isSubscribed ? (
+              <button onClick={subscribeToPush} disabled={loading} style={{
+                flex: 1, padding: '0.5rem', minHeight: '44px',
+                // צבע אחיד ולא מעבר צבע: המעבר לצבע המשני דהה כמעט ללבן
+                // בחלק מהערכות, והטקסט הלבן נבלע בו
+                background: loading ? 'var(--surface-3, #ccc)' : '#1a6b35',
+                color: 'white', border: 'none', borderRadius: '10px',
+                fontSize: 'var(--fs-sm)', fontWeight: '700', cursor: loading ? 'wait' : 'pointer',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}>
+                {loading ? '⏳ מפעיל...' : '🔔 הפעל התראות'}
+              </button>
+            ) : (
+              <>
+                <span style={{
+                  flex: 1, textAlign: 'center',
+                  padding: '0.4rem',
+                  background: 'var(--good-bg, #dcfce7)',
+                  color: 'var(--good-fg, #166534)', borderRadius: '10px',
+                  fontSize: 'var(--fs-xs)', fontWeight: '700',
+                  border: '1px solid #86efac'
+                }}>
+                  ✅ פעיל
+                </span>
+                <button onClick={unsubscribeFromPush} disabled={loading} style={{
+                  padding: '0.4rem 0.7rem',
+                  background: 'linear-gradient(135deg, #dc3545, #c62828)',
+                  color: 'white', border: 'none', borderRadius: '10px',
+                  fontSize: 'var(--fs-xs)', fontWeight: '700', cursor: 'pointer'
+                }}>
+                  {loading ? '⏳' : '📕 בטל'}
+                </button>
+              </>
+            )}
+          </div>
+
+          <div style={{ height: '0.5rem' }} />
+          {/* ההגדרות מופיעות רק אחרי ההפעלה: לפניה המתגים לא עושים כלום,
+              והכפתור שמפעיל אותם היה מתחתיהם */}
+          {isSubscribed && (
           <div style={{
             padding: '0.6rem',
             backgroundColor: 'var(--surface-2, #f8f9fc)',
@@ -372,42 +419,7 @@ function NotificationSettings({ user, embedded = false }) {
               </div>
             )}
           </div>
-
-          {/* Subscribe/Unsubscribe */}
-          <div style={{ display: 'flex', gap: '0.3rem', justifyContent: 'center', alignItems: 'center' }}>
-            {!isSubscribed ? (
-              <button onClick={subscribeToPush} disabled={loading} style={{
-                flex: 1, padding: '0.5rem',
-                background: loading ? '#ccc' : 'linear-gradient(135deg, var(--theme-primary, #007bff), var(--theme-secondary, #6c757d))',
-                color: 'white', border: 'none', borderRadius: '10px',
-                fontSize: 'var(--fs-sm)', fontWeight: '700', cursor: loading ? 'wait' : 'pointer',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-              }}>
-                {loading ? '⏳ מפעיל...' : '🔔 הפעל התראות'}
-              </button>
-            ) : (
-              <>
-                <span style={{
-                  flex: 1, textAlign: 'center',
-                  padding: '0.4rem',
-                  background: 'var(--good-bg, #dcfce7)',
-                  color: 'var(--good-fg, #166534)', borderRadius: '10px',
-                  fontSize: 'var(--fs-xs)', fontWeight: '700',
-                  border: '1px solid #86efac'
-                }}>
-                  ✅ פעיל
-                </span>
-                <button onClick={unsubscribeFromPush} disabled={loading} style={{
-                  padding: '0.4rem 0.7rem',
-                  background: 'linear-gradient(135deg, #dc3545, #c62828)',
-                  color: 'white', border: 'none', borderRadius: '10px',
-                  fontSize: 'var(--fs-xs)', fontWeight: '700', cursor: 'pointer'
-                }}>
-                  {loading ? '⏳' : '📕 בטל'}
-                </button>
-              </>
-            )}
-          </div>
+          )}
 
           {/* Tips */}
           <div style={{

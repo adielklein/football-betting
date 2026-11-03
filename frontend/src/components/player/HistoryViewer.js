@@ -4,6 +4,7 @@ import LeagueLogo from '../LeagueLogo';
 import Score from '../Score';
 import { textOn } from '../../services/readableColor';
 import { formatScore } from '../../services/liveNumbers';
+import { placesFor, anyScored } from '../../services/ranking';
 
 function HistoryViewer({ weeks, user }) {
   const [selectedHistoryWeek, setSelectedHistoryWeek] = useState(null);
@@ -207,7 +208,7 @@ function HistoryViewer({ weeks, user }) {
               flexShrink: 0, boxShadow: '0 4px 12px rgba(0,123,255,0.25)'
             }}>
               <div style={{ fontSize: 'var(--fs-xs)', opacity: 0.85, lineHeight: 1, textTransform: 'uppercase', letterSpacing: '0.5px' }}>הניקוד שלך</div>
-              <div style={{ fontSize: 'var(--fs-xl)', fontWeight: '800', lineHeight: 1.2 }}>{calculateUserWeekScore()}</div>
+              <div style={{ fontSize: 'var(--fs-xl)', fontWeight: '800', lineHeight: 1.2 }}>{historyData.matches.some((m) => m.result?.team1Goals !== undefined) ? calculateUserWeekScore() : '–'}</div>
             </div>
           </div>
 
@@ -329,15 +330,27 @@ function HistoryViewer({ weeks, user }) {
             )}
           </div>
 
-          {/* לוח תוצאות */}
-          {historyData.allBets.length > 0 && (
+          {/* לוח תוצאות. לפני התוצאה הראשונה כולם על 0, וטבלה עם מדליות
+              הייתה מכתירה מנצח לפי סדר אלפביתי */}
+          {historyData.allBets.length > 0 && !historyData.matches.some((m) => m.result?.team1Goals !== undefined) && (
+            <div className="card" style={{ textAlign: 'center', color: 'var(--text-3, #5f6670)', fontSize: 'var(--fs-sm)' }}>
+              🏆 לוח התוצאות של השבוע יופיע אחרי התוצאה הראשונה
+            </div>
+          )}
+          {historyData.allBets.length > 0 && historyData.matches.some((m) => m.result?.team1Goals !== undefined) && (() => {
+            const board = getScoreboardData();
+            const places = placesFor(board.map((p) => p.score));
+            const scored = anyScored(board.map((p) => p.score));
+            return (
             <div className="card">
               <h3 style={{ fontSize: 'var(--fs-sm)', margin: '0 0 0.5rem 0', fontWeight: '700', color: 'var(--text-2, #555)' }}>🏆 לוח תוצאות השבוע</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                {getScoreboardData().map((player, index) => {
-                  const rank = getRankStyle(index);
+                {board.map((player, index) => {
+                  // מקום לפי ניקוד: תיקו חולק מקום ומדליה
+                  const place = places[index];
+                  const rank = scored ? getRankStyle(place - 1) : getRankStyle(-1);
                   const isMe = player.name === user.name;
-                  const isTop3 = index < 3;
+                  const isTop3 = scored && place <= 3;
                   // לשורה עם רקע משלה יש גם טקסט משלה
                   const rowFg = isMe ? 'var(--me-fg, #14508f)' : (isTop3 ? rank.fg : 'var(--text, #333)');
                   return (
@@ -352,7 +365,7 @@ function HistoryViewer({ weeks, user }) {
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, flex: 1 }}>
                         <span style={{ fontSize: isTop3 ? 'var(--fs-lg)' : 'var(--fs-xs)', fontWeight: '800', minWidth: '24px', textAlign: 'center', color: !isTop3 ? 'var(--text-4, #bbb)' : rowFg }}>
-                          {rank.icon || (index + 1)}
+                          {rank.icon || (scored ? place : '–')}
                         </span>
                         <span style={{ fontWeight: isMe ? '700' : '500', fontSize: 'var(--fs-sm)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: rowFg }}>
                           {player.name}
@@ -369,7 +382,8 @@ function HistoryViewer({ weeks, user }) {
                 })}
               </div>
             </div>
-          )}
+            );
+          })()}
         </>
       )}
 

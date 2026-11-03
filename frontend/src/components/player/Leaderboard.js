@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import LiveTable from './LiveTable';
 import { formatScore } from '../../services/liveNumbers';
+import { placesFor, anyScored } from '../../services/ranking';
 
 function Leaderboard({ leaderboard, user }) {
   const [monthlyScores, setMonthlyScores] = useState([]);
@@ -262,9 +263,17 @@ function Leaderboard({ leaderboard, user }) {
     return { icon: null, bg: 'transparent', border: 'transparent', shadow: 'none' };
   };
 
-  const renderPlayerRow = (player, index, scoreKey, isMe, animDelay) => {
-    const rank = getRankStyle(index);
-    const isTop3 = index < 3;
+  // מקום לפי ניקוד (תיקו חולק מקום), ומדליות רק כשמישהו כבר צבר נקודות
+  const rankedRows = (list, scoreOf) => {
+    const scores = list.map(scoreOf);
+    const places = placesFor(scores);
+    const scored = anyScored(scores);
+    return list.map((player, index) => ({ player, index, place: places[index], scored }));
+  };
+
+  const renderPlayerRow = (player, index, scoreKey, isMe, animDelay, place = index + 1, scored = true) => {
+    const rank = scored ? getRankStyle(place - 1) : getRankStyle(-1);
+    const isTop3 = scored && place <= 3;
     const score = formatScore(player[scoreKey] !== undefined ? player[scoreKey] : player.score);
 
     // לשורה עם רקע משלה יש גם טקסט משלה. שורה רגילה יורשת את הרגיל.
@@ -291,7 +300,7 @@ function Leaderboard({ leaderboard, user }) {
             textAlign: 'center',
             color: !isTop3 ? 'var(--text-4, #bbb)' : rowFg
           }}>
-            {rank.icon || (index + 1)}
+            {rank.icon || (scored ? place : '–')}
           </span>
           <span style={{
             fontWeight: isMe ? '700' : '500',
@@ -449,8 +458,8 @@ function Leaderboard({ leaderboard, user }) {
             </h2>
             {!loading && monthlyScores.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                {monthlyScores.map((player, index) =>
-                  renderPlayerRow(player, index, 'monthlyScore', player.name === user.name, index * 0.04)
+                {rankedRows(monthlyScores, (p) => p.monthlyScore).map(({ player, index, place, scored }) =>
+                  renderPlayerRow(player, index, 'monthlyScore', player.name === user.name, index * 0.04, place, scored)
                 )}
               </div>
             )}
@@ -486,8 +495,8 @@ function Leaderboard({ leaderboard, user }) {
 
                 {selectedWeekId && selectedWeekScores.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    {selectedWeekScores.map((player, index) =>
-                      renderPlayerRow(player, index, 'score', player.name === user.name, index * 0.03)
+                    {rankedRows(selectedWeekScores, (p) => p.score).map(({ player, index, place, scored }) =>
+                      renderPlayerRow(player, index, 'score', player.name === user.name, index * 0.03, place, scored)
                     )}
                   </div>
                 )}
@@ -513,8 +522,8 @@ function Leaderboard({ leaderboard, user }) {
             </h2>
             {!loading && seasonalScores.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                {seasonalScores.map((player, index) =>
-                  renderPlayerRow(player, index, 'seasonalScore', player.name === user.name, index * 0.04)
+                {rankedRows(seasonalScores, (p) => p.seasonalScore).map(({ player, index, place, scored }) =>
+                  renderPlayerRow(player, index, 'seasonalScore', player.name === user.name, index * 0.04, place, scored)
                 )}
               </div>
             )}
@@ -534,10 +543,10 @@ function Leaderboard({ leaderboard, user }) {
             </h2>
             {leaderboard.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                {leaderboard.map((entry, index) =>
+                {rankedRows(leaderboard, (e) => e.totalScore).map(({ player: entry, index, place, scored }) =>
                   renderPlayerRow(
                     { name: entry.user.name, score: entry.totalScore },
-                    index, 'score', entry.user._id === user.id, index * 0.04
+                    index, 'score', entry.user._id === user.id, index * 0.04, place, scored
                   )
                 )}
               </div>
