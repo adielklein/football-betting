@@ -178,11 +178,6 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
     setBets((prev) => ({ ...prev, [matchId]: { ...(prev[matchId] || {}), ...prediction } }));
   };
 
-  const getUserTotalScore = () => {
-    const userEntry = leaderboard.find(entry => entry.user._id === user.id);
-    return userEntry ? userEntry.totalScore : 0;
-  };
-
   const tabs = [
     { key: 'betting', label: 'הימורים', icon: '⚽' },
     { key: 'allbets', label: 'כל ההימורים', icon: '👥' },
@@ -228,7 +223,6 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
       <PlayerHeader
         user={user}
         selectedWeek={selectedWeek}
-        userScore={getUserTotalScore()}
         onLogout={onLogout}
         onOpenSettings={toggleSettings}
         settingsOpen={activeTab === 'settings'}

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { applyTheme } from '../../themes';
 import ColorSchemeToggle from '../ColorSchemeToggle';
 
-function PlayerHeader({ user, selectedWeek, userScore, onLogout, onOpenSettings, settingsOpen }) {
+function PlayerHeader({ user, selectedWeek, onLogout, onOpenSettings, settingsOpen }) {
 
   useEffect(() => {
     if (user) {
@@ -48,21 +48,8 @@ function PlayerHeader({ user, selectedWeek, userScore, onLogout, onOpenSettings,
             gap: '0.4rem',
             flexShrink: 0
           }}>
-            <div style={{
-              textAlign: 'center',
-              color: 'white',
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.08) 100%)',
-              padding: '0.35rem 0.7rem',
-              borderRadius: '12px',
-              border: '1px solid rgba(255,255,255,0.15)',
-              backdropFilter: 'blur(4px)',
-              WebkitBackdropFilter: 'blur(4px)'
-            }}>
-              <div style={{ fontSize: 'var(--fs-xs)', opacity: 0.8, lineHeight: 1, textTransform: 'uppercase', letterSpacing: '0.5px' }}>ניקוד</div>
-              <div style={{ fontSize: 'var(--fs-lg)', fontWeight: '700', lineHeight: 1.2 }}>
-                {userScore || 0}
-              </div>
-            </div>
+            {/* בלי תיבת ניקוד: הניקוד נמצא בטבלה, והתיבה ישבה בדיוק על
+                סמל הקבוצה שבמרכז הכותרת והסתירה אותו */}
             <ColorSchemeToggle />
             {onOpenSettings && (
               <button
