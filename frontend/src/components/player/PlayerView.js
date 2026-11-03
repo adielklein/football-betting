@@ -244,13 +244,6 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
           marginBottom: '1rem'
         }}></div>
         <h2 style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-md)', fontWeight: '500' }}>טוען נתונים...</h2>
-
-        <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
       </div>
     );
   }

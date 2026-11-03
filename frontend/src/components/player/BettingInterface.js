@@ -330,11 +330,18 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
   // לכל מכשיר, ורק כשזה קורה מול העיניים - לא בכל כניסה למסך מלא
   const counterRef = useRef(null);
   const prevCount = useRef(null);
+  const prevWeekId = useRef(null);
   const [celebrateDone, setCelebrateDone] = useState(false);
   const doneNow = matches.length > 0 &&
     Object.keys(bets).filter((id) => bets[id].team1Goals !== undefined).length >= matches.length;
   useEffect(() => {
     const count = Object.keys(bets).filter((id) => bets[id].team1Goals !== undefined).length;
+    // מעבר לשבוע אחר הוא לא "סיים עכשיו" - מתחילים לספור מחדש
+    if (prevWeekId.current !== selectedWeek?._id) {
+      prevWeekId.current = selectedWeek?._id;
+      prevCount.current = count;
+      return undefined;
+    }
     const before = prevCount.current;
     prevCount.current = count;
     if (before === null || !doneNow || before >= matches.length) return undefined;

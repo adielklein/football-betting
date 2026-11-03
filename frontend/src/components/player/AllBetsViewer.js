@@ -58,6 +58,10 @@ function AllBetsViewer({ weeks, user, active = true }) {
   const [stampIds, setStampIds] = useState({});
   useEffect(() => {
     if (!active || matches.length === 0 || allBets.length === 0) return undefined;
+    // רק שבוע מהשבועיים האחרונים. בלי זה, אחרי העדכון, דפדוף בשבועות ישנים
+    // היה מפעיל קונפטי על כל פגיעה מדויקת אי-פעם
+    const lock = selectedWeek?.lockTime ? new Date(selectedWeek.lockTime).getTime() : 0;
+    if (!lock || Date.now() - lock > 14 * 24 * 3600 * 1000) return undefined;
     const fresh = matches.filter((m) => {
       if (!m.result || m.result.team1Goals === undefined) return false;
       const mine = allBets.find((b) => (b.userId?._id || b.userId) === user.id && (b.matchId?._id || b.matchId) === m._id);
@@ -69,7 +73,7 @@ function AllBetsViewer({ weeks, user, active = true }) {
     // אחרי הציור, כדי שהקונפטי ייצא מהתג עצמו
     const t = setTimeout(() => confettiFrom(document.getElementById(`exact-badge-${fresh[0]._id}`)), 150);
     return () => clearTimeout(t);
-  }, [active, matches, allBets, user.id]);
+  }, [active, matches, allBets, user.id, selectedWeek?.lockTime]);
 
   useEffect(() => {
     if (!weeks || weeks.length === 0) return;

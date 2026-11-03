@@ -257,8 +257,6 @@ function AuditLog() {
         </span>
       </div>
 
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-
       {logs.length === 0 ? (
         <div style={{
           textAlign: 'center', padding: '2rem', color: 'var(--text-3, #888)',

@@ -221,6 +221,7 @@ function App() {
   const handleLogout = async () => {
     try {
       console.log('🚪 מתנתק...');
+      setJustLoggedIn(false); // כדי שאנימציית הכניסה תרוץ שוב בהתחברות הבאה
       clearToken();
       localStorage.removeItem('football_betting_user');
       setCurrentUser(null);
@@ -275,13 +276,7 @@ function App() {
           marginBottom: '1rem'
         }}></div>
         <h2 style={{ color: 'var(--theme-text, #666)', fontSize: 'var(--fs-lg)' }}>טוען...</h2>
-        
-        <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
+
       </div>
     );
   }
@@ -351,12 +346,6 @@ function App() {
               </button>
             </div>
           </div>
-          <style>{`
-            @keyframes slideUp {
-              from { transform: translateY(30px); opacity: 0; }
-              to { transform: translateY(0); opacity: 1; }
-            }
-          `}</style>
         </div>
       )}
       </div>
