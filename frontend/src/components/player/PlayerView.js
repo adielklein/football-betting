@@ -12,6 +12,7 @@ import ErrorBoundary from '../ErrorBoundary';
 import { confirmLeave } from '../../services/unsavedGuard';
 import useTabRoute from '../../services/useTabRoute';
 import useSwipeNav from '../../services/useSwipeNav';
+import BottomNav from './BottomNav';
 import { stepTab } from '../../services/swipeNav';
 import { syncPushSubscription } from '../../services/pushSync';
 
@@ -234,52 +235,6 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
       />
 
       <div className="container">
-        {/* Tab Bar */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(5, 1fr)',
-          gap: '4px',
-          marginBottom: '0.75rem',
-          padding: '4px',
-          backgroundColor: 'var(--surface-3, #f0f2f5)',
-          borderRadius: '14px',
-          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)'
-        }}>
-          {tabs.map(tab => {
-            const isActive = activeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                style={{
-                  padding: '0.5rem 0.1rem',
-                  border: 'none',
-                  borderRadius: '11px',
-                  backgroundColor: isActive ? 'var(--surface, #fff)' : 'transparent',
-                  color: isActive ? 'var(--theme-primary-text, #007bff)' : 'var(--text-3, #888)',
-                  fontWeight: isActive ? '700' : '500',
-                  fontSize: 'var(--fs-xs)',
-                  cursor: 'pointer',
-                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                  WebkitAppearance: 'none',
-                  touchAction: 'manipulation',
-                  whiteSpace: 'nowrap',
-                  margin: 0,
-                  boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)' : 'none',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '2px',
-                  lineHeight: 1.2
-                }}
-              >
-                <span style={{ fontSize: 'var(--fs-md)', lineHeight: 1 }}>{tab.icon}</span>
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
         <div
           {...swipe}
           key={activeTab}
@@ -339,6 +294,8 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
           </ErrorBoundary>
         </div>
       </div>
+
+      <BottomNav tabs={tabs} activeTab={activeTab} onSelect={setActiveTab} />
     </div>
   );
 }

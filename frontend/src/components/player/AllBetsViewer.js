@@ -370,15 +370,20 @@ function AllBetsViewer({ weeks, user }) {
                         {match.team2}
                         <span style={{ fontSize: 'var(--fs-xs)', opacity: 0.55 }} aria-hidden="true">📊</span>
                       </button>
+                      {/* ההימור שלך תמיד בשורה משלו מתחת לשמות. כשהוא ישב בסוף
+                          השורה הוא קפץ לשורה הבאה רק כשהשמות ארוכים, וכל כרטיס
+                          נראה אחרת */}
                       {myBet && myBet.prediction && (
-                        <span style={{
-                          fontSize: 'var(--fs-xs)', flexShrink: 0, padding: '1px 8px',
-                          borderRadius: '999px', fontWeight: '800',
-                          backgroundColor: 'var(--me-bg, #e8f0fe)', color: 'var(--me-fg, #14508f)'
-                        }}>
-                          <span style={{ fontSize: 'var(--fs-xs)', opacity: 0.7, fontWeight: 700 }}>שלך </span>
-                          <Score home={myBet.prediction.team1Goals} away={myBet.prediction.team2Goals} />
-                        </span>
+                        <div style={{ flexBasis: '100%', display: 'flex', justifyContent: 'center' }}>
+                          <span style={{
+                            fontSize: 'var(--fs-xs)', padding: '1px 8px',
+                            borderRadius: '999px', fontWeight: '800',
+                            backgroundColor: 'var(--me-bg, #e8f0fe)', color: 'var(--me-fg, #14508f)'
+                          }}>
+                            <span style={{ fontSize: 'var(--fs-xs)', opacity: 0.7, fontWeight: 700 }}>שלך </span>
+                            <Score home={myBet.prediction.team1Goals} away={myBet.prediction.team2Goals} />
+                          </span>
+                        </div>
                       )}
                     </div>
 

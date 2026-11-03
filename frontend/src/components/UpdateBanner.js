@@ -22,8 +22,8 @@ function UpdateBanner() {
       role="status"
       style={{
         position: 'fixed',
-        // מעל אזור המחוות של iOS, ומעל כל שאר התוכן
-        bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+        // מעל אזור המחוות של iOS, מעל סרגל הניווט של השחקן, ומעל כל שאר התוכן
+        bottom: 'calc(12px + var(--bottom-nav-h, 0px) + env(safe-area-inset-bottom, 0px))',
         left: '12px',
         right: '12px',
         zIndex: 10000,
