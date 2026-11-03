@@ -4,6 +4,7 @@ const Match = require('../models/Match');
 const Week = require('../models/Week');
 const User = require('../models/User'); // 🆕 נוסף לבדיקת תפקיד משתמש
 const { logAdminAction } = require('../services/auditService');
+const { requireUser } = require('../middleware/requireAdmin');
 const router = express.Router();
 
 // Get user bets for a week
@@ -34,20 +35,22 @@ router.get('/week/:weekId', async (req, res) => {
 });
 
 // Create or update bet
-router.post('/', async (req, res) => {
+router.post('/', requireUser, async (req, res) => {
   try {
-    const { userId, matchId, weekId, team1Goals, team2Goals, requestedByUserId } = req.body;
-    
-    // 🆕 DEBUG: מה נתקבל בשרת
-    console.log('🔍 DEBUG: Request body:', JSON.stringify(req.body, null, 2));
-    
-    // 🆕 בדוק מי ביקש את השינוי (אדמין או השחקן עצמו)
-    const requesterId = requestedByUserId || userId; // אם לא סופק requestedByUserId, השתמש ב-userId
-    const requesterUser = await User.findById(requesterId);
-    const isAdmin = requesterUser && requesterUser.role === 'admin';
+    const { userId, matchId, weekId, team1Goals, team2Goals } = req.body;
+
+    // מי מבקש - מהטוקן בלבד. עד עכשיו זה נלקח מ-requestedByUserId שבבקשה,
+    // כך שכל אחד יכול היה להמר בשם אחר, ועם מזהה של אדמין גם לעקוף נעילה
+    const requesterUser = req.authUser;
+    if (!requesterUser) return res.status(401).json({ message: 'נדרשת התחברות' });
+    const isAdmin = requesterUser.role === 'admin';
+    const requestedByUserId = String(requesterUser._id);
+    if (!isAdmin && String(userId) !== requestedByUserId) {
+      return res.status(403).json({ message: 'אפשר להמר רק בשם עצמך' });
+    }
     
     console.log(`🔍 בדיקת הרשאות: מבקש ${requesterUser?.name}, תפקיד: ${requesterUser?.role}, אדמין: ${isAdmin}`);
-    console.log(`🎯 הימור עבור שחקן: ${userId}, מבקש: ${requesterId}`);
+    console.log(`🎯 הימור עבור שחקן: ${userId}, מבקש: ${requestedByUserId}`);
     
     // בדיקה מלאה - עם חריגה לאדמין
     const week = await Week.findById(weekId);
@@ -125,9 +128,9 @@ router.post('/', async (req, res) => {
 });
 
 // Update bet (עם חריגה לאדמין)
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireUser, async (req, res) => {
   try {
-    const { prediction, requestedByUserId } = req.body;
+    const { prediction } = req.body;
     
     // מצא את הדימור הקיים
     const existingBet = await Bet.findById(req.params.id)
@@ -141,10 +144,14 @@ router.patch('/:id', async (req, res) => {
     const week = existingBet.weekId;
     const betOwner = existingBet.userId;
     
-    // 🆕 בדוק מי ביקש את השינוי
-    const requesterId = requestedByUserId || betOwner._id;
-    const requesterUser = await User.findById(requesterId);
-    const isAdmin = requesterUser && requesterUser.role === 'admin';
+    // מי מבקש - מהטוקן בלבד, כמו ביצירת הימור
+    const requesterUser = req.authUser;
+    if (!requesterUser) return res.status(401).json({ message: 'נדרשת התחברות' });
+    const isAdmin = requesterUser.role === 'admin';
+    if (!isAdmin && String(betOwner?._id) !== String(requesterUser._id)) {
+      return res.status(403).json({ message: 'אפשר לשנות רק הימור של עצמך' });
+    }
+    const requestedByUserId = String(requesterUser._id);
     
     console.log(`🔍 עדכון הימור: בעלים ${betOwner?.name}, מבקש ${requesterUser?.name}, תפקיד מבקש: ${requesterUser?.role}, אדמין: ${isAdmin}`);
     
@@ -181,7 +188,7 @@ router.patch('/:id', async (req, res) => {
     console.log(`✅ Bet update allowed for bet ${req.params.id}${isAdmin ? ` (REQUESTED BY ADMIN: ${requesterUser.name})` : ''}`);
 
     // Audit log - כשאדמין מעדכן הימור
-    if (isAdmin && requestedByUserId) {
+    if (isAdmin && requestedByUserId !== String(betOwner._id)) {
       const match = await Match.findById(existingBet.matchId);
       logAdminAction(requestedByUserId, 'עדכון הימור של שחקן', `${betOwner?.name}: ${match?.team1} ${prediction.team1Goals} - ${prediction.team2Goals} ${match?.team2}`, { betId: req.params.id, playerId: betOwner._id });
     }

@@ -606,7 +606,7 @@ router.get('/365-competitions', requireAdmin, async (req, res) => {
 });
 
 // 🔬 בדיקה רב-טווחית - בודק האם ESPN בכלל מחזיק נתונים על הליגה
-router.get('/probe/:leagueId', async (req, res) => {
+router.get('/probe/:leagueId', requireAdmin, async (req, res) => {
   try {
     const league = await League.findById(req.params.leagueId);
     if (!league || !league.espnLeagueCode) {
@@ -643,7 +643,7 @@ router.get('/probe/:leagueId', async (req, res) => {
 });
 
 // 🔍 Debug - מחזיר את התגובה הגולמית מהספק כדי לאבחן בעיות
-router.get('/debug/:leagueId', async (req, res) => {
+router.get('/debug/:leagueId', requireAdmin, async (req, res) => {
   try {
     const league = await League.findById(req.params.leagueId);
     if (!league) return res.status(404).json({ message: 'הליגה לא נמצאה' });

@@ -588,7 +588,7 @@ router.post('/nudge/:weekId', requireAdmin, async (req, res) => {
     }
 
     const { logAdminAction } = require('../services/auditService');
-    const adminId = req.headers['x-user-id'] || req.body?.adminId;
+    const adminId = req.adminUser?._id || req.body?.adminId;
     if (adminId) {
       logAdminAction(adminId, 'תזכורת למי שלא הימר', `${data.week.name} - ${reached} שחקנים`, {
         weekId: data.week._id

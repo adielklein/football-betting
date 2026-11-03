@@ -7,12 +7,16 @@ import UpdateBanner from './components/UpdateBanner';
 import ToastHost from './components/ToastHost';
 import { HashRouter } from 'react-router-dom';
 import { onSchemeChange } from './services/colorScheme';
+import { getToken, setToken, clearToken, AUTH_EXPIRED_EVENT } from './services/authSession';
 import './index.css';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [inAppNotification, setInAppNotification] = useState(null);
+  // למה מוצג מסך הכניסה: 'security' - חיבור ישן מלפני הטוקנים, 'expired' -
+  // השרת דחה את הטוקן (פג או שהסיסמה הוחלפה). בלי הסבר זה נראה כמו תקלה
+  const [loginNotice, setLoginNotice] = useState(null);
 
   const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000/api'
@@ -23,6 +27,15 @@ function App() {
     
     // בדוק אם יש משתמש שמור בLocalStorage
     const savedUser = localStorage.getItem('football_betting_user');
+    // חיבור ששמור מלפני עדכון האבטחה: יש משתמש אבל אין טוקן, והשרת כבר לא
+    // מקבל זיהוי בלעדיו. התחברות מחדש חד-פעמית - הנתונים עצמם בשרת
+    if (savedUser && !getToken()) {
+      localStorage.removeItem('football_betting_user');
+      setLoginNotice('security');
+      applyTheme(null);
+      setLoading(false);
+      return;
+    }
     if (savedUser) {
       try {
         const parsedUser = JSON.parse(savedUser);
@@ -174,7 +187,11 @@ function App() {
     });
   };
 
-  const handleLogin = (user) => {
+  const handleLogin = (loggedIn) => {
+    // הטוקן נשמר בנפרד מהמשתמש - ראו services/authSession
+    const { token, ...user } = loggedIn;
+    setToken(token);
+    setLoginNotice(null);
     console.log('✅ התחברות מוצלחת:', user.name);
     console.log('🎨 ערכת נושא:', user.theme || 'default');
     
@@ -195,6 +212,7 @@ function App() {
   const handleLogout = async () => {
     try {
       console.log('🚪 מתנתק...');
+      clearToken();
       localStorage.removeItem('football_betting_user');
       setCurrentUser(null);
       
@@ -205,11 +223,23 @@ function App() {
       console.log('✅ התנתקות הושלמה');
     } catch (error) {
       console.error('❌ שגיאה בהתנתקות:', error);
+      clearToken();
       localStorage.removeItem('football_betting_user');
       setCurrentUser(null);
       applyTheme(null); // החזר לערכת בסיסית
     }
   };
+
+  // השרת דחה את הטוקן באמצע שימוש - חזרה למסך הכניסה, עם הסבר.
+  // כמה בקשות שנדחו בבת אחת מגיעות לכאן כמה פעמים, וזה בסדר: ההתנתקות זהה
+  useEffect(() => {
+    const onExpired = (e) => {
+      setLoginNotice(e.detail?.reason === 'missing' ? 'security' : 'expired');
+      handleLogout();
+    };
+    window.addEventListener(AUTH_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, onExpired);
+  }, []);
 
   // הערכה כותבת רקע וטקסט בסגנון מוטבע, ולכן מעבר בהיר/כהה מחייב
   // להחיל אותה מחדש - אחרת הרקע נשאר של המצב הקודם.
@@ -254,7 +284,7 @@ function App() {
     <HashRouter>
       <div className="App">
       {!currentUser ? (
-        <Login onLogin={handleLogin} />
+        <Login onLogin={handleLogin} notice={loginNotice} />
       ) : currentUser.role === 'admin' ? (
         <AdminView user={currentUser} onLogout={handleLogout} />
       ) : (

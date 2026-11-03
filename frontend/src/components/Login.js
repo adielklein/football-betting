@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { applyTheme } from '../themes';
 
-function Login({ onLogin }) {
+function Login({ onLogin, notice = null }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -90,6 +90,27 @@ function Login({ onLogin }) {
           </p>
         </div>
 
+        {/* למה מבקשים להתחבר שוב - בלי הסבר זה נראה כמו תקלה */}
+        {notice && (
+          <div role="status" style={{
+            marginBottom: '0.9rem', padding: '0.65rem 0.8rem', borderRadius: '12px',
+            background: 'var(--info-bg, #eef4ff)', color: 'var(--info-fg, #1e40af)',
+            border: '1px solid var(--info-border, #c7d7fe)', fontSize: '13px', lineHeight: 1.5
+          }}>
+            {notice === 'security' ? (
+              <>
+                <strong>🔒 עדכון אבטחה – צריך להתחבר מחדש פעם אחת.</strong>
+                <br />ההימורים, הניקוד וההגדרות שלך שמורים. שכחת סיסמה? פנה למנהל.
+              </>
+            ) : (
+              <>
+                <strong>החיבור הסתיים – צריך להתחבר מחדש.</strong>
+                <br />זה קורה למשל כשהסיסמה הוחלפה.
+              </>
+            )}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '0.75rem' }}>
             <label style={{
@@ -134,6 +155,7 @@ function Login({ onLogin }) {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
               className="input"
               style={{
                 width: '100%',

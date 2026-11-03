@@ -4,6 +4,11 @@ const User = require('../models/User');
 const { logAdminAction } = require('../services/auditService');
 const { requireAdmin, requireSelfOrAdmin } = require('../middleware/requireAdmin');
 const { normalizeUsername } = require('../utils/username');
+const authToken = require('../services/authToken');
+const loginLimiter = require('../services/loginLimiter');
+
+// הכתובת האמיתית של המבקש. ב-Render הבקשה עוברת דרך פרוקסי
+const clientIp = (req) => String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress || '';
 const router = express.Router();
 
 // אוטומטית צור אדמין בהפעלת השרת
@@ -54,20 +59,29 @@ router.post('/login', async (req, res) => {
 
     console.log('Login attempt:', username);
 
+    const ip = clientIp(req);
+    const waitMs = loginLimiter.blockedFor(ip, normalizeUsername(username));
+    if (waitMs > 0) {
+      return res.status(429).json({ message: `יותר מדי ניסיונות כושלים. אפשר לנסות שוב בעוד ${Math.ceil(waitMs / 60000)} דקות` });
+    }
+
     // השם המנורמל (בלי תווי כיווניות, גרש אחיד), וגם המקורי - כדי ששמות
     // שנשמרו לפני הנרמול ימשיכו להתאים בדיוק כמו קודם
     const user = await User.findOne({
       username: { $in: [...new Set([String(username).trim(), normalizeUsername(username)])] }
     });
     if (!user) {
+      loginLimiter.fail(ip, normalizeUsername(username));
       return res.status(401).json({ message: 'שם משתמש או סיסמה שגויים' });
     }
 
     // Check password
-    const isValidPassword = await bcrypt.compare(password, user.password);
+    const isValidPassword = await bcrypt.compare(String(password), user.password);
     if (!isValidPassword) {
+      loginLimiter.fail(ip, normalizeUsername(username));
       return res.status(401).json({ message: 'שם משתמש או סיסמה שגויים' });
     }
+    loginLimiter.succeed(ip, normalizeUsername(username));
 
     console.log(`התחברות מוצלחת: ${user.name} (${user.role}) - ערכת נושא: ${user.theme || 'default'}`);
 
@@ -80,7 +94,9 @@ router.post('/login', async (req, res) => {
         role: user.role,
         theme: user.theme || 'default',
         defaultTab: user.defaultTab || 'betting',
-        nameLocked: !!user.nameLocked
+        nameLocked: !!user.nameLocked,
+        // הטוקן נשמר עם המשתמש במכשיר ונשלח בכל בקשה. בלעדיו השרת לא מזהה אותו
+        token: authToken.sign({ uid: user._id, tv: user.tokenVersion || 0 })
       }
     });
 
@@ -273,10 +289,15 @@ router.patch('/users/:id/password', requireSelfOrAdmin((req) => req.params.id), 
 
     user.password = await bcrypt.hash(password, 10);
     user.passwordPlain = password;
+    // סיסמה חדשה מנתקת כל מכשיר שהתחבר עם הקודמת
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
     await user.save();
 
     if (isAdminRequest && req.adminUser) {
       logAdminAction(req.adminUser._id, 'איפוס סיסמה', user.name, { userId: user._id });
+    } else {
+      // מי שהחליף לעצמו נשאר מחובר במכשיר הזה - הלקוח קולט את הטוקן מהכותרת
+      res.set('X-Auth-Token', authToken.sign({ uid: user._id, tv: user.tokenVersion }));
     }
 
     res.json({ message: 'הסיסמה עודכנה' });
@@ -344,6 +365,8 @@ router.patch('/users/:id', requireAdmin, async (req, res) => {
       updateData.password = await bcrypt.hash(password, 10);
       // גם העותק הקריא, אחרת הוא יישאר על הסיסמה הקודמת
       updateData.passwordPlain = password;
+      // מנתק את המכשירים שהתחברו עם הסיסמה הקודמת
+      updateData.$inc = { tokenVersion: 1 };
     }
     
     const user = await User.findByIdAndUpdate(

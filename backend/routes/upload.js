@@ -1,4 +1,5 @@
 const express = require('express');
+const { requireAdmin } = require('../middleware/requireAdmin');
 const router = express.Router();
 
 // ImgBB API Key - מ-.env
@@ -12,7 +13,8 @@ if (!IMGBB_API_KEY) {
  * POST /api/upload/notification-image
  * מעלה תמונה ל-ImgBB (משתמש ב-fetch המובנה של Node.js 18+)
  */
-router.post('/notification-image', async (req, res) => {
+// רק אדמין - בלי זה כל אחד יכול היה להעלות תמונות על חשבון מפתח ה-ImgBB
+router.post('/notification-image', requireAdmin, async (req, res) => {
   try {
     if (!IMGBB_API_KEY) {
       return res.status(500).json({

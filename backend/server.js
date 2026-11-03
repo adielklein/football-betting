@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const notificationRoutes = require('./routes/notifications');
 require('dotenv').config();
-const { requireAdmin, INTERNAL_TOKEN } = require('./middleware/requireAdmin');
+const { authenticate, requireAdmin, INTERNAL_TOKEN } = require('./middleware/requireAdmin');
 
 const app = express();
 
@@ -19,10 +19,14 @@ app.use(cors({
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Id', 'X-Internal-Token']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Id', 'X-Internal-Token'],
+  // טוקן מחודש, וסיבת 401 - הלקוח צריך לקרוא את שתיהן
+  exposedHeaders: ['X-Auth-Token', 'X-Auth-Status']
 }));
 
 app.use(express.json({ limit: '10mb' })); 
+// מי מבקש - לפי טוקן חתום בלבד. לפני כל הנתיבים, כדי שכולם יראו את אותה זהות
+app.use(authenticate);
 app.use('/api/notifications', notificationRoutes);
 
 // חיבור למונגו
