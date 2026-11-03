@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import NearMissView from './NearMissView';
 import TeamLogo from '../TeamLogo';
 import { getTheme } from '../../themes';
-import { GoalsCard, CrowdCard, SeasonRankCard, LeaguesCard, ThemeTeamCard } from './InsightCards';
+import { GoalsCard, CrowdCard, SeasonRankCard, LeaguesCard, ThemeTeamCard, accuracyBar, accuracyText } from './InsightCards';
 
 // נקודות יכולות להיות שבריות (ניקוד לפי יחסים), ולכן ספרה אחת אחרי הנקודה
 const pts = (n) => Math.round((n || 0) * 10) / 10;
@@ -28,7 +28,8 @@ const WeeklyBarChart = ({ weeks, activeIndex, onSelect }) => {
   }
 
   const maxScore = Math.max(...weeks.map((w) => w.weeklyScore || 0), 1);
-  const barWidth = weeks.length > 12 ? 22 : weeks.length > 8 ? 30 : 38;
+  // עד 11 שבועות נכנסים במסך טלפון בלי גלילה; מעבר לזה הגרף נגלל
+  const barWidth = weeks.length > 8 ? 22 : 38;
   const gap = weeks.length > 12 ? 5 : 6;
   const active = weeks[activeIndex] || weeks[weeks.length - 1];
 
@@ -132,7 +133,7 @@ const WeeklyBarChart = ({ weeks, activeIndex, onSelect }) => {
           </span>
         </div>
       )}
-      <p style={{ margin: '6px 2px 0', fontSize: 'var(--fs-xs)', color: 'var(--text-4, #bbb)' }}>
+      <p style={{ margin: '6px 2px 0', fontSize: 'var(--fs-xs)', color: 'var(--text-3, #5f6670)' }}>
         לחיצה על עמודה מציגה את שם השבוע
       </p>
     </div>
@@ -146,7 +147,7 @@ const CumulativeChart = ({ weeks, activeIndex, onSelect }) => {
 
   const maxTotal = Math.max(...weeks.map((w) => w.cumulativeScore || 0), 1);
   const chartHeight = 120;
-  const axisPad = 32; // מקום למספרים בציר. הוא מימין, כמו בכל שאר האפליקציה
+  const axisPad = 36; // מקום למספרים בציר. הוא מימין, כמו בכל שאר האפליקציה
   const step = Math.max(24, Math.min(60, (window.innerWidth - 110) / Math.max(weeks.length - 1, 1)));
   const chartWidth = Math.max(step * Math.max(weeks.length - 1, 1) + axisPad + 14, 280);
 
@@ -178,8 +179,8 @@ const CumulativeChart = ({ weeks, activeIndex, onSelect }) => {
           const y = chartHeight - pct * (chartHeight - 22) - 10;
           return (
             <g key={i}>
-              <line x1="8" y1={y} x2={chartWidth - axisPad + 6} y2={y} stroke="#f0f2f5" strokeWidth="1" />
-              <text x={chartWidth - axisPad + 10} y={y + 3} fontSize="12" fill="var(--text-4, #656c77)" textAnchor="start">
+              <line x1="8" y1={y} x2={chartWidth - axisPad + 6} y2={y} stroke="var(--border, #e5e7eb)" strokeWidth="1" />
+              <text x={chartWidth - axisPad + 14} y={y + 4} fontSize="12" fill="var(--text-3, #5f6670)" textAnchor="start">
                 {pts(maxTotal * pct)}
               </text>
             </g>
@@ -210,7 +211,7 @@ const CumulativeChart = ({ weeks, activeIndex, onSelect }) => {
           return (
             <text key={'l' + i} x={p.x} y={chartHeight + 18} fontSize="12" textAnchor="middle"
               fontWeight={i === activeIndex ? '800' : '500'}
-              fill={i === activeIndex ? 'var(--theme-primary, #007bff)' : '#bbb'}>
+              fill={i === activeIndex ? 'var(--theme-primary-text, #007bff)' : 'var(--text-3, #5f6670)'}>
               {p.week.weekIndex}
             </text>
           );
@@ -408,7 +409,7 @@ function PlayerStats({ user }) {
     return (
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
         {/* Wrong (gray) */}
-        <circle cx={center} cy={center} r={r} fill="none" stroke="#e8ecf0" strokeWidth="14"
+        <circle cx={center} cy={center} r={r} fill="none" stroke="var(--surface-3, #e8ecf0)" strokeWidth="14"
           strokeDasharray={`${wrongLen} ${circumference - wrongLen}`}
           strokeDashoffset={0} />
         {/* Direction (orange) */}
@@ -490,7 +491,7 @@ function PlayerStats({ user }) {
 
   // === Team Row ===
   const TeamRow = ({ team, rank, isBest }) => {
-    const color = isBest ? '#10b981' : '#ef4444';
+    const color = isBest ? '#15803d' : '#c62828'; // לבן עליהם: 5:1 ומעלה
     const bg = isBest ? 'var(--good-bg, #ecfdf5)' : 'var(--bad-bg, #fef2f2)';
     return (
       <div style={{
@@ -569,16 +570,17 @@ function PlayerStats({ user }) {
               <div style={{ flex: 1 }}>
                 <MiniBar value={overview.exactCount} max={overview.totalBets} color="linear-gradient(90deg, #10b981, #34d399)" label="🎯 מדויק" count={overview.exactCount} />
                 <MiniBar value={overview.directionCount} max={overview.totalBets} color="linear-gradient(90deg, #f59e0b, #fbbf24)" label="👆 כיוון" count={overview.directionCount} />
-                <MiniBar value={overview.wrongCount} max={overview.totalBets} color="linear-gradient(90deg, #cbd5e1, #e2e8f0)" label="❌ החטאה" count={overview.wrongCount} />
+                <MiniBar value={overview.wrongCount} max={overview.totalBets} color="var(--text-4, #9aa2ae)" label="❌ החטאה" count={overview.wrongCount} />
               </div>
             </div>
           </Card>
 
           {/* Stats Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '0.6rem' }}>
-            <StatPill value={overview.totalBets} label="הימורים" color="var(--theme-primary, #007bff)" bg="linear-gradient(135deg, #eff6ff, #dbeafe)" />
-            <StatPill value={overview.totalPoints} label="נקודות" color="#10b981" bg="linear-gradient(135deg, #ecfdf5, #d1fae5)" />
-            <StatPill value={overview.exactRate + '%'} label="דיוק מלא" color="#8b5cf6" bg="linear-gradient(135deg, #f5f3ff, #ede9fe)" />
+            {/* רקעים מהטוקנים ולא מעברי צבע קבועים: הבהירים נשארו לבנים בוהקים במצב כהה */}
+            <StatPill value={overview.totalBets} label="הימורים" color="var(--theme-primary-text, #007bff)" bg="var(--surface-2, #f8f9fc)" />
+            <StatPill value={overview.totalPoints} label="נקודות" color="var(--good-fg, #1a6b35)" bg="var(--good-bg, #ecfdf5)" />
+            <StatPill value={overview.exactRate + '%'} label="דיוק מלא" color="var(--info-fg, #1560ad)" bg="var(--info-bg, #eff6ff)" />
           </div>
 
           {/* Streaks */}
@@ -604,15 +606,6 @@ function PlayerStats({ user }) {
           </Card>
 
           {/* התאום בהימורים. לא מוצג מול שרת ישן שעוד לא שולח את הנתון */}
-          {bettingTwins && (
-            <Card title="התאום שלך בהימורים" icon="👯">
-              <BettingTwins data={bettingTwins} />
-            </Card>
-          )}
-
-          <GoalsCard goals={insights.goals} />
-          <CrowdCard crowd={insights.crowd} />
-
           {/* Prediction Distribution */}
           <Card title="התפלגות ניחושים" icon="🎲">
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
@@ -637,6 +630,8 @@ function PlayerStats({ user }) {
             </div>
           </Card>
 
+          <GoalsCard goals={insights.goals} />
+
           {/* Top Predictions */}
           <Card title="תוצאות שמנחש הכי הרבה" icon="🏅">
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
@@ -653,6 +648,14 @@ function PlayerStats({ user }) {
               ))}
             </div>
           </Card>
+
+          {/* מול שאר השחקנים */}
+          {bettingTwins && (
+            <Card title="התאום שלך בהימורים" icon="👯">
+              <BettingTwins data={bettingTwins} />
+            </Card>
+          )}
+          <CrowdCard crowd={insights.crowd} />
         </div>
       )}
 
@@ -769,12 +772,12 @@ function PlayerStats({ user }) {
                     <div style={{
                       height: '100%', borderRadius: '3px',
                       width: team.accuracy + '%',
-                      background: team.accuracy >= 60 ? '#10b981' : team.accuracy >= 40 ? '#f59e0b' : '#ef4444'
+                      background: accuracyBar(team.accuracy)
                     }} />
                   </div>
                   <span style={{
                     fontSize: 'var(--fs-xs)', fontWeight: '700', minWidth: '32px', textAlign: 'left',
-                    color: team.accuracy >= 60 ? '#10b981' : team.accuracy >= 40 ? '#f59e0b' : '#ef4444'
+                    color: accuracyText(team.accuracy)
                   }}>
                     {team.accuracy}%
                   </span>
