@@ -54,7 +54,7 @@ export function StatusItem({ item, now, onAction, busy }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: '13px', fontWeight: item.level === 'todo' ? 700 : 600, color: st.fg }}>
           {item.text}
-          {item.at && <span style={{ fontWeight: 500, color: 'var(--text-3, #777)' }}> · ננעל {whenText(item.at, now)}</span>}
+          {item.at && <span style={{ fontWeight: 500, color: 'var(--text-3, #777)' }}> · {item.atLabel || 'ננעל'} {whenText(item.at, now)}</span>}
         </div>
         {item.detail && <div style={{ fontSize: '11px', color: 'var(--text-3, #777)', marginTop: '2px' }}>{item.detail}</div>}
         {item.names?.length > 0 && (

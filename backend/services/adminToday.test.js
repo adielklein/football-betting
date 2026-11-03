@@ -97,7 +97,8 @@ test('הכל נכנס והניקוד תקין → הושלם', () => {
 
 test('המסך: אין שבוע פתוח → "צור שבוע"; שבוע ישן שהושלם לא מוצג', () => {
   const done = { week: week({ _id: 'w0', lockTime: new Date(NOW - 100 * H) }), matches: [], bets: [], scores: [], exclusions: [] };
-  const running = { week: week({ lockTime: new Date(NOW - 10 * H) }), matches: [match('m1', -1)], bets: [], scores: [], exclusions: [] };
+  // כל המשחקים כבר שוחקו (אחד עוד בלי תוצאה) - זה הזמן לשבוע הבא
+  const running = { week: week({ lockTime: new Date(NOW - 10 * H) }), matches: [match('m1', -5)], bets: [], scores: [], exclusions: [] };
   const today = buildToday({ weekData: [running, { ...done, matches: [match('x', -100, { team1Goals: 0, team2Goals: 0 }, { weekId: 'w0' })] }], players, users, now: NOW });
   assert.deepStrictEqual(today.global.map((g) => g.key), ['no_upcoming']);
   assert.deepStrictEqual(today.weeks.map((w) => w.weekId), ['w1']);
@@ -117,4 +118,31 @@ test('המסך: 365 שנכשל שוב ושוב מופיע עם קישור ללו
 test('ניסוח ליחיד: "משחק אחד", לא "1 משחקים"', () => {
   const s = status({ week: week({ lockTime: new Date(NOW - 10 * H) }), matches: [match('m1', -1), match('m2', -5)] });
   assert.deepStrictEqual(s.items.map((i) => i.text), ['משחק אחד מתנהל עכשיו', 'משחק אחד נגמר ואין לו תוצאה']);
+});
+
+test('שבוע נעול שעוד משחקים בו - לא מציעים ליצור את הבא', () => {
+  const lockedWeek = week({ lockTime: new Date(NOW - 20 * H) });
+  const partial = (ms) => buildToday({ weekData: [{ week: lockedWeek, matches: ms, bets: [], scores: [], exclusions: [] }], players, users, now: NOW });
+  // שניים נגמרו, אחד חי, אחד מחר
+  const playing = partial([
+    match('m1', -20, { team1Goals: 1, team2Goals: 0 }), match('m2', -19, { team1Goals: 2, team2Goals: 2 }),
+    match('m3', -1), match('m4', 20)
+  ]);
+  assert.deepStrictEqual(playing.global.map((g) => g.key), [], 'לא מציע ליצור שבוע');
+  assert.equal(playing.weeks[0].counts.upcoming, 1);
+
+  // רק משחק עתידי, בלי חי
+  assert.deepStrictEqual(partial([match('m1', -20, { team1Goals: 1, team2Goals: 0 }), match('m4', 20)]).global, []);
+
+  // כל המשחקים כבר התחילו ונגמרו - עכשיו כן
+  const finished = partial([match('m1', -20, { team1Goals: 1, team2Goals: 0 }), match('m2', -19, { team1Goals: 0, team2Goals: 0 })]);
+  assert.deepStrictEqual(finished.global.map((g) => g.key), ['no_upcoming']);
+});
+
+test('שבוע נעול עם משחקים קדימה מראה מתי הבא', () => {
+  const s = status({ week: week({ lockTime: new Date(NOW - 20 * H) }), matches: [match('m1', 20), match('m2', 30)] });
+  const it = s.items.find((i) => i.key === 'upcoming');
+  assert.equal(it.text, '2 משחקים עוד לפנינו');
+  assert.equal(it.atLabel, 'הבא');
+  assert.equal(new Date(it.at).getTime(), NOW + 20 * H);
 });

@@ -52,6 +52,11 @@ function buildWeekStatus({ week, matches = [], bets = [], players = [], users = 
   const audit = buildScoreAudit({ weeks: [week], matches, bets, scores, users, exclusions, now });
   const missingResults = audit.issues.filter((i) => i.kind === 'missing_result');
   const scoreErrors = audit.issues.filter((i) => i.kind === 'bet_points' || i.kind === 'weekly_score');
+  // משחקים שעוד לא התחילו (ולא נדחו) - השבוע עוד לא נגמר
+  const upcoming = matches.filter((m) => {
+    const k = kickoffOf(m);
+    return !hasResult(m) && !m.postponed && Number.isFinite(k) && k > now;
+  }).length;
   const liveNow = matches.filter((m) => {
     const k = kickoffOf(m);
     return !hasResult(m) && !m.postponed && Number.isFinite(k) && now >= k && now - k < LIVE_WINDOW_MS;
@@ -100,6 +105,10 @@ function buildWeekStatus({ week, matches = [], bets = [], players = [], users = 
 
   if (stage === 'running' || stage === 'done') {
     if (liveNow > 0) add('info', 'live_now', count(liveNow, 'משחק אחד מתנהל עכשיו', 'משחקים מתנהלים עכשיו'));
+    if (upcoming > 0) {
+      const next = Math.min(...matches.filter((m) => !hasResult(m) && !m.postponed && kickoffOf(m) > now).map(kickoffOf));
+      add('info', 'upcoming', `${count(upcoming, 'משחק אחד', 'משחקים')} עוד לפנינו`, { at: new Date(next), atLabel: 'הבא' });
+    }
     if (missingResults.length > 0) {
       add('todo', 'missing_results', count(missingResults.length, 'משחק אחד נגמר ואין לו תוצאה', 'משחקים נגמרו ואין להם תוצאה'), {
         names: missingResults.map((i) => i.match),
@@ -130,6 +139,7 @@ function buildWeekStatus({ week, matches = [], bets = [], players = [], users = 
       withResult,
       postponed,
       liveNow,
+      upcoming,
       players: bettors.pending.length + bettors.complete.length,
       betComplete: bettors.complete.length,
       scoreErrors: scoreErrors.length
@@ -150,8 +160,12 @@ function buildToday({ weekData = [], players = [], users = [], providers = [], l
   const weeks = statuses.filter((s, i) => i === 0 || s.stage !== 'done');
 
   const global = [];
-  const upcoming = statuses.some((s) => s.stage === 'open' || s.stage === 'draft');
-  if (!upcoming) {
+  // "צור שבוע" רק כשבאמת אין מה לשחק: אין שבוע פתוח או טיוטה, וגם השבוע
+  // הנעול כבר לא מחכה למשחקים. שבוע שעוד משחקים בו (למשל מחזור שמתפרס על
+  // שלישי-רביעי) הוא לא סיבה לפתוח את הבא
+  const hasUpcomingWeek = statuses.some((s) => s.stage === 'open' || s.stage === 'draft');
+  const stillPlaying = statuses.some((s) => s.stage === 'running' && (s.counts.upcoming > 0 || s.counts.liveNow > 0));
+  if (!hasUpcomingWeek && !stillPlaying) {
     global.push({ level: 'todo', key: 'no_upcoming', text: 'אין שבוע פתוח להימורים - הגיע הזמן ליצור את הבא', action: { type: 'create' } });
   }
 
