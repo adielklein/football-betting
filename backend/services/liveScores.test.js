@@ -80,3 +80,44 @@ test('משחק שלא מתנהל לא מסומן כמחצית גם אם הטקס
   assert.equal(e.halftime, false);
   assert.equal(e.minute, null);
 });
+
+// === סדר הפוך ===
+test('משחק שאצלנו בסדר הפוך מ-365: התוצאה החיה והאדומים מתהפכים', () => {
+  const game = {
+    statusGroup: LIVE, gameTimeDisplay: "60'",
+    homeCompetitor: { name: 'ריאל מדריד', score: 2, redCards: 1 },
+    awayCompetitor: { name: 'ברצלונה', score: 0, redCards: 0 }
+  };
+  const e = toLiveEntry({ _id: 'm1', team1: 'ברצלונה', team2: 'ריאל מדריד' }, game);
+  assert.equal(e.flipped, true);
+  assert.deepStrictEqual([e.team1Goals, e.team2Goals], [0, 2]);
+
+  const same = toLiveEntry({ _id: 'm1', team1: 'ריאל מדריד', team2: 'ברצלונה' }, game);
+  assert.equal(same.flipped, false);
+  assert.deepStrictEqual([same.team1Goals, same.team2Goals], [2, 0]);
+});
+
+test('שמות שלא מזוהים - נשאר הסדר הטבעי, כמו קודם', () => {
+  const game = { statusGroup: LIVE, homeCompetitor: { name: 'X', score: 1 }, awayCompetitor: { name: 'Y', score: 0 } };
+  const e = toLiveEntry({ _id: 'm1', team1: 'הלבנים', team2: 'הבלאוגרנה' }, game);
+  assert.equal(e.flipped, false);
+  assert.deepStrictEqual([e.team1Goals, e.team2Goals], [1, 0]);
+  // וגם בלי שמות בכלל (קורא ישן)
+  assert.equal(toLiveEntry({ _id: 'm1' }, game).flipped, false);
+});
+
+test('פרטי שער בסדר הפוך: הכובש מיוחס לקבוצה שלנו הנכונה', async () => {
+  const { fetchGameDetails } = require('./liveScores');
+  const real = global.fetch;
+  global.fetch = async () => ({ ok: true, status: 200, json: async () => ({ game: {
+    homeCompetitor: { id: 131 }, awayCompetitor: { id: 132 }, members: [], events: []
+  } }) });
+  try {
+    const straight = await fetchGameDetails('365_1');
+    const flipped = await fetchGameDetails('365_1', { flipped: true });
+    assert.deepStrictEqual([straight.homeCompetitorId, straight.awayCompetitorId], [131, 132]);
+    assert.deepStrictEqual([flipped.homeCompetitorId, flipped.awayCompetitorId], [132, 131]);
+  } finally {
+    global.fetch = real;
+  }
+});

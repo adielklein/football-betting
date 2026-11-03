@@ -18,4 +18,19 @@ const buildDetector = (sameTeam) => (team1, team2, homeName, awayName) => {
   return { flipped: false, confident: false };
 };
 
-module.exports = { buildDetector };
+// תוצאה מהספק בסדר שלו (בית/חוץ) → בסדר שלנו, כשהסדר אצלנו הפוך.
+// כולל התוצאה הסופית (הארכה) והפנדלים, כדי שגם ההערה "הוכרע בהארכה" תהיה
+// בכיוון הנכון
+const flipResult = (r) => {
+  if (!r) return r;
+  const out = { ...r, team1Goals: r.team2Goals, team2Goals: r.team1Goals };
+  if (r.finalScore) {
+    out.finalScore = { ...r.finalScore, team1Goals: r.finalScore.team2Goals, team2Goals: r.finalScore.team1Goals };
+    if (r.finalScore.penalties) {
+      out.finalScore.penalties = { team1: r.finalScore.penalties.team2, team2: r.finalScore.penalties.team1 };
+    }
+  }
+  return out;
+};
+
+module.exports = { buildDetector, flipResult };

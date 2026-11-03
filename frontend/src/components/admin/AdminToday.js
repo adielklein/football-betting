@@ -62,7 +62,7 @@ function AdminToday() {
       return run(key, () => nudgePending(a.weekId), (r) => `נשלח ל-${r.users ?? r.sent ?? 0} שחקנים`);
     }
     if (a.type === 'sync') {
-      return run(key, () => syncResults(a.weekId), (r) => (r.updated > 0 ? `עודכנו ${r.updated} תוצאות והניקוד חושב` : `אין תוצאות חדשות (${r.notFinished || 0} עוד לא הסתיימו)`));
+      return run(key, () => syncResults(a.weekId), (r) => (r.updated > 0 ? `עודכנו ${r.updated} תוצאות והניקוד חושב${r.flipped?.length ? ` · ${r.flipped.length} בסדר הפוך תוקנו` : ''}` : `אין תוצאות חדשות (${r.notFinished || 0} עוד לא הסתיימו)`));
     }
     if (a.type === 'recalc') {
       if (!window.confirm('לחשב מחדש את הניקוד של השבוע לפי התוצאות השמורות? לא נשלחות התראות.')) return undefined;

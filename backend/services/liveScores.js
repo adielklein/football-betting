@@ -9,6 +9,7 @@
 // כשבאמת יש משחק בחלון שידור. מחוץ לחלון: אפס בקשות.
 
 const providerHealth = require('./providerHealth');
+const { detectOrientation } = require('../utils/teamMatch');
 
 const API_BASE = 'https://webws.365scores.com/web';
 const COMMON_QUERY = 'appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6';
@@ -151,9 +152,21 @@ const toLiveEntry = (match, game) => {
   const finished = game.statusGroup === STATUS_FINISHED;
   const halftime = game.statusGroup === STATUS_LIVE && isHalftime(game);
   noteRedCardSupport(game.homeCompetitor);
+
+  // הקבוצה שאצלנו team1 היא לא תמיד הבית אצל 365 (עריכה ידנית של הסדר).
+  // בלי ההיפוך התוצאה החיה, "הטבלה עכשיו" והתראות השער היו הפוכים
+  const { flipped } = match.team1 && match.team2
+    ? (({ flipped: f, confident }) => ({ flipped: f && confident }))(
+        detectOrientation(match.team1, match.team2, game.homeCompetitor?.name, game.awayCompetitor?.name)
+      )
+    : { flipped: false };
+  const side1 = flipped ? game.awayCompetitor : game.homeCompetitor;
+  const side2 = flipped ? game.homeCompetitor : game.awayCompetitor;
+
   return {
-    team1Reds: redCardsOf(game.homeCompetitor),
-    team2Reds: redCardsOf(game.awayCompetitor),
+    flipped,
+    team1Reds: redCardsOf(side1),
+    team2Reds: redCardsOf(side2),
     matchId: String(match._id),
     status: finished ? 'finished' : game.statusGroup === STATUS_LIVE ? 'live' : 'scheduled',
     statusText: game.shortStatusText || game.statusText || null,
@@ -161,8 +174,8 @@ const toLiveEntry = (match, game) => {
     // "45+1'" בזמן משחק, ריק לפני ואחרי, ו"מחצית" בהפסקה
     halftime,
     minute: halftime ? 'מחצית' : (game.gameTimeDisplay || null),
-    team1Goals: scoreOf(game.homeCompetitor),
-    team2Goals: scoreOf(game.awayCompetitor),
+    team1Goals: scoreOf(side1),
+    team2Goals: scoreOf(side2),
     justEnded: !!game.justEnded
   };
 };
@@ -283,7 +296,8 @@ const invalidate = (weekId) => cache.delete(String(weekId));
 // לצד הדקה, הקבוצה והשחקן.
 //
 // נקרא רק כשזוהה אירוע ויש למי לשלוח - לא בכל סריקה.
-const fetchGameDetails = async (externalId) => {
+// flipped: המשחק אצלנו בסדר הפוך - team1 שלנו הוא החוץ אצל 365
+const fetchGameDetails = async (externalId, { flipped = false } = {}) => {
   if (!is365Id(externalId)) return null;
 
   try {
@@ -308,8 +322,9 @@ const fetchGameDetails = async (externalId) => {
     }));
 
     return {
-      homeCompetitorId: game.homeCompetitor?.id ?? null,
-      awayCompetitorId: game.awayCompetitor?.id ?? null,
+      // "home" כאן = team1 שלנו, כדי שהשער ייוחס לכובש הנכון גם כשהסדר הפוך
+      homeCompetitorId: (flipped ? game.awayCompetitor?.id : game.homeCompetitor?.id) ?? null,
+      awayCompetitorId: (flipped ? game.homeCompetitor?.id : game.awayCompetitor?.id) ?? null,
       events
     };
   } catch (err) {

@@ -314,7 +314,10 @@ const fetchResult = async (externalId) => {
     return {
       team1Goals: Math.round(team1Goals),
       team2Goals: Math.round(team2Goals),
-      finalScore
+      finalScore,
+      // השמות בסדר של 365 (בית/חוץ) - כדי שהסנכרון יזהה משחק שאצלנו בסדר הפוך
+      homeName: game.homeCompetitor?.name || null,
+      awayName: game.awayCompetitor?.name || null
     };
   } catch (err) {
     console.warn(`⚠️ [365] fetchResult failed for ${externalId}:`, err.message);

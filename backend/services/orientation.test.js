@@ -79,3 +79,29 @@ test('ההכרעה עקבית: היפוך הקלט מהפך את התשובה', 
     }
   }
 });
+
+// === היפוך תוצאה ===
+const { flipResult } = require('./orientation');
+
+test('היפוך תוצאה מחליף שערים, תוצאה סופית ופנדלים', () => {
+  const r = flipResult({
+    team1Goals: 2, team2Goals: 1,
+    finalScore: { team1Goals: 3, team2Goals: 3, penalties: { team1: 4, team2: 5 } },
+    homeName: 'x'
+  });
+  assert.deepStrictEqual([r.team1Goals, r.team2Goals], [1, 2]);
+  assert.deepStrictEqual([r.finalScore.team1Goals, r.finalScore.team2Goals], [3, 3]);
+  assert.deepStrictEqual(r.finalScore.penalties, { team1: 5, team2: 4 });
+  assert.equal(r.homeName, 'x', 'שדות אחרים נשמרים');
+});
+
+test('היפוך בלי תוצאה סופית', () => {
+  assert.deepStrictEqual(flipResult({ team1Goals: 0, team2Goals: 2, finalScore: null }), { team1Goals: 2, team2Goals: 0, finalScore: null });
+});
+
+test('זיהוי עם ההשוואה האמיתית: עברית מול עברית, ושמות לא מזוהים נשארים בסדר הטבעי', () => {
+  const { detectOrientation } = require('../utils/teamMatch');
+  assert.deepStrictEqual(detectOrientation('ברצלונה', 'ריאל מדריד', 'ריאל מדריד', 'ברצלונה'), { flipped: true, confident: true });
+  assert.deepStrictEqual(detectOrientation('ריאל מדריד', 'ברצלונה', 'ריאל מדריד', 'ברצלונה'), { flipped: false, confident: true });
+  assert.deepStrictEqual(detectOrientation('הלבנים', 'הבלאוגרנה', 'ריאל מדריד', 'ברצלונה'), { flipped: false, confident: false });
+});

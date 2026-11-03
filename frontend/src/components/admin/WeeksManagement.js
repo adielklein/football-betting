@@ -244,7 +244,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
       done = (r) => `נשלח ל-${r.users ?? 0} שחקנים`;
     } else if (a.type === 'sync') {
       task = () => syncResults(a.weekId);
-      done = (r) => (r.updated > 0 ? `עודכנו ${r.updated} תוצאות והניקוד חושב` : `אין תוצאות חדשות (${r.notFinished || 0} עוד לא הסתיימו)`);
+      done = (r) => (r.updated > 0 ? `עודכנו ${r.updated} תוצאות והניקוד חושב${r.flipped?.length ? ` · ${r.flipped.length} בסדר הפוך תוקנו` : ''}` : `אין תוצאות חדשות (${r.notFinished || 0} עוד לא הסתיימו)`);
     } else if (a.type === 'recalc') {
       if (!window.confirm('לחשב מחדש את הניקוד של השבוע לפי התוצאות השמורות? לא נשלחות התראות.')) return undefined;
       task = () => recalcSilently(a.weekId);
@@ -1297,6 +1297,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                   if (r.skippedFuture) msg += `\n⏰ דולגו ${r.skippedFuture} שעוד לא התחילו`;
                   if (r.skippedNoExternal) msg += `\n❓ דולגו ${r.skippedNoExternal} בלי מזהה חיצוני`;
                   if (r.alreadyUpToDate) msg += `\n✔️ ${r.alreadyUpToDate} כבר מעודכנים`;
+                  if (r.flipped?.length) msg += `\n🔁 ${r.flipped.length} בסדר הפוך מ-365 - התוצאה הוכנסה בסדר שלנו`;
                   if (r.notFinished) msg += `\n⏳ ${r.notFinished} עדיין לא הסתיימו`;
                   if (r.errors?.length) {
                     msg += `\n⚠️ ${r.errors.length} שגיאות`;

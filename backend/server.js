@@ -442,7 +442,7 @@ const notifyLiveEvents = async (matches, games, sentInThisPoll = new Set()) => {
         // נפרד, ולכן נטענים רק כשיש אירוע ויש למי לשלוח. פעם אחת למשחק
         // בסריקה, גם כששני אירועים קרו יחד
         if ((event.type === 'goal' || event.type === 'goalCancelled') && details === undefined) {
-          details = await liveScores.fetchGameDetails(match.externalId);
+          details = await liveScores.fetchGameDetails(match.externalId, { flipped: !!live.flipped });
         }
 
         const enriched = (event.type === 'goal' || event.type === 'goalCancelled')
