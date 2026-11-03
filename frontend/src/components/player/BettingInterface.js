@@ -8,6 +8,7 @@ import useLiveScores from '../../services/useLiveScores';
 import { showsLiveBadge } from '../../services/liveBetStatus';
 import { setUnsavedChecker } from '../../services/unsavedGuard';
 import { toast } from '../../services/toast';
+import { pop, confettiFrom, once } from '../../services/motion';
 import Score from '../Score';
 import { textOn } from '../../services/readableColor';
 
@@ -163,6 +164,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
     }));
     // שינוי אחרי כישלון הוא ניסיון חדש
     setSaveStatus((prev) => (prev[matchId] === 'error' ? { ...prev, [matchId]: undefined } : prev));
+    if (digits) pop(document.getElementById(`bet-${matchId}-${field === 'team1Goals' ? 1 : 2}`));
 
     // אין כאן מעבר אוטומטי לשדה השני בכוונה. ניסיתי, וזה חוסך הקשה אחת
     // אבל מזיז את הסמן מתחת לאצבע: מי שמקליד תוצאה דו-ספרתית מקבל ספרה
@@ -321,6 +323,25 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
     [matches, localBets, bets, saveStatus]
   );
 
+  // "כל ההימורים הוזנו": חגיגה קטנה ברגע שההימור האחרון נשמר. פעם אחת לשבוע
+  // לכל מכשיר, ורק כשזה קורה מול העיניים - לא בכל כניסה למסך מלא
+  const counterRef = useRef(null);
+  const prevCount = useRef(null);
+  const [celebrateDone, setCelebrateDone] = useState(false);
+  const doneNow = matches.length > 0 &&
+    Object.keys(bets).filter((id) => bets[id].team1Goals !== undefined).length >= matches.length;
+  useEffect(() => {
+    const count = Object.keys(bets).filter((id) => bets[id].team1Goals !== undefined).length;
+    const before = prevCount.current;
+    prevCount.current = count;
+    if (before === null || !doneNow || before >= matches.length) return undefined;
+    if (!once(`all-bets:${selectedWeek?._id}`)) return undefined;
+    setCelebrateDone(true);
+    confettiFrom(counterRef.current, { count: 70 });
+    const t = setTimeout(() => setCelebrateDone(false), 4000);
+    return () => clearTimeout(t);
+  }, [bets, matches.length, doneNow, selectedWeek?._id]);
+
   const countdownBoxStyle = (total) => ({
     padding: '2px 5px', borderRadius: '6px', fontSize: 'var(--fs-sm)', fontWeight: '800',
     fontVariantNumeric: 'tabular-nums', textAlign: 'center',
@@ -377,7 +398,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
           marginBottom: '0.4rem'
         }}>
           <h2 style={{ margin: 0, fontSize: 'var(--fs-md)', fontWeight: '700', color: 'var(--text, #333)' }}>{selectedWeek.name}</h2>
-          <span style={{
+          <span ref={counterRef} style={{
             fontSize: 'var(--fs-xs)',
             color: savedCount === matches.length ? '#fff' : 'var(--good-fg, #28a745)',
             backgroundColor: savedCount === matches.length ? '#1a6b35' : 'var(--good-bg, #e8f5e9)',
@@ -407,9 +428,18 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
           }}></div>
         </div>
 
-        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #5f6670)', marginTop: '0.3rem', textAlign: 'center' }}>
-          ההימורים נשמרים אוטומטית
-        </div>
+        {celebrateDone ? (
+          <div role="status" style={{
+            fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--good-fg, #1a6b35)', background: 'var(--good-bg, #e8f5e9)',
+            borderRadius: '10px', padding: '4px 8px', marginTop: '0.4rem', textAlign: 'center', animation: 'doneIn .45s ease-out both'
+          }}>
+            כל ההימורים הוזנו ✓
+          </div>
+        ) : (
+          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #5f6670)', marginTop: '0.3rem', textAlign: 'center' }}>
+            ההימורים נשמרים אוטומטית
+          </div>
+        )}
 
         {/* Countdown Timer */}
         {timeLeft && (
@@ -669,7 +699,13 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                 ) : hasChanges ? (
                   <span style={{ color: 'var(--text-3, #5f6670)', fontWeight: '600' }}>מלאו את שני הצדדים</span>
                 ) : isSaved ? (
-                  <span style={{ color: 'var(--good-fg, #1a6b35)' }}>✓ נשמר</span>
+                  <span style={{ color: 'var(--good-fg, #1a6b35)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    {/* הווי מצטייר רק ברגע השמירה; אחר כך הוא פשוט שם */}
+                    <svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true" className={justSaved ? 'draw-check' : undefined}>
+                      <path d="M2 7.5 L5.5 11 L12 3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    נשמר
+                  </span>
                 ) : null}
               </div>
 

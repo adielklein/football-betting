@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { reducedMotion } from '../../services/motion';
 
 // סרגל הלשוניות הראשי, בתחתית המסך.
 //
@@ -17,6 +18,8 @@ const isTypingTarget = (el) =>
 
 function BottomNav({ tabs, activeTab, onSelect }) {
   const [typing, setTyping] = useState(false);
+  const activeIndex = tabs.findIndex((t) => t.key === activeTab);
+  const still = reducedMotion();
 
   useEffect(() => {
     const onIn = (e) => setTyping(isTypingTarget(e.target));
@@ -50,7 +53,9 @@ function BottomNav({ tabs, activeTab, onSelect }) {
           bottom: 0,
           zIndex: 900,
           display: typing ? 'none' : 'grid',
-          gridTemplateColumns: `repeat(${tabs.length}, 1fr)`,
+          // minmax(0, 1fr): רוחב שווה לכל לשונית. עם 1fr רגיל לשונית עם שם
+          // ארוך ("כל ההימורים") התרחבה כשהפכה פעילה, כי הטקסט המודגש רחב יותר
+          gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`,
           padding: '0 4px env(safe-area-inset-bottom, 0px)',
           background: 'var(--surface, #fff)',
           borderTop: '1px solid var(--border, #e5e7eb)',
@@ -60,6 +65,17 @@ function BottomNav({ tabs, activeTab, onSelect }) {
           WebkitTransform: 'translateZ(0)'
         }}
       >
+        {/* פס אחד מעל הלשונית הפעילה, שמחליק אליה במעבר. הוא סימון שנקרא גם
+            בלי צבע. ממוקם מתחילת השורה, ולכן עובד בכיוון ימין-לשמאל */}
+        {activeIndex >= 0 && (
+          <span aria-hidden="true" style={{
+            position: 'absolute', top: 0, height: '3px', borderRadius: '0 0 3px 3px',
+            width: `${50 / tabs.length}%`,
+            insetInlineStart: `${(activeIndex + 0.25) * (100 / tabs.length)}%`,
+            background: 'var(--theme-primary-text, #007bff)',
+            transition: still ? 'none' : 'inset-inline-start .32s cubic-bezier(.4,0,.2,1)'
+          }} />
+        )}
         {tabs.map((tab) => {
           const isActive = activeTab === tab.key;
           return (
@@ -91,14 +107,9 @@ function BottomNav({ tabs, activeTab, onSelect }) {
                 touchAction: 'manipulation'
               }}
             >
-              {/* פס קטן מעל הלשונית הפעילה - סימון שנקרא גם בלי צבע */}
-              {isActive && (
-                <span aria-hidden="true" style={{
-                  position: 'absolute', top: 0, left: '25%', right: '25%', height: '3px',
-                  borderRadius: '0 0 3px 3px', background: 'var(--theme-primary-text, #007bff)'
-                }} />
-              )}
-              <span aria-hidden="true" style={{
+              {/* key משתנה כשהלשונית נבחרת, וזה מפעיל את קפיצת האייקון מחדש */}
+              <span key={isActive ? 'on' : 'off'} aria-hidden="true" style={{
+                animation: isActive && !still ? 'navBounce .4s cubic-bezier(.2,1.5,.4,1)' : undefined,
                 fontSize: 'var(--fs-lg)',
                 lineHeight: 1,
                 transform: isActive ? 'scale(1.08)' : 'none',

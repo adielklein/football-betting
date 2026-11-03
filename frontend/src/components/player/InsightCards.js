@@ -152,7 +152,7 @@ export function SeasonRankCard({ history }) {
               </text>
             </g>
           ))}
-          <path d={path} fill="none" stroke="var(--theme-primary-text, #007bff)" strokeWidth="2.5"
+          <path d={path} pathLength="1" className="line-draw" fill="none" stroke="var(--theme-primary-text, #007bff)" strokeWidth="2.5"
             strokeLinecap="round" strokeLinejoin="round" />
           {history.map((h, i) => {
             const isLast = i === n - 1;

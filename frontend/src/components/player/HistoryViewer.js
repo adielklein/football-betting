@@ -5,6 +5,7 @@ import Score from '../Score';
 import { textOn } from '../../services/readableColor';
 import { formatScore } from '../../services/liveNumbers';
 import useReturnRefresh from '../../services/useReturnRefresh';
+import { SkeletonCards } from '../Skeleton';
 import { placesFor, anyScored } from '../../services/ranking';
 
 function HistoryViewer({ weeks, user, active = true }) {
@@ -174,13 +175,7 @@ function HistoryViewer({ weeks, user, active = true }) {
         </select>
       </div>
 
-      {loading && (
-        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-4, #999)' }}>
-          <div style={{ width: '36px', height: '36px', border: '3px solid var(--border, #f0f0f0)', borderTop: '3px solid var(--theme-primary, #007bff)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 0.5rem' }}></div>
-          <span style={{ fontSize: 'var(--fs-sm)' }}>טוען היסטוריה...</span>
-          <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-        </div>
-      )}
+      {loading && <SkeletonCards cards={4} label="טוען היסטוריה..." />}
 
       {!selectedHistoryWeek && !loading && filteredWeeks.length === 0 && (
         <div className="card" style={{ textAlign: 'center', padding: '2rem', background: 'var(--info-bg, #f8f9ff)' }}>

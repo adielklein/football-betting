@@ -7,6 +7,8 @@ import LiveScore from './LiveScore';
 import GoalFlash from './GoalFlash';
 import useLiveScores from '../../services/useLiveScores';
 import useReturnRefresh from '../../services/useReturnRefresh';
+import { confettiFrom, once } from '../../services/motion';
+import { SkeletonCards } from '../Skeleton';
 import { showsLiveBadge } from '../../services/liveBetStatus';
 import MatchInsightsModal from './MatchInsightsModal';
 import Score from '../Score';
@@ -50,6 +52,24 @@ function AllBetsViewer({ weeks, user, active = true }) {
 
   // הלשונית נשארת טעונה; חזרה אליה אחרי יותר מדקה מרעננת ברקע
   useReturnRefresh(active, () => selectedWeek && loadWeekData(selectedWeek._id, { silent: true }));
+
+  // חגיגת "מדויק": בפעם הראשונה שהמכשיר הזה רואה תוצאה שניחשת בדיוק, התג
+  // נוחת כמו חותמת ומתפרץ קונפטי. פעם אחת לכל משחק, ורק כשהמסך מוצג
+  const [stampIds, setStampIds] = useState({});
+  useEffect(() => {
+    if (!active || matches.length === 0 || allBets.length === 0) return undefined;
+    const fresh = matches.filter((m) => {
+      if (!m.result || m.result.team1Goals === undefined) return false;
+      const mine = allBets.find((b) => (b.userId?._id || b.userId) === user.id && (b.matchId?._id || b.matchId) === m._id);
+      const p = mine?.prediction;
+      return p && p.team1Goals === m.result.team1Goals && p.team2Goals === m.result.team2Goals && once(`exact:${m._id}`);
+    });
+    if (fresh.length === 0) return undefined;
+    setStampIds((prev) => ({ ...prev, ...Object.fromEntries(fresh.map((m) => [m._id, true])) }));
+    // אחרי הציור, כדי שהקונפטי ייצא מהתג עצמו
+    const t = setTimeout(() => confettiFrom(document.getElementById(`exact-badge-${fresh[0]._id}`)), 150);
+    return () => clearTimeout(t);
+  }, [active, matches, allBets, user.id]);
 
   useEffect(() => {
     if (!weeks || weeks.length === 0) return;
@@ -270,11 +290,7 @@ function AllBetsViewer({ weeks, user, active = true }) {
           <p style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-sm)', margin: 0 }}>בחר שבוע מהרשימה למעלה</p>
         </div>
       ) : loading ? (
-        <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
-          <div style={{ width: '36px', height: '36px', border: '3px solid var(--border, #f0f0f0)', borderTop: '3px solid var(--theme-primary, #007bff)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 0.75rem' }}></div>
-          <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-4, #999)' }}>טוען הימורים...</span>
-          <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-        </div>
+        <SkeletonCards cards={4} label="טוען הימורים..." />
       ) : (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', padding: '0 0.15rem' }}>
@@ -327,10 +343,13 @@ function AllBetsViewer({ weeks, user, active = true }) {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         {myBet && match.result && match.result.team1Goals !== undefined && (
-                          <span style={{
-                            padding: '1px 6px', borderRadius: '6px', fontSize: 'var(--fs-xs)', fontWeight: '700',
-                            backgroundColor: myBadge.bg, color: myBadge.color
-                          }}>{myBadge.text}</span>
+                          <span
+                            id={myExact ? `exact-badge-${match._id}` : undefined}
+                            className={myExact && stampIds[match._id] ? 'stamp-in' : undefined}
+                            style={{
+                              padding: '1px 6px', borderRadius: '6px', fontSize: 'var(--fs-xs)', fontWeight: '700',
+                              backgroundColor: myBadge.bg, color: myBadge.color
+                            }}>{myBadge.text}</span>
                         )}
                         {showsLiveBadge(liveByMatchId[match._id], match.result) ? (
                           <LiveScore live={liveByMatchId[match._id]} prediction={myBet && myBet.prediction} result={match.result} compact />

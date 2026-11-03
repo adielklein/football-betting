@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useCountUp, reducedMotion } from '../../services/motion';
+import { SkeletonStats } from '../Skeleton';
 import NearMissView from './NearMissView';
 import TeamLogo from '../TeamLogo';
 import { getTheme } from '../../themes';
@@ -194,7 +196,7 @@ const CumulativeChart = ({ weeks, activeIndex, onSelect }) => {
             fill="url(#areaGradient)" opacity="0.3"
           />
         )}
-        <path d={pathD} fill="none" stroke="var(--theme-primary, #007bff)" strokeWidth="2.5"
+        <path d={pathD} pathLength="1" className="line-draw" fill="none" stroke="var(--theme-primary, #007bff)" strokeWidth="2.5"
           strokeLinecap="round" strokeLinejoin="round" />
 
         {points.map((p, i) => (
@@ -305,6 +307,162 @@ const BettingTwins = ({ data }) => {
   );
 };
 
+// === רכיבי הסקירה ===
+// מוגדרים מחוץ ל-PlayerStats בכוונה: רכיב שמוגדר בתוך רכיב אחר נבנה מחדש
+// בכל ציור שלו, ואנימציית הכניסה הייתה מתחילה מחדש בכל לחיצה במסך.
+
+// "גדל" אחרי הציור הראשון: מ-0 לערך האמיתי, עם מעבר ב-CSS
+const useGrown = () => {
+  const [grown, setGrown] = useState(reducedMotion);
+  useEffect(() => {
+    if (grown) return undefined;
+    let r2;
+    const r1 = requestAnimationFrame(() => { r2 = requestAnimationFrame(() => setGrown(true)); });
+    return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2); };
+  }, [grown]);
+  return grown;
+};
+
+const DONUT_EASE = '1.1s cubic-bezier(0.4, 0, 0.2, 1)';
+
+const DonutChart = ({ exact, direction, wrong, accuracy, size = 120 }) => {
+  const grown = useGrown();
+  const shown = useCountUp(accuracy, { duration: 1100 });
+  const total = exact + direction + wrong;
+  if (total === 0) return null;
+
+  const r = (size - 16) / 2;
+  const circumference = 2 * Math.PI * r;
+  const center = size / 2;
+
+  // הטבעת מתמלאת מ-0: הירוק והכתום גדלים, והאפור מקבל את השאר
+  const k = grown ? 1 : 0;
+  const exactLen = (exact / total) * circumference * k;
+  const dirLen = (direction / total) * circumference * k;
+  const wrongLen = circumference - exactLen - dirLen;
+  const ring = { transition: `stroke-dasharray ${DONUT_EASE}, stroke-dashoffset ${DONUT_EASE}` };
+
+  return (
+    <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+      <circle cx={center} cy={center} r={r} fill="none" stroke="var(--surface-3, #e8ecf0)" strokeWidth="14"
+        strokeDasharray={`${wrongLen} ${circumference - wrongLen}`}
+        strokeDashoffset={0} style={ring} />
+      <circle cx={center} cy={center} r={r} fill="none" stroke="#f59e0b" strokeWidth="14"
+        strokeDasharray={`${dirLen} ${circumference - dirLen}`}
+        strokeDashoffset={-wrongLen} strokeLinecap={dirLen > 0 ? 'round' : 'butt'} style={ring} />
+      <circle cx={center} cy={center} r={r} fill="none" stroke="#10b981" strokeWidth="14"
+        strokeDasharray={`${exactLen} ${circumference - exactLen}`}
+        strokeDashoffset={-(wrongLen + dirLen)} strokeLinecap={exactLen > 0 ? 'round' : 'butt'} style={ring} />
+      <text x={center} y={center - 6} textAnchor="middle" dominantBaseline="middle"
+        style={{ transform: 'rotate(90deg)', transformOrigin: `${center}px ${center}px`, fontSize: 'var(--fs-xl)', fontWeight: '800', fill: 'var(--text, #333)', fontVariantNumeric: 'tabular-nums' }}>
+        {shown}%
+      </text>
+      <text x={center} y={center + 14} textAnchor="middle" dominantBaseline="middle"
+        style={{ transform: 'rotate(90deg)', transformOrigin: `${center}px ${center}px`, fontSize: 'var(--fs-xs)', fill: 'var(--text-3, #5f6670)', fontWeight: '500' }}>
+        פגיעה
+      </text>
+    </svg>
+  );
+};
+
+const MiniBar = ({ value, max, color, label, count }) => {
+  const grown = useGrown();
+  const pct = max > 0 ? (value / max) * 100 : 0;
+  return (
+    <div style={{ marginBottom: '8px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+        <span style={{ fontSize: 'var(--fs-xs)', fontWeight: '600', color: 'var(--text-2, #555)' }}>{label}</span>
+        <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)' }}>{count != null ? count : value}</span>
+      </div>
+      <div style={{ height: '8px', borderRadius: '4px', background: 'var(--surface-3, #f0f2f5)', overflow: 'hidden' }}>
+        <div style={{
+          height: '100%', borderRadius: '4px', width: `${grown ? pct : 0}%`,
+          background: color, transition: 'width 0.9s cubic-bezier(0.4, 0, 0.2, 1)'
+        }} />
+      </div>
+    </div>
+  );
+};
+
+// מספר שנספר מ-0 בכניסה הראשונה למסך
+const StatPill = ({ value, decimals = 0, suffix = '', label, color, bg }) => {
+  const shown = useCountUp(value, { decimals });
+  return (
+    <div style={{
+      flex: 1, textAlign: 'center', padding: '0.6rem 0.3rem',
+      background: bg || 'var(--surface-2, #f8f9fc)', borderRadius: '12px',
+    }}>
+      <div style={{ fontSize: 'var(--fs-xl)', fontWeight: '800', color: color || 'var(--text, #333)', lineHeight: 1.2, fontVariantNumeric: 'tabular-nums' }}>
+        {shown}{suffix}
+      </div>
+      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', fontWeight: '600', marginTop: '2px' }}>
+        {label}
+      </div>
+    </div>
+  );
+};
+
+// === Card Wrapper ===
+const Card = ({ children, title, icon, style = {} }) => (
+  <div style={{
+    background: 'var(--surface, #fff)', borderRadius: '16px',
+    padding: '0.85rem', marginBottom: '0.6rem',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)',
+    border: '1px solid rgba(0,0,0,0.05)',
+    ...style
+  }}>
+    {title && (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.7rem' }}>
+        {icon && <span style={{ fontSize: 'var(--fs-md)' }}>{icon}</span>}
+        <span style={{ fontWeight: '700', fontSize: 'var(--fs-sm)', color: 'var(--text, #333)' }}>{title}</span>
+      </div>
+    )}
+    {children}
+  </div>
+);
+
+// === Team Row ===
+const TeamRow = ({ team, rank, isBest }) => {
+  const color = isBest ? '#15803d' : '#c62828'; // לבן עליהם: 5:1 ומעלה
+  const bg = isBest ? 'var(--good-bg, #ecfdf5)' : 'var(--bad-bg, #fef2f2)';
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: '8px',
+      padding: '8px 10px', borderRadius: '10px',
+      background: bg, marginBottom: '6px',
+      animation: 'slideUp 0.3s ease both',
+      animationDelay: (rank * 60) + 'ms'
+    }}>
+      <span style={{
+        width: '22px', height: '22px', borderRadius: '50%',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 'var(--fs-xs)', fontWeight: '800', color: '#fff',
+        background: color
+      }}>
+        {rank + 1}
+      </span>
+      <TeamLogo name={team.name} src={team.logo} size={18} />
+      <span style={{ flex: 1, fontSize: 'var(--fs-sm)', fontWeight: '700', color: 'var(--text, #333)' }}>
+        {team.name}
+      </span>
+      <div style={{ textAlign: 'left', display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <span style={{
+          fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)',
+        }}>
+          {team.bets} משחקים
+        </span>
+        <span style={{
+          padding: '2px 8px', borderRadius: '8px',
+          fontSize: 'var(--fs-xs)', fontWeight: '800',
+          background: color, color: '#fff'
+        }}>
+          {team.accuracy}%
+        </span>
+      </div>
+    </div>
+  );
+};
+
 function PlayerStats({ user, active = true }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -342,17 +500,7 @@ function PlayerStats({ user, active = true }) {
   };
 
   if (loading) {
-    return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <div style={{
-          width: '40px', height: '40px', margin: '0 auto 1rem',
-          border: '3px solid var(--border, #f0f0f0)',
-          borderTop: '3px solid var(--theme-primary, #007bff)',
-          borderRadius: '50%', animation: 'spin 0.8s linear infinite'
-        }} />
-        <p style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-sm)' }}>טוען סטטיסטיקות...</p>
-      </div>
-    );
+    return <SkeletonStats />;
   }
 
   if (!stats || stats.overview.totalBets === 0) {
@@ -395,146 +543,6 @@ function PlayerStats({ user, active = true }) {
   ];
 
   // === Donut Chart Component ===
-  const DonutChart = ({ exact, direction, wrong, size = 120 }) => {
-    const total = exact + direction + wrong;
-    if (total === 0) return null;
-
-    const exactPct = (exact / total) * 100;
-    const dirPct = (direction / total) * 100;
-
-    const r = (size - 16) / 2;
-    const circumference = 2 * Math.PI * r;
-    const center = size / 2;
-
-    const exactLen = (exactPct / 100) * circumference;
-    const dirLen = (dirPct / 100) * circumference;
-    const wrongLen = circumference - exactLen - dirLen;
-
-    return (
-      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        {/* Wrong (gray) */}
-        <circle cx={center} cy={center} r={r} fill="none" stroke="var(--surface-3, #e8ecf0)" strokeWidth="14"
-          strokeDasharray={`${wrongLen} ${circumference - wrongLen}`}
-          strokeDashoffset={0} />
-        {/* Direction (orange) */}
-        <circle cx={center} cy={center} r={r} fill="none" stroke="#f59e0b" strokeWidth="14"
-          strokeDasharray={`${dirLen} ${circumference - dirLen}`}
-          strokeDashoffset={-wrongLen} strokeLinecap="round" />
-        {/* Exact (green) */}
-        <circle cx={center} cy={center} r={r} fill="none" stroke="#10b981" strokeWidth="14"
-          strokeDasharray={`${exactLen} ${circumference - exactLen}`}
-          strokeDashoffset={-(wrongLen + dirLen)} strokeLinecap="round" />
-        {/* Center text */}
-        <text x={center} y={center - 6} textAnchor="middle" dominantBaseline="middle"
-          style={{ transform: 'rotate(90deg)', transformOrigin: `${center}px ${center}px`, fontSize: 'var(--fs-xl)', fontWeight: '800', fill: 'var(--text, #333)' }}>
-          {overview.accuracy}%
-        </text>
-        <text x={center} y={center + 14} textAnchor="middle" dominantBaseline="middle"
-          style={{ transform: 'rotate(90deg)', transformOrigin: `${center}px ${center}px`, fontSize: 'var(--fs-xs)', fill: 'var(--text-3, #5f6670)', fontWeight: '500' }}>
-          פגיעה
-        </text>
-      </svg>
-    );
-  };
-
-  // === Mini Bar Component ===
-  const MiniBar = ({ value, max, color, label, count }) => {
-    const pct = max > 0 ? (value / max) * 100 : 0;
-    return (
-      <div style={{ marginBottom: '8px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-          <span style={{ fontSize: 'var(--fs-xs)', fontWeight: '600', color: 'var(--text-2, #555)' }}>{label}</span>
-          <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)' }}>{count != null ? count : value}</span>
-        </div>
-        <div style={{
-          height: '8px', borderRadius: '4px', background: 'var(--surface-3, #f0f2f5)', overflow: 'hidden'
-        }}>
-          <div style={{
-            height: '100%', borderRadius: '4px', width: `${pct}%`,
-            background: color,
-            transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)'
-          }} />
-        </div>
-      </div>
-    );
-  };
-
-  // === Card Wrapper ===
-  const Card = ({ children, title, icon, style = {} }) => (
-    <div style={{
-      background: 'var(--surface, #fff)', borderRadius: '16px',
-      padding: '0.85rem', marginBottom: '0.6rem',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)',
-      border: '1px solid rgba(0,0,0,0.05)',
-      ...style
-    }}>
-      {title && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.7rem' }}>
-          {icon && <span style={{ fontSize: 'var(--fs-md)' }}>{icon}</span>}
-          <span style={{ fontWeight: '700', fontSize: 'var(--fs-sm)', color: 'var(--text, #333)' }}>{title}</span>
-        </div>
-      )}
-      {children}
-    </div>
-  );
-
-  // === Stat Pill ===
-  const StatPill = ({ value, label, color, bg }) => (
-    <div style={{
-      flex: 1, textAlign: 'center', padding: '0.6rem 0.3rem',
-      background: bg || 'var(--surface-2, #f8f9fc)', borderRadius: '12px',
-    }}>
-      <div style={{ fontSize: 'var(--fs-xl)', fontWeight: '800', color: color || 'var(--text, #333)', lineHeight: 1.2 }}>
-        {value}
-      </div>
-      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', fontWeight: '600', marginTop: '2px' }}>
-        {label}
-      </div>
-    </div>
-  );
-
-  // === Team Row ===
-  const TeamRow = ({ team, rank, isBest }) => {
-    const color = isBest ? '#15803d' : '#c62828'; // לבן עליהם: 5:1 ומעלה
-    const bg = isBest ? 'var(--good-bg, #ecfdf5)' : 'var(--bad-bg, #fef2f2)';
-    return (
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: '8px',
-        padding: '8px 10px', borderRadius: '10px',
-        background: bg, marginBottom: '6px',
-        animation: 'slideUp 0.3s ease both',
-        animationDelay: (rank * 60) + 'ms'
-      }}>
-        <span style={{
-          width: '22px', height: '22px', borderRadius: '50%',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 'var(--fs-xs)', fontWeight: '800', color: '#fff',
-          background: color
-        }}>
-          {rank + 1}
-        </span>
-        <TeamLogo name={team.name} src={team.logo} size={18} />
-        <span style={{ flex: 1, fontSize: 'var(--fs-sm)', fontWeight: '700', color: 'var(--text, #333)' }}>
-          {team.name}
-        </span>
-        <div style={{ textAlign: 'left', display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <span style={{
-            fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)',
-          }}>
-            {team.bets} משחקים
-          </span>
-          <span style={{
-            padding: '2px 8px', borderRadius: '8px',
-            fontSize: 'var(--fs-xs)', fontWeight: '800',
-            background: color, color: '#fff'
-          }}>
-            {team.accuracy}%
-          </span>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div style={{ animation: 'scaleIn 0.2s ease' }}>
       {/* Section Tabs */}
@@ -570,7 +578,7 @@ function PlayerStats({ user, active = true }) {
           {/* Donut + Key Stats */}
           <Card>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <DonutChart exact={overview.exactCount} direction={overview.directionCount} wrong={overview.wrongCount} />
+              <DonutChart exact={overview.exactCount} direction={overview.directionCount} wrong={overview.wrongCount} accuracy={overview.accuracy} />
               <div style={{ flex: 1 }}>
                 <MiniBar value={overview.exactCount} max={overview.totalBets} color="linear-gradient(90deg, #10b981, #34d399)" label="🎯 מדויק" count={overview.exactCount} />
                 <MiniBar value={overview.directionCount} max={overview.totalBets} color="linear-gradient(90deg, #f59e0b, #fbbf24)" label="👆 כיוון" count={overview.directionCount} />
@@ -583,8 +591,8 @@ function PlayerStats({ user, active = true }) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '0.6rem' }}>
             {/* רקעים מהטוקנים ולא מעברי צבע קבועים: הבהירים נשארו לבנים בוהקים במצב כהה */}
             <StatPill value={overview.totalBets} label="הימורים" color="var(--theme-primary-text, #007bff)" bg="var(--surface-2, #f8f9fc)" />
-            <StatPill value={overview.totalPoints} label="נקודות" color="var(--good-fg, #1a6b35)" bg="var(--good-bg, #ecfdf5)" />
-            <StatPill value={overview.exactRate + '%'} label="דיוק מלא" color="var(--info-fg, #1560ad)" bg="var(--info-bg, #eff6ff)" />
+            <StatPill value={overview.totalPoints} decimals={1} label="נקודות" color="var(--good-fg, #1a6b35)" bg="var(--good-bg, #ecfdf5)" />
+            <StatPill value={overview.exactRate} suffix="%" label="דיוק מלא" color="var(--info-fg, #1560ad)" bg="var(--info-bg, #eff6ff)" />
           </div>
 
           {/* Streaks */}

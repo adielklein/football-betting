@@ -836,3 +836,26 @@ tr:hover {
     0%, 100% { opacity: 1; }
   }
 }
+
+/* === תנועה: קווים שמצטיירים, חותמת, הבזק, קפיצת אייקון === */
+@keyframes drawStroke { to { stroke-dashoffset: 0; } }
+.draw-check path { stroke-dasharray: 20; stroke-dashoffset: 20; animation: drawStroke .35s ease-out forwards; }
+.line-draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: drawStroke 1.1s .15s ease-out forwards; }
+@keyframes stampIn {
+  0% { opacity: 0; transform: scale(2.2) rotate(-14deg); }
+  100% { opacity: 1; transform: scale(1) rotate(-4deg); }
+}
+.stamp-in { display: inline-block; animation: stampIn .5s cubic-bezier(.2,1.3,.4,1) both; }
+@keyframes rowShine { from { transform: translateX(120%); } to { transform: translateX(-120%); } }
+.row-shine { position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.6) 50%, transparent 70%);
+  transform: translateX(120%); animation: rowShine 1s .25s ease-out forwards; }
+@keyframes navBounce { 0% { transform: translateY(0); } 40% { transform: translateY(-5px) scale(1.12); } 100% { transform: translateY(0); } }
+@keyframes doneIn { 0% { opacity: 0; transform: scale(.9); } 60% { transform: scale(1.04); } 100% { opacity: 1; transform: scale(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .draw-check path, .line-draw { animation: none; stroke-dashoffset: 0; }
+  .stamp-in { animation: none; transform: rotate(-4deg); }
+  .row-shine { display: none; }
+  .skeleton { animation: none !important; }
+}

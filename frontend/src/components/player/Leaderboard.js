@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import LiveTable from './LiveTable';
 import { formatScore } from '../../services/liveNumbers';
 import useReturnRefresh from '../../services/useReturnRefresh';
+import { useFlip } from '../../services/motion';
+import { SkeletonRows } from '../Skeleton';
 import { placesFor, anyScored } from '../../services/ranking';
 
 function Leaderboard({ leaderboard, user, active = true }) {
@@ -31,7 +33,9 @@ function Leaderboard({ leaderboard, user, active = true }) {
       // First load - initialize from data
       loadScoresData();
     } else if (selectedMonth !== null && selectedSeason !== null) {
-      loadScoresData();
+      // החלפת חודש או עונה: הטבלה הקודמת נשארת על המסך עד שהחדשה מגיעה,
+      // ואז השורות זזות למקומן החדש (useFlip) במקום ספינר וקפיצה
+      loadScoresData({ silent: monthlyScores.length > 0 || seasonalScores.length > 0 });
     }
   }, [selectedMonth, selectedSeason]);
 
@@ -278,6 +282,18 @@ function Leaderboard({ leaderboard, user, active = true }) {
     return list.map((player, index) => ({ player, index, place: places[index], scored }));
   };
 
+  // רשימות שהשורות בהן זזות בתנועה כשהסדר משתנה
+  const monthlyListRef = useRef(null);
+  const weeklyListRef = useRef(null);
+  const seasonalListRef = useRef(null);
+  const generalListRef = useRef(null);
+  useFlip(monthlyListRef, [monthlyScores, activeTab]);
+  useFlip(weeklyListRef, [selectedWeekScores, activeTab]);
+  useFlip(seasonalListRef, [seasonalScores, activeTab]);
+  useFlip(generalListRef, [leaderboard, activeTab]);
+  // הבזק על המקום הראשון: מתחיל מחדש בכל פעם שמחליפים מה מוצג
+  const shineToken = `${activeTab}-${selectedMonth}-${selectedSeason}-${selectedWeekId}`;
+
   const renderPlayerRow = (player, index, scoreKey, isMe, animDelay, place = index + 1, scored = true) => {
     const rank = scored ? getRankStyle(place - 1) : getRankStyle(-1);
     const isTop3 = scored && place <= 3;
@@ -287,7 +303,9 @@ function Leaderboard({ leaderboard, user, active = true }) {
     const rowFg = isMe ? 'var(--me-fg, #14508f)' : (isTop3 ? rank.fg : 'var(--text, #333)');
 
     return (
-      <div key={player.name} style={{
+      <div key={player.name} data-flip-key={player.name} style={{
+        position: 'relative',
+        overflow: 'hidden',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -336,6 +354,7 @@ function Leaderboard({ leaderboard, user, active = true }) {
         }}>
           {score}
         </span>
+        {scored && place === 1 && <span key={shineToken} className="row-shine" aria-hidden="true" />}
       </div>
     );
   };
@@ -444,19 +463,10 @@ function Leaderboard({ leaderboard, user, active = true }) {
         </div>
       )}
 
-      {loading && (
-        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-4, #999)' }}>
-          <div style={{
-            width: '36px', height: '36px',
-            border: '3px solid var(--border, #f0f0f0)', borderTop: '3px solid var(--theme-primary, #007bff)',
-            borderRadius: '50%', animation: 'spin 0.8s linear infinite',
-            margin: '0 auto 0.5rem'
-          }}></div>
-          <span style={{ fontSize: 'var(--fs-sm)' }}>טוען נתונים...</span>
-        </div>
-      )}
+      {loading && <SkeletonRows rows={8} label="טוען טבלה..." />}
 
-      <div style={{ animation: 'scaleIn 0.2s ease' }}>
+      {/* בזמן הטעינה הראשונה השלד מחליף את הכרטיס, ולא יושב מעל כרטיס ריק */}
+      <div style={{ animation: 'scaleIn 0.2s ease', display: loading ? 'none' : undefined }}>
         {/* דירוג חודשי */}
         {activeTab === 'monthly' && (
           <div className="card">
@@ -464,7 +474,7 @@ function Leaderboard({ leaderboard, user, active = true }) {
               🏅 דירוג {months.find(m => m.value === selectedMonth)?.label}
             </h2>
             {!loading && monthlyScores.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+              <div ref={monthlyListRef} style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                 {rankedRows(monthlyScores, (p) => p.monthlyScore).map(({ player, index, place, scored }) =>
                   renderPlayerRow(player, index, 'monthlyScore', player.name === user.name, index * 0.04, place, scored)
                 )}
@@ -501,7 +511,7 @@ function Leaderboard({ leaderboard, user, active = true }) {
                 </div>
 
                 {selectedWeekId && selectedWeekScores.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <div ref={weeklyListRef} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                     {rankedRows(selectedWeekScores, (p) => p.score).map(({ player, index, place, scored }) =>
                       renderPlayerRow(player, index, 'score', player.name === user.name, index * 0.03, place, scored)
                     )}
@@ -528,7 +538,7 @@ function Leaderboard({ leaderboard, user, active = true }) {
               📅 דירוג עונתי - {seasons.find(s => s.value === selectedSeason)?.label}
             </h2>
             {!loading && seasonalScores.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+              <div ref={seasonalListRef} style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                 {rankedRows(seasonalScores, (p) => p.seasonalScore).map(({ player, index, place, scored }) =>
                   renderPlayerRow(player, index, 'seasonalScore', player.name === user.name, index * 0.04, place, scored)
                 )}
@@ -549,7 +559,7 @@ function Leaderboard({ leaderboard, user, active = true }) {
               🏆 דירוג כללי (כל הזמנים)
             </h2>
             {leaderboard.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+              <div ref={generalListRef} style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                 {rankedRows(leaderboard, (e) => e.totalScore).map(({ player: entry, index, place, scored }) =>
                   renderPlayerRow(
                     { name: entry.user.name, score: entry.totalScore },
