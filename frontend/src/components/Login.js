@@ -1,11 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { applyTheme } from '../themes';
+import { hapticError } from '../services/haptics';
+import { play } from '../services/motion';
 
 function Login({ onLogin, notice = null }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const cardRef = useRef(null);
+
+  // שגיאה: הכרטיס רועד והטלפון רוטט פעמיים - מורגש עוד לפני שקוראים את ההודעה
+  const fail = (text) => {
+    setMessage(text);
+    hapticError();
+    play(cardRef.current, [
+      { transform: 'translateX(0)' }, { transform: 'translateX(-10px)' }, { transform: 'translateX(10px)' },
+      { transform: 'translateX(-8px)' }, { transform: 'translateX(8px)' }, { transform: 'translateX(-3px)' }, { transform: 'translateX(0)' }
+    ], { duration: 440, easing: 'ease-in-out', composite: 'add' });
+  };
 
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
@@ -18,7 +31,7 @@ function Login({ onLogin, notice = null }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!username || !password) {
-      setMessage('יש למלא שם משתמש וסיסמה');
+      fail('יש למלא שם משתמש וסיסמה');
       return;
     }
 
@@ -42,11 +55,11 @@ function Login({ onLogin, notice = null }) {
           onLogin(data.user);
         }
       } else {
-        setMessage(data.message || 'שם משתמש או סיסמה שגויים');
+        fail(data.message || 'שם משתמש או סיסמה שגויים');
       }
     } catch (error) {
       console.error('Login error:', error);
-      setMessage('שגיאה בחיבור לשרת');
+      fail('שגיאה בחיבור לשרת');
     } finally {
       setLoading(false);
     }
@@ -61,7 +74,7 @@ function Login({ onLogin, notice = null }) {
       justifyContent: 'center',
       padding: '20px'
     }}>
-      <div style={{
+      <div ref={cardRef} style={{
         width: '100%',
         maxWidth: '380px',
         background: 'rgba(255,255,255,0.97)',

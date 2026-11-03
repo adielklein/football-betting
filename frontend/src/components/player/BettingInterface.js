@@ -9,6 +9,7 @@ import { showsLiveBadge } from '../../services/liveBetStatus';
 import { setUnsavedChecker } from '../../services/unsavedGuard';
 import { toast } from '../../services/toast';
 import { pop, confettiFrom, once } from '../../services/motion';
+import { hapticError } from '../../services/haptics';
 import Score from '../Score';
 import { textOn } from '../../services/readableColor';
 
@@ -208,6 +209,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
         const body = await response.json().catch(() => null);
         const reason = describeSaveError(body?.message);
         setSaveStatus((prev) => ({ ...prev, [matchId]: 'error' }));
+        hapticError();
         toast.error(reason.text);
 
         // נסגר בזמן שהמסך היה פתוח: אין טעם להשאיר טופס חי שכל שמירה בו
@@ -217,6 +219,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
     } catch (error) {
       console.error('Error saving bet:', error);
       setSaveStatus((prev) => ({ ...prev, [matchId]: 'error' }));
+      hapticError();
       toast.error('ההימור לא נשמר - בדקו את החיבור ונסו שוב');
     }
   };
