@@ -29,7 +29,9 @@ function ColorSchemeToggle() {
       style={{
         background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.08) 100%)',
         color: 'white',
-        padding: '0.4rem 0.6rem',
+        padding: '0 0.6rem',
+        minHeight: '44px',
+        minWidth: '44px',
         fontSize: 'var(--fs-sm)',
         lineHeight: 1,
         margin: 0,

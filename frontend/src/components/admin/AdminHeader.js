@@ -103,6 +103,7 @@ function AdminHeader({ user, onLogout }) {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          gap: '0.5rem',
           padding: '0.15rem 0'
         }}>
           <div style={{ minWidth: 0, flex: 1 }}>
@@ -170,7 +171,7 @@ function AdminHeader({ user, onLogout }) {
                     border: '1px solid rgba(255,255,255,0.3)',
                     borderRadius: '20px',
                     padding: '4px 12px',
-                    minHeight: '32px',
+                    minHeight: '36px',
                     fontSize: 'var(--fs-xs)',
                     fontWeight: '600',
                     cursor: 'pointer',
@@ -192,7 +193,8 @@ function AdminHeader({ user, onLogout }) {
               color: 'white',
               border: '1px solid rgba(255,255,255,0.2)',
               borderRadius: '10px',
-              padding: '0.4rem 0.9rem',
+              padding: '0 0.9rem',
+              minHeight: '44px',
               fontSize: 'var(--fs-sm)',
               fontWeight: '600',
               cursor: 'pointer',

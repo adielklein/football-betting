@@ -9,6 +9,7 @@ import useLiveScores from '../../services/useLiveScores';
 import { showsLiveBadge } from '../../services/liveBetStatus';
 import MatchInsightsModal from './MatchInsightsModal';
 import Score from '../Score';
+import { textOn } from '../../services/readableColor';
 
 function AllBetsViewer({ weeks, user }) {
   const [selectedWeek, setSelectedWeek] = useState(null);
@@ -314,7 +315,7 @@ function AllBetsViewer({ weeks, user }) {
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                           <LeagueLogo league={match.leagueId} size={14} />
                           <span style={{
-                            padding: '2px 8px', backgroundColor: getLeagueColor(match), color: 'white',
+                            padding: '2px 8px', backgroundColor: getLeagueColor(match), color: textOn(getLeagueColor(match)),
                             borderRadius: '6px', fontSize: 'var(--fs-xs)', fontWeight: '700',
                             boxShadow: `0 2px 4px ${getLeagueColor(match)}33`
                           }}>{getLeagueName(match)}</span>
@@ -404,9 +405,9 @@ function AllBetsViewer({ weeks, user }) {
                   {match.odds && (match.odds.homeWin || match.odds.draw || match.odds.awayWin) && (
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '0.25rem', marginBottom: '0.3rem' }}>
                       {[
-                        { label: '1', value: match.odds.homeWin, bg: '#eef4ff', color: '#3b6fd4' },
-                        { label: 'X', value: match.odds.draw, bg: '#fef6e6', color: '#c67e00' },
-                        { label: '2', value: match.odds.awayWin, bg: '#edf7ee', color: '#2d8a3e' }
+                        { label: '1', value: match.odds.homeWin, bg: '#eef4ff', color: '#2b5bb8' },
+                        { label: 'X', value: match.odds.draw, bg: '#fef6e6', color: '#8a5300' },
+                        { label: '2', value: match.odds.awayWin, bg: '#edf7ee', color: '#1f6b2e' }
                       ].map(odd => (
                         <span key={odd.label} style={{ padding: '2px 8px', backgroundColor: odd.bg, borderRadius: '8px', fontSize: 'var(--fs-xs)', color: odd.color, fontWeight: '700' }}>
                           {odd.label}: {odd.value || '-'}

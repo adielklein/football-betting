@@ -62,7 +62,7 @@ export function StatusItem({ item, now, onAction, busy }) {
             {/* מקום לחיצה של 28px לפחות - קודם זה היה 17×12, קטן מהמינימום (24) */}
             <button type="button" onClick={() => setShowNames((v) => !v)} style={{
               background: 'none', border: 'none', padding: '6px 10px', margin: '0 -10px -6px', minHeight: '28px', cursor: 'pointer',
-              fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--theme-primary, #007bff)'
+              fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--theme-primary-text, #007bff)'
             }}>
               {showNames ? 'הסתר' : 'מי?'}
             </button>

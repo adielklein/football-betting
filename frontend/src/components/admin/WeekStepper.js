@@ -56,7 +56,7 @@ function WeekStepper({ status, onStep, onAction, busyKey, now = Date.now() }) {
         {STEPS.map((s, i) => {
           const st = d[s.key];
           const isCurrent = s.key === current;
-          const color = st.attention ? 'var(--warn-fg, #a15c00)' : st.done ? 'var(--good-fg, #1a6b35)' : isCurrent ? 'var(--theme-primary, #007bff)' : 'var(--text-4, #aaa)';
+          const color = st.attention ? 'var(--warn-fg, #a15c00)' : st.done ? 'var(--good-fg, #1a6b35)' : isCurrent ? 'var(--theme-primary-text, #007bff)' : 'var(--text-4, #aaa)';
           return (
             <button key={s.key} type="button" onClick={() => onStep(s.key)} style={{
               position: 'relative', padding: '8px 2px 6px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center',

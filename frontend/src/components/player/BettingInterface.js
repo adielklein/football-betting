@@ -9,6 +9,7 @@ import { showsLiveBadge } from '../../services/liveBetStatus';
 import { setUnsavedChecker } from '../../services/unsavedGuard';
 import { toast } from '../../services/toast';
 import Score from '../Score';
+import { textOn } from '../../services/readableColor';
 
 // שם קבוצה לחיץ - פותח את חלון הנתונים. התג על הלוגו מסמן שאפשר ללחוץ
 // בלי להוסיף גובה לשורה הצפופה.
@@ -372,7 +373,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
             </span>
             <span style={{
               fontSize: 'var(--fs-xs)', fontWeight: '600',
-              color: timeLeft.total < 3600000 ? 'var(--bad-fg, #dc2626)' : timeLeft.total < 86400000 ? '#d97706' : 'var(--info-fg, #2563eb)'
+              color: timeLeft.total < 3600000 ? 'var(--bad-fg, #dc2626)' : timeLeft.total < 86400000 ? 'var(--warn-fg, #92400e)' : 'var(--info-fg, #2563eb)'
             }}>
               נסגר בעוד
             </span>
@@ -443,7 +444,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   <span style={{
                     padding: '2px 8px',
                     backgroundColor: getLeagueColor(match),
-                    color: 'white',
+                    color: textOn(getLeagueColor(match)),
                     borderRadius: '6px',
                     fontSize: 'var(--fs-xs)',
                     fontWeight: '700',
@@ -471,9 +472,9 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   marginBottom: '0.4rem'
                 }}>
                   {[
-                    { label: '1', value: match.odds.homeWin, bg: '#eef4ff', color: '#3b6fd4' },
-                    { label: 'X', value: match.odds.draw, bg: '#fef6e6', color: '#c67e00' },
-                    { label: '2', value: match.odds.awayWin, bg: '#edf7ee', color: '#2d8a3e' }
+                    { label: '1', value: match.odds.homeWin, bg: '#eef4ff', color: '#2b5bb8' },
+                    { label: 'X', value: match.odds.draw, bg: '#fef6e6', color: '#8a5300' },
+                    { label: '2', value: match.odds.awayWin, bg: '#edf7ee', color: '#1f6b2e' }
                   ].map(odd => (
                     <span key={odd.label} style={{
                       padding: '2px 10px',

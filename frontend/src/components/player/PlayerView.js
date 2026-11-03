@@ -250,7 +250,7 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
                   border: 'none',
                   borderRadius: '11px',
                   backgroundColor: isActive ? 'var(--surface, #fff)' : 'transparent',
-                  color: isActive ? 'var(--theme-primary, #007bff)' : 'var(--text-3, #888)',
+                  color: isActive ? 'var(--theme-primary-text, #007bff)' : 'var(--text-3, #888)',
                   fontWeight: isActive ? '700' : '500',
                   fontSize: 'var(--fs-xs)',
                   cursor: 'pointer',

@@ -61,7 +61,7 @@ const WeeklyBarChart = ({ weeks, activeIndex, onSelect }) => {
                   <div style={{
                     height: '15px', textAlign: 'center',
                     fontSize: 'var(--fs-xs)', fontWeight: '700',
-                    color: isActive ? 'var(--theme-primary, #007bff)' : 'var(--text-4, #aaa)'
+                    color: isActive ? 'var(--theme-primary-text, #007bff)' : 'var(--text-4, #aaa)'
                   }}>
                     {pts(score)}
                   </div>
@@ -122,7 +122,7 @@ const WeeklyBarChart = ({ weeks, activeIndex, onSelect }) => {
           }}>
             {active.weekName}
           </span>
-          <span style={{ fontSize: 'var(--fs-sm)', fontWeight: '800', color: 'var(--theme-primary, #007bff)' }}>
+          <span style={{ fontSize: 'var(--fs-sm)', fontWeight: '800', color: 'var(--theme-primary-text, #007bff)' }}>
             {pts(active.weeklyScore)} נק׳
           </span>
           <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', fontWeight: '500' }}>
@@ -177,7 +177,7 @@ const CumulativeChart = ({ weeks, activeIndex, onSelect }) => {
           return (
             <g key={i}>
               <line x1="8" y1={y} x2={chartWidth - axisPad + 6} y2={y} stroke="#f0f2f5" strokeWidth="1" />
-              <text x={chartWidth - axisPad + 10} y={y + 3} fontSize="12" fill="#bbb" textAnchor="start">
+              <text x={chartWidth - axisPad + 10} y={y + 3} fontSize="12" fill="var(--text-4, #656c77)" textAnchor="start">
                 {pts(maxTotal * pct)}
               </text>
             </g>
@@ -261,7 +261,7 @@ const BettingTwins = ({ data }) => {
           </div>
         </div>
         <div style={{ textAlign: 'center', flexShrink: 0 }}>
-          <div style={{ fontSize: 'var(--fs-xl)', fontWeight: '800', color: 'var(--theme-primary, #007bff)', lineHeight: 1.1 }}>
+          <div style={{ fontSize: 'var(--fs-xl)', fontWeight: '800', color: 'var(--theme-primary-text, #007bff)', lineHeight: 1.1 }}>
             {twin.sameRate}%
           </div>
           <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', fontWeight: '600' }}>זהים</div>
@@ -538,7 +538,7 @@ function PlayerStats({ user }) {
             <button key={s.key} onClick={() => setActiveSection(s.key)} style={{
               padding: '0.4rem', border: 'none', borderRadius: '10px',
               background: isActive ? 'var(--surface, #fff)' : 'transparent',
-              color: isActive ? 'var(--theme-primary, #007bff)' : 'var(--text-3, #888)',
+              color: isActive ? 'var(--theme-primary-text, #007bff)' : 'var(--text-3, #888)',
               fontWeight: isActive ? '700' : '500', fontSize: 'var(--fs-xs)',
               cursor: 'pointer', display: 'flex', flexDirection: 'column',
               alignItems: 'center', gap: '1px',
@@ -590,7 +590,7 @@ function PlayerStats({ user }) {
                 background: 'var(--warn-bg, #fefce8)',
                 borderRadius: '12px'
               }}>
-                <div style={{ fontSize: 'var(--fs-xl)', fontWeight: '800', color: '#ca8a04' }}>{currentHitStreak}</div>
+                <div style={{ fontSize: 'var(--fs-xl)', fontWeight: '800', color: 'var(--warn-fg, #8a5d00)' }}>{currentHitStreak}</div>
                 <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--warn-fg, #854d0e)', fontWeight: '600' }}>רצף נוכחי</div>
               </div>
             </div>
@@ -607,9 +607,9 @@ function PlayerStats({ user }) {
           <Card title="התפלגות ניחושים" icon="🎲">
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
               {[
-                { key: 'home', label: '1 ניצחון בית', color: '#3b82f6', bg: '#eff6ff' },
-                { key: 'draw', label: 'X תיקו', color: '#8b5cf6', bg: '#f5f3ff' },
-                { key: 'away', label: '2 ניצחון חוץ', color: '#ef4444', bg: '#fef2f2' },
+                { key: 'home', label: '1 ניצחון בית', color: 'var(--info-fg, #1d4ed8)', bg: 'var(--info-bg, #eff6ff)' },
+                { key: 'draw', label: 'X תיקו', color: 'var(--warn-fg, #92400e)', bg: 'var(--warn-bg, #fffbeb)' },
+                { key: 'away', label: '2 ניצחון חוץ', color: 'var(--bad-fg, #b91c1c)', bg: 'var(--bad-bg, #fef2f2)' },
               ].map(item => {
                 const total = predictionDistribution.home + predictionDistribution.draw + predictionDistribution.away;
                 const pct = total > 0 ? Math.round((predictionDistribution[item.key] / total) * 100) : 0;
@@ -687,7 +687,7 @@ function PlayerStats({ user }) {
                     </span>
                     <span style={{
                       fontSize: 'var(--fs-sm)', fontWeight: '800',
-                      color: week.weeklyScore > 0 ? 'var(--theme-primary, #007bff)' : 'var(--text-4, #ccc)'
+                      color: week.weeklyScore > 0 ? 'var(--theme-primary-text, #007bff)' : 'var(--text-4, #ccc)'
                     }}>
                       {pts(week.weeklyScore)} נק׳
                     </span>

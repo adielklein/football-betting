@@ -345,7 +345,7 @@ function PushManagement() {
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
               padding: '0.4rem 0.1rem', border: 'none', borderRadius: '10px',
               backgroundColor: isActive ? 'var(--surface, #fff)' : 'transparent',
-              color: isActive ? 'var(--theme-primary, #007bff)' : 'var(--text-3, #888)',
+              color: isActive ? 'var(--theme-primary-text, #007bff)' : 'var(--text-3, #888)',
               fontWeight: isActive ? '700' : '500', fontSize: 'var(--fs-xs)',
               cursor: 'pointer', transition: 'all 0.2s ease',
               boxShadow: isActive ? '0 2px 6px rgba(0,0,0,0.1)' : 'none',

@@ -588,8 +588,12 @@ export const applyTheme = (user) => {
   // צבע המותג כטקסט. צבעי מותג לא נבחרו כדי להיות קריאים על רקע כהה -
   // ברצלונה היא ארגמן כהה שנותן ניגודיות 1.75 על המשטח הכהה, כלומר
   // כותרות שכמעט נעלמות. הגוון נשמר, רק הבהירות מותאמת עד שהוא קריא.
-  const surface = dark ? token('--surface', '#1b1f26') : theme.colors.background;
-  root.style.setProperty('--theme-primary-text', readableOn(theme.colors.primary, surface));
+  // נבדק מול המשטח הקשה ביותר: במצב כהה ‎--surface-3‎ (הבהיר מבין
+  // המשטחים הכהים), ובמצב בהיר גם מול האפור של פסי הלשוניות.
+  const primaryText = dark
+    ? readableOn(theme.colors.primary, token('--surface-3', '#2b313b'))
+    : readableOn(readableOn(theme.colors.primary, theme.colors.background), '#f0f2f5');
+  root.style.setProperty('--theme-primary-text', primaryText);
   
   // 🍎 הוסף קלאס iOS לbody אם צריך
   if (isIOSDevice) {

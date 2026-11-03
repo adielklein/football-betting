@@ -86,7 +86,7 @@ function ProviderCard({ p, now }) {
       {p.recent.length > 0 && (
         <button type="button" onClick={() => setShowRecent((v) => !v)} style={{
           marginTop: '6px', background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-          fontSize: 'var(--fs-xs)', color: 'var(--theme-primary, #007bff)'
+          fontSize: 'var(--fs-xs)', color: 'var(--theme-primary-text, #007bff)'
         }}>
           {showRecent ? '▲ הסתר קריאות אחרונות' : `▼ ${p.recent.length} קריאות אחרונות`}
         </button>

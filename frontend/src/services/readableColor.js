@@ -97,3 +97,10 @@ export const readableOn = (color, background, target = 4.5) => {
 };
 
 export default readableOn;
+
+/**
+ * צבע טקסט (לבן או כמעט-שחור) לתגית שהרקע שלה הוא הצבע הנתון - למשל צבע
+ * ליגה. בוחר את מה שנותן ניגודיות גבוהה יותר.
+ */
+export const textOn = (background) =>
+  (contrast('#ffffff', background) >= contrast('#1a1a1a', background) ? '#ffffff' : '#1a1a1a');

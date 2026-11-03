@@ -8,6 +8,7 @@ import GroupedPicker from '../GroupedPicker';
 import { leaguePickerGroups } from '../../utils/leagueGroups';
 import { toast } from '../../services/toast';
 import Score from '../Score';
+import { textOn } from '../../services/readableColor';
 import WeekStepper from './WeekStepper';
 import { fetchWeekStatus, syncResults, recalcSilently, nudgePending } from '../../services/weekActions';
 
@@ -1056,7 +1057,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
               <button 
                 onClick={() => setEditingWeek(editingWeek === selectedWeek._id ? null : selectedWeek._id)} 
                 className="btn"
-                style={{ backgroundColor: '#17a2b8', color: 'white' }}
+                style={{ backgroundColor: '#0e7490', color: 'white' }}
               >
                 ✏️ ערוך שם
               </button>
@@ -1396,7 +1397,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                         style={{
                           padding: '2px 8px',
                           backgroundColor: match.leagueId?.color || match.color || '#6c757d',
-                          color: 'white',
+                          color: textOn(match.leagueId?.color || match.color || '#6c757d'),
                           borderRadius: '4px',
                           fontSize: 'var(--fs-xs)',
                           fontWeight: 'bold'
@@ -1431,8 +1432,8 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                       {match.odds && (match.odds.homeWin || match.odds.draw || match.odds.awayWin) && (
                         <span style={{ 
                           fontSize: 'var(--fs-xs)', 
-                          color: '#fff',
-                          backgroundColor: '#ff9800',
+                          color: '#5c3300',
+                          backgroundColor: '#ffd08a',
                           padding: '2px 6px',
                           borderRadius: '4px',
                           fontWeight: 'bold'
@@ -1461,7 +1462,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                             style={{ 
                               fontSize: 'var(--fs-xs)', 
                               padding: '4px 8px',
-                              backgroundColor: '#17a2b8',
+                              backgroundColor: '#0e7490',
                               color: 'white'
                             }}
                             title="ערוך פרטי משחק"
@@ -1503,9 +1504,9 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                       padding: '1rem', 
                       backgroundColor: 'var(--surface, #fff)', 
                       borderRadius: '4px',
-                      border: '2px solid #17a2b8'
+                      border: '2px solid #0e7490'
                     }}>
-                      <h4 style={{ marginBottom: '1rem', color: '#17a2b8' }}>
+                      <h4 style={{ marginBottom: '1rem', color: 'var(--info-fg, #0e7490)' }}>
                         ✏️ עריכת פרטי משחק
                       </h4>
                       

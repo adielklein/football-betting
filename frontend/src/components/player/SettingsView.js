@@ -56,7 +56,7 @@ function SettingsView({ user, onThemeChange, onProfileChange }) {
                 border: 'none',
                 borderRadius: '11px',
                 backgroundColor: active ? 'var(--surface, #fff)' : 'transparent',
-                color: active ? 'var(--theme-primary, #007bff)' : 'var(--text-3, #888)',
+                color: active ? 'var(--theme-primary-text, #007bff)' : 'var(--text-3, #888)',
                 fontWeight: active ? '700' : '500',
                 fontSize: 'var(--fs-sm)',
                 cursor: 'pointer',
