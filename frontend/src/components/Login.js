@@ -5,10 +5,11 @@ import { play, reducedMotion } from '../services/motion';
 import { createGoalScene } from './goalScene';
 
 function Login({ onLogin, notice = null }) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [usernameState, setUsername] = useState('');
+  const [passwordState, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [success, setSuccess] = useState(false);
   const cardRef = useRef(null);
 
   // שגיאה: הכרטיס רועד והטלפון רוטט פעמיים - מורגש עוד לפני שקוראים את ההודעה
@@ -48,6 +49,11 @@ function Login({ onLogin, notice = null }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // ערכים שהדפדפן מילא לבד (סיסמה שמורה) לא תמיד מגיעים ל-state - בחלק
+    // מהדפדפנים אין אירוע שינוי עד שנוגעים בדף. לכן קוראים מהשדות עצמם
+    const form = e.currentTarget;
+    const username = (form.elements.username?.value ?? '').trim() || usernameState;
+    const password = form.elements.password?.value || passwordState;
     if (!username || !password) {
       fail('יש למלא שם משתמש וסיסמה');
       return;
@@ -66,12 +72,15 @@ function Login({ onLogin, notice = null }) {
       const data = await response.json();
 
       if (response.ok) {
-        if (data.user.theme) {
-          applyTheme(data.user);
-          setTimeout(() => { onLogin(data.user); }, 200);
-        } else {
-          onLogin(data.user);
-        }
+        // הצלחה: הכפתור הופך ל-✓, הכרטיס נעלם, ורק אז נכנסים. פחות משנייה
+        if (data.user.theme) applyTheme(data.user);
+        if (reducedMotion()) { onLogin(data.user); return; }
+        setSuccess(true);
+        sceneRef.current && sceneRef.current.skip();
+        setTimeout(() => play(cardRef.current, [
+          { opacity: 1, transform: 'translateY(0) scale(1)' }, { opacity: 0, transform: 'translateY(12px) scale(.94)' }
+        ], { duration: 300, easing: 'ease-in', fill: 'forwards', composite: 'add' }), 480);
+        setTimeout(() => onLogin(data.user), 780);
       } else {
         fail(data.message || 'שם משתמש או סיסמה שגויים');
       }
@@ -172,7 +181,8 @@ function Login({ onLogin, notice = null }) {
                 ושם משתמש צריך להגיע בדיוק כמו שהוקלד */}
             <input
               type="text"
-              value={username}
+              name="username"
+              value={usernameState}
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
               autoCapitalize="none"
@@ -202,7 +212,8 @@ function Login({ onLogin, notice = null }) {
             </label>
             <input
               type="password"
-              value={password}
+              name="password"
+              value={passwordState}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
               className="input"
@@ -222,24 +233,34 @@ function Login({ onLogin, notice = null }) {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || success}
+            aria-label={success ? 'מחובר' : undefined}
             style={{
-              width: '100%',
-              padding: '0.8rem',
+              display: 'grid',
+              placeItems: 'center',
+              width: success ? '52px' : '100%',
+              height: '52px',
+              margin: '0 auto',
               fontSize: 'var(--fs-md)',
               fontWeight: '700',
-              background: loading ? '#ccc' : 'linear-gradient(135deg, var(--theme-primary, #007bff), var(--theme-secondary, #6c757d))',
+              background: success
+                ? '#15803d'
+                : (loading ? '#9aa3af' : 'linear-gradient(135deg, var(--theme-primary, #007bff), var(--theme-secondary, #6c757d))'),
               color: 'white',
               border: 'none',
-              borderRadius: '12px',
+              borderRadius: success ? '50%' : '14px',
               cursor: loading ? 'wait' : 'pointer',
               boxShadow: loading ? 'none' : '0 4px 16px rgba(0,0,0,0.15)',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              transition: 'width .35s cubic-bezier(.4,0,.2,1), border-radius .35s, background .3s',
               WebkitAppearance: 'none',
               touchAction: 'manipulation'
             }}
           >
-            {loading ? (
+            {success ? (
+              <svg width="24" height="24" viewBox="0 0 14 14" aria-hidden="true" className="draw-check">
+                <path d="M2 7.5 L5.5 11 L12 3.5" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            ) : loading ? (
               <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                 <span style={{
                   width: '18px', height: '18px',

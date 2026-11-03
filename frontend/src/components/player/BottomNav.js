@@ -13,8 +13,15 @@ const NAV_HEIGHT = 60;
 
 // שדה קלט בפוקוס = המקלדת פתוחה. באנדרואיד הסרגל היה נדחף מעל המקלדת
 // ומסתיר את המשחק שמקלידים בו, ובאייפון הוא קופץ באמצע המסך. מסתירים.
+// רק שדות שפותחים מקלדת. רשימה נפתחת (בחירת חודש/שבוע) נשארת בפוקוס
+// באייפון אחרי הבחירה, וכשהיא נספרה כאן הסרגל נעלם וחזר בלחיצה הבאה -
+// וזה נראה כמו סרגל שקופץ
+const TYPING_INPUTS = new Set(['text', 'search', 'email', 'password', 'tel', 'url', 'number']);
 const isTypingTarget = (el) =>
-  !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable);
+  !!el && (
+    (el.tagName === 'INPUT' && TYPING_INPUTS.has((el.type || 'text').toLowerCase())) ||
+    el.tagName === 'TEXTAREA' || el.isContentEditable
+  );
 
 function BottomNav({ tabs, activeTab, onSelect }) {
   const [typing, setTyping] = useState(false);

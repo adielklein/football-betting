@@ -851,6 +851,9 @@ tr:hover {
   background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.6) 50%, transparent 70%);
   transform: translateX(120%); animation: rowShine 1s .25s ease-out forwards; }
 @keyframes navBounce { 0% { transform: translateY(0); } 40% { transform: translateY(-5px) scale(1.12); } 100% { transform: translateY(0); } }
+/* כניסה לאפליקציה אחרי התחברות: שקיפות בלבד. transform על עטיפה היה
+   הופך את סרגל הניווט (position: fixed) ליחסי אליה, והוא היה קופץ */
+@keyframes appEnter { from { opacity: 0; } to { opacity: 1; } }
 @keyframes doneIn { 0% { opacity: 0; transform: scale(.9); } 60% { transform: scale(1.04); } 100% { opacity: 1; transform: scale(1); } }
 
 @media (prefers-reduced-motion: reduce) {

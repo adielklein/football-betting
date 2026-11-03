@@ -192,6 +192,9 @@ function App() {
     });
   };
 
+  // אנימציית כניסה עדינה לאפליקציה, רק ברגע ההתחברות (לא בכל פתיחה)
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
+
   const handleLogin = (loggedIn) => {
     // הטוקן נשמר בנפרד מהמשתמש - ראו services/authSession
     const { token, ...user } = loggedIn;
@@ -207,6 +210,7 @@ function App() {
     }
     
     setCurrentUser(user);
+    setJustLoggedIn(true);
     localStorage.setItem('football_betting_user', JSON.stringify(user));
     
     // 🎨 החל ערכת נושא מיד אחרי התחברות
@@ -289,7 +293,7 @@ function App() {
     <HashRouter>
       {/* רשת ביטחון אחרונה: גם תקלה מחוץ ללשוניות (כותרת, ניווט) לא תשאיר דף לבן */}
       <ErrorBoundary name="app" fullScreen>
-      <div className="App">
+      <div className="App" style={justLoggedIn ? { animation: 'appEnter .45s ease-out both' } : undefined}>
       {!currentUser ? (
         <Login onLogin={handleLogin} notice={loginNotice} />
       ) : currentUser.role === 'admin' ? (
