@@ -102,7 +102,7 @@ function ScoreAudit() {
   return (
     <div style={cardStyle}>
       <h3 style={{ marginTop: 0 }}>🧮 בדיקת ניקוד</h3>
-      <p style={{ fontSize: '12px', color: 'var(--text-3, #777)', margin: '0 0 0.6rem' }}>
+      <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #777)', margin: '0 0 0.6rem' }}>
         כל הימור בחודש מחושב מחדש ומושווה לניקוד השמור, יחד עם ניקוד השבוע שהטבלה מציגה. לא משנה כלום.
       </p>
 
@@ -121,14 +121,14 @@ function ScoreAudit() {
         <div style={{ marginTop: '0.75rem' }}>
           {/* שורת סיכום */}
           <div style={{
-            padding: '8px 10px', borderRadius: '10px', fontSize: '13px', fontWeight: 700,
+            padding: '8px 10px', borderRadius: '10px', fontSize: 'var(--fs-sm)', fontWeight: 700,
             background: report.summary.errors ? SEVERITY.error.bg : 'var(--good-bg, #e8f6ec)',
             color: report.summary.errors ? SEVERITY.error.fg : 'var(--good-fg, #1a6b35)'
           }}>
             {report.summary.errors === 0
               ? `✅ הניקוד תקין - ${report.summary.betsChecked} הימורים ב-${report.summary.weeks} שבועות נבדקו`
               : `❌ נמצאו ${report.summary.errors} שגיאות ב-${report.summary.betsChecked} הימורים`}
-            <div style={{ fontSize: '11px', fontWeight: 500, marginTop: '2px' }}>
+            <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 500, marginTop: '2px' }}>
               {report.summary.matchesWithResult}/{report.summary.matches} משחקים עם תוצאה
               {report.summary.warnings ? ` · ${report.summary.warnings} אזהרות` : ''}
               {report.summary.notes ? ` · ${report.summary.notes} לידיעה` : ''}
@@ -138,13 +138,13 @@ function ScoreAudit() {
           {/* שבועות */}
           <div style={{ marginTop: '0.6rem' }}>
             {report.weeks.map((w) => (
-              <div key={w.weekId} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 2px', borderBottom: '1px solid var(--border, #f0f0f0)', fontSize: '12px' }}>
+              <div key={w.weekId} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 2px', borderBottom: '1px solid var(--border, #f0f0f0)', fontSize: 'var(--fs-xs)' }}>
                 <span>{w.needsRecalc ? '⚠️' : '✅'}</span>
                 <span style={{ flex: 1, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{w.name}</span>
                 <span style={{ color: 'var(--text-4, #999)' }}>{w.withResult}/{w.matches} תוצאות · {w.bets} הימורים</span>
                 {w.needsRecalc && (
                   <button type="button" className="btn btn-secondary" onClick={() => recalc(w)} disabled={!!recalcing}
-                    style={{ margin: 0, padding: '3px 8px', fontSize: '11px' }}>
+                    style={{ margin: 0, padding: '3px 8px', fontSize: 'var(--fs-xs)' }}>
                     {recalcing === w.weekId ? 'מחשב…' : 'חשב מחדש'}
                   </button>
                 )}
@@ -155,12 +155,12 @@ function ScoreAudit() {
           {/* ממצאים */}
           {['error', 'warn', 'info'].map((sev) => grouped[sev].length > 0 && (
             <div key={sev} style={{ marginTop: '0.7rem' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: SEVERITY[sev].fg, marginBottom: '4px' }}>
+              <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: SEVERITY[sev].fg, marginBottom: '4px' }}>
                 {SEVERITY[sev].icon} {SEVERITY[sev].title} ({grouped[sev].length})
               </div>
               {grouped[sev].map((i, n) => (
-                <div key={n} style={{ padding: '6px 8px', borderRadius: '8px', background: SEVERITY[sev].bg, marginBottom: '4px', fontSize: '12px' }}>
-                  <div style={{ color: 'var(--text-3, #777)', fontSize: '11px' }}>
+                <div key={n} style={{ padding: '6px 8px', borderRadius: '8px', background: SEVERITY[sev].bg, marginBottom: '4px', fontSize: 'var(--fs-xs)' }}>
+                  <div style={{ color: 'var(--text-3, #777)', fontSize: 'var(--fs-xs)' }}>
                     {[i.weekName, i.match, i.user].filter(Boolean).join(' · ')}
                   </div>
                   <div style={{ color: 'var(--text-2, #444)' }}>{i.message}</div>
@@ -172,8 +172,8 @@ function ScoreAudit() {
           {/* שחקנים */}
           {report.players.length > 0 && (
             <div style={{ marginTop: '0.8rem' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '4px' }}>ניקוד החודש לפי שחקן</div>
-              <div style={{ display: 'flex', fontSize: '10px', color: 'var(--text-4, #999)', padding: '0 2px 3px', gap: '6px' }}>
+              <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, marginBottom: '4px' }}>ניקוד החודש לפי שחקן</div>
+              <div style={{ display: 'flex', fontSize: 'var(--fs-xs)', color: 'var(--text-4, #999)', padding: '0 2px 3px', gap: '6px' }}>
                 <span style={{ flex: 1 }}>שחקן</span>
                 <span style={{ width: '64px', textAlign: 'center' }}>בול / כיוון</span>
                 <span style={{ width: '58px', textAlign: 'left' }}>נקודות</span>
@@ -181,17 +181,17 @@ function ScoreAudit() {
               {report.players.map((p) => {
                 const off = Math.abs(p.expectedPoints - p.storedPoints) > 0.05;
                 return (
-                  <div key={p.userId} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 2px', borderTop: '1px solid var(--border, #f0f0f0)', fontSize: '12px', opacity: p.admin ? 0.6 : 1 }}>
+                  <div key={p.userId} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 2px', borderTop: '1px solid var(--border, #f0f0f0)', fontSize: 'var(--fs-xs)', opacity: p.admin ? 0.6 : 1 }}>
                     <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {p.name}
-                      {p.admin && <span style={{ fontSize: '10px', color: 'var(--text-4, #999)' }}> · אדמין</span>}
-                      {p.excluded && <span style={{ fontSize: '10px', color: 'var(--text-4, #999)' }}> · מוחרג</span>}
+                      {p.admin && <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #999)' }}> · אדמין</span>}
+                      {p.excluded && <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #999)' }}> · מוחרג</span>}
                     </span>
                     <span style={{ width: '64px', textAlign: 'center', color: 'var(--text-3, #777)' }}>{p.exact} / {p.direction}</span>
                     <span style={{ width: '58px', textAlign: 'left', fontWeight: 700, color: off ? SEVERITY.error.fg : 'var(--text, #333)' }}
                       title={off ? `בטבלה: ${p.storedPoints}` : undefined}>
                       {p.expectedPoints}
-                      {off && <span style={{ display: 'block', fontSize: '10px', fontWeight: 500, textDecoration: 'line-through' }}>{p.storedPoints}</span>}
+                      {off && <span style={{ display: 'block', fontSize: 'var(--fs-xs)', fontWeight: 500, textDecoration: 'line-through' }}>{p.storedPoints}</span>}
                     </span>
                   </div>
                 );

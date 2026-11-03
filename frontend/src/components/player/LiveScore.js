@@ -58,7 +58,7 @@ function LiveScore({ live, prediction, result, compact = false }) {
         backgroundColor: tone.bg,
         border: `1px solid ${tone.border}`,
         color: tone.fg,
-        fontSize: compact ? '10px' : '11px',
+        fontSize: compact ? 'var(--fs-xs)' : 'var(--fs-xs)',
         fontWeight: 700,
         whiteSpace: 'nowrap'
       }}

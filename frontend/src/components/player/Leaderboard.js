@@ -285,7 +285,7 @@ function Leaderboard({ leaderboard, user }) {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, flex: 1 }}>
           <span style={{
-            fontSize: isTop3 ? '20px' : '13px',
+            fontSize: isTop3 ? 'var(--fs-lg)' : 'var(--fs-sm)',
             fontWeight: '800',
             minWidth: '28px',
             textAlign: 'center',
@@ -295,7 +295,7 @@ function Leaderboard({ leaderboard, user }) {
           </span>
           <span style={{
             fontWeight: isMe ? '700' : '500',
-            fontSize: '14px',
+            fontSize: 'var(--fs-sm)',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
@@ -303,13 +303,13 @@ function Leaderboard({ leaderboard, user }) {
           }}>
             {player.name}
             {isMe && (
-              <span style={{ color: rowFg, opacity: 0.75, fontSize: '10px', marginRight: '3px', fontWeight: '600' }}> (אתה)</span>
+              <span style={{ color: rowFg, opacity: 0.75, fontSize: 'var(--fs-xs)', marginRight: '3px', fontWeight: '600' }}> (אתה)</span>
             )}
           </span>
         </div>
         <span style={{
           fontWeight: '800',
-          fontSize: isTop3 ? '18px' : '15px',
+          fontSize: isTop3 ? 'var(--fs-lg)' : 'var(--fs-md)',
           color: rowFg,
           flexShrink: 0,
           background: isTop3 ? 'var(--overlay, rgba(255,255,255,0.72))' : 'var(--surface-3, #f5f5f5)',
@@ -361,7 +361,7 @@ function Leaderboard({ leaderboard, user }) {
                 backgroundColor: isActive ? 'var(--surface, #fff)' : 'transparent',
                 color: isActive ? 'var(--theme-primary, #007bff)' : 'var(--text-3, #888)',
                 fontWeight: isActive ? '700' : '500',
-                fontSize: '13px',
+                fontSize: 'var(--fs-sm)',
                 cursor: 'pointer',
                 transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                 WebkitAppearance: 'none',
@@ -374,7 +374,7 @@ function Leaderboard({ leaderboard, user }) {
                 lineHeight: 1.2
               }}
             >
-              <span style={{ fontSize: '16px', lineHeight: 1 }}>{tab.icon}</span>
+              <span style={{ fontSize: 'var(--fs-md)', lineHeight: 1 }}>{tab.icon}</span>
               <span>{tab.label}</span>
             </button>
           );
@@ -393,7 +393,7 @@ function Leaderboard({ leaderboard, user }) {
             value={selectedSeason}
             onChange={(e) => setSelectedSeason(e.target.value)}
             className="input"
-            style={{ width: '100%', fontSize: '13px', padding: '0.45rem', borderRadius: '10px' }}
+            style={{ width: '100%', fontSize: 'var(--fs-sm)', padding: '0.45rem', borderRadius: '10px' }}
           >
             {seasons.map(season => (
               <option key={season.value} value={season.value}>{season.label}</option>
@@ -403,7 +403,7 @@ function Leaderboard({ leaderboard, user }) {
             value={selectedMonth}
             onChange={(e) => { setSelectedMonth(parseInt(e.target.value)); setSelectedWeekId(''); }}
             className="input"
-            style={{ width: '100%', fontSize: '13px', padding: '0.45rem', borderRadius: '10px' }}
+            style={{ width: '100%', fontSize: 'var(--fs-sm)', padding: '0.45rem', borderRadius: '10px' }}
           >
             {months.map(month => (
               <option key={month.value} value={month.value}>{month.label}</option>
@@ -419,7 +419,7 @@ function Leaderboard({ leaderboard, user }) {
             value={selectedSeason}
             onChange={(e) => setSelectedSeason(e.target.value)}
             className="input"
-            style={{ width: '100%', fontSize: '13px', padding: '0.45rem', borderRadius: '10px' }}
+            style={{ width: '100%', fontSize: 'var(--fs-sm)', padding: '0.45rem', borderRadius: '10px' }}
           >
             {seasons.map(season => (
               <option key={season.value} value={season.value}>{season.label}</option>
@@ -436,7 +436,7 @@ function Leaderboard({ leaderboard, user }) {
             borderRadius: '50%', animation: 'spin 0.8s linear infinite',
             margin: '0 auto 0.5rem'
           }}></div>
-          <span style={{ fontSize: '13px' }}>טוען נתונים...</span>
+          <span style={{ fontSize: 'var(--fs-sm)' }}>טוען נתונים...</span>
         </div>
       )}
 
@@ -444,7 +444,7 @@ function Leaderboard({ leaderboard, user }) {
         {/* דירוג חודשי */}
         {activeTab === 'monthly' && (
           <div className="card">
-            <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
+            <h2 style={{ fontSize: 'var(--fs-md)', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
               🏅 דירוג {months.find(m => m.value === selectedMonth)?.label}
             </h2>
             {!loading && monthlyScores.length > 0 && (
@@ -455,7 +455,7 @@ function Leaderboard({ leaderboard, user }) {
               </div>
             )}
             {monthlyScores.length === 0 && !loading && (
-              <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1.5rem', fontSize: '14px' }}>
+              <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1.5rem', fontSize: 'var(--fs-sm)' }}>
                 אין נתונים לחודש {months.find(m => m.value === selectedMonth)?.label}
               </div>
             )}
@@ -471,12 +471,12 @@ function Leaderboard({ leaderboard, user }) {
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   marginBottom: '0.5rem', gap: '0.5rem'
                 }}>
-                  <h2 style={{ fontSize: '0.95rem', margin: 0, flexShrink: 0, fontWeight: '700' }}>📊 פירוט שבוע</h2>
+                  <h2 style={{ fontSize: 'var(--fs-md)', margin: 0, flexShrink: 0, fontWeight: '700' }}>📊 פירוט שבוע</h2>
                   <select
                     value={selectedWeekId}
                     onChange={(e) => setSelectedWeekId(e.target.value)}
                     className="input"
-                    style={{ fontSize: '13px', padding: '0.35rem', maxWidth: '55%', borderRadius: '10px' }}
+                    style={{ fontSize: 'var(--fs-sm)', padding: '0.35rem', maxWidth: '55%', borderRadius: '10px' }}
                   >
                     {availableWeeks.map(week => (
                       <option key={week._id} value={week._id}>{week.name}</option>
@@ -492,13 +492,13 @@ function Leaderboard({ leaderboard, user }) {
                   </div>
                 )}
                 {selectedWeekScores.length === 0 && selectedWeekId && (
-                  <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '0.75rem', fontSize: '13px' }}>
+                  <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '0.75rem', fontSize: 'var(--fs-sm)' }}>
                     אין נתוני ניקוד לשבוע זה
                   </div>
                 )}
               </>
             ) : (
-              <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1.5rem', fontSize: '14px' }}>
+              <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1.5rem', fontSize: 'var(--fs-sm)' }}>
                 אין שבועות בחודש {months.find(m => m.value === selectedMonth)?.label}
               </div>
             )}
@@ -508,7 +508,7 @@ function Leaderboard({ leaderboard, user }) {
         {/* דירוג עונתי */}
         {activeTab === 'seasonal' && (
           <div className="card">
-            <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
+            <h2 style={{ fontSize: 'var(--fs-md)', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
               📅 דירוג עונתי - {seasons.find(s => s.value === selectedSeason)?.label}
             </h2>
             {!loading && seasonalScores.length > 0 && (
@@ -519,7 +519,7 @@ function Leaderboard({ leaderboard, user }) {
               </div>
             )}
             {seasonalScores.length === 0 && !loading && (
-              <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1.5rem', fontSize: '14px' }}>
+              <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1.5rem', fontSize: 'var(--fs-sm)' }}>
                 אין נתונים לעונה {seasons.find(s => s.value === selectedSeason)?.label}
               </div>
             )}
@@ -529,7 +529,7 @@ function Leaderboard({ leaderboard, user }) {
         {/* דירוג כללי */}
         {activeTab === 'general' && (
           <div className="card">
-            <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
+            <h2 style={{ fontSize: 'var(--fs-md)', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
               🏆 דירוג כללי (כל הזמנים)
             </h2>
             {leaderboard.length > 0 ? (
@@ -542,7 +542,7 @@ function Leaderboard({ leaderboard, user }) {
                 )}
               </div>
             ) : (
-              <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1.5rem', fontSize: '14px' }}>
+              <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1.5rem', fontSize: 'var(--fs-sm)' }}>
                 אין נתוני דירוג עדיין
               </div>
             )}

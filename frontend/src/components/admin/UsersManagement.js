@@ -245,7 +245,7 @@ function UsersManagement({ users, loadData, user }) {
         backgroundColor: theme.colors.primary,
         color: theme.colors.primary === '#ffffff' ? '#000' : '#fff',
         borderRadius: '20px',
-        fontSize: '12px',
+        fontSize: 'var(--fs-xs)',
         display: 'inline-flex',
         alignItems: 'center',
         gap: '4px',
@@ -263,10 +263,10 @@ function UsersManagement({ users, loadData, user }) {
             }}
           />
         ) : (
-          <span style={{ fontSize: '14px' }}>{theme.logo}</span>
+          <span style={{ fontSize: 'var(--fs-sm)' }}>{theme.logo}</span>
         )}
         {theme.logoType === 'image' && (
-          <span style={{ fontSize: '14px', display: 'none' }}>🖼️</span>
+          <span style={{ fontSize: 'var(--fs-sm)', display: 'none' }}>🖼️</span>
         )}
         {theme.name}
       </span>
@@ -274,7 +274,7 @@ function UsersManagement({ users, loadData, user }) {
   };
 
   const labelStyle = {
-    fontSize: '11px',
+    fontSize: 'var(--fs-xs)',
     color: 'var(--text-3, #888)',
     display: 'block',
     marginBottom: '3px',
@@ -283,7 +283,7 @@ function UsersManagement({ users, loadData, user }) {
 
   const inputStyle = {
     borderRadius: '10px',
-    fontSize: '13px',
+    fontSize: 'var(--fs-sm)',
     padding: '0.45rem 0.6rem'
   };
 
@@ -298,11 +298,11 @@ function UsersManagement({ users, loadData, user }) {
             cursor: 'pointer', userSelect: 'none', minHeight: '44px'
           }}
         >
-          <h2 style={{ fontSize: '0.95rem', margin: 0, fontWeight: '700' }}>
+          <h2 style={{ fontSize: 'var(--fs-md)', margin: 0, fontWeight: '700' }}>
             ➕ הוסף משתמש חדש
           </h2>
           <span style={{
-            fontSize: '18px', transition: 'transform 0.2s ease',
+            fontSize: 'var(--fs-lg)', transition: 'transform 0.2s ease',
             transform: addUserOpen ? 'rotate(180deg)' : 'rotate(0deg)'
           }}>▼</span>
         </div>
@@ -382,7 +382,7 @@ function UsersManagement({ users, loadData, user }) {
             color: 'white',
             border: 'none',
             borderRadius: '10px',
-            fontSize: '14px',
+            fontSize: 'var(--fs-sm)',
             fontWeight: '700',
             cursor: 'pointer',
             boxShadow: '0 2px 8px rgba(40,167,69,0.3)',
@@ -405,11 +405,11 @@ function UsersManagement({ users, loadData, user }) {
             cursor: 'pointer', userSelect: 'none', minHeight: '44px'
           }}
         >
-          <h2 style={{ fontSize: '0.95rem', margin: 0, fontWeight: '700' }}>
+          <h2 style={{ fontSize: 'var(--fs-md)', margin: 0, fontWeight: '700' }}>
             🚫 ניהול השתתפות חודשית
           </h2>
           <span style={{
-            fontSize: '18px', transition: 'transform 0.2s ease',
+            fontSize: 'var(--fs-lg)', transition: 'transform 0.2s ease',
             transform: exclusionsOpen ? 'rotate(180deg)' : 'rotate(0deg)'
           }}>▼</span>
         </div>
@@ -419,7 +419,7 @@ function UsersManagement({ users, loadData, user }) {
             value={exclusionMonth || ''}
             onChange={e => setExclusionMonth(parseInt(e.target.value))}
             className="input"
-            style={{ flex: 1, borderRadius: '10px', fontSize: '13px', padding: '0.45rem 0.6rem' }}
+            style={{ flex: 1, borderRadius: '10px', fontSize: 'var(--fs-sm)', padding: '0.45rem 0.6rem' }}
           >
             {months.map(m => (
               <option key={m.value} value={m.value}>{m.label}</option>
@@ -429,7 +429,7 @@ function UsersManagement({ users, loadData, user }) {
             value={exclusionSeason}
             onChange={e => setExclusionSeason(e.target.value)}
             className="input"
-            style={{ flex: 1, borderRadius: '10px', fontSize: '13px', padding: '0.45rem 0.6rem' }}
+            style={{ flex: 1, borderRadius: '10px', fontSize: 'var(--fs-sm)', padding: '0.45rem 0.6rem' }}
           >
             <option value="2024-25">2024-25</option>
             <option value="2025-26">2025-26</option>
@@ -437,7 +437,7 @@ function UsersManagement({ users, loadData, user }) {
           </select>
         </div>
         {loadingExclusions ? (
-          <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-3, #888)', fontSize: '13px' }}>טוען...</div>
+          <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-3, #888)', fontSize: 'var(--fs-sm)' }}>טוען...</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
             {users.filter(u => u.role !== 'admin').map(userItem => {
@@ -451,7 +451,7 @@ function UsersManagement({ users, loadData, user }) {
                   transition: 'all 0.2s ease'
                 }}>
                   <span style={{
-                    fontSize: '13px', fontWeight: '600',
+                    fontSize: 'var(--fs-sm)', fontWeight: '600',
                     color: isExcluded ? 'var(--bad-fg, #c53030)' : '#276749',
                     textDecoration: isExcluded ? 'line-through' : 'none'
                   }}>
@@ -480,7 +480,7 @@ function UsersManagement({ users, loadData, user }) {
             })}
           </div>
         )}
-        <div style={{ marginTop: '0.5rem', fontSize: '11px', color: 'var(--text-3, #888)', textAlign: 'center' }}>
+        <div style={{ marginTop: '0.5rem', fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', textAlign: 'center' }}>
           ירוק = משתתף | אדום = לא משתתף בחודש זה
         </div>
         </div>)}
@@ -495,18 +495,18 @@ function UsersManagement({ users, loadData, user }) {
             cursor: 'pointer', userSelect: 'none', minHeight: '44px'
           }}
         >
-          <h2 style={{ fontSize: '0.95rem', margin: 0, fontWeight: '700' }}>
+          <h2 style={{ fontSize: 'var(--fs-md)', margin: 0, fontWeight: '700' }}>
             👥 רשימת משתמשים ({users.length})
           </h2>
           <span style={{
-            fontSize: '18px', transition: 'transform 0.2s ease',
+            fontSize: 'var(--fs-lg)', transition: 'transform 0.2s ease',
             transform: userListOpen ? 'rotate(180deg)' : 'rotate(0deg)'
           }}>▼</span>
         </div>
         {!userListOpen ? null : (<div style={{ marginTop: '0.5rem' }}>
 
         {users.length === 0 ? (
-          <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '2rem', fontSize: '14px' }}>
+          <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '2rem', fontSize: 'var(--fs-sm)' }}>
             <div style={{ fontSize: '40px', marginBottom: '0.5rem' }}>👥</div>
             אין משתמשים במערכת עדיין
           </div>
@@ -527,7 +527,7 @@ function UsersManagement({ users, loadData, user }) {
                     border: '1px solid #ffe082',
                     animation: `slideUp 0.25s ease ${index * 0.03}s both`
                   }}>
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--warn-fg, #f57f17)', marginBottom: '0.4rem' }}>
+                    <div style={{ fontSize: 'var(--fs-xs)', fontWeight: '700', color: 'var(--warn-fg, #f57f17)', marginBottom: '0.4rem' }}>
                       ✏️ עריכת {userItem.name}
                     </div>
                     <div style={{
@@ -621,7 +621,7 @@ function UsersManagement({ users, loadData, user }) {
                           color: 'white',
                           border: 'none',
                           borderRadius: '8px',
-                          fontSize: '13px',
+                          fontSize: 'var(--fs-sm)',
                           fontWeight: '700',
                           cursor: 'pointer'
                         }}
@@ -637,7 +637,7 @@ function UsersManagement({ users, loadData, user }) {
                           color: 'white',
                           border: 'none',
                           borderRadius: '8px',
-                          fontSize: '13px',
+                          fontSize: 'var(--fs-sm)',
                           fontWeight: '600',
                           cursor: 'pointer'
                         }}
@@ -665,7 +665,7 @@ function UsersManagement({ users, loadData, user }) {
                 }}>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      <span style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text, #333)' }}>
+                      <span style={{ fontWeight: '600', fontSize: 'var(--fs-sm)', color: 'var(--text, #333)' }}>
                         {userItem.name}
                       </span>
                       <span style={{
@@ -673,22 +673,22 @@ function UsersManagement({ users, loadData, user }) {
                         backgroundColor: userItem.role === 'admin' ? '#dc3545' : '#28a745',
                         color: 'white',
                         borderRadius: '20px',
-                        fontSize: '10px',
+                        fontSize: 'var(--fs-xs)',
                         fontWeight: '700'
                       }}>
                         {userItem.role === 'admin' ? '👑 מנהל' : '⚽ שחקן'}
                       </span>
                       {isCurrentUser && (
-                        <span style={{ color: 'var(--info-fg, #1976d2)', fontSize: '10px', fontWeight: '600' }}>(אתה)</span>
+                        <span style={{ color: 'var(--info-fg, #1976d2)', fontSize: 'var(--fs-xs)', fontWeight: '600' }}>(אתה)</span>
                       )}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '2px', flexWrap: 'wrap' }}>
-                      <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--text-3, #888)' }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)' }}>
                         @{userItem.username}
                       </span>
                       <ThemeDisplay themeName={userItem.theme || 'default'} />
                       {userItem.nameLocked && (
-                        <span title="השם נעול לשינוי על ידי המשתמש" style={{ fontSize: '11px' }}>🔒</span>
+                        <span title="השם נעול לשינוי על ידי המשתמש" style={{ fontSize: 'var(--fs-xs)' }}>🔒</span>
                       )}
                     </div>
 
@@ -699,7 +699,7 @@ function UsersManagement({ users, loadData, user }) {
                         borderRadius: '8px',
                         background: 'var(--warn-bg, #fff3cd)',
                         color: 'var(--warn-fg, #9a7b3f)',
-                        fontSize: '12px',
+                        fontSize: 'var(--fs-xs)',
                         fontFamily: 'monospace',
                         display: 'flex',
                         alignItems: 'center',
@@ -713,7 +713,7 @@ function UsersManagement({ users, loadData, user }) {
                             return next;
                           })}
                           className="btn"
-                          style={{ background: 'transparent', padding: '0 0.2rem', fontSize: '12px' }}
+                          style={{ background: 'transparent', padding: '0 0.2rem', fontSize: 'var(--fs-xs)' }}
                         >
                           ✖
                         </button>
@@ -732,7 +732,7 @@ function UsersManagement({ users, loadData, user }) {
                         color: 'white',
                         border: 'none',
                         borderRadius: '8px',
-                        fontSize: '11px',
+                        fontSize: 'var(--fs-xs)',
                         fontWeight: '700',
                         cursor: 'pointer'
                       }}
@@ -747,7 +747,7 @@ function UsersManagement({ users, loadData, user }) {
                         color: 'white',
                         border: 'none',
                         borderRadius: '8px',
-                        fontSize: '11px',
+                        fontSize: 'var(--fs-xs)',
                         fontWeight: '700',
                         cursor: 'pointer'
                       }}
@@ -763,7 +763,7 @@ function UsersManagement({ users, loadData, user }) {
                           color: 'white',
                           border: 'none',
                           borderRadius: '8px',
-                          fontSize: '11px',
+                          fontSize: 'var(--fs-xs)',
                           fontWeight: '700',
                           cursor: 'pointer'
                         }}

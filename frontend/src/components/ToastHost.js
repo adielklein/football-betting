@@ -56,7 +56,7 @@ function ToastHost() {
               borderRadius: '12px',
               background: style.bg,
               color: '#ffffff',
-              fontSize: '14px',
+              fontSize: 'var(--fs-sm)',
               fontWeight: 600,
               lineHeight: 1.4,
               boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
@@ -74,7 +74,7 @@ function ToastHost() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '12px',
+                fontSize: 'var(--fs-xs)',
                 fontWeight: 700
               }}
             >

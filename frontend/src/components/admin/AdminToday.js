@@ -77,20 +77,20 @@ function AdminToday() {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.6rem' }}>
         <h2 style={{ margin: 0, flex: 1 }}>היום</h2>
-        {data && <span style={{ fontSize: '11px', color: 'var(--text-4, #999)' }}>עודכן {new Date(data.generatedAt).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}</span>}
+        {data && <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #999)' }}>עודכן {new Date(data.generatedAt).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}</span>}
         <button type="button" className="btn btn-secondary" onClick={load} title="רענן" style={{ margin: 0, padding: '4px 10px' }}>🔄</button>
       </div>
 
       {error && (
-        <div className="card" style={{ color: 'var(--bad-fg, #b3261e)', fontSize: '13px' }}>לא הצלחתי לטעון: {error}</div>
+        <div className="card" style={{ color: 'var(--bad-fg, #b3261e)', fontSize: 'var(--fs-sm)' }}>לא הצלחתי לטעון: {error}</div>
       )}
 
-      {!data && !error && <div className="card" style={{ fontSize: '13px', color: 'var(--text-3, #777)' }}>טוען…</div>}
+      {!data && !error && <div className="card" style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-3, #777)' }}>טוען…</div>}
 
       {data && (
         <>
           <div style={{
-            padding: '10px 12px', borderRadius: '12px', marginBottom: '0.75rem', fontWeight: 700, fontSize: '14px',
+            padding: '10px 12px', borderRadius: '12px', marginBottom: '0.75rem', fontWeight: 700, fontSize: 'var(--fs-sm)',
             background: data.todo ? 'var(--info-bg, #e8f0fe)' : 'var(--good-bg, #e8f6ec)',
             color: data.todo ? 'var(--info-fg, #1e40af)' : 'var(--good-fg, #1a6b35)'
           }}>
@@ -110,15 +110,15 @@ function AdminToday() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                   <button type="button" onClick={() => navigate(`/admin/week?week=${w.weekId}`)} style={{
                     flex: 1, minWidth: 0, minHeight: '36px', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'start',
-                    fontSize: '15px', fontWeight: 800, color: 'var(--text, #222)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                    fontSize: 'var(--fs-md)', fontWeight: 800, color: 'var(--text, #222)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
                   }}>
                     {w.name}
                   </button>
-                  <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 9px', borderRadius: '999px', background: st.bg, color: st.fg, whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, padding: '3px 9px', borderRadius: '999px', background: st.bg, color: st.fg, whiteSpace: 'nowrap' }}>
                     {w.stageLabel}
                   </span>
                 </div>
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', fontSize: '12px', color: 'var(--text-3, #777)', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', fontSize: 'var(--fs-xs)', color: 'var(--text-3, #777)', marginBottom: '8px' }}>
                   <span>⚽ {w.counts.matches} משחקים</span>
                   {w.stage !== 'draft' && w.counts.players > 0 && <span>✍️ {w.counts.betComplete}/{w.counts.players} הימרו</span>}
                   {(w.stage === 'running' || w.stage === 'done') && <span>🏁 {w.counts.withResult}/{w.counts.matches} תוצאות</span>}

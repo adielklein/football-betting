@@ -219,8 +219,8 @@ function PushManagement() {
     return () => { cancelled = true; };
   }, [activeTab, overview]);
 
-  const labelStyle = { display: 'block', marginBottom: '4px', fontWeight: '700', fontSize: '12px', color: 'var(--text-2, #555)' };
-  const inputStyle = { borderRadius: '10px', fontSize: '13px', padding: '0.5rem 0.6rem' };
+  const labelStyle = { display: 'block', marginBottom: '4px', fontWeight: '700', fontSize: 'var(--fs-xs)', color: 'var(--text-2, #555)' };
+  const inputStyle = { borderRadius: '10px', fontSize: 'var(--fs-sm)', padding: '0.5rem 0.6rem' };
 
   const subTabs = [
     { key: 'broadcast', label: 'לכולם', icon: '📢' },
@@ -260,7 +260,7 @@ function PushManagement() {
         <label style={labelStyle}>תמונה (אופציונלי - אנדרואיד בלבד)</label>
         <input type="file" accept="image/*" onChange={handleImageSelect}
           className="input" style={{ ...inputStyle, width: '100%' }} />
-        <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', marginTop: '2px' }}>מקסימום 10MB</div>
+        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', marginTop: '2px' }}>מקסימום 10MB</div>
         {notificationImage && (
           <div style={{ marginTop: '0.4rem' }}>
             {/* המספר לא סתם הערה כללית: הוא נספר מהמכשירים הרשומים בפועל,
@@ -270,9 +270,9 @@ function PushManagement() {
                 display: 'flex', gap: '6px', alignItems: 'flex-start',
                 padding: '0.5rem 0.6rem', marginBottom: '0.4rem',
                 background: 'var(--warn-bg, #fff8e1)', border: '1px solid #ffe0a3',
-                borderRadius: '10px', fontSize: '11px', color: 'var(--warn-fg, #7a5c17)', lineHeight: 1.5
+                borderRadius: '10px', fontSize: 'var(--fs-xs)', color: 'var(--warn-fg, #7a5c17)', lineHeight: 1.5
               }}>
-                <span style={{ fontSize: '13px', flexShrink: 0 }}>🍎</span>
+                <span style={{ fontSize: 'var(--fs-sm)', flexShrink: 0 }}>🍎</span>
                 <span>
                   <b>{appleDeviceUsers} שחקנים על אייפון</b> לא יראו את התמונה בהתראה עצמה —
                   אפל לא תומכת בזה. הם כן יראו אותה כשיפתחו את האפליקציה,
@@ -288,7 +288,7 @@ function PushManagement() {
               marginTop: '0.3rem', padding: '0.25rem 0.6rem',
               background: 'linear-gradient(135deg, #dc3545, #c62828)',
               color: 'white', border: 'none', borderRadius: '8px',
-              fontSize: '11px', fontWeight: '700', cursor: 'pointer'
+              fontSize: 'var(--fs-xs)', fontWeight: '700', cursor: 'pointer'
             }}>
               🗑️ הסר תמונה
             </button>
@@ -300,7 +300,7 @@ function PushManagement() {
 
   return (
     <div>
-      <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.6rem 0', fontWeight: '700' }}>
+      <h2 style={{ fontSize: 'var(--fs-md)', margin: '0 0 0.6rem 0', fontWeight: '700' }}>
         📢 ניהול התראות Push
       </h2>
 
@@ -321,10 +321,10 @@ function PushManagement() {
               border: `1px solid ${stat.border}`,
               animation: 'slideUp 0.3s ease both'
             }}>
-              <div style={{ fontSize: '22px', fontWeight: '800', color: stat.color }}>
+              <div style={{ fontSize: 'var(--fs-xl)', fontWeight: '800', color: stat.color }}>
                 {stat.value}
               </div>
-              <div style={{ fontSize: '10px', color: stat.color, fontWeight: '600', marginTop: '1px' }}>
+              <div style={{ fontSize: 'var(--fs-xs)', color: stat.color, fontWeight: '600', marginTop: '1px' }}>
                 {stat.label}
               </div>
             </div>
@@ -346,13 +346,13 @@ function PushManagement() {
               padding: '0.4rem 0.1rem', border: 'none', borderRadius: '10px',
               backgroundColor: isActive ? 'var(--surface, #fff)' : 'transparent',
               color: isActive ? 'var(--theme-primary, #007bff)' : 'var(--text-3, #888)',
-              fontWeight: isActive ? '700' : '500', fontSize: '11px',
+              fontWeight: isActive ? '700' : '500', fontSize: 'var(--fs-xs)',
               cursor: 'pointer', transition: 'all 0.2s ease',
               boxShadow: isActive ? '0 2px 6px rgba(0,0,0,0.1)' : 'none',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px',
               WebkitAppearance: 'none', touchAction: 'manipulation'
             }}>
-              <span style={{ fontSize: '14px' }}>{tab.icon}</span>
+              <span style={{ fontSize: 'var(--fs-sm)' }}>{tab.icon}</span>
               <span>{tab.label}</span>
             </button>
           );
@@ -362,7 +362,7 @@ function PushManagement() {
       {/* Broadcast tab */}
       {activeTab === 'broadcast' && (
         <div className="card" style={{ animation: 'scaleIn 0.2s ease' }}>
-          <h3 style={{ fontSize: '0.9rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
+          <h3 style={{ fontSize: 'var(--fs-sm)', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
             📢 שלח התראה לכולם
           </h3>
           {notificationFormFields}
@@ -372,7 +372,7 @@ function PushManagement() {
               width: '100%', padding: '0.6rem',
               background: loading ? '#ccc' : 'linear-gradient(135deg, #28a745, #20c997)',
               color: 'white', border: 'none', borderRadius: '10px',
-              fontSize: '14px', fontWeight: '700', cursor: loading ? 'wait' : 'pointer',
+              fontSize: 'var(--fs-sm)', fontWeight: '700', cursor: loading ? 'wait' : 'pointer',
               boxShadow: loading ? 'none' : '0 2px 8px rgba(40,167,69,0.3)',
               WebkitAppearance: 'none', touchAction: 'manipulation'
             }}>
@@ -384,7 +384,7 @@ function PushManagement() {
       {/* Selective tab */}
       {activeTab === 'selective' && (
         <div className="card" style={{ animation: 'scaleIn 0.2s ease' }}>
-          <h3 style={{ fontSize: '0.9rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
+          <h3 style={{ fontSize: 'var(--fs-sm)', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
             🎯 שלח התראה למשתמשים נבחרים
           </h3>
           {notificationFormFields}
@@ -393,7 +393,7 @@ function PushManagement() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
               <label style={labelStyle}>בחר משתמשים ({selectedUsers.length} נבחרו)</label>
               <button onClick={handleSelectAll} style={{
-                padding: '3px 10px', borderRadius: '20px', fontSize: '10px', fontWeight: '700',
+                padding: '3px 10px', borderRadius: '20px', fontSize: 'var(--fs-xs)', fontWeight: '700',
                 background: 'var(--surface-3, #f0f2f5)', color: 'var(--text-3, #666)', border: '1px solid #e0e0e0', cursor: 'pointer'
               }}>
                 {selectedUsers.length === getSubscribedUsers().length ? 'בטל הכל' : 'בחר הכל'}
@@ -405,7 +405,7 @@ function PushManagement() {
               borderRadius: '10px', border: '1px solid var(--border, #f0f0f0)'
             }}>
               {getSubscribedUsers().length === 0 ? (
-                <p style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1rem', fontSize: '13px' }}>
+                <p style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1rem', fontSize: 'var(--fs-sm)' }}>
                   אין משתמשים מנויים
                 </p>
               ) : (
@@ -422,11 +422,11 @@ function PushManagement() {
                       style={{ marginLeft: '0.4rem', accentColor: 'var(--theme-primary, #007bff)' }} />
                     <span style={{
                       flex: 1, fontWeight: selectedUsers.includes(u._id) ? '700' : '500',
-                      fontSize: '13px', color: 'var(--text, #333)'
+                      fontSize: 'var(--fs-sm)', color: 'var(--text, #333)'
                     }}>
                       {u.name}
                     </span>
-                    <span style={{ fontSize: '10px', color: 'var(--text-4, #aaa)' }}>@{u.username}</span>
+                    <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)' }}>@{u.username}</span>
                   </div>
                 ))
               )}
@@ -439,7 +439,7 @@ function PushManagement() {
               width: '100%', padding: '0.6rem',
               background: loading ? '#ccc' : 'linear-gradient(135deg, #007bff, #0056d2)',
               color: 'white', border: 'none', borderRadius: '10px',
-              fontSize: '14px', fontWeight: '700', cursor: loading ? 'wait' : 'pointer',
+              fontSize: 'var(--fs-sm)', fontWeight: '700', cursor: loading ? 'wait' : 'pointer',
               boxShadow: loading ? 'none' : '0 2px 8px rgba(0,123,255,0.3)',
               WebkitAppearance: 'none', touchAction: 'manipulation'
             }}>
@@ -462,7 +462,7 @@ function PushManagement() {
           </div>
 
           {pendingLoading && (
-            <div className="card" style={{ textAlign: 'center', padding: '1.2rem', fontSize: '12px', color: 'var(--text-4, #aaa)' }}>
+            <div className="card" style={{ textAlign: 'center', padding: '1.2rem', fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)' }}>
               טוען…
             </div>
           )}
@@ -470,7 +470,7 @@ function PushManagement() {
           {!pendingLoading && pending && (
             <>
               <div className="card" style={{ marginBottom: '0.5rem' }}>
-                <div style={{ fontSize: '12px', color: 'var(--text-2, #555)', lineHeight: 1.6, marginBottom: '0.6rem' }}>
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-2, #555)', lineHeight: 1.6, marginBottom: '0.6rem' }}>
                   ב<b>{pending.week.name}</b> יש {pending.matchCount} משחקים.
                   {' '}<b>{pending.pending.length}</b> שחקנים עוד לא סיימו,
                   {' '}ואפשר להשיג בהתראה <b>{pending.reachable}</b> מהם.
@@ -480,11 +480,11 @@ function PushManagement() {
                     width: '100%', background: pending.reachable > 0
                       ? 'linear-gradient(135deg, #f59e0b, #d97706)' : undefined,
                     color: pending.reachable > 0 ? 'white' : undefined,
-                    fontWeight: 700, fontSize: '13px'
+                    fontWeight: 700, fontSize: 'var(--fs-sm)'
                   }}>
                   {pending.reachable > 0 ? `⏰ שלח תזכורת ל-${pending.reachable} שחקנים` : 'אין למי לשלוח'}
                 </button>
-                <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', marginTop: '0.4rem', lineHeight: 1.5 }}>
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', marginTop: '0.4rem', lineHeight: 1.5 }}>
                   ההודעה אישית - היא אומרת לכל אחד כמה משחקים נשארו לו.
                   {' '}מי שאינו רשום לחודש לא מקבל כלום.
                 </div>
@@ -492,7 +492,7 @@ function PushManagement() {
 
           {pending.pending.length > 0 && (
             <div className="card" style={{ marginBottom: '0.5rem' }}>
-              <h3 style={{ fontSize: '0.85rem', margin: '0 0 0.15rem 0', fontWeight: 700, color: '#d97706' }}>
+              <h3 style={{ fontSize: 'var(--fs-sm)', margin: '0 0 0.15rem 0', fontWeight: 700, color: '#d97706' }}>
                 ❌ לא סיימו להמר ({pending.pending.length})
               </h3>
               
@@ -501,16 +501,16 @@ function PushManagement() {
                   <div key={r.userId} style={{
                     display: 'flex', alignItems: 'center', gap: '0.4rem',
                     padding: '0.35rem 0.5rem', borderRadius: '8px',
-                    background: 'var(--surface-2, #f8f9fc)', fontSize: '12px'
+                    background: 'var(--surface-2, #f8f9fc)', fontSize: 'var(--fs-xs)'
                   }}>
                     <span style={{ flex: 1, minWidth: 0, fontWeight: 600, color: 'var(--text, #333)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {r.name}
                     </span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-3, #888)', fontVariantNumeric: 'tabular-nums' }}>
+                    <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', fontVariantNumeric: 'tabular-nums' }}>
                       {r.placed}/{r.of}
                     </span>
                     {!r.canBeNotified && (
-                      <span style={{ fontSize: '9px', color: 'var(--warn-fg, #c2410c)' }} title="אין התראות פעילות">🔕</span>
+                      <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--warn-fg, #c2410c)' }} title="אין התראות פעילות">🔕</span>
                     )}
                   </div>
                 ))}
@@ -519,7 +519,7 @@ function PushManagement() {
           )}
           {pending.complete.length > 0 && (
             <div className="card" style={{ marginBottom: '0.5rem' }}>
-              <h3 style={{ fontSize: '0.85rem', margin: '0 0 0.15rem 0', fontWeight: 700, color: 'var(--good-fg, #16a34a)' }}>
+              <h3 style={{ fontSize: 'var(--fs-sm)', margin: '0 0 0.15rem 0', fontWeight: 700, color: 'var(--good-fg, #16a34a)' }}>
                 ✅ סיימו ({pending.complete.length})
               </h3>
               
@@ -528,16 +528,16 @@ function PushManagement() {
                   <div key={r.userId} style={{
                     display: 'flex', alignItems: 'center', gap: '0.4rem',
                     padding: '0.35rem 0.5rem', borderRadius: '8px',
-                    background: 'var(--surface-2, #f8f9fc)', fontSize: '12px'
+                    background: 'var(--surface-2, #f8f9fc)', fontSize: 'var(--fs-xs)'
                   }}>
                     <span style={{ flex: 1, minWidth: 0, fontWeight: 600, color: 'var(--text, #333)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {r.name}
                     </span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-3, #888)', fontVariantNumeric: 'tabular-nums' }}>
+                    <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', fontVariantNumeric: 'tabular-nums' }}>
                       {r.placed}/{r.of}
                     </span>
                     {!r.canBeNotified && (
-                      <span style={{ fontSize: '9px', color: 'var(--warn-fg, #c2410c)' }} title="אין התראות פעילות">🔕</span>
+                      <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--warn-fg, #c2410c)' }} title="אין התראות פעילות">🔕</span>
                     )}
                   </div>
                 ))}
@@ -546,25 +546,25 @@ function PushManagement() {
           )}
           {pending.notRegistered.length > 0 && (
             <div className="card" style={{ marginBottom: '0.5rem' }}>
-              <h3 style={{ fontSize: '0.85rem', margin: '0 0 0.15rem 0', fontWeight: 700, color: 'var(--text-3, #888)' }}>
+              <h3 style={{ fontSize: 'var(--fs-sm)', margin: '0 0 0.15rem 0', fontWeight: 700, color: 'var(--text-3, #888)' }}>
                 🚫 לא רשומים לחודש הזה ({pending.notRegistered.length})
               </h3>
-              <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', marginBottom: '0.4rem' }}>מוחרגים מהחודש - לא יקבלו תזכורת</div>
+              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', marginBottom: '0.4rem' }}>מוחרגים מהחודש - לא יקבלו תזכורת</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                 {pending.notRegistered.map((r) => (
                   <div key={r.userId} style={{
                     display: 'flex', alignItems: 'center', gap: '0.4rem',
                     padding: '0.35rem 0.5rem', borderRadius: '8px',
-                    background: 'var(--surface-2, #f8f9fc)', fontSize: '12px'
+                    background: 'var(--surface-2, #f8f9fc)', fontSize: 'var(--fs-xs)'
                   }}>
                     <span style={{ flex: 1, minWidth: 0, fontWeight: 600, color: 'var(--text, #333)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {r.name}
                     </span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-3, #888)', fontVariantNumeric: 'tabular-nums' }}>
+                    <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', fontVariantNumeric: 'tabular-nums' }}>
                       {r.placed}/{r.of}
                     </span>
                     {!r.canBeNotified && (
-                      <span style={{ fontSize: '9px', color: 'var(--warn-fg, #c2410c)' }} title="אין התראות פעילות">🔕</span>
+                      <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--warn-fg, #c2410c)' }} title="אין התראות פעילות">🔕</span>
                     )}
                   </div>
                 ))}
@@ -578,26 +578,26 @@ function PushManagement() {
 
       {activeTab === 'live' && (
         <div style={{ animation: 'scaleIn 0.2s ease' }}>
-          <div className="card" style={{ marginBottom: '0.5rem', fontSize: '11px', color: 'var(--text-3, #888)' }}>
+          <div className="card" style={{ marginBottom: '0.5rem', fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)' }}>
             מה הסריקה החיה ראתה ועשתה ב-24 השעות האחרונות: כל שינוי מצב שדווח מ-365,
             כל התראה שיצאה, וכל התראה שנחסמה כי כבר נשלחה. משחק שמדווח שוב ושוב
             אותו מעבר מצב ייראה כאן מיד.
           </div>
 
           {liveLogFailed && (
-            <div className="card" style={{ marginBottom: '0.5rem', color: 'var(--bad-fg, #dc2626)', fontSize: '13px' }}>
+            <div className="card" style={{ marginBottom: '0.5rem', color: 'var(--bad-fg, #dc2626)', fontSize: 'var(--fs-sm)' }}>
               לא ניתן לטעון את היומן
             </div>
           )}
 
           {!liveLog && !liveLogFailed && (
-            <div className="card" style={{ textAlign: 'center', padding: '1.2rem', fontSize: '12px', color: 'var(--text-4, #aaa)' }}>
+            <div className="card" style={{ textAlign: 'center', padding: '1.2rem', fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)' }}>
               טוען…
             </div>
           )}
 
           {liveLog && liveLog.length === 0 && (
-            <div className="card" style={{ textAlign: 'center', padding: '1.2rem', fontSize: '12px', color: 'var(--text-4, #aaa)' }}>
+            <div className="card" style={{ textAlign: 'center', padding: '1.2rem', fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)' }}>
               אין עדיין רשומות. היומן מתמלא בזמן שמשחקים משודרים.
             </div>
           )}
@@ -605,14 +605,14 @@ function PushManagement() {
           {liveLog && liveLog.map((m) => (
             <div key={m._id} className="card" style={{ marginBottom: '0.4rem', padding: '0.6rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
-                <span style={{ fontWeight: '700', fontSize: '13px' }}>{m.team1} - {m.team2}</span>
-                <span style={{ fontSize: '10px', color: 'var(--text-4, #aaa)' }}>{m.externalId}</span>
+                <span style={{ fontWeight: '700', fontSize: 'var(--fs-sm)' }}>{m.team1} - {m.team2}</span>
+                <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)' }}>{m.externalId}</span>
               </div>
 
               {m.entries.map((e, idx) => (
                 <div key={idx} style={{
                   display: 'flex', gap: '0.4rem', alignItems: 'baseline',
-                  fontSize: '11px', padding: '2px 0',
+                  fontSize: 'var(--fs-xs)', padding: '2px 0',
                   borderTop: idx === 0 ? 'none' : '1px solid var(--surface-3, #f0f2f5)'
                 }}>
                   <span style={{ color: 'var(--text-4, #aaa)', fontVariantNumeric: 'tabular-nums' }}>
@@ -637,13 +637,13 @@ function PushManagement() {
       {activeTab === 'settings' && (
         <div style={{ animation: 'scaleIn 0.2s ease' }}>
           {overviewFailed && (
-            <div className="card" style={{ marginBottom: '0.5rem', color: 'var(--bad-fg, #dc2626)', fontSize: '13px' }}>
+            <div className="card" style={{ marginBottom: '0.5rem', color: 'var(--bad-fg, #dc2626)', fontSize: 'var(--fs-sm)' }}>
               לא ניתן לטעון את ההגדרות
             </div>
           )}
 
           {!overview && !overviewFailed && (
-            <div className="card" style={{ textAlign: 'center', padding: '1.2rem', fontSize: '12px', color: 'var(--text-4, #aaa)' }}>
+            <div className="card" style={{ textAlign: 'center', padding: '1.2rem', fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)' }}>
               טוען…
             </div>
           )}
@@ -652,7 +652,7 @@ function PushManagement() {
             <>
               {/* כמה אנשים בכלל הדליקו כל סוג - עונה על "האם מישהו משתמש בזה" */}
               <div className="card" style={{ marginBottom: '0.5rem' }}>
-                <h3 style={{ fontSize: '0.9rem', margin: '0 0 0.4rem 0', fontWeight: '700' }}>
+                <h3 style={{ fontSize: 'var(--fs-sm)', margin: '0 0 0.4rem 0', fontWeight: '700' }}>
                   🔔 מי מקבל מה ({overview.length})
                 </h3>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
@@ -660,7 +660,7 @@ function PushManagement() {
                     const count = overview.filter((r) => r.enabled && r.alerts[key]).length;
                     return (
                       <span key={key} style={{
-                        fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px',
+                        fontSize: 'var(--fs-xs)', fontWeight: '700', padding: '2px 8px', borderRadius: '10px',
                         background: count > 0 ? 'var(--good-bg, #dcfce7)' : 'var(--surface-3, #f0f2f5)',
                         color: count > 0 ? 'var(--good-fg, #16a34a)' : 'var(--text-4, #aaa)'
                       }}>
@@ -677,12 +677,12 @@ function PushManagement() {
                   animation: `slideUp 0.2s ease ${Math.min(i * 0.03, 0.3)}s both`
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
-                    <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text, #333)' }}>{row.name}</span>
-                    <span style={{ fontSize: '10px', color: 'var(--text-4, #aaa)' }}>@{row.username}</span>
+                    <span style={{ fontWeight: '700', fontSize: 'var(--fs-sm)', color: 'var(--text, #333)' }}>{row.name}</span>
+                    <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)' }}>@{row.username}</span>
 
                     {!row.enabled ? (
                       <span style={{
-                        fontSize: '10px', fontWeight: '700', padding: '1px 7px', borderRadius: '10px',
+                        fontSize: 'var(--fs-xs)', fontWeight: '700', padding: '1px 7px', borderRadius: '10px',
                         background: 'var(--surface-3, #f0f2f5)', color: 'var(--text-4, #999)'
                       }}>
                         כבוי
@@ -692,7 +692,7 @@ function PushManagement() {
                       <span
                         title="ההתראות מופעלות אבל אין מכשיר רשום - שום התראה לא תגיע"
                         style={{
-                          fontSize: '10px', fontWeight: '700', padding: '1px 7px', borderRadius: '10px',
+                          fontSize: 'var(--fs-xs)', fontWeight: '700', padding: '1px 7px', borderRadius: '10px',
                           background: 'var(--warn-bg, #fff3cd)', color: 'var(--warn-fg, #9a7b3f)'
                         }}
                       >
@@ -700,7 +700,7 @@ function PushManagement() {
                       </span>
                     ) : (
                       <span style={{
-                        fontSize: '10px', fontWeight: '700', padding: '1px 7px', borderRadius: '10px',
+                        fontSize: 'var(--fs-xs)', fontWeight: '700', padding: '1px 7px', borderRadius: '10px',
                         background: 'var(--good-bg, #dcfce7)', color: 'var(--good-fg, #16a34a)'
                       }}>
                         {row.deviceCount} מכשירים
@@ -713,7 +713,7 @@ function PushManagement() {
                       const on = !!row.alerts[key];
                       return (
                         <span key={key} style={{
-                          fontSize: '10px', fontWeight: on ? '700' : '500',
+                          fontSize: 'var(--fs-xs)', fontWeight: on ? '700' : '500',
                           padding: '2px 7px', borderRadius: '9px',
                           background: on ? 'var(--good-bg, #dcfce7)' : 'transparent',
                           color: on ? 'var(--good-fg, #16a34a)' : 'var(--text-4, #bbb)',
@@ -724,7 +724,7 @@ function PushManagement() {
                         </span>
                       );
                     })}
-                    <span style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', alignSelf: 'center' }}>
+                    <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', alignSelf: 'center' }}>
                       · תזכורת {row.alerts.hoursBeforeLock}שע לפני
                     </span>
                   </div>
@@ -732,7 +732,7 @@ function PushManagement() {
                   {row.devices.length > 0 && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       {row.devices.map((d, di) => (
-                        <div key={di} style={{ fontSize: '10px', color: 'var(--text-3, #888)' }}>
+                        <div key={di} style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)' }}>
                           📱 {d.label}
                           {d.pending && (
                             // המכשיר טרם דיווח על עצמו. עדיף לומר את זה מלהציג
@@ -764,11 +764,11 @@ function PushManagement() {
         <div style={{ animation: 'scaleIn 0.2s ease' }}>
           {/* Subscribed */}
           <div className="card" style={{ marginBottom: '0.5rem' }}>
-            <h3 style={{ fontSize: '0.9rem', margin: '0 0 0.4rem 0', fontWeight: '700', color: 'var(--good-fg, #16a34a)' }}>
+            <h3 style={{ fontSize: 'var(--fs-sm)', margin: '0 0 0.4rem 0', fontWeight: '700', color: 'var(--good-fg, #16a34a)' }}>
               ✅ מנויים ({getSubscribedUsers().length})
             </h3>
             {getSubscribedUsers().length === 0 ? (
-              <p style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1rem', fontSize: '13px' }}>אין משתמשים מנויים</p>
+              <p style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1rem', fontSize: 'var(--fs-sm)' }}>אין משתמשים מנויים</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                 {getSubscribedUsers().map((u, i) => (
@@ -779,8 +779,8 @@ function PushManagement() {
                     animation: `slideUp 0.2s ease ${i * 0.03}s both`
                   }}>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontWeight: '600', fontSize: '13px', color: 'var(--text, #333)' }}>{u.name}</div>
-                      <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)' }}>
+                      <div style={{ fontWeight: '600', fontSize: 'var(--fs-sm)', color: 'var(--text, #333)' }}>{u.name}</div>
+                      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)' }}>
                         @{u.username} • {u.pushSettings?.deviceCount || 0} מכשירים • {u.pushSettings?.hoursBeforeLock || 2}שע לפני נעילה
                       </div>
                     </div>
@@ -788,7 +788,7 @@ function PushManagement() {
                       padding: '0.25rem 0.5rem',
                       background: 'linear-gradient(135deg, #17a2b8, #138496)',
                       color: 'white', border: 'none', borderRadius: '8px',
-                      fontSize: '10px', fontWeight: '700', cursor: 'pointer', flexShrink: 0
+                      fontSize: 'var(--fs-xs)', fontWeight: '700', cursor: 'pointer', flexShrink: 0
                     }}>
                       🔔 בדיקה
                     </button>
@@ -800,11 +800,11 @@ function PushManagement() {
 
           {/* Unsubscribed */}
           <div className="card">
-            <h3 style={{ fontSize: '0.9rem', margin: '0 0 0.4rem 0', fontWeight: '700', color: 'var(--bad-fg, #dc2626)' }}>
+            <h3 style={{ fontSize: 'var(--fs-sm)', margin: '0 0 0.4rem 0', fontWeight: '700', color: 'var(--bad-fg, #dc2626)' }}>
               ❌ לא מנויים ({getUnsubscribedUsers().length})
             </h3>
             {getUnsubscribedUsers().length === 0 ? (
-              <p style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1rem', fontSize: '13px' }}>
+              <p style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '1rem', fontSize: 'var(--fs-sm)' }}>
                 כל המשתמשים מנויים! 🎉
               </p>
             ) : (
@@ -818,12 +818,12 @@ function PushManagement() {
                     animation: `slideUp 0.2s ease ${i * 0.03}s both`
                   }}>
                     <div>
-                      <div style={{ fontWeight: '600', fontSize: '13px' }}>{u.name}</div>
-                      <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)' }}>@{u.username}</div>
+                      <div style={{ fontWeight: '600', fontSize: 'var(--fs-sm)' }}>{u.name}</div>
+                      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)' }}>@{u.username}</div>
                     </div>
                     <span style={{
                       padding: '2px 8px', borderRadius: '20px',
-                      fontSize: '10px', fontWeight: '700',
+                      fontSize: 'var(--fs-xs)', fontWeight: '700',
                       backgroundColor: 'var(--bad-bg, #fee2e2)', color: 'var(--bad-fg, #dc2626)',
                       border: '1px solid #fca5a5'
                     }}>
@@ -843,7 +843,7 @@ function PushManagement() {
         borderRadius: '12px',
         background: 'var(--warn-bg, #fff8e1)',
         border: '1px solid #fde68a',
-        fontSize: '12px', color: 'var(--warn-fg, #92400e)'
+        fontSize: 'var(--fs-xs)', color: 'var(--warn-fg, #92400e)'
       }}>
         <div style={{ fontWeight: '700', marginBottom: '0.3rem' }}>💡 טיפים</div>
         <ul style={{ margin: 0, paddingRight: '16px', lineHeight: 1.6 }}>

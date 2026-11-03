@@ -18,7 +18,7 @@ function ResultNote({ result, style }) {
     : `הסתיים ${final.team1Goals}-${final.team2Goals} אחרי הארכה`;
 
   return (
-    <div style={{ fontSize: '10.5px', color: 'var(--text-4, #aaa)', lineHeight: 1.5, ...style }}>
+    <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', lineHeight: 1.5, ...style }}>
       ⏱️ {text} · הניקוד לפי 90 דקות
     </div>
   );

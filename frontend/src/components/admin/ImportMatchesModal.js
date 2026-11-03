@@ -335,7 +335,7 @@ function ImportMatchesModal({ week, previousWeek = null, leagues, adminId, onClo
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexShrink: 0 }}>
           <h3 style={{ margin: 0 }}>📥 ייבוא משחקים ל-{week?.name}</h3>
-          <button onClick={onClose} className="btn" style={{ background: 'transparent', fontSize: '20px' }}>✖</button>
+          <button onClick={onClose} className="btn" style={{ background: 'transparent', fontSize: 'var(--fs-lg)' }}>✖</button>
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'flex-end', marginBottom: '1rem', flexShrink: 0 }}>
@@ -408,7 +408,7 @@ function ImportMatchesModal({ week, previousWeek = null, leagues, adminId, onClo
               </div>
             </>
           )}
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '14px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: 'var(--fs-sm)' }}>
             <input
               type="checkbox"
               checked={includeOdds}
@@ -429,7 +429,7 @@ function ImportMatchesModal({ week, previousWeek = null, leagues, adminId, onClo
         {includeOdds && (
           <div style={{
             background: 'var(--warn-bg, #fffaf0)', border: '1px solid #f5e3c0', color: 'var(--warn-fg, #9a7b3f)',
-            padding: '0.45rem 0.7rem', borderRadius: '8px', fontSize: '12px',
+            padding: '0.45rem 0.7rem', borderRadius: '8px', fontSize: 'var(--fs-xs)',
             marginBottom: '0.75rem', flexShrink: 0
           }}>
             ℹ️ ווינר מפרסמים יחסים רק למחזור הקרוב. משחקים רחוקים יותר ייובאו בלי יחסים —
@@ -447,7 +447,7 @@ function ImportMatchesModal({ week, previousWeek = null, leagues, adminId, onClo
         {skipped && (
           <div style={{
             background: 'var(--warn-bg, #fffaf0)', border: '1px solid #f5e3c0', color: 'var(--warn-fg, #9a7b3f)',
-            padding: '0.45rem 0.7rem', borderRadius: '8px', fontSize: '12px',
+            padding: '0.45rem 0.7rem', borderRadius: '8px', fontSize: 'var(--fs-xs)',
             marginBottom: '0.75rem', flexShrink: 0
           }}>
             {skipped.created > 0
@@ -462,7 +462,7 @@ function ImportMatchesModal({ week, previousWeek = null, leagues, adminId, onClo
         {nonScores365.length > 0 && (
           <div style={{
             background: 'var(--warn-bg, #fffaf0)', border: '1px solid #f5e3c0', color: 'var(--warn-fg, #9a7b3f)',
-            padding: '0.45rem 0.7rem', borderRadius: '8px', fontSize: '12px',
+            padding: '0.45rem 0.7rem', borderRadius: '8px', fontSize: 'var(--fs-xs)',
             marginBottom: '0.75rem', flexShrink: 0
           }}>
             ⚠️ {nonScores365.join(', ')} נמשכו מספק גיבוי ולא מ-365scores (365 לא החזיר משחקים בטווח).
@@ -473,7 +473,7 @@ function ImportMatchesModal({ week, previousWeek = null, leagues, adminId, onClo
         {failedLeagues.length > 0 && (
           <div style={{
             background: 'var(--warn-bg, #fffaf0)', border: '1px solid #f5e3c0', color: 'var(--warn-fg, #9a7b3f)',
-            padding: '0.45rem 0.7rem', borderRadius: '8px', fontSize: '12px',
+            padding: '0.45rem 0.7rem', borderRadius: '8px', fontSize: 'var(--fs-xs)',
             marginBottom: '0.75rem', flexShrink: 0
           }}>
             ⚠️ {failedLeagues.length} ליגות לא נמשכו: {failedLeagues.map((f) => f.league).join(', ')}
@@ -486,7 +486,7 @@ function ImportMatchesModal({ week, previousWeek = null, leagues, adminId, onClo
           {loading && (
             <div style={{
               textAlign: 'center', padding: fixtures.length > 0 ? '0.5rem' : '2rem',
-              color: 'var(--text-3, #666)', fontSize: fixtures.length > 0 ? '12px' : '14px'
+              color: 'var(--text-3, #666)', fontSize: fixtures.length > 0 ? 'var(--fs-xs)' : 'var(--fs-sm)'
             }}>
               ⏳ טוען
               {progress.total > 1 && ` ליגות… ${progress.done} מתוך ${progress.total}`}
@@ -507,7 +507,7 @@ function ImportMatchesModal({ week, previousWeek = null, leagues, adminId, onClo
               אין משחקים בטווח {rangeMode === 'range'
                 ? `${customFrom} עד ${customTo}`
                 : `${days} הימים הקרובים`}
-              <div style={{ fontSize: '11px', color: 'var(--text-4, #aaa)', marginTop: '0.4rem' }}>
+              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', marginTop: '0.4rem' }}>
                 תחרות שאינה בעונתה תחזור ריקה. אפשר להרחיב את הטווח או לבחור תאריכים.
               </div>
             </div>
@@ -525,17 +525,17 @@ function ImportMatchesModal({ week, previousWeek = null, leagues, adminId, onClo
               />
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-                <button onClick={handleSelectAll} className="btn" style={{ fontSize: '13px' }} disabled={filteredIndexed.length === 0}>
+                <button onClick={handleSelectAll} className="btn" style={{ fontSize: 'var(--fs-sm)' }} disabled={filteredIndexed.length === 0}>
                   {filteredIndexed.length > 0 && filteredIndexed.every(({ idx }) => fixtures[idx].selected) ? 'נקה הכל' : 'בחר הכל'}
                 </button>
-                <span style={{ fontSize: '13px', color: 'var(--text-3, #666)' }}>
+                <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-3, #666)' }}>
                   {selectedCount} מתוך {fixtures.length} נבחרו
                   {normalizedQuery && ` (מוצגים ${filteredIndexed.length})`}
                 </span>
               </div>
 
               {normalizedQuery && filteredIndexed.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-3, #666)', fontSize: '13px' }}>
+                <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-3, #666)', fontSize: 'var(--fs-sm)' }}>
                   לא נמצאו משחקים התואמים "{searchQuery}"
                 </div>
               )}
@@ -579,12 +579,12 @@ function ImportMatchesModal({ week, previousWeek = null, leagues, adminId, onClo
                         style={{ flex: 1 }}
                       />
                     </div>
-                    <div style={{ fontSize: '14px', color: 'var(--text-2, #444)', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-2, #444)', whiteSpace: 'nowrap' }}>
                       📅 {f.date} | 🕒 {f.time}
                     </div>
                     {isMulti && f.leagueName && (
                       <span style={{
-                        fontSize: '11px', fontWeight: '700', whiteSpace: 'nowrap',
+                        fontSize: 'var(--fs-xs)', fontWeight: '700', whiteSpace: 'nowrap',
                         padding: '2px 8px', borderRadius: '10px',
                         background: 'var(--surface-3, #eef3f8)', color: 'var(--text-3, #667)'
                       }}>
@@ -594,8 +594,8 @@ function ImportMatchesModal({ week, previousWeek = null, leagues, adminId, onClo
                   </div>
                   {includeOdds && (
                     <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', alignItems: 'center', paddingRight: '30px' }}>
-                      <span style={{ fontSize: '12px', color: 'var(--text-3, #888)' }}>יחסים:</span>
-                      <label style={{ fontSize: '12px' }}>1:</label>
+                      <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)' }}>יחסים:</span>
+                      <label style={{ fontSize: 'var(--fs-xs)' }}>1:</label>
                       <input
                         type="number"
                         step="0.1"
@@ -606,7 +606,7 @@ function ImportMatchesModal({ week, previousWeek = null, leagues, adminId, onClo
                         style={{ width: '70px', textAlign: 'center' }}
                         placeholder="בית"
                       />
-                      <label style={{ fontSize: '12px' }}>X:</label>
+                      <label style={{ fontSize: 'var(--fs-xs)' }}>X:</label>
                       <input
                         type="number"
                         step="0.1"
@@ -617,7 +617,7 @@ function ImportMatchesModal({ week, previousWeek = null, leagues, adminId, onClo
                         style={{ width: '70px', textAlign: 'center' }}
                         placeholder="תיקו"
                       />
-                      <label style={{ fontSize: '12px' }}>2:</label>
+                      <label style={{ fontSize: 'var(--fs-xs)' }}>2:</label>
                       <input
                         type="number"
                         step="0.1"

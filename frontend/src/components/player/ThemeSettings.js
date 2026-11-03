@@ -76,7 +76,7 @@ function ThemeSettings({ user, onThemeChange }) {
         placeholder="בחר ערכת נושא"
       />
 
-      <div style={{ fontSize: '11px', color: 'var(--text-4, #aaa)', marginTop: '0.5rem', lineHeight: 1.5 }}>
+      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', marginTop: '0.5rem', lineHeight: 1.5 }}>
         {saving ? 'שומר…' : 'הערכה נשמרת למשתמש שלך ומופיעה בכל מכשיר שתתחבר ממנו.'}
       </div>
     </div>

@@ -65,10 +65,10 @@ class ErrorBoundary extends React.Component {
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: full ? 'center' : 'flex-start'
       }}>
         <div style={{ fontSize: '36px', marginBottom: '0.4rem' }}>😕</div>
-        <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text, #222)' }}>
+        <div style={{ fontSize: 'var(--fs-md)', fontWeight: 800, color: 'var(--text, #222)' }}>
           {full ? 'משהו השתבש' : 'משהו השתבש במסך הזה'}
         </div>
-        <div style={{ fontSize: '13px', color: 'var(--text-3, #777)', margin: '0.35rem 0 1rem', maxWidth: '320px' }}>
+        <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-3, #777)', margin: '0.35rem 0 1rem', maxWidth: '320px' }}>
           {full
             ? 'רענון הדף בדרך כלל פותר את זה. ההימורים והניקוד שמורים בשרת.'
             : 'שאר האפליקציה ממשיכה לעבוד. אפשר לנסות שוב או לעבור ללשונית אחרת.'}
@@ -85,7 +85,7 @@ class ErrorBoundary extends React.Component {
         </div>
         {/* הטקסט הטכני - כדי שצילום מסך של התקלה יגיד מה קרה */}
         <div dir="ltr" style={{
-          marginTop: '1rem', fontSize: '10px', color: 'var(--text-4, #aaa)', fontFamily: 'monospace',
+          marginTop: '1rem', fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', fontFamily: 'monospace',
           maxWidth: '100%', overflowWrap: 'anywhere'
         }}>
           {String(error?.message || error).slice(0, 160)}

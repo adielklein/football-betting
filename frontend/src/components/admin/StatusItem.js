@@ -50,29 +50,29 @@ export function StatusItem({ item, now, onAction, busy }) {
       display: 'flex', gap: '8px', alignItems: 'flex-start', padding: '8px 10px', borderRadius: '10px',
       background: st.bg, borderInlineStart: `3px solid ${st.border}`, marginBottom: '6px'
     }}>
-      <span style={{ fontSize: '14px', lineHeight: '20px' }}>{st.icon}</span>
+      <span style={{ fontSize: 'var(--fs-sm)', lineHeight: '20px' }}>{st.icon}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: '13px', fontWeight: item.level === 'todo' ? 700 : 600, color: st.fg }}>
+        <div style={{ fontSize: 'var(--fs-sm)', fontWeight: item.level === 'todo' ? 700 : 600, color: st.fg }}>
           {item.text}
           {item.at && <span style={{ fontWeight: 500, color: 'var(--text-3, #777)' }}> · {item.atLabel || 'ננעל'} {whenText(item.at, now)}</span>}
         </div>
-        {item.detail && <div style={{ fontSize: '11px', color: 'var(--text-3, #777)', marginTop: '2px' }}>{item.detail}</div>}
+        {item.detail && <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #777)', marginTop: '2px' }}>{item.detail}</div>}
         {item.names?.length > 0 && (
           <>
             {/* מקום לחיצה של 28px לפחות - קודם זה היה 17×12, קטן מהמינימום (24) */}
             <button type="button" onClick={() => setShowNames((v) => !v)} style={{
               background: 'none', border: 'none', padding: '6px 10px', margin: '0 -10px -6px', minHeight: '28px', cursor: 'pointer',
-              fontSize: '12px', fontWeight: 600, color: 'var(--theme-primary, #007bff)'
+              fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--theme-primary, #007bff)'
             }}>
               {showNames ? 'הסתר' : 'מי?'}
             </button>
-            {showNames && <div style={{ fontSize: '12px', color: 'var(--text-2, #555)', marginTop: '2px' }}>{item.names.join(' · ')}</div>}
+            {showNames && <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-2, #555)', marginTop: '2px' }}>{item.names.join(' · ')}</div>}
           </>
         )}
       </div>
       {a && (
         <button type="button" className="btn btn-primary" disabled={busy} onClick={() => onAction(a)}
-          style={{ margin: 0, padding: '5px 10px', fontSize: '12px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+          style={{ margin: 0, padding: '5px 10px', fontSize: 'var(--fs-xs)', whiteSpace: 'nowrap', flexShrink: 0 }}>
           {busy ? '⏳' : actionLabel(a)}
         </button>
       )}

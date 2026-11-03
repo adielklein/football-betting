@@ -28,8 +28,8 @@ function SettingsView({ user, onThemeChange, onProfileChange }) {
   return (
     <div>
       <div className="card" style={{ marginBottom: '0.75rem' }}>
-        <h2 style={{ fontSize: '0.95rem', margin: 0, fontWeight: '700' }}>⚙️ הגדרות</h2>
-        <p style={{ fontSize: '12px', color: 'var(--text-3, #888)', margin: '0.35rem 0 0' }}>
+        <h2 style={{ fontSize: 'var(--fs-md)', margin: 0, fontWeight: '700' }}>⚙️ הגדרות</h2>
+        <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', margin: '0.35rem 0 0' }}>
           ההגדרות נשמרות למשתמש שלך ומופיעות בכל מכשיר שתתחבר ממנו.
         </p>
       </div>
@@ -58,7 +58,7 @@ function SettingsView({ user, onThemeChange, onProfileChange }) {
                 backgroundColor: active ? 'var(--surface, #fff)' : 'transparent',
                 color: active ? 'var(--theme-primary, #007bff)' : 'var(--text-3, #888)',
                 fontWeight: active ? '700' : '500',
-                fontSize: '13px',
+                fontSize: 'var(--fs-sm)',
                 cursor: 'pointer',
                 transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                 WebkitAppearance: 'none',
@@ -71,7 +71,7 @@ function SettingsView({ user, onThemeChange, onProfileChange }) {
                 lineHeight: 1.2
               }}
             >
-              <span style={{ fontSize: '16px', lineHeight: 1 }}>{item.icon}</span>
+              <span style={{ fontSize: 'var(--fs-md)', lineHeight: 1 }}>{item.icon}</span>
               <span>{item.label}</span>
             </button>
           );
@@ -83,7 +83,7 @@ function SettingsView({ user, onThemeChange, onProfileChange }) {
           isSupported ? (
             <NotificationSettings user={user} embedded />
           ) : (
-            <div style={{ fontSize: '13px', color: 'var(--text-3, #888)', padding: '0.5rem 0' }}>
+            <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-3, #888)', padding: '0.5rem 0' }}>
               הדפדפן הזה לא תומך בהתראות. באייפון צריך להוסיף את האפליקציה למסך הבית
               ולפתוח אותה משם.
             </div>

@@ -204,7 +204,7 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
           animation: 'spin 0.8s linear infinite',
           marginBottom: '1rem'
         }}></div>
-        <h2 style={{ color: 'var(--text-3, #888)', fontSize: '1rem', fontWeight: '500' }}>טוען נתונים...</h2>
+        <h2 style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-md)', fontWeight: '500' }}>טוען נתונים...</h2>
 
         <style>{`
           @keyframes spin {
@@ -252,7 +252,7 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
                   backgroundColor: isActive ? 'var(--surface, #fff)' : 'transparent',
                   color: isActive ? 'var(--theme-primary, #007bff)' : 'var(--text-3, #888)',
                   fontWeight: isActive ? '700' : '500',
-                  fontSize: '12px',
+                  fontSize: 'var(--fs-xs)',
                   cursor: 'pointer',
                   transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                   WebkitAppearance: 'none',
@@ -267,7 +267,7 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
                   lineHeight: 1.2
                 }}
               >
-                <span style={{ fontSize: '16px', lineHeight: 1 }}>{tab.icon}</span>
+                <span style={{ fontSize: 'var(--fs-md)', lineHeight: 1 }}>{tab.icon}</span>
                 <span>{tab.label}</span>
               </button>
             );

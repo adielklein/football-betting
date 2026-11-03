@@ -48,8 +48,8 @@ function WeekStepper({ status, onStep, onAction, busyKey, now = Date.now() }) {
   return (
     <div id="week-stepper" className="card" style={{ scrollMarginTop: '1rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-        <strong style={{ flex: 1, fontSize: '14px' }}>{status.name}</strong>
-        <span style={{ fontSize: '11px', color: 'var(--text-3, #777)' }}>{status.stageLabel}</span>
+        <strong style={{ flex: 1, fontSize: 'var(--fs-sm)' }}>{status.name}</strong>
+        <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #777)' }}>{status.stageLabel}</span>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
@@ -63,9 +63,9 @@ function WeekStepper({ status, onStep, onAction, busyKey, now = Date.now() }) {
               border: `1.5px solid ${isCurrent ? 'var(--theme-primary, #007bff)' : 'transparent'}`,
               background: st.attention ? 'var(--warn-bg, #fff6e0)' : st.done ? 'var(--good-bg, #eef9f1)' : 'var(--surface-2, #f6f7f9)'
             }}>
-              <div style={{ fontSize: '15px', lineHeight: 1 }}>{st.attention ? '⚠️' : st.done ? '✅' : s.icon}</div>
-              <div style={{ fontSize: '12px', fontWeight: 700, color, marginTop: '3px' }}>{i + 1}. {s.label}</div>
-              <div style={{ fontSize: '10px', color: 'var(--text-3, #777)', marginTop: '1px', lineHeight: 1.25 }}>{st.sub}</div>
+              <div style={{ fontSize: 'var(--fs-md)', lineHeight: 1 }}>{st.attention ? '⚠️' : st.done ? '✅' : s.icon}</div>
+              <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color, marginTop: '3px' }}>{i + 1}. {s.label}</div>
+              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #777)', marginTop: '1px', lineHeight: 1.25 }}>{st.sub}</div>
             </button>
           );
         })}

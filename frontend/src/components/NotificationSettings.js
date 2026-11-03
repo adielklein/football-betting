@@ -15,11 +15,11 @@ function ToggleRow({ label, hint, checked, onChange }) {
       }}
     >
       <div style={{ minWidth: 0 }}>
-        <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-2, #555)', cursor: 'pointer' }}>
+        <label style={{ fontSize: 'var(--fs-xs)', fontWeight: '600', color: 'var(--text-2, #555)', cursor: 'pointer' }}>
           {label}
         </label>
         {hint && (
-          <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', marginTop: '1px' }}>{hint}</div>
+          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', marginTop: '1px' }}>{hint}</div>
         )}
       </div>
       <div style={{
@@ -263,12 +263,12 @@ function NotificationSettings({ user, embedded = false }) {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <span style={{ fontSize: '16px' }}>🔔</span>
-          <span style={{ fontWeight: '600', fontSize: '13px', color: 'var(--text, #333)' }}>התראות תזכורת</span>
+          <span style={{ fontSize: 'var(--fs-md)' }}>🔔</span>
+          <span style={{ fontWeight: '600', fontSize: 'var(--fs-sm)', color: 'var(--text, #333)' }}>התראות תזכורת</span>
           {isSubscribed && (
             <span style={{
               padding: '1px 8px', borderRadius: '20px',
-              fontSize: '10px', fontWeight: '700',
+              fontSize: 'var(--fs-xs)', fontWeight: '700',
               background: 'var(--good-bg, #dcfce7)',
               color: 'var(--good-fg, #16a34a)', border: '1px solid #86efac'
             }}>
@@ -277,7 +277,7 @@ function NotificationSettings({ user, embedded = false }) {
           )}
         </div>
         <span style={{
-          fontSize: '12px', color: 'var(--text-4, #aaa)',
+          fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)',
           transition: 'transform 0.3s ease',
           transform: showSettings ? 'rotate(180deg)' : 'rotate(0deg)',
           display: 'inline-block'
@@ -299,12 +299,12 @@ function NotificationSettings({ user, embedded = false }) {
             borderRadius: '10px',
             marginBottom: '0.5rem'
           }}>
-            <p style={{ fontSize: '12px', color: 'var(--text-3, #888)', marginBottom: '0.5rem' }}>
+            <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', marginBottom: '0.5rem' }}>
               קבל התראה לנייד לפני שההימורים נסגרים
             </p>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-2, #555)', flexShrink: 0 }}>
+              <label style={{ fontSize: 'var(--fs-xs)', fontWeight: '600', color: 'var(--text-2, #555)', flexShrink: 0 }}>
                 התראה לפני:
               </label>
               <select
@@ -312,7 +312,7 @@ function NotificationSettings({ user, embedded = false }) {
                 onChange={(e) => setHoursBeforeLock(Number(e.target.value))}
                 className="input"
                 style={{
-                  flex: 1, fontSize: '13px', padding: '0.35rem 0.5rem',
+                  flex: 1, fontSize: 'var(--fs-sm)', padding: '0.35rem 0.5rem',
                   borderRadius: '8px', maxWidth: '140px'
                 }}
                 disabled={loading}
@@ -337,7 +337,7 @@ function NotificationSettings({ user, embedded = false }) {
               marginTop: '0.5rem', paddingTop: '0.5rem',
               borderTop: '1px solid var(--border, #eee)'
             }}>
-              <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-3, #888)', marginBottom: '0.2rem' }}>
+              <div style={{ fontSize: 'var(--fs-xs)', fontWeight: '700', color: 'var(--text-3, #888)', marginBottom: '0.2rem' }}>
                 אירועים במשחק חי
               </div>
               {MATCH_EVENT_ALERTS.map(({ key, label, hint }) => (
@@ -357,7 +357,7 @@ function NotificationSettings({ user, embedded = false }) {
                   flex: 1, padding: '0.35rem',
                   background: 'linear-gradient(135deg, #28a745, #20c997)',
                   color: 'white', border: 'none', borderRadius: '8px',
-                  fontSize: '12px', fontWeight: '700', cursor: 'pointer'
+                  fontSize: 'var(--fs-xs)', fontWeight: '700', cursor: 'pointer'
                 }}>
                   💾 שמור
                 </button>
@@ -365,7 +365,7 @@ function NotificationSettings({ user, embedded = false }) {
                   flex: 1, padding: '0.35rem',
                   background: 'linear-gradient(135deg, #17a2b8, #138496)',
                   color: 'white', border: 'none', borderRadius: '8px',
-                  fontSize: '12px', fontWeight: '700', cursor: 'pointer'
+                  fontSize: 'var(--fs-xs)', fontWeight: '700', cursor: 'pointer'
                 }}>
                   📢 בדיקה
                 </button>
@@ -380,7 +380,7 @@ function NotificationSettings({ user, embedded = false }) {
                 flex: 1, padding: '0.5rem',
                 background: loading ? '#ccc' : 'linear-gradient(135deg, var(--theme-primary, #007bff), var(--theme-secondary, #6c757d))',
                 color: 'white', border: 'none', borderRadius: '10px',
-                fontSize: '14px', fontWeight: '700', cursor: loading ? 'wait' : 'pointer',
+                fontSize: 'var(--fs-sm)', fontWeight: '700', cursor: loading ? 'wait' : 'pointer',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
               }}>
                 {loading ? '⏳ מפעיל...' : '🔔 הפעל התראות'}
@@ -392,7 +392,7 @@ function NotificationSettings({ user, embedded = false }) {
                   padding: '0.4rem',
                   background: 'var(--good-bg, #dcfce7)',
                   color: 'var(--good-fg, #166534)', borderRadius: '10px',
-                  fontSize: '12px', fontWeight: '700',
+                  fontSize: 'var(--fs-xs)', fontWeight: '700',
                   border: '1px solid #86efac'
                 }}>
                   ✅ פעיל
@@ -401,7 +401,7 @@ function NotificationSettings({ user, embedded = false }) {
                   padding: '0.4rem 0.7rem',
                   background: 'linear-gradient(135deg, #dc3545, #c62828)',
                   color: 'white', border: 'none', borderRadius: '10px',
-                  fontSize: '11px', fontWeight: '700', cursor: 'pointer'
+                  fontSize: 'var(--fs-xs)', fontWeight: '700', cursor: 'pointer'
                 }}>
                   {loading ? '⏳' : '📕 בטל'}
                 </button>
@@ -413,12 +413,12 @@ function NotificationSettings({ user, embedded = false }) {
           <div style={{
             marginTop: '0.5rem', padding: '0.5rem',
             background: 'linear-gradient(135deg, #dbeafe, #e0e7ff)',
-            borderRadius: '8px', fontSize: '11px', color: '#3730a3',
+            borderRadius: '8px', fontSize: 'var(--fs-xs)', color: '#3730a3',
             lineHeight: 1.5
           }}>
             <strong>💡 התקנה:</strong> פתח ב-Chrome/Safari → תפריט → "הוסף למסך הבית"
             <br />
-            <span style={{ fontSize: '10px', color: 'var(--info-fg, #6366a1)' }}>
+            <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--info-fg, #6366a1)' }}>
               📱 תמיכה במספר מכשירים - כולם יקבלו התראות!
             </span>
           </div>

@@ -16,11 +16,11 @@ const activeProvider = (league) => {
 };
 
 const searchLabelStyle = {
-  fontSize: '11px', color: 'var(--text-3, #888)', display: 'block', marginBottom: '3px', fontWeight: '600'
+  fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', display: 'block', marginBottom: '3px', fontWeight: '600'
 };
 
 const searchInputStyle = {
-  borderRadius: '10px', fontSize: '13px', padding: '0.45rem 0.6rem'
+  borderRadius: '10px', fontSize: 'var(--fs-sm)', padding: '0.45rem 0.6rem'
 };
 
 // חיפוש תחרות ב-365 לפי שם. 365 הוא הספק המועדף כאן - הוא מחזיר עברית, ורק
@@ -73,7 +73,7 @@ function Competition365Search({ onPick }) {
             padding: '0.45rem 0.8rem',
             background: searching ? '#9e9e9e' : 'linear-gradient(135deg, #007bff, #00a2ff)',
             color: 'white', border: 'none', borderRadius: '10px',
-            fontSize: '13px', fontWeight: '700', cursor: searching ? 'default' : 'pointer',
+            fontSize: 'var(--fs-sm)', fontWeight: '700', cursor: searching ? 'default' : 'pointer',
             whiteSpace: 'nowrap'
           }}
         >
@@ -88,7 +88,7 @@ function Competition365Search({ onPick }) {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               gap: '0.5rem', padding: '0.35rem 0.5rem',
               background: 'var(--surface, #fff)', border: '1px solid var(--border, #f0f0f0)',
-              borderRadius: '8px', fontSize: '12px'
+              borderRadius: '8px', fontSize: 'var(--fs-xs)'
             }}>
               <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {c.name}
@@ -99,7 +99,7 @@ function Competition365Search({ onPick }) {
                 onClick={() => onPick(c)}
                 style={{
                   padding: '0.2rem 0.55rem', background: 'var(--surface-3, #eef3f8)',
-                  border: 'none', borderRadius: '6px', fontSize: '11px',
+                  border: 'none', borderRadius: '6px', fontSize: 'var(--fs-xs)',
                   fontWeight: '700', cursor: 'pointer', flexShrink: 0
                 }}
               >
@@ -112,12 +112,12 @@ function Competition365Search({ onPick }) {
 
       {results && !results.source && (
         <div style={{
-          marginTop: '0.5rem', fontSize: '11px', color: 'var(--warn-fg, #9a7b3f)',
+          marginTop: '0.5rem', fontSize: 'var(--fs-xs)', color: 'var(--warn-fg, #9a7b3f)',
           background: 'var(--warn-bg, #fffaf0)', border: '1px solid #f5e3c0',
           borderRadius: '8px', padding: '0.4rem 0.55rem'
         }}>
           ⚠️ 365 לא החזירו רשימת תחרויות. פירוט הניסיונות:
-          <pre style={{ margin: '0.3rem 0 0', whiteSpace: 'pre-wrap', fontSize: '10px' }}>
+          <pre style={{ margin: '0.3rem 0 0', whiteSpace: 'pre-wrap', fontSize: 'var(--fs-xs)' }}>
             {JSON.stringify(results.diagnostics, null, 1)}
           </pre>
         </div>
@@ -360,11 +360,11 @@ function LeaguesManagement() {
   };
 
   const labelStyle = {
-    fontSize: '11px', color: 'var(--text-3, #888)', display: 'block', marginBottom: '3px', fontWeight: '600'
+    fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', display: 'block', marginBottom: '3px', fontWeight: '600'
   };
 
   const inputStyle = {
-    borderRadius: '10px', fontSize: '13px', padding: '0.45rem 0.6rem'
+    borderRadius: '10px', fontSize: 'var(--fs-sm)', padding: '0.45rem 0.6rem'
   };
 
   if (loading) {
@@ -376,7 +376,7 @@ function LeaguesManagement() {
           borderRadius: '50%', animation: 'spin 0.8s linear infinite',
           margin: '0 auto 0.5rem'
         }}></div>
-        <span style={{ fontSize: '13px', color: 'var(--text-3, #888)' }}>טוען ליגות...</span>
+        <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-3, #888)' }}>טוען ליגות...</span>
       </div>
     );
   }
@@ -386,7 +386,7 @@ function LeaguesManagement() {
       {/* Header */}
       <div className="card" style={{ marginBottom: '0.75rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ fontSize: '0.95rem', margin: 0, fontWeight: '700' }}>
+          <h2 style={{ fontSize: 'var(--fs-md)', margin: 0, fontWeight: '700' }}>
             🏆 ניהול ליגות ({leagues.length})
           </h2>
           <div style={{ display: 'flex', gap: '0.4rem' }}>
@@ -398,7 +398,7 @@ function LeaguesManagement() {
                 padding: '0.4rem 0.8rem',
                 background: seeding ? '#9e9e9e' : 'linear-gradient(135deg, #007bff, #00a2ff)',
                 color: 'white', border: 'none', borderRadius: '8px',
-                fontSize: '12px', fontWeight: '700', cursor: seeding ? 'default' : 'pointer'
+                fontSize: 'var(--fs-xs)', fontWeight: '700', cursor: seeding ? 'default' : 'pointer'
               }}
             >
               {seeding ? '⏳ מסנכרן...' : '🌍 סנכרן ליגות אירופאיות'}
@@ -411,7 +411,7 @@ function LeaguesManagement() {
                 padding: '0.4rem 0.8rem',
                 background: verifying ? '#9e9e9e' : 'linear-gradient(135deg, #6f42c1, #8e5ad6)',
                 color: 'white', border: 'none', borderRadius: '8px',
-                fontSize: '12px', fontWeight: '700', cursor: verifying ? 'default' : 'pointer'
+                fontSize: 'var(--fs-xs)', fontWeight: '700', cursor: verifying ? 'default' : 'pointer'
               }}
             >
               {verifying ? '⏳ בודק...' : '🔍 בדוק מול 365'}
@@ -424,7 +424,7 @@ function LeaguesManagement() {
                 padding: '0.4rem 0.8rem',
                 background: verifying ? '#9e9e9e' : 'linear-gradient(135deg, #495057, #6c757d)',
                 color: 'white', border: 'none', borderRadius: '8px',
-                fontSize: '12px', fontWeight: '700', cursor: verifying ? 'default' : 'pointer'
+                fontSize: 'var(--fs-xs)', fontWeight: '700', cursor: verifying ? 'default' : 'pointer'
               }}
             >
               🩺 נתיבי 365
@@ -436,7 +436,7 @@ function LeaguesManagement() {
                   padding: '0.4rem 0.8rem',
                   background: 'linear-gradient(135deg, #28a745, #20c997)',
                   color: 'white', border: 'none', borderRadius: '8px',
-                  fontSize: '12px', fontWeight: '700', cursor: 'pointer'
+                  fontSize: 'var(--fs-xs)', fontWeight: '700', cursor: 'pointer'
                 }}
               >
                 🏆 אתחל ברירת מחדל
@@ -450,12 +450,12 @@ function LeaguesManagement() {
       {health && (
         <div className="card" style={{ marginBottom: '0.75rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-            <h2 style={{ fontSize: '0.95rem', margin: 0, fontWeight: '700' }}>
+            <h2 style={{ fontSize: 'var(--fs-md)', margin: 0, fontWeight: '700' }}>
               🩺 נתיבי 365 {health.league ? `· ${health.league} (#${health.competitionId})` : ''}
             </h2>
-            <button onClick={() => setHealth(null)} className="btn" style={{ background: 'transparent', fontSize: '16px', padding: '0 0.3rem' }}>✖</button>
+            <button onClick={() => setHealth(null)} className="btn" style={{ background: 'transparent', fontSize: 'var(--fs-md)', padding: '0 0.3rem' }}>✖</button>
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-3, #888)', marginBottom: '0.4rem', lineHeight: 1.5 }}>
+          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', marginBottom: '0.4rem', lineHeight: 1.5 }}>
             לכל נתיב: האם הוא עונה, כמה משחקים החזיר, כמה מהם בתחרות שביקשנו,
             ובאילו תאריכים. זה מה שאומר אם הספק מכבד את המסננים - ואם לא, מה
             בדיוק הוא מתעלם ממנו.
@@ -463,11 +463,11 @@ function LeaguesManagement() {
 
           {health.probes.map((probe, i) => (
             <div key={`${probe.path}-${i}`} style={{
-              padding: '0.4rem 0.2rem', fontSize: '12px',
+              padding: '0.4rem 0.2rem', fontSize: 'var(--fs-xs)',
               borderTop: '1px dashed var(--border, #eef1f4)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ fontSize: '13px' }}>{probe.ok ? '✅' : '❌'}</span>
+                <span style={{ fontSize: 'var(--fs-sm)' }}>{probe.ok ? '✅' : '❌'}</span>
                 <span style={{ fontWeight: 600, flex: 1, minWidth: 0 }}>{probe.name}</span>
                 <span style={{
                   fontWeight: 800,
@@ -478,7 +478,7 @@ function LeaguesManagement() {
               </div>
 
               {probe.ok && (
-                <div style={{ fontSize: '11px', color: 'var(--text-3, #888)', marginTop: '2px' }}>
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', marginTop: '2px' }}>
                   {probe.games != null && `${probe.games} משחקים`}
                   {probe.inCompetition != null && ` · ${probe.inCompetition} בתחרות`}
                   {probe.firstDate && ` · ${probe.firstDate} → ${probe.lastDate}`}
@@ -490,14 +490,14 @@ function LeaguesManagement() {
                   להוציא מהספק - למשל אם יש שדה שמסביר ביטול שער */}
               {probe.gameKeys && (
                 <details style={{ marginTop: '3px' }}>
-                  <summary style={{ fontSize: '10.5px', color: 'var(--text-4, #aaa)', cursor: 'pointer' }}>
+                  <summary style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', cursor: 'pointer' }}>
                     שדות באובייקט המשחק ({probe.gameKeys.length})
                   </summary>
-                  <div style={{ fontSize: '10px', color: 'var(--text-3, #888)', fontFamily: 'monospace', marginTop: '2px', wordBreak: 'break-all' }}>
+                  <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', fontFamily: 'monospace', marginTop: '2px', wordBreak: 'break-all' }}>
                     {probe.gameKeys.join(', ')}
                   </div>
                   {probe.arrays && Object.entries(probe.arrays).map(([key, info]) => (
-                    <div key={key} style={{ fontSize: '10px', color: 'var(--text-3, #888)', fontFamily: 'monospace', marginTop: '4px', wordBreak: 'break-all' }}>
+                    <div key={key} style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', fontFamily: 'monospace', marginTop: '4px', wordBreak: 'break-all' }}>
                       {key} ({info.count}): {info.keys.join(', ')}
                       <div style={{ marginTop: '2px', opacity: 0.8 }}>{info.sample}</div>
                     </div>
@@ -506,13 +506,13 @@ function LeaguesManagement() {
               )}
 
               {probe.samples && probe.samples.length > 0 && (
-                <div style={{ fontSize: '10.5px', color: 'var(--text-4, #aaa)', marginTop: '1px' }}>
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', marginTop: '1px' }}>
                   {probe.samples.join(' · ')}
                 </div>
               )}
 
               {probe.error && (
-                <div style={{ fontSize: '11px', color: 'var(--bad-fg, #b3261e)', marginTop: '2px' }}>{probe.error}</div>
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--bad-fg, #b3261e)', marginTop: '2px' }}>{probe.error}</div>
               )}
             </div>
           ))}
@@ -523,19 +523,19 @@ function LeaguesManagement() {
       {verification && (
         <div className="card" style={{ marginBottom: '0.75rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-            <h2 style={{ fontSize: '0.95rem', margin: 0, fontWeight: '700' }}>
+            <h2 style={{ fontSize: 'var(--fs-md)', margin: 0, fontWeight: '700' }}>
               🔍 בדיקה מול 365 ({verification.checked})
             </h2>
             <button
               onClick={() => setVerification(null)}
               className="btn"
-              style={{ background: 'transparent', fontSize: '16px', padding: '0 0.3rem' }}
+              style={{ background: 'transparent', fontSize: 'var(--fs-md)', padding: '0 0.3rem' }}
             >
               ✖
             </button>
           </div>
 
-          <div style={{ fontSize: '11px', color: 'var(--text-3, #888)', marginBottom: '0.5rem', lineHeight: 1.5 }}>
+          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', marginBottom: '0.5rem', lineHeight: 1.5 }}>
             שם התחרות והקבוצות כפי ש-365 מחזירים אותם על המשחקים עצמם, בטווח
             {' '}{verification.fromDate} עד {verification.toDate}. זו הראיה היחידה
             שהחיבור נכון - שם ששמרנו אצלנו רק חוזר על מה שהנחנו.
@@ -550,13 +550,13 @@ function LeaguesManagement() {
                 background: bad ? 'var(--warn-bg, #fffaf0)' : 'transparent'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                  <span style={{ fontWeight: 700, fontSize: '13px' }}>{row.name}</span>
-                  <span style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', fontFamily: 'monospace' }}>
+                  <span style={{ fontWeight: 700, fontSize: 'var(--fs-sm)' }}>{row.name}</span>
+                  <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', fontFamily: 'monospace' }}>
                     #{row.competitionId}
                   </span>
                   {row.liveName && (
                     <span style={{
-                      padding: '1px 6px', borderRadius: '10px', fontSize: '10px', fontWeight: 700,
+                      padding: '1px 6px', borderRadius: '10px', fontSize: 'var(--fs-xs)', fontWeight: 700,
                       background: 'var(--good-bg, #e8f6ec)', color: 'var(--good-fg, #1a6b35)'
                     }}>
                       365: {row.liveName}
@@ -564,7 +564,7 @@ function LeaguesManagement() {
                   )}
                   {bad && (
                     <span style={{
-                      padding: '1px 6px', borderRadius: '10px', fontSize: '10px', fontWeight: 700,
+                      padding: '1px 6px', borderRadius: '10px', fontSize: 'var(--fs-xs)', fontWeight: 700,
                       background: 'var(--warn-bg, #fff3cd)', color: 'var(--warn-fg, #9a7b3f)'
                     }}>
                       {row.error ? 'שגיאה' : 'אין משחקים בטווח'}
@@ -573,12 +573,12 @@ function LeaguesManagement() {
                 </div>
 
                 {row.samples.length > 0 && (
-                  <div style={{ fontSize: '11px', color: 'var(--text-3, #888)', marginTop: '2px' }}>
+                  <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', marginTop: '2px' }}>
                     {row.samples.join(' · ')}
                   </div>
                 )}
                 {row.error && (
-                  <div style={{ fontSize: '11px', color: 'var(--bad-fg, #b3261e)', marginTop: '2px' }}>
+                  <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--bad-fg, #b3261e)', marginTop: '2px' }}>
                     {row.error}
                   </div>
                 )}
@@ -590,7 +590,7 @@ function LeaguesManagement() {
 
       {/* Add league form */}
       <div className="card" style={{ marginBottom: '0.75rem' }}>
-        <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
+        <h2 style={{ fontSize: 'var(--fs-md)', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
           ➕ הוסף ליגה חדשה
         </h2>
         <div style={{
@@ -690,7 +690,7 @@ function LeaguesManagement() {
           width: '100%', padding: '0.55rem',
           background: 'linear-gradient(135deg, #28a745, #20c997)',
           color: 'white', border: 'none', borderRadius: '10px',
-          fontSize: '14px', fontWeight: '700', cursor: 'pointer',
+          fontSize: 'var(--fs-sm)', fontWeight: '700', cursor: 'pointer',
           boxShadow: '0 2px 8px rgba(40,167,69,0.3)',
           WebkitAppearance: 'none', touchAction: 'manipulation'
         }}>
@@ -700,12 +700,12 @@ function LeaguesManagement() {
 
       {/* Leagues list */}
       <div className="card">
-        <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
+        <h2 style={{ fontSize: 'var(--fs-md)', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
           📋 ליגות קיימות
         </h2>
 
         {leagues.length === 0 ? (
-          <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '2rem', fontSize: '14px' }}>
+          <div style={{ textAlign: 'center', color: 'var(--text-4, #999)', padding: '2rem', fontSize: 'var(--fs-sm)' }}>
             <div style={{ fontSize: '40px', marginBottom: '0.5rem' }}>🏆</div>
             אין ליגות במערכת עדיין
           </div>
@@ -735,11 +735,11 @@ function LeaguesManagement() {
                     <LeagueLogo league={league} size={20} />
                   </div>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text, #333)' }}>
+                    <div style={{ fontWeight: '600', fontSize: 'var(--fs-sm)', color: 'var(--text, #333)' }}>
                       {league.name}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      <span style={{ fontFamily: 'monospace', fontSize: '10px', color: 'var(--text-4, #aaa)' }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)' }}>
                         {league.key}
                       </span>
                       {/* השם אצל 365. התאמה שגויה - "ליגת האומות" של קונקקאף
@@ -749,7 +749,7 @@ function LeaguesManagement() {
                         <span
                           title="שם התחרות אצל 365scores"
                           style={{
-                            padding: '1px 6px', borderRadius: '10px', fontSize: '10px',
+                            padding: '1px 6px', borderRadius: '10px', fontSize: 'var(--fs-xs)',
                             background: 'var(--surface-3, #f0f2f5)', color: 'var(--text-3, #888)'
                           }}
                         >
@@ -759,16 +759,16 @@ function LeaguesManagement() {
                       <span style={{
                         padding: '1px 6px',
                         backgroundColor: league.type === 'club' ? 'var(--info-bg, #e3f2fd)' : league.type === 'national' ? 'var(--warn-bg, #fff3cd)' : 'var(--surface-2, #f8f9fa)',
-                        borderRadius: '10px', fontSize: '10px', fontWeight: '600',
+                        borderRadius: '10px', fontSize: 'var(--fs-xs)', fontWeight: '600',
                         color: league.type === 'club' ? 'var(--info-fg, #1565c0)' : league.type === 'national' ? 'var(--warn-fg, #f57f17)' : 'var(--text-3, #666)'
                       }}>
                         {league.type === 'club' ? '🏢 מועדון' : league.type === 'national' ? '🌍 נבחרות' : '📌 אחר'}
                       </span>
                       {league.region && (
-                        <span style={{ fontSize: '10px', color: 'var(--text-4, #999)' }}>{league.region}</span>
+                        <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #999)' }}>{league.region}</span>
                       )}
                       <span style={{
-                        fontSize: '10px', color: 'var(--text-4, #bbb)', fontWeight: '600'
+                        fontSize: 'var(--fs-xs)', color: 'var(--text-4, #bbb)', fontWeight: '600'
                       }}>
                         #{league.order}
                       </span>
@@ -780,7 +780,7 @@ function LeaguesManagement() {
                               ? 'יחסי ווינר, תובנות וטבלה חיה זמינים'
                               : 'ללא יחסי ווינר, תובנות וטבלה חיה - הם קיימים רק ב-365scores'}
                             style={{
-                              padding: '1px 6px', borderRadius: '10px', fontSize: '10px', fontWeight: '700',
+                              padding: '1px 6px', borderRadius: '10px', fontSize: 'var(--fs-xs)', fontWeight: '700',
                               backgroundColor: p.good ? 'var(--good-bg, #e6f4ea)' : 'var(--warn-bg, #fff3cd)',
                               color: p.good ? 'var(--good-fg, #1e7e34)' : 'var(--warn-fg, #9a7b3f)'
                             }}
@@ -797,7 +797,7 @@ function LeaguesManagement() {
                     padding: '0.3rem 0.6rem',
                     background: 'linear-gradient(135deg, #ffc107, #ffb300)',
                     color: 'white', border: 'none', borderRadius: '8px',
-                    fontSize: '11px', fontWeight: '700', cursor: 'pointer'
+                    fontSize: 'var(--fs-xs)', fontWeight: '700', cursor: 'pointer'
                   }}>
                     ✏️
                   </button>
@@ -805,7 +805,7 @@ function LeaguesManagement() {
                     padding: '0.3rem 0.6rem',
                     background: 'linear-gradient(135deg, #dc3545, #c62828)',
                     color: 'white', border: 'none', borderRadius: '8px',
-                    fontSize: '11px', fontWeight: '700', cursor: 'pointer'
+                    fontSize: 'var(--fs-xs)', fontWeight: '700', cursor: 'pointer'
                   }}>
                     🗑️
                   </button>
@@ -837,7 +837,7 @@ function LeaguesManagement() {
               borderBottom: '1px solid var(--border, #f0f0f0)',
               background: 'var(--surface-2, #f8f9fa)'
             }}>
-              <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '700' }}>
+              <h3 style={{ margin: 0, fontSize: 'var(--fs-md)', fontWeight: '700' }}>
                 ✏️ עריכת ליגה: {editingLeague.name}
               </h3>
             </div>
@@ -936,14 +936,14 @@ function LeaguesManagement() {
                 flex: 1, padding: '0.55rem',
                 background: 'linear-gradient(135deg, #28a745, #20c997)',
                 color: 'white', border: 'none', borderRadius: '10px',
-                fontSize: '14px', fontWeight: '700', cursor: 'pointer'
+                fontSize: 'var(--fs-sm)', fontWeight: '700', cursor: 'pointer'
               }}>
                 💾 שמור
               </button>
               <button onClick={() => { setEditingLeague(null); setEditForm({}); }} style={{
                 flex: 1, padding: '0.55rem',
                 backgroundColor: '#6c757d', color: 'white', border: 'none',
-                borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer'
+                borderRadius: '10px', fontSize: 'var(--fs-sm)', fontWeight: '600', cursor: 'pointer'
               }}>
                 ביטול
               </button>

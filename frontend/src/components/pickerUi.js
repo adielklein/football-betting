@@ -30,7 +30,7 @@ const rowStyle = (selected) => ({
   background: selected ? 'var(--me-bg, #dbeafe)' : 'transparent',
   color: selected ? 'var(--me-fg, #14508f)' : 'var(--text, #333)',
   fontWeight: selected ? 800 : 600,
-  fontSize: '13px',
+  fontSize: 'var(--fs-sm)',
   textAlign: 'right',
   cursor: 'pointer',
   font: 'inherit',
@@ -44,7 +44,7 @@ const triggerStyle = (disabled) => ({
   width: '100%',
   cursor: disabled ? 'default' : 'pointer',
   font: 'inherit',
-  fontSize: '13px',
+  fontSize: 'var(--fs-sm)',
   fontWeight: 700,
   color: 'var(--text, #333)',
   textAlign: 'right'

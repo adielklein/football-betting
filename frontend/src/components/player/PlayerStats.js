@@ -22,7 +22,7 @@ const WeeklyBarChart = ({ weeks, activeIndex, onSelect }) => {
   }, [activeIndex]);
 
   if (!weeks || weeks.length === 0) {
-    return <p style={{ color: 'var(--text-4, #999)', fontSize: '13px', textAlign: 'center' }}>אין נתונים עדיין</p>;
+    return <p style={{ color: 'var(--text-4, #999)', fontSize: 'var(--fs-sm)', textAlign: 'center' }}>אין נתונים עדיין</p>;
   }
 
   const maxScore = Math.max(...weeks.map((w) => w.weeklyScore || 0), 1);
@@ -60,7 +60,7 @@ const WeeklyBarChart = ({ weeks, activeIndex, onSelect }) => {
                 <>
                   <div style={{
                     height: '15px', textAlign: 'center',
-                    fontSize: '10px', fontWeight: '700',
+                    fontSize: 'var(--fs-xs)', fontWeight: '700',
                     color: isActive ? 'var(--theme-primary, #007bff)' : 'var(--text-4, #aaa)'
                   }}>
                     {pts(score)}
@@ -88,7 +88,7 @@ const WeeklyBarChart = ({ weeks, activeIndex, onSelect }) => {
               const isActive = i === activeIndex;
               return column(week, i, (
                 <div style={{
-                  textAlign: 'center', fontSize: '10px', lineHeight: '16px',
+                  textAlign: 'center', fontSize: 'var(--fs-xs)', lineHeight: '16px',
                   height: '16px', borderRadius: '8px',
                   fontWeight: isActive ? '800' : '600',
                   color: isActive ? '#fff' : 'var(--text-4, #aaa)',
@@ -112,25 +112,25 @@ const WeeklyBarChart = ({ weeks, activeIndex, onSelect }) => {
           <span style={{
             minWidth: '20px', height: '20px', borderRadius: '6px',
             background: 'var(--theme-primary, #007bff)', color: '#fff',
-            fontSize: '11px', fontWeight: '800', lineHeight: '20px', textAlign: 'center'
+            fontSize: 'var(--fs-xs)', fontWeight: '800', lineHeight: '20px', textAlign: 'center'
           }}>
             {active.weekIndex}
           </span>
           <span style={{
-            flex: 1, fontSize: '12px', fontWeight: '700', color: 'var(--text, #333)',
+            flex: 1, fontSize: 'var(--fs-xs)', fontWeight: '700', color: 'var(--text, #333)',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
           }}>
             {active.weekName}
           </span>
-          <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--theme-primary, #007bff)' }}>
+          <span style={{ fontSize: 'var(--fs-sm)', fontWeight: '800', color: 'var(--theme-primary, #007bff)' }}>
             {pts(active.weeklyScore)} נק׳
           </span>
-          <span style={{ fontSize: '11px', color: 'var(--text-4, #aaa)', fontWeight: '500' }}>
+          <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', fontWeight: '500' }}>
             מצטבר {pts(active.cumulativeScore)}
           </span>
         </div>
       )}
-      <p style={{ margin: '6px 2px 0', fontSize: '10px', color: 'var(--text-4, #bbb)' }}>
+      <p style={{ margin: '6px 2px 0', fontSize: 'var(--fs-xs)', color: 'var(--text-4, #bbb)' }}>
         לחיצה על עמודה מציגה את שם השבוע
       </p>
     </div>
@@ -177,7 +177,7 @@ const CumulativeChart = ({ weeks, activeIndex, onSelect }) => {
           return (
             <g key={i}>
               <line x1="8" y1={y} x2={chartWidth - axisPad + 6} y2={y} stroke="#f0f2f5" strokeWidth="1" />
-              <text x={chartWidth - axisPad + 10} y={y + 3} fontSize="9" fill="#bbb" textAnchor="start">
+              <text x={chartWidth - axisPad + 10} y={y + 3} fontSize="12" fill="#bbb" textAnchor="start">
                 {pts(maxTotal * pct)}
               </text>
             </g>
@@ -206,7 +206,7 @@ const CumulativeChart = ({ weeks, activeIndex, onSelect }) => {
         {points.map((p, i) => {
           if (!labelled.has(i)) return null;
           return (
-            <text key={'l' + i} x={p.x} y={chartHeight + 18} fontSize="9" textAnchor="middle"
+            <text key={'l' + i} x={p.x} y={chartHeight + 18} fontSize="12" textAnchor="middle"
               fontWeight={i === activeIndex ? '800' : '500'}
               fill={i === activeIndex ? 'var(--theme-primary, #007bff)' : '#bbb'}>
               {p.week.weekIndex}
@@ -231,7 +231,7 @@ const BettingTwins = ({ data }) => {
   const twins = (data && data.twins) || [];
   if (twins.length === 0) {
     return (
-      <p style={{ color: 'var(--text-4, #999)', fontSize: '12px', textAlign: 'center', margin: '0.3rem 0' }}>
+      <p style={{ color: 'var(--text-4, #999)', fontSize: 'var(--fs-xs)', textAlign: 'center', margin: '0.3rem 0' }}>
         עוד אין מספיק משחקים משותפים עם שחקן אחר (צריך לפחות {(data && data.minCommon) || 10})
       </p>
     );
@@ -245,31 +245,31 @@ const BettingTwins = ({ data }) => {
           width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: 'linear-gradient(135deg, var(--theme-primary, #007bff), var(--theme-secondary, #6c757d))',
-          color: '#fff', fontSize: '18px', fontWeight: '800'
+          color: '#fff', fontSize: 'var(--fs-lg)', fontWeight: '800'
         }}>
           {(twin.name || '?').trim().charAt(0)}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontSize: '16px', fontWeight: '800', color: 'var(--text, #333)',
+            fontSize: 'var(--fs-md)', fontWeight: '800', color: 'var(--text, #333)',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
           }}>
             {twin.name}
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-3, #888)', marginTop: '1px' }}>
+          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', marginTop: '1px' }}>
             אותה תוצאה בדיוק ב-{twin.same} מתוך {twin.common} משחקים משותפים
           </div>
         </div>
         <div style={{ textAlign: 'center', flexShrink: 0 }}>
-          <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--theme-primary, #007bff)', lineHeight: 1.1 }}>
+          <div style={{ fontSize: 'var(--fs-xl)', fontWeight: '800', color: 'var(--theme-primary, #007bff)', lineHeight: 1.1 }}>
             {twin.sameRate}%
           </div>
-          <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)', fontWeight: '600' }}>זהים</div>
+          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', fontWeight: '600' }}>זהים</div>
         </div>
       </div>
 
       <div style={{
-        marginTop: '8px', fontSize: '11px', color: 'var(--text-3, #888)',
+        marginTop: '8px', fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)',
         background: 'var(--surface-2, #f8f9fc)', borderRadius: '8px', padding: '6px 10px'
       }}>
         ובאותו כיוון (מי מנצח או תיקו): <b style={{ color: 'var(--text-2, #555)' }}>{twin.directionRate}%</b> מהמשחקים
@@ -280,7 +280,7 @@ const BettingTwins = ({ data }) => {
           {rest.map((t, i) => (
             <div key={t.userId} style={{
               display: 'flex', alignItems: 'center', gap: '8px',
-              padding: '5px 4px', fontSize: '12px'
+              padding: '5px 4px', fontSize: 'var(--fs-xs)'
             }}>
               <span style={{ width: '16px', textAlign: 'center', color: 'var(--text-4, #aaa)', fontWeight: '700' }}>{i + 2}</span>
               <span style={{
@@ -289,7 +289,7 @@ const BettingTwins = ({ data }) => {
               }}>
                 {t.name}
               </span>
-              <span dir="ltr" style={{ fontSize: '11px', color: 'var(--text-4, #aaa)' }}>{t.same}/{t.common}</span>
+              <span dir="ltr" style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)' }}>{t.same}/{t.common}</span>
               <span style={{ minWidth: '36px', textAlign: 'left', fontWeight: '800', color: 'var(--text-2, #555)' }}>
                 {t.sameRate}%
               </span>
@@ -339,7 +339,7 @@ function PlayerStats({ user }) {
           borderTop: '3px solid var(--theme-primary, #007bff)',
           borderRadius: '50%', animation: 'spin 0.8s linear infinite'
         }} />
-        <p style={{ color: 'var(--text-3, #888)', fontSize: '14px' }}>טוען סטטיסטיקות...</p>
+        <p style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-sm)' }}>טוען סטטיסטיקות...</p>
       </div>
     );
   }
@@ -352,8 +352,8 @@ function PlayerStats({ user }) {
         borderRadius: '16px', margin: '0.5rem 0'
       }}>
         <div style={{ fontSize: '48px', marginBottom: '0.5rem' }}>📊</div>
-        <p style={{ color: 'var(--text-3, #666)', fontSize: '15px', fontWeight: '600' }}>אין עדיין סטטיסטיקות</p>
-        <p style={{ color: 'var(--text-4, #999)', fontSize: '13px' }}>התחל להמר כדי לראות את הנתונים שלך!</p>
+        <p style={{ color: 'var(--text-3, #666)', fontSize: 'var(--fs-md)', fontWeight: '600' }}>אין עדיין סטטיסטיקות</p>
+        <p style={{ color: 'var(--text-4, #999)', fontSize: 'var(--fs-sm)' }}>התחל להמר כדי לראות את הנתונים שלך!</p>
       </div>
     );
   }
@@ -414,11 +414,11 @@ function PlayerStats({ user }) {
           strokeDashoffset={-(wrongLen + dirLen)} strokeLinecap="round" />
         {/* Center text */}
         <text x={center} y={center - 6} textAnchor="middle" dominantBaseline="middle"
-          style={{ transform: 'rotate(90deg)', transformOrigin: `${center}px ${center}px`, fontSize: '22px', fontWeight: '800', fill: '#333' }}>
+          style={{ transform: 'rotate(90deg)', transformOrigin: `${center}px ${center}px`, fontSize: 'var(--fs-xl)', fontWeight: '800', fill: '#333' }}>
           {overview.accuracy}%
         </text>
         <text x={center} y={center + 14} textAnchor="middle" dominantBaseline="middle"
-          style={{ transform: 'rotate(90deg)', transformOrigin: `${center}px ${center}px`, fontSize: '10px', fill: '#999', fontWeight: '500' }}>
+          style={{ transform: 'rotate(90deg)', transformOrigin: `${center}px ${center}px`, fontSize: 'var(--fs-xs)', fill: '#999', fontWeight: '500' }}>
           דיוק
         </text>
       </svg>
@@ -431,8 +431,8 @@ function PlayerStats({ user }) {
     return (
       <div style={{ marginBottom: '8px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-          <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-2, #555)' }}>{label}</span>
-          <span style={{ fontSize: '12px', color: 'var(--text-3, #888)' }}>{count != null ? count : value}</span>
+          <span style={{ fontSize: 'var(--fs-xs)', fontWeight: '600', color: 'var(--text-2, #555)' }}>{label}</span>
+          <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)' }}>{count != null ? count : value}</span>
         </div>
         <div style={{
           height: '8px', borderRadius: '4px', background: 'var(--surface-3, #f0f2f5)', overflow: 'hidden'
@@ -458,8 +458,8 @@ function PlayerStats({ user }) {
     }}>
       {title && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.7rem' }}>
-          {icon && <span style={{ fontSize: '16px' }}>{icon}</span>}
-          <span style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text, #333)' }}>{title}</span>
+          {icon && <span style={{ fontSize: 'var(--fs-md)' }}>{icon}</span>}
+          <span style={{ fontWeight: '700', fontSize: 'var(--fs-sm)', color: 'var(--text, #333)' }}>{title}</span>
         </div>
       )}
       {children}
@@ -472,10 +472,10 @@ function PlayerStats({ user }) {
       flex: 1, textAlign: 'center', padding: '0.6rem 0.3rem',
       background: bg || 'var(--surface-2, #f8f9fc)', borderRadius: '12px',
     }}>
-      <div style={{ fontSize: '22px', fontWeight: '800', color: color || 'var(--text, #333)', lineHeight: 1.2 }}>
+      <div style={{ fontSize: 'var(--fs-xl)', fontWeight: '800', color: color || 'var(--text, #333)', lineHeight: 1.2 }}>
         {value}
       </div>
-      <div style={{ fontSize: '10px', color: 'var(--text-3, #888)', fontWeight: '600', marginTop: '2px' }}>
+      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', fontWeight: '600', marginTop: '2px' }}>
         {label}
       </div>
     </div>
@@ -496,24 +496,24 @@ function PlayerStats({ user }) {
         <span style={{
           width: '22px', height: '22px', borderRadius: '50%',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '11px', fontWeight: '800', color: '#fff',
+          fontSize: 'var(--fs-xs)', fontWeight: '800', color: '#fff',
           background: color
         }}>
           {rank + 1}
         </span>
         <TeamLogo name={team.name} src={team.logo} size={18} />
-        <span style={{ flex: 1, fontSize: '13px', fontWeight: '700', color: 'var(--text, #333)' }}>
+        <span style={{ flex: 1, fontSize: 'var(--fs-sm)', fontWeight: '700', color: 'var(--text, #333)' }}>
           {team.name}
         </span>
         <div style={{ textAlign: 'left', display: 'flex', gap: '8px', alignItems: 'center' }}>
           <span style={{
-            fontSize: '11px', color: 'var(--text-3, #888)',
+            fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)',
           }}>
             {team.bets} משחקים
           </span>
           <span style={{
             padding: '2px 8px', borderRadius: '8px',
-            fontSize: '12px', fontWeight: '800',
+            fontSize: 'var(--fs-xs)', fontWeight: '800',
             background: color, color: '#fff'
           }}>
             {team.accuracy}%
@@ -539,13 +539,13 @@ function PlayerStats({ user }) {
               padding: '0.4rem', border: 'none', borderRadius: '10px',
               background: isActive ? 'var(--surface, #fff)' : 'transparent',
               color: isActive ? 'var(--theme-primary, #007bff)' : 'var(--text-3, #888)',
-              fontWeight: isActive ? '700' : '500', fontSize: '12px',
+              fontWeight: isActive ? '700' : '500', fontSize: 'var(--fs-xs)',
               cursor: 'pointer', display: 'flex', flexDirection: 'column',
               alignItems: 'center', gap: '1px',
               boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
               transition: 'all 0.25s ease'
             }}>
-              <span style={{ fontSize: '14px' }}>{s.icon}</span>
+              <span style={{ fontSize: 'var(--fs-sm)' }}>{s.icon}</span>
               <span>{s.label}</span>
             </button>
           );
@@ -582,16 +582,16 @@ function PlayerStats({ user }) {
                 background: 'var(--warn-bg, #fff7ed)',
                 borderRadius: '12px'
               }}>
-                <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--warn-fg, #ea580c)' }}>{bestHitStreak}</div>
-                <div style={{ fontSize: '10px', color: 'var(--warn-fg, #9a3412)', fontWeight: '600' }}>שיא רצף פגיעות</div>
+                <div style={{ fontSize: 'var(--fs-xl)', fontWeight: '800', color: 'var(--warn-fg, #ea580c)' }}>{bestHitStreak}</div>
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--warn-fg, #9a3412)', fontWeight: '600' }}>שיא רצף פגיעות</div>
               </div>
               <div style={{
                 textAlign: 'center', padding: '0.6rem',
                 background: 'var(--warn-bg, #fefce8)',
                 borderRadius: '12px'
               }}>
-                <div style={{ fontSize: '24px', fontWeight: '800', color: '#ca8a04' }}>{currentHitStreak}</div>
-                <div style={{ fontSize: '10px', color: 'var(--warn-fg, #854d0e)', fontWeight: '600' }}>רצף נוכחי</div>
+                <div style={{ fontSize: 'var(--fs-xl)', fontWeight: '800', color: '#ca8a04' }}>{currentHitStreak}</div>
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--warn-fg, #854d0e)', fontWeight: '600' }}>רצף נוכחי</div>
               </div>
             </div>
           </Card>
@@ -618,9 +618,9 @@ function PlayerStats({ user }) {
                     textAlign: 'center', padding: '0.5rem 0.3rem',
                     background: item.bg, borderRadius: '10px'
                   }}>
-                    <div style={{ fontSize: '20px', fontWeight: '800', color: item.color }}>{pct}%</div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-3, #666)', fontWeight: '600' }}>{item.label}</div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-4, #aaa)' }}>{predictionDistribution[item.key]}</div>
+                    <div style={{ fontSize: 'var(--fs-lg)', fontWeight: '800', color: item.color }}>{pct}%</div>
+                    <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #666)', fontWeight: '600' }}>{item.label}</div>
+                    <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)' }}>{predictionDistribution[item.key]}</div>
                   </div>
                 );
               })}
@@ -635,10 +635,10 @@ function PlayerStats({ user }) {
                   padding: '6px 12px', borderRadius: '20px',
                   background: i === 0 ? 'linear-gradient(135deg, var(--theme-primary, #007bff), var(--theme-secondary, #6c757d))' : 'var(--surface-3, #f0f2f5)',
                   color: i === 0 ? '#fff' : 'var(--text-2, #555)',
-                  fontSize: '13px', fontWeight: '700',
+                  fontSize: 'var(--fs-sm)', fontWeight: '700',
                   boxShadow: i === 0 ? '0 2px 8px rgba(0,0,0,0.15)' : 'none'
                 }}>
-                  {pred.score} <span style={{ fontSize: '10px', opacity: 0.8 }}>({pred.count}×)</span>
+                  {pred.score} <span style={{ fontSize: 'var(--fs-xs)', opacity: 0.8 }}>({pred.count}×)</span>
                 </div>
               ))}
             </div>
@@ -673,26 +673,26 @@ function PlayerStats({ user }) {
                     {/* אותו מספר שמופיע על הציר בגרפים */}
                     <span style={{
                       minWidth: '18px', height: '18px', borderRadius: '5px', textAlign: 'center',
-                      fontSize: '10px', fontWeight: '800', lineHeight: '18px',
+                      fontSize: 'var(--fs-xs)', fontWeight: '800', lineHeight: '18px',
                       background: isActive ? 'var(--theme-primary, #007bff)' : 'var(--surface-3, #eef1f5)',
                       color: isActive ? '#fff' : 'var(--text-4, #aaa)'
                     }}>
                       {week.weekIndex}
                     </span>
                     <span style={{
-                      flex: 1, fontSize: '12px', color: 'var(--text-2, #555)', fontWeight: '600',
+                      flex: 1, fontSize: 'var(--fs-xs)', color: 'var(--text-2, #555)', fontWeight: '600',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
                     }}>
                       {week.weekName}
                     </span>
                     <span style={{
-                      fontSize: '13px', fontWeight: '800',
+                      fontSize: 'var(--fs-sm)', fontWeight: '800',
                       color: week.weeklyScore > 0 ? 'var(--theme-primary, #007bff)' : 'var(--text-4, #ccc)'
                     }}>
                       {pts(week.weeklyScore)} נק׳
                     </span>
                     <span style={{
-                      fontSize: '11px', color: 'var(--text-4, #aaa)', fontWeight: '500',
+                      fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', fontWeight: '500',
                       minWidth: '58px', textAlign: 'left'
                     }}>
                       מצטבר {pts(week.cumulativeScore)}
@@ -718,7 +718,7 @@ function PlayerStats({ user }) {
                 <TeamRow key={team.name} team={team} rank={i} isBest={true} />
               ))
             ) : (
-              <p style={{ color: 'var(--text-4, #999)', fontSize: '13px', textAlign: 'center' }}>צריך לפחות 3 הימורים לקבוצה</p>
+              <p style={{ color: 'var(--text-4, #999)', fontSize: 'var(--fs-sm)', textAlign: 'center' }}>צריך לפחות 3 הימורים לקבוצה</p>
             )}
           </Card>
 
@@ -729,7 +729,7 @@ function PlayerStats({ user }) {
                 <TeamRow key={team.name} team={team} rank={i} isBest={false} />
               ))
             ) : (
-              <p style={{ color: 'var(--text-4, #999)', fontSize: '13px', textAlign: 'center' }}>צריך לפחות 3 הימורים לקבוצה</p>
+              <p style={{ color: 'var(--text-4, #999)', fontSize: 'var(--fs-sm)', textAlign: 'center' }}>צריך לפחות 3 הימורים לקבוצה</p>
             )}
           </Card>
 
@@ -743,10 +743,10 @@ function PlayerStats({ user }) {
                   background: i % 2 === 0 ? 'var(--surface-2, #fafbfc)' : 'transparent',
                 }}>
                   <TeamLogo name={team.name} src={team.logo} size={16} />
-                  <span style={{ flex: 1, fontSize: '12px', fontWeight: '600', color: 'var(--text-2, #444)' }}>
+                  <span style={{ flex: 1, fontSize: 'var(--fs-xs)', fontWeight: '600', color: 'var(--text-2, #444)' }}>
                     {team.name}
                   </span>
-                  <span style={{ fontSize: '10px', color: 'var(--text-4, #aaa)' }}>{team.bets}</span>
+                  <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)' }}>{team.bets}</span>
                   <div style={{
                     width: '50px', height: '6px', borderRadius: '3px',
                     background: 'var(--surface-3, #f0f2f5)', overflow: 'hidden'
@@ -758,7 +758,7 @@ function PlayerStats({ user }) {
                     }} />
                   </div>
                   <span style={{
-                    fontSize: '11px', fontWeight: '700', minWidth: '32px', textAlign: 'left',
+                    fontSize: 'var(--fs-xs)', fontWeight: '700', minWidth: '32px', textAlign: 'left',
                     color: team.accuracy >= 60 ? '#10b981' : team.accuracy >= 40 ? '#f59e0b' : '#ef4444'
                   }}>
                     {team.accuracy}%

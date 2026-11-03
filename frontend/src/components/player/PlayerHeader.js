@@ -34,7 +34,7 @@ function PlayerHeader({ user, selectedWeek, userScore, onLogout, onOpenSettings,
             <p style={{
               color: '#fff',
               opacity: 0.85,
-              fontSize: '0.8rem',
+              fontSize: 'var(--fs-sm)',
               marginTop: '2px',
               letterSpacing: '0.2px'
             }}>
@@ -58,8 +58,8 @@ function PlayerHeader({ user, selectedWeek, userScore, onLogout, onOpenSettings,
               backdropFilter: 'blur(4px)',
               WebkitBackdropFilter: 'blur(4px)'
             }}>
-              <div style={{ fontSize: '9px', opacity: 0.8, lineHeight: 1, textTransform: 'uppercase', letterSpacing: '0.5px' }}>ניקוד</div>
-              <div style={{ fontSize: '18px', fontWeight: '700', lineHeight: 1.2 }}>
+              <div style={{ fontSize: 'var(--fs-xs)', opacity: 0.8, lineHeight: 1, textTransform: 'uppercase', letterSpacing: '0.5px' }}>ניקוד</div>
+              <div style={{ fontSize: 'var(--fs-lg)', fontWeight: '700', lineHeight: 1.2 }}>
                 {userScore || 0}
               </div>
             </div>
@@ -79,7 +79,7 @@ function PlayerHeader({ user, selectedWeek, userScore, onLogout, onOpenSettings,
                     : 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.08) 100%)',
                   color: settingsOpen ? 'var(--theme-primary, #007bff)' : 'white',
                   padding: '0.4rem 0.6rem',
-                  fontSize: '15px',
+                  fontSize: 'var(--fs-md)',
                   margin: 0,
                   lineHeight: 1,
                   borderRadius: '10px',
@@ -94,7 +94,7 @@ function PlayerHeader({ user, selectedWeek, userScore, onLogout, onOpenSettings,
               background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.08) 100%)',
               color: 'white',
               padding: '0.4rem 0.7rem',
-              fontSize: '13px',
+              fontSize: 'var(--fs-sm)',
               margin: 0,
               borderRadius: '10px',
               border: '1px solid rgba(255,255,255,0.15)',

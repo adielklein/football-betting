@@ -61,7 +61,7 @@ function WeekPicker({ organizedWeeks, months, selectedWeek, onSelect, label }) {
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {label}
         </span>
-        <span style={{ fontSize: '11px', color: 'var(--text-4, #aaa)', flexShrink: 0 }}>
+        <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', flexShrink: 0 }}>
           {open ? '▲' : '▼'}
         </span>
       </button>
@@ -69,7 +69,7 @@ function WeekPicker({ organizedWeeks, months, selectedWeek, onSelect, label }) {
       {open && (
         <div style={panelStyle}>
           {seasons.length === 0 && (
-            <div style={{ padding: '0.6rem', fontSize: '12px', color: 'var(--text-4, #aaa)', textAlign: 'center' }}>
+            <div style={{ padding: '0.6rem', fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', textAlign: 'center' }}>
               אין שבועות עדיין
             </div>
           )}
@@ -88,8 +88,8 @@ function WeekPicker({ organizedWeeks, months, selectedWeek, onSelect, label }) {
                 >
                   <span>📅</span>
                   <span style={{ flex: 1 }}>עונה {season}</span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-4, #aaa)' }}>{weeksInSeason}</span>
-                  <span style={{ fontSize: '10px', color: 'var(--text-4, #aaa)' }}>{seasonOpen ? '▲' : '▼'}</span>
+                  <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)' }}>{weeksInSeason}</span>
+                  <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)' }}>{seasonOpen ? '▲' : '▼'}</span>
                 </button>
 
                 {seasonOpen && monthNums.map((monthNum) => {
@@ -105,8 +105,8 @@ function WeekPicker({ organizedWeeks, months, selectedWeek, onSelect, label }) {
                         style={{ ...rowStyle(false), color: 'var(--text-3, #888)' }}
                       >
                         <span style={{ flex: 1 }}>{monthLabelOf(months, monthNum)}</span>
-                        <span style={{ fontSize: '11px', color: 'var(--text-4, #aaa)' }}>{weeks.length}</span>
-                        <span style={{ fontSize: '10px', color: 'var(--text-4, #aaa)' }}>{monthOpen ? '▲' : '▼'}</span>
+                        <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)' }}>{weeks.length}</span>
+                        <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)' }}>{monthOpen ? '▲' : '▼'}</span>
                       </button>
 
                       {monthOpen && (
@@ -119,8 +119,8 @@ function WeekPicker({ organizedWeeks, months, selectedWeek, onSelect, label }) {
                               style={rowStyle(selectedWeek?._id === week._id)}
                             >
                               <span style={{ flex: 1 }}>{week.name}</span>
-                              {week.locked && <span style={{ fontSize: '11px' }}>🔒</span>}
-                              {week.active && !week.locked && <span style={{ fontSize: '11px' }}>🟢</span>}
+                              {week.locked && <span style={{ fontSize: 'var(--fs-xs)' }}>🔒</span>}
+                              {week.active && !week.locked && <span style={{ fontSize: 'var(--fs-xs)' }}>🟢</span>}
                             </button>
                           ))}
                         </div>

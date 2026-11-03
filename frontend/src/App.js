@@ -266,7 +266,7 @@ function App() {
           animation: 'spin 1s linear infinite',
           marginBottom: '1rem'
         }}></div>
-        <h2 style={{ color: 'var(--theme-text, #666)', fontSize: '1.2rem' }}>טוען...</h2>
+        <h2 style={{ color: 'var(--theme-text, #666)', fontSize: 'var(--fs-lg)' }}>טוען...</h2>
         
         <style>{`
           @keyframes spin {
@@ -323,10 +323,10 @@ function App() {
               />
             )}
             <div style={{ padding: '1.2rem 1.5rem' }}>
-              <h3 style={{ margin: '0 0 0.5rem', fontSize: '18px', color: 'var(--text, #333)', textAlign: 'right' }}>
+              <h3 style={{ margin: '0 0 0.5rem', fontSize: 'var(--fs-lg)', color: 'var(--text, #333)', textAlign: 'right' }}>
                 {inAppNotification.title}
               </h3>
-              <p style={{ margin: '0 0 1rem', fontSize: '15px', color: 'var(--text-2, #555)', lineHeight: 1.5, textAlign: 'right', whiteSpace: 'pre-line' }}>
+              <p style={{ margin: '0 0 1rem', fontSize: 'var(--fs-md)', color: 'var(--text-2, #555)', lineHeight: 1.5, textAlign: 'right', whiteSpace: 'pre-line' }}>
                 {inAppNotification.body}
               </p>
               <button
@@ -334,7 +334,7 @@ function App() {
                 style={{
                   width: '100%', padding: '10px', border: 'none', borderRadius: '10px',
                   backgroundColor: 'var(--theme-primary, #007bff)', color: '#fff',
-                  fontSize: '16px', fontWeight: '700', cursor: 'pointer'
+                  fontSize: 'var(--fs-md)', fontWeight: '700', cursor: 'pointer'
                 }}
               >
                 הבנתי 👍

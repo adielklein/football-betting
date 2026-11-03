@@ -39,7 +39,7 @@ const cardStyle = {
 };
 
 const chip = (active) => ({
-  padding: '5px 10px', borderRadius: '999px', fontSize: '12px', cursor: 'pointer',
+  padding: '5px 10px', borderRadius: '999px', fontSize: 'var(--fs-xs)', cursor: 'pointer',
   border: `1px solid ${active ? 'var(--theme-primary, #007bff)' : 'var(--border-2, #e3e6ea)'}`,
   background: active ? 'var(--theme-primary, #007bff)' : 'var(--surface, #fff)',
   color: active ? '#fff' : 'var(--text-2, #555)', fontWeight: active ? 700 : 500
@@ -48,7 +48,7 @@ const chip = (active) => ({
 // טקסט טכני (שגיאות, נתיבים) נשאר משמאל לימין כדי שלא יתבלגן בתוך RTL
 const mono = {
   fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-  fontSize: '11px', direction: 'ltr', textAlign: 'left',
+  fontSize: 'var(--fs-xs)', direction: 'ltr', textAlign: 'left',
   whiteSpace: 'pre-wrap', wordBreak: 'break-word'
 };
 
@@ -62,20 +62,20 @@ function ProviderCard({ p, now }) {
   return (
     <div style={{ padding: '0.6rem', borderRadius: '10px', background: 'var(--surface-2, #f8f9fc)', marginBottom: '0.5rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-        <strong style={{ fontSize: '13px', flex: 1 }}>{p.source}</strong>
-        <span style={{ fontSize: '12px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', color: status.fg, background: status.bg }}>
+        <strong style={{ fontSize: 'var(--fs-sm)', flex: 1 }}>{p.source}</strong>
+        <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', color: status.fg, background: status.bg }}>
           {status.text}
         </span>
       </div>
 
-      <div style={{ fontSize: '12px', color: 'var(--text-3, #777)', marginTop: '4px' }}>
+      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #777)', marginTop: '4px' }}>
         הצלחה אחרונה: {p.lastOkAt ? ago(p.lastOkAt, now) : 'עוד לא הייתה מאז הפעלת השרת'}
         {' · '}{p.okCount} הצליחו, {p.failCount} נכשלו
       </div>
 
       {p.lastError && (
         <div style={{ marginTop: '6px', padding: '6px 8px', borderRadius: '8px', background: 'var(--bad-bg, #fdecec)' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--bad-fg, #b3261e)' }}>
+          <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--bad-fg, #b3261e)' }}>
             שגיאה אחרונה ({ago(p.lastError.at, now)}){p.lastError.status ? ` · סטטוס ${p.lastError.status}` : ''}
           </div>
           <div style={{ ...mono, color: 'var(--text-2, #555)', marginTop: '2px' }}>{p.lastError.message}</div>
@@ -86,7 +86,7 @@ function ProviderCard({ p, now }) {
       {p.recent.length > 0 && (
         <button type="button" onClick={() => setShowRecent((v) => !v)} style={{
           marginTop: '6px', background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-          fontSize: '12px', color: 'var(--theme-primary, #007bff)'
+          fontSize: 'var(--fs-xs)', color: 'var(--theme-primary, #007bff)'
         }}>
           {showRecent ? '▲ הסתר קריאות אחרונות' : `▼ ${p.recent.length} קריאות אחרונות`}
         </button>
@@ -95,8 +95,8 @@ function ProviderCard({ p, now }) {
         <div style={{ marginTop: '4px' }}>
           {p.recent.map((r, i) => (
             <div key={i} style={{ display: 'flex', gap: '6px', alignItems: 'baseline', padding: '2px 0', borderTop: i ? '1px solid var(--border, #eee)' : 'none' }}>
-              <span style={{ fontSize: '11px' }}>{r.ok ? '✅' : '❌'}</span>
-              <span style={{ fontSize: '11px', color: 'var(--text-4, #999)', whiteSpace: 'nowrap' }}>{clock(r.at)}</span>
+              <span style={{ fontSize: 'var(--fs-xs)' }}>{r.ok ? '✅' : '❌'}</span>
+              <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #999)', whiteSpace: 'nowrap' }}>{clock(r.at)}</span>
               <span style={{ ...mono, flex: 1, color: 'var(--text-2, #555)' }}>
                 {r.status ?? '—'} · {r.ms != null ? `${r.ms}ms` : ''} · {r.path}{r.message ? `\n${r.message}` : ''}
               </span>
@@ -176,14 +176,14 @@ function ServerLogs() {
       <div style={cardStyle}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.6rem', flexWrap: 'wrap' }}>
           <h3 style={{ margin: 0, flex: 1 }}>חיבור ל-365</h3>
-          <button type="button" className="btn btn-primary" onClick={runProbe} disabled={probing} style={{ fontSize: '13px' }}>
+          <button type="button" className="btn btn-primary" onClick={runProbe} disabled={probing} style={{ fontSize: 'var(--fs-sm)' }}>
             {probing ? 'בודק…' : '🩺 בדוק עכשיו'}
           </button>
         </div>
 
         {probe && (
           <div style={{
-            padding: '6px 8px', borderRadius: '8px', marginBottom: '0.5rem', fontSize: '12px',
+            padding: '6px 8px', borderRadius: '8px', marginBottom: '0.5rem', fontSize: 'var(--fs-xs)',
             background: probe.ok ? 'var(--good-bg, #e8f6ec)' : 'var(--bad-bg, #fdecec)',
             color: probe.ok ? 'var(--good-fg, #1a6b35)' : 'var(--bad-fg, #b3261e)'
           }}>
@@ -193,13 +193,13 @@ function ServerLogs() {
         )}
 
         {backoff?.until && (
-          <div style={{ padding: '6px 8px', borderRadius: '8px', marginBottom: '0.5rem', fontSize: '12px', background: 'var(--warn-bg, #fff4d6)', color: 'var(--warn-fg, #7c5306)' }}>
+          <div style={{ padding: '6px 8px', borderRadius: '8px', marginBottom: '0.5rem', fontSize: 'var(--fs-xs)', background: 'var(--warn-bg, #fff4d6)', color: 'var(--warn-fg, #7c5306)' }}>
             ⏸️ התוצאות החיות בהפסקה אחרי {backoff.consecutiveFailures} כישלונות ברצף - הניסיון הבא {until(backoff.until, now)}
           </div>
         )}
 
         {providers.length === 0 ? (
-          <p style={{ fontSize: '12px', color: 'var(--text-4, #999)', margin: 0 }}>
+          <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #999)', margin: 0 }}>
             עוד לא הייתה פנייה ל-365 מאז הפעלת השרת. "בדוק עכשיו" שולח אחת.
           </p>
         ) : (
@@ -227,19 +227,19 @@ function ServerLogs() {
           <button type="button" className="btn btn-secondary" onClick={load} title="רענן" style={{ margin: 0 }}>🔄</button>
         </div>
 
-        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', minHeight: '36px', fontSize: '12px', color: 'var(--text-3, #777)', marginBottom: '0.5rem', cursor: 'pointer' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', minHeight: '36px', fontSize: 'var(--fs-xs)', color: 'var(--text-3, #777)', marginBottom: '0.5rem', cursor: 'pointer' }}>
           <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} style={{ width: '24px', height: '24px', margin: 0 }} />
           רענון אוטומטי כל 10 שניות
         </label>
 
         {error && (
-          <div style={{ padding: '6px 8px', borderRadius: '8px', background: 'var(--bad-bg, #fdecec)', color: 'var(--bad-fg, #b3261e)', fontSize: '12px', marginBottom: '0.5rem' }}>
+          <div style={{ padding: '6px 8px', borderRadius: '8px', background: 'var(--bad-bg, #fdecec)', color: 'var(--bad-fg, #b3261e)', fontSize: 'var(--fs-xs)', marginBottom: '0.5rem' }}>
             לא הצלחתי לטעון את הלוגים: {error}
           </div>
         )}
 
         {data && (
-          <div style={{ fontSize: '11px', color: 'var(--text-4, #999)', marginBottom: '0.4rem' }}>
+          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #999)', marginBottom: '0.4rem' }}>
             השרת עלה {ago(data.startedAt, now)} · הלוג מתאפס בכל עלייה מחדש (דיפלוי, קריסה)
             {' · '}מוצגות {data.entries.length} שורות
           </div>
@@ -247,13 +247,13 @@ function ServerLogs() {
 
         <div style={{ maxHeight: '60vh', overflowY: 'auto', borderRadius: '8px', border: '1px solid var(--border, #eee)' }}>
           {data && data.entries.length === 0 && (
-            <div style={{ padding: '0.8rem', textAlign: 'center', fontSize: '12px', color: 'var(--text-4, #999)' }}>אין שורות שמתאימות לסינון</div>
+            <div style={{ padding: '0.8rem', textAlign: 'center', fontSize: 'var(--fs-xs)', color: 'var(--text-4, #999)' }}>אין שורות שמתאימות לסינון</div>
           )}
           {data && data.entries.map((e) => {
             const st = LEVEL_STYLE[e.level] || LEVEL_STYLE.info;
             return (
               <div key={e.id} style={{ padding: '5px 8px', borderBottom: '1px solid var(--border, #f0f0f0)', background: st.bg }}>
-                <div style={{ display: 'flex', gap: '6px', fontSize: '11px', color: 'var(--text-4, #999)' }}>
+                <div style={{ display: 'flex', gap: '6px', fontSize: 'var(--fs-xs)', color: 'var(--text-4, #999)' }}>
                   <span>{clock(e.at)}</span>
                   {st.label && <span style={{ color: st.fg, fontWeight: 700 }}>{st.label}</span>}
                 </div>

@@ -222,7 +222,7 @@ function AdminView({ user, onLogout }) {
                   backgroundColor: isActive ? 'var(--surface, #fff)' : 'transparent',
                   color: isActive ? 'var(--theme-primary, #007bff)' : 'var(--text-3, #888)',
                   fontWeight: isActive ? '700' : '500',
-                  fontSize: '11px',
+                  fontSize: 'var(--fs-xs)',
                   cursor: 'pointer',
                   transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                   WebkitAppearance: 'none',
@@ -238,7 +238,7 @@ function AdminView({ user, onLogout }) {
                   position: 'relative'
                 }}
               >
-                <span style={{ fontSize: '15px', lineHeight: 1 }}>{tab.icon}</span>
+                <span style={{ fontSize: 'var(--fs-md)', lineHeight: 1 }}>{tab.icon}</span>
                 <span>{tab.label}</span>
                 {tab.key === 'system' && isPrimaryAdmin && auditCount > 0 && (
                   <span style={{
@@ -247,7 +247,7 @@ function AdminView({ user, onLogout }) {
                     right: '6px',
                     backgroundColor: '#ff3b30',
                     color: '#fff',
-                    fontSize: '9px',
+                    fontSize: 'var(--fs-xs)',
                     fontWeight: '700',
                     borderRadius: '50%',
                     width: '16px',
@@ -294,7 +294,7 @@ function AdminView({ user, onLogout }) {
         {runningCommit() && (
           <div style={{
             textAlign: 'center', marginTop: '0.75rem',
-            fontSize: '10px', color: 'var(--text-4, #c3c8d0)',
+            fontSize: 'var(--fs-xs)', color: 'var(--text-4, #c3c8d0)',
             fontFamily: 'monospace'
           }}>
             {runningCommit()}

@@ -222,16 +222,16 @@ function AllBetsViewer({ weeks, user }) {
     <div>
       {/* סינונים */}
       <div className="card" style={{ marginBottom: '0.75rem', padding: '0.75rem' }}>
-        <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>👥 הימורים של כל השחקנים</h2>
+        <h2 style={{ fontSize: 'var(--fs-md)', margin: '0 0 0.5rem 0', fontWeight: '700' }}>👥 הימורים של כל השחקנים</h2>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', marginBottom: '0.4rem' }}>
           <select value={selectedSeason} onChange={(e) => { setSelectedSeason(e.target.value); setSelectedMonth(''); setSelectedWeek(null); }}
-            className="input" style={{ width: '100%', fontSize: '13px', padding: '0.4rem', borderRadius: '10px' }}>
+            className="input" style={{ width: '100%', fontSize: 'var(--fs-sm)', padding: '0.4rem', borderRadius: '10px' }}>
             <option value="">כל העונות</option>
             {availableSeasons.map(s => <option key={s} value={s}>עונת {s}</option>)}
           </select>
           <select value={selectedMonth} onChange={(e) => { setSelectedMonth(parseInt(e.target.value) || ''); setSelectedWeek(null); }}
-            className="input" style={{ width: '100%', fontSize: '13px', padding: '0.4rem', borderRadius: '10px' }}
+            className="input" style={{ width: '100%', fontSize: 'var(--fs-sm)', padding: '0.4rem', borderRadius: '10px' }}
             disabled={!selectedSeason || availableMonths.length === 0}>
             <option value="">כל החודשים</option>
             {availableMonths.map(m => <option key={m} value={m}>{months.find(x => x.value === m)?.label}</option>)}
@@ -242,14 +242,14 @@ function AllBetsViewer({ weeks, user }) {
           const week = filteredWeeks.find(w => w._id === e.target.value);
           setSelectedWeek(week || null);
           if (week) loadWeekData(week._id);
-        }} className="input" style={{ width: '100%', fontSize: '13px', padding: '0.4rem', borderRadius: '10px' }}
+        }} className="input" style={{ width: '100%', fontSize: 'var(--fs-sm)', padding: '0.4rem', borderRadius: '10px' }}
           disabled={filteredWeeks.length === 0}>
           <option value="">בחר שבוע נעול ({filteredWeeks.length} זמינים)</option>
           {filteredWeeks.map(w => <option key={w._id} value={w._id}>{w.name} - {months.find(m => m.value === w.month)?.label}</option>)}
         </select>
 
         {filteredWeeks.length === 0 && selectedSeason && (
-          <div style={{ padding: '0.5rem', backgroundColor: 'var(--warn-bg, #fff8e1)', borderRadius: '8px', fontSize: '13px', color: 'var(--warn-fg, #f57f17)', marginTop: '0.4rem', border: '1px solid #ffe082' }}>
+          <div style={{ padding: '0.5rem', backgroundColor: 'var(--warn-bg, #fff8e1)', borderRadius: '8px', fontSize: 'var(--fs-sm)', color: 'var(--warn-fg, #f57f17)', marginTop: '0.4rem', border: '1px solid #ffe082' }}>
             אין שבועות נעולים עבור הסינון הנבחר
           </div>
         )}
@@ -258,30 +258,30 @@ function AllBetsViewer({ weeks, user }) {
       {!selectedWeek && filteredWeeks.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '2rem', background: 'var(--info-bg, #f8f9ff)' }}>
           <div style={{ fontSize: '40px', marginBottom: '0.5rem' }}>🔒</div>
-          <p style={{ color: 'var(--text-3, #888)', fontSize: '14px', margin: 0 }}>ההימורים יהיו זמינים לצפייה כשיהיו שבועות נעולים</p>
+          <p style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-sm)', margin: 0 }}>ההימורים יהיו זמינים לצפייה כשיהיו שבועות נעולים</p>
         </div>
       ) : !selectedWeek ? (
         <div className="card" style={{ textAlign: 'center', padding: '1.5rem' }}>
-          <p style={{ color: 'var(--text-3, #888)', fontSize: '14px', margin: 0 }}>בחר שבוע מהרשימה למעלה</p>
+          <p style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-sm)', margin: 0 }}>בחר שבוע מהרשימה למעלה</p>
         </div>
       ) : loading ? (
         <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
           <div style={{ width: '36px', height: '36px', border: '3px solid var(--border, #f0f0f0)', borderTop: '3px solid var(--theme-primary, #007bff)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 0.75rem' }}></div>
-          <span style={{ fontSize: '14px', color: 'var(--text-4, #999)' }}>טוען הימורים...</span>
+          <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-4, #999)' }}>טוען הימורים...</span>
           <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
         </div>
       ) : (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', padding: '0 0.15rem' }}>
-            <span style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text, #333)' }}>{selectedWeek.name}</span>
-            <span style={{ fontSize: '11px', color: 'var(--warn-fg, #f57f17)', backgroundColor: 'var(--warn-bg, #fff8e1)', padding: '3px 10px', borderRadius: '10px', fontWeight: '700', border: '1px solid #ffe082' }}>
+            <span style={{ fontWeight: '700', fontSize: 'var(--fs-sm)', color: 'var(--text, #333)' }}>{selectedWeek.name}</span>
+            <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--warn-fg, #f57f17)', backgroundColor: 'var(--warn-bg, #fff8e1)', padding: '3px 10px', borderRadius: '10px', fontWeight: '700', border: '1px solid #ffe082' }}>
               🔒 נעול
             </span>
           </div>
 
           {matches.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', padding: '1rem' }}>
-              <p style={{ color: 'var(--text-3, #888)', fontSize: '14px', margin: 0 }}>אין משחקים בשבוע זה</p>
+              <p style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-sm)', margin: 0 }}>אין משחקים בשבוע זה</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -310,12 +310,12 @@ function AllBetsViewer({ weeks, user }) {
                   <div style={{ cursor: 'pointer' }} onClick={() => setExpandedMatches(prev => ({ ...prev, [match._id]: !prev[match._id] }))}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <span style={{ fontSize: '12px', color: 'var(--text-4, #999)', transition: 'transform 0.2s', transform: expandedMatches[match._id] ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                        <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #999)', transition: 'transform 0.2s', transform: expandedMatches[match._id] ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                           <LeagueLogo league={match.leagueId} size={14} />
                           <span style={{
                             padding: '2px 8px', backgroundColor: getLeagueColor(match), color: 'white',
-                            borderRadius: '6px', fontSize: '10px', fontWeight: '700',
+                            borderRadius: '6px', fontSize: 'var(--fs-xs)', fontWeight: '700',
                             boxShadow: `0 2px 4px ${getLeagueColor(match)}33`
                           }}>{getLeagueName(match)}</span>
                         </span>
@@ -323,19 +323,19 @@ function AllBetsViewer({ weeks, user }) {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         {myBet && match.result && match.result.team1Goals !== undefined && (
                           <span style={{
-                            padding: '1px 6px', borderRadius: '6px', fontSize: '10px', fontWeight: '700',
+                            padding: '1px 6px', borderRadius: '6px', fontSize: 'var(--fs-xs)', fontWeight: '700',
                             backgroundColor: myBadge.bg, color: myBadge.color
                           }}>{myBadge.text}</span>
                         )}
                         {showsLiveBadge(liveByMatchId[match._id], match.result) ? (
                           <LiveScore live={liveByMatchId[match._id]} prediction={myBet && myBet.prediction} result={match.result} compact />
                         ) : (
-                          <span style={{ fontSize: '11px', color: 'var(--text-4, #aaa)', fontWeight: '500' }}>{match.date} • {match.time}</span>
+                          <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', fontWeight: '500' }}>{match.date} • {match.time}</span>
                         )}
                       </div>
                     </div>
 
-                    <div style={{ textAlign: 'center', fontWeight: '700', fontSize: '14px', marginBottom: '0.35rem', color: 'var(--text, #333)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                    <div style={{ textAlign: 'center', fontWeight: '700', fontSize: 'var(--fs-sm)', marginBottom: '0.35rem', color: 'var(--text, #333)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', flexWrap: 'wrap' }}>
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setInsightsFor({ match, focusTeam: 1 }); }}
@@ -350,7 +350,7 @@ function AllBetsViewer({ weeks, user }) {
                       >
                         <TeamLogo name={match.team1} src={match.team1LogoUrl} />
                         {match.team1}
-                        <span style={{ fontSize: '9px', opacity: 0.55 }} aria-hidden="true">📊</span>
+                        <span style={{ fontSize: 'var(--fs-xs)', opacity: 0.55 }} aria-hidden="true">📊</span>
                       </button>
                       <span style={{ color: 'var(--text-4, #999)', fontWeight: 500 }}>נגד</span>
                       <button
@@ -367,15 +367,15 @@ function AllBetsViewer({ weeks, user }) {
                       >
                         <TeamLogo name={match.team2} src={match.team2LogoUrl} />
                         {match.team2}
-                        <span style={{ fontSize: '9px', opacity: 0.55 }} aria-hidden="true">📊</span>
+                        <span style={{ fontSize: 'var(--fs-xs)', opacity: 0.55 }} aria-hidden="true">📊</span>
                       </button>
                       {myBet && myBet.prediction && (
                         <span style={{
-                          fontSize: '12px', flexShrink: 0, padding: '1px 8px',
+                          fontSize: 'var(--fs-xs)', flexShrink: 0, padding: '1px 8px',
                           borderRadius: '999px', fontWeight: '800',
                           backgroundColor: 'var(--me-bg, #e8f0fe)', color: 'var(--me-fg, #14508f)'
                         }}>
-                          <span style={{ fontSize: '9px', opacity: 0.7, fontWeight: 700 }}>שלך </span>
+                          <span style={{ fontSize: 'var(--fs-xs)', opacity: 0.7, fontWeight: 700 }}>שלך </span>
                           <Score home={myBet.prediction.team1Goals} away={myBet.prediction.team2Goals} />
                         </span>
                       )}
@@ -387,7 +387,7 @@ function AllBetsViewer({ weeks, user }) {
                       <div style={{
                         textAlign: 'center', padding: '3px 8px',
                         background: 'var(--good-bg, #e8f5e9)', borderRadius: '8px',
-                        fontSize: '13px', fontWeight: '700', color: 'var(--good-fg, #2e7d32)'
+                        fontSize: 'var(--fs-sm)', fontWeight: '700', color: 'var(--good-fg, #2e7d32)'
                       }}>
                         תוצאה: <Score home={match.result.team1Goals} away={match.result.team2Goals} />
                         {/* המסך היחיד שלא אמר שהמשחק נמשך מעבר ל-90, ולכן
@@ -408,7 +408,7 @@ function AllBetsViewer({ weeks, user }) {
                         { label: 'X', value: match.odds.draw, bg: '#fef6e6', color: '#c67e00' },
                         { label: '2', value: match.odds.awayWin, bg: '#edf7ee', color: '#2d8a3e' }
                       ].map(odd => (
-                        <span key={odd.label} style={{ padding: '2px 8px', backgroundColor: odd.bg, borderRadius: '8px', fontSize: '10px', color: odd.color, fontWeight: '700' }}>
+                        <span key={odd.label} style={{ padding: '2px 8px', backgroundColor: odd.bg, borderRadius: '8px', fontSize: 'var(--fs-xs)', color: odd.color, fontWeight: '700' }}>
                           {odd.label}: {odd.value || '-'}
                         </span>
                       ))}
@@ -433,26 +433,26 @@ function AllBetsViewer({ weeks, user }) {
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                           padding: '0.3rem 0.4rem',
                           backgroundColor: isMe ? 'var(--me-bg, #e8f0fe)' : 'transparent',
-                          borderRadius: '6px', fontSize: '13px'
+                          borderRadius: '6px', fontSize: 'var(--fs-sm)'
                         }}>
                           <span style={{
                             fontWeight: isMe ? '700' : '400', flex: 1, minWidth: 0,
                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: isMe ? 'var(--me-fg, #14508f)' : 'var(--text-2, #444)'
                           }}>
                             {player.name}
-                            {isMe && <span style={{ color: 'var(--me-fg, #14508f)', opacity: 0.75, fontSize: '10px' }}> (אתה)</span>}
+                            {isMe && <span style={{ color: 'var(--me-fg, #14508f)', opacity: 0.75, fontSize: 'var(--fs-xs)' }}> (אתה)</span>}
                           </span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
                             {bet && bet.prediction ? (
-                              <span style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: '14px', minWidth: '36px', textAlign: 'center', color: 'var(--text, #333)' }}>
+                              <span style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: 'var(--fs-sm)', minWidth: '36px', textAlign: 'center', color: 'var(--text, #333)' }}>
                                 <Score home={bet.prediction.team1Goals} away={bet.prediction.team2Goals} />
                               </span>
                             ) : (
-                              <span style={{ color: 'var(--text-4, #ccc)', fontSize: '11px' }}>לא הימר</span>
+                              <span style={{ color: 'var(--text-4, #ccc)', fontSize: 'var(--fs-xs)' }}>לא הימר</span>
                             )}
                             {bet && match.result && match.result.team1Goals !== undefined && (
                               <span style={{
-                                padding: '1px 6px', borderRadius: '6px', fontSize: '10px', fontWeight: '700',
+                                padding: '1px 6px', borderRadius: '6px', fontSize: 'var(--fs-xs)', fontWeight: '700',
                                 minWidth: '38px', textAlign: 'center',
                                 backgroundColor: badge.bg, color: badge.color
                               }}>
@@ -468,7 +468,7 @@ function AllBetsViewer({ weeks, user }) {
                 </div>
               ))}
 
-              <div style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-4, #bbb)', padding: '0.25rem' }}>
+              <div style={{ textAlign: 'center', fontSize: 'var(--fs-xs)', color: 'var(--text-4, #bbb)', padding: '0.25rem' }}>
                 🎯 מדויק | ✅ כיוון נכון | ❌ שגוי
               </div>
             </div>

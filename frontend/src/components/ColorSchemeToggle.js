@@ -30,7 +30,7 @@ function ColorSchemeToggle() {
         background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.08) 100%)',
         color: 'white',
         padding: '0.4rem 0.6rem',
-        fontSize: '14px',
+        fontSize: 'var(--fs-sm)',
         lineHeight: 1,
         margin: 0,
         borderRadius: '10px',

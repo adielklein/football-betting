@@ -21,7 +21,7 @@ const TAB_OPTIONS = [
   { id: 'stats', name: '📊 סטטיסטיקה' }
 ];
 
-const label = { fontSize: '12px', color: 'var(--text-3, #888)', display: 'block', marginBottom: '0.2rem' };
+const label = { fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', display: 'block', marginBottom: '0.2rem' };
 const section = { paddingTop: '0.75rem', marginTop: '0.75rem', borderTop: '1px solid var(--border, #eef1f4)' };
 
 function AccountSettings({ user, onProfileChange }) {
@@ -118,7 +118,7 @@ function AccountSettings({ user, onProfileChange }) {
             שמור
           </button>
         </div>
-        <div style={{ fontSize: '11px', color: 'var(--text-4, #aaa)', marginTop: '0.3rem' }}>
+        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', marginTop: '0.3rem' }}>
           {nameLocked
             ? '🔒 השם שלך נעול לשינוי. אפשר לבקש ממנהל.'
             : 'זה השם שמופיע בטבלאות ובכל ההימורים.'}
@@ -133,7 +133,7 @@ function AccountSettings({ user, onProfileChange }) {
           onChange={saveTab}
           placeholder="בחר מסך"
         />
-        <div style={{ fontSize: '11px', color: 'var(--text-4, #aaa)', marginTop: '0.3rem' }}>
+        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', marginTop: '0.3rem' }}>
           המסך שייפתח בכל כניסה לאפליקציה.
         </div>
       </div>
@@ -166,7 +166,7 @@ function AccountSettings({ user, onProfileChange }) {
         >
           {savingPassword ? 'מעדכן…' : '🔑 עדכן סיסמה'}
         </button>
-        <div style={{ fontSize: '11px', color: 'var(--text-4, #aaa)', marginTop: '0.3rem' }}>
+        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', marginTop: '0.3rem' }}>
           מנהל יכול לאפס את הסיסמה אם שכחת.
         </div>
       </div>

@@ -107,7 +107,7 @@ function AdminHeader({ user, onLogout }) {
         }}>
           <div style={{ minWidth: 0, flex: 1 }}>
             <h1 style={{
-              fontSize: '1.1rem',
+              fontSize: 'var(--fs-md)',
               margin: 0,
               fontWeight: '700',
               overflow: 'hidden',
@@ -128,7 +128,7 @@ function AdminHeader({ user, onLogout }) {
                 WebkitBackdropFilter: 'blur(4px)',
                 padding: '2px 10px',
                 borderRadius: '20px',
-                fontSize: '12px',
+                fontSize: 'var(--fs-xs)',
                 color: 'rgba(255,255,255,0.95)',
                 border: '1px solid rgba(255,255,255,0.15)',
                 fontWeight: '600'
@@ -148,7 +148,7 @@ function AdminHeader({ user, onLogout }) {
                       border: '1px solid rgba(76,175,80,0.5)',
                       borderRadius: '20px',
                       padding: '2px 8px',
-                      fontSize: '11px',
+                      fontSize: 'var(--fs-xs)',
                       fontWeight: '600',
                       color: 'rgba(255,255,255,0.95)',
                       cursor: 'pointer',
@@ -171,7 +171,7 @@ function AdminHeader({ user, onLogout }) {
                     borderRadius: '20px',
                     padding: '4px 12px',
                     minHeight: '32px',
-                    fontSize: '12px',
+                    fontSize: 'var(--fs-xs)',
                     fontWeight: '600',
                     cursor: 'pointer',
                     WebkitAppearance: 'none'
@@ -193,7 +193,7 @@ function AdminHeader({ user, onLogout }) {
               border: '1px solid rgba(255,255,255,0.2)',
               borderRadius: '10px',
               padding: '0.4rem 0.9rem',
-              fontSize: '13px',
+              fontSize: 'var(--fs-sm)',
               fontWeight: '600',
               cursor: 'pointer',
               transition: 'all 0.2s ease',

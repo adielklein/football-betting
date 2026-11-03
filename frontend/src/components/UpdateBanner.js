@@ -41,11 +41,11 @@ function UpdateBanner() {
         margin: '0 auto'
       }}
     >
-      <span style={{ fontSize: '20px', lineHeight: 1 }} aria-hidden="true">✨</span>
+      <span style={{ fontSize: 'var(--fs-lg)', lineHeight: 1 }} aria-hidden="true">✨</span>
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 700, fontSize: '14px' }}>גרסה חדשה זמינה</div>
-        <div style={{ fontSize: '12px', opacity: 0.9 }}>לחץ לעדכון</div>
+        <div style={{ fontWeight: 700, fontSize: 'var(--fs-sm)' }}>גרסה חדשה זמינה</div>
+        <div style={{ fontSize: 'var(--fs-xs)', opacity: 0.9 }}>לחץ לעדכון</div>
       </div>
 
       <button
@@ -59,7 +59,7 @@ function UpdateBanner() {
           background: 'var(--surface, #ffffff)',
           color: 'var(--theme-primary-text, #007bff)',
           fontWeight: 700,
-          fontSize: '14px',
+          fontSize: 'var(--fs-sm)',
           cursor: updating ? 'default' : 'pointer',
           opacity: updating ? 0.7 : 1
         }}
@@ -78,7 +78,7 @@ function UpdateBanner() {
           border: 'none',
           background: 'rgba(255, 255, 255, 0.2)',
           color: '#ffffff',
-          fontSize: '16px',
+          fontSize: 'var(--fs-md)',
           lineHeight: 1,
           cursor: 'pointer'
         }}

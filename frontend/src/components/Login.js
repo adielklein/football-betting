@@ -85,7 +85,7 @@ function Login({ onLogin, notice = null }) {
               borderRadius: '12px'
             }}
           />
-          <p style={{ color: 'var(--text-3, #888)', fontSize: '0.85rem', fontWeight: '500' }}>
+          <p style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-sm)', fontWeight: '500' }}>
             פרמיירליג • לה ליגה • ליגת העל
           </p>
         </div>
@@ -95,7 +95,7 @@ function Login({ onLogin, notice = null }) {
           <div role="status" style={{
             marginBottom: '0.9rem', padding: '0.65rem 0.8rem', borderRadius: '12px',
             background: 'var(--info-bg, #eef4ff)', color: 'var(--info-fg, #1e40af)',
-            border: '1px solid var(--info-border, #c7d7fe)', fontSize: '13px', lineHeight: 1.5
+            border: '1px solid var(--info-border, #c7d7fe)', fontSize: 'var(--fs-sm)', lineHeight: 1.5
           }}>
             {notice === 'security' ? (
               <>
@@ -115,7 +115,7 @@ function Login({ onLogin, notice = null }) {
           <div style={{ marginBottom: '0.75rem' }}>
             <label style={{
               display: 'block', marginBottom: '0.35rem',
-              fontWeight: '600', fontSize: '13px', color: 'var(--text-2, #555)'
+              fontWeight: '600', fontSize: 'var(--fs-sm)', color: 'var(--text-2, #555)'
             }}>
               שם משתמש
             </label>
@@ -135,7 +135,7 @@ function Login({ onLogin, notice = null }) {
                 padding: '0.7rem 0.85rem',
                 borderRadius: '12px',
                 border: '1.5px solid #e5e7eb',
-                fontSize: '16px',
+                fontSize: 'var(--fs-md)',
                 backgroundColor: 'var(--surface-2, #f8f9fc)',
                 transition: 'all 0.25s ease'
               }}
@@ -147,7 +147,7 @@ function Login({ onLogin, notice = null }) {
           <div style={{ marginBottom: '1.25rem' }}>
             <label style={{
               display: 'block', marginBottom: '0.35rem',
-              fontWeight: '600', fontSize: '13px', color: 'var(--text-2, #555)'
+              fontWeight: '600', fontSize: 'var(--fs-sm)', color: 'var(--text-2, #555)'
             }}>
               סיסמה
             </label>
@@ -162,7 +162,7 @@ function Login({ onLogin, notice = null }) {
                 padding: '0.7rem 0.85rem',
                 borderRadius: '12px',
                 border: '1.5px solid #e5e7eb',
-                fontSize: '16px',
+                fontSize: 'var(--fs-md)',
                 backgroundColor: 'var(--surface-2, #f8f9fc)',
                 transition: 'all 0.25s ease'
               }}
@@ -177,7 +177,7 @@ function Login({ onLogin, notice = null }) {
             style={{
               width: '100%',
               padding: '0.8rem',
-              fontSize: '16px',
+              fontSize: 'var(--fs-md)',
               fontWeight: '700',
               background: loading ? '#ccc' : 'linear-gradient(135deg, var(--theme-primary, #007bff), var(--theme-secondary, #6c757d))',
               color: 'white',
@@ -216,7 +216,7 @@ function Login({ onLogin, notice = null }) {
             color: message.includes('שגיאה') || message.includes('שגויים') ? 'var(--bad-fg, #991b1b)' : 'var(--good-fg, #166534)',
             borderRadius: '10px',
             textAlign: 'center',
-            fontSize: '13px',
+            fontSize: 'var(--fs-sm)',
             fontWeight: '600',
             animation: 'slideUp 0.3s ease'
           }}>
@@ -226,7 +226,7 @@ function Login({ onLogin, notice = null }) {
 
         <div style={{
           textAlign: 'center', marginTop: '1.25rem',
-          color: 'var(--text-4, #aaa)', fontSize: '12px', lineHeight: 1.6
+          color: 'var(--text-4, #aaa)', fontSize: 'var(--fs-xs)', lineHeight: 1.6
         }}>
           <p>פנה למנהל המערכת לקבלת פרטי התחברות</p>
           <p style={{ marginTop: '0.25rem' }}>📱 מכל מכשיר • 💻 כל דפדפן</p>

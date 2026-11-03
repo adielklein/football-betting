@@ -24,14 +24,14 @@ function SubTabs({ parent, tabs, children }) {
                   position: 'relative', flexShrink: 0, padding: '6px 12px', borderRadius: '999px', cursor: 'pointer',
                   border: `1px solid ${on ? 'var(--theme-primary, #007bff)' : 'var(--border-2, #e3e6ea)'}`,
                   background: on ? 'var(--theme-primary, #007bff)' : 'var(--surface, #fff)',
-                  color: on ? '#fff' : 'var(--text-2, #555)', fontWeight: on ? 700 : 500, fontSize: '13px'
+                  color: on ? '#fff' : 'var(--text-2, #555)', fontWeight: on ? 700 : 500, fontSize: 'var(--fs-sm)'
                 }}
               >
                 {t.icon} {t.label}
                 {t.badge > 0 && (
                   <span style={{
                     marginInlineStart: '6px', background: '#ff3b30', color: '#fff', borderRadius: '999px',
-                    fontSize: '10px', padding: '1px 6px', fontWeight: 700
+                    fontSize: 'var(--fs-xs)', padding: '1px 6px', fontWeight: 700
                   }}>{t.badge}</span>
                 )}
               </button>

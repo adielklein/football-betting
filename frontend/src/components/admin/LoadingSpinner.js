@@ -20,7 +20,7 @@ function LoadingSpinner({ message = "טוען..." }) {
         animation: 'spin 0.8s linear infinite',
         marginBottom: '1rem'
       }}></div>
-      <h2 style={{ color: 'var(--text-3, #888)', fontSize: '1rem', fontWeight: '500' }}>{message}</h2>
+      <h2 style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-md)', fontWeight: '500' }}>{message}</h2>
     </div>
   );
 }

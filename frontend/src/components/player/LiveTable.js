@@ -196,23 +196,23 @@ function LiveTable({ weekId, meUserId, scope = null }) {
             animation: 'livePulse 1.4s ease-in-out infinite'
           }}
         />
-        <span style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text, #333)' }}>
+        <span style={{ fontWeight: 800, fontSize: 'var(--fs-sm)', color: 'var(--text, #333)' }}>
           הטבלה עכשיו
         </span>
         {scope && (
           <span style={{
-            fontSize: '10px', fontWeight: 800, padding: '1px 7px', borderRadius: '10px',
+            fontSize: 'var(--fs-xs)', fontWeight: 800, padding: '1px 7px', borderRadius: '10px',
             background: 'var(--surface-3, #f0f2f5)', color: 'var(--text-3, #888)'
           }}>
             {scope.chip}
           </span>
         )}
-        <span style={{ fontSize: '11px', color: 'var(--bad-fg, #b3261e)', fontWeight: 700 }}>
+        <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--bad-fg, #b3261e)', fontWeight: 700 }}>
           <Num>{liveMatches}</Num> {liveMatches === 1 ? 'משחק מתנהל' : 'משחקים מתנהלים'}
         </span>
       </div>
 
-      <div style={{ fontSize: '10.5px', color: 'var(--text-4, #aaa)', marginBottom: '0.6rem', lineHeight: 1.5 }}>
+      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', marginBottom: '0.6rem', lineHeight: 1.5 }}>
         {scope
           ? `איך ${scope.label} היה נראה אילו השריקה הייתה עכשיו. `
           : `איך ${weekName} היה נגמר אילו השריקה הייתה עכשיו. `}
@@ -240,7 +240,7 @@ function LiveTable({ weekId, meUserId, scope = null }) {
               }}
             >
               <span style={{
-                minWidth: '18px', fontSize: '12px', fontWeight: 800,
+                minWidth: '18px', fontSize: 'var(--fs-xs)', fontWeight: 800,
                 color: me ? 'var(--me-fg, #14508f)' : 'var(--text-4, #aaa)'
               }}>
                 <Num>{r.liveRank}</Num>
@@ -248,14 +248,14 @@ function LiveTable({ weekId, meUserId, scope = null }) {
 
               {/* התנועה היא העיקר, ולכן היא צמודה למקום ולא בקצה השורה */}
               <span style={{
-                minWidth: '26px', fontSize: '11px', fontWeight: 800,
+                minWidth: '26px', fontSize: 'var(--fs-xs)', fontWeight: 800,
                 color: up ? 'var(--good-fg, #1a6b35)' : down ? 'var(--bad-fg, #a81f17)' : 'var(--text-4, #ccc)'
               }}>
                 {up ? `▲${r.rankChange}` : down ? `▼${-r.rankChange}` : '–'}
               </span>
 
               <span style={{
-                flex: 1, minWidth: 0, fontSize: '13px',
+                flex: 1, minWidth: 0, fontSize: 'var(--fs-sm)',
                 fontWeight: me ? 800 : 600,
                 color: me ? 'var(--me-fg, #14508f)' : 'var(--text, #333)',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
@@ -268,7 +268,7 @@ function LiveTable({ weekId, meUserId, scope = null }) {
 
               {r.gained > 0 && (
                 <span style={{
-                  fontSize: '11px', fontWeight: 800, color: 'var(--good-fg, #1a6b35)',
+                  fontSize: 'var(--fs-xs)', fontWeight: 800, color: 'var(--good-fg, #1a6b35)',
                   background: 'var(--good-bg, #e8f6ec)', borderRadius: '7px', padding: '1px 7px'
                 }}>
                   <Num>+{r.gained}</Num>
@@ -276,7 +276,7 @@ function LiveTable({ weekId, meUserId, scope = null }) {
               )}
 
               <span style={{
-                fontSize: '14px', fontWeight: 800, minWidth: '34px', textAlign: 'left',
+                fontSize: 'var(--fs-sm)', fontWeight: 800, minWidth: '34px', textAlign: 'left',
                 color: me ? 'var(--me-fg, #14508f)' : 'var(--text, #333)'
               }}>
                 <RollingNumber value={r.liveScore} />
@@ -286,7 +286,7 @@ function LiveTable({ weekId, meUserId, scope = null }) {
             {open && r.gains.length > 0 && (
               <div style={{
                 padding: '0.35rem 0.5rem 0.55rem 2.6rem',
-                fontSize: '11px', color: 'var(--text-3, #888)'
+                fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)'
               }}>
                 {r.gains.map((g) => (
                   <div key={g.matchId} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '2px 0' }}>
@@ -306,7 +306,7 @@ function LiveTable({ weekId, meUserId, scope = null }) {
         );
       })}
 
-      <div style={{ fontSize: '9.5px', color: 'var(--text-4, #c3c8d0)', marginTop: '0.5rem', textAlign: 'center' }}>
+      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #c3c8d0)', marginTop: '0.5rem', textAlign: 'center' }}>
         מתעדכן כל דקה · לחצו על שורה כדי לראות ממה היא מורכבת
       </div>
     </div>

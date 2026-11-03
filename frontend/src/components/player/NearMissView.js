@@ -25,8 +25,8 @@ const Card = ({ children, title, icon, style = {} }) => (
   }}>
     {title && (
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.7rem' }}>
-        {icon && <span style={{ fontSize: '16px' }}>{icon}</span>}
-        <span style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text, #333)' }}>{title}</span>
+        {icon && <span style={{ fontSize: 'var(--fs-md)' }}>{icon}</span>}
+        <span style={{ fontWeight: 700, fontSize: 'var(--fs-sm)', color: 'var(--text, #333)' }}>{title}</span>
       </div>
     )}
     {children}
@@ -44,11 +44,11 @@ const ScoreChip = ({ score, color, bg, label }) => (
   <span style={{ textAlign: 'center', minWidth: '46px' }}>
     <span style={{
       display: 'block', padding: '2px 7px', borderRadius: '7px',
-      background: bg, color, fontWeight: 800, fontSize: '12px'
+      background: bg, color, fontWeight: 800, fontSize: 'var(--fs-xs)'
     }}>
       <Score pair={score} />
     </span>
-    <span style={{ display: 'block', fontSize: '8.5px', color: 'var(--text-4, #aab1bb)', marginTop: '1px' }}>{label}</span>
+    <span style={{ display: 'block', fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aab1bb)', marginTop: '1px' }}>{label}</span>
   </span>
 );
 
@@ -78,12 +78,12 @@ function LuckTable({ meUserId }) {
 
   return (
     <Card title="מי הכי חסר מזל" icon="🍀">
-      <div style={{ fontSize: '10.5px', color: 'var(--text-3, #9aa2ae)', marginBottom: '0.6rem', lineHeight: 1.5 }}>
+      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #9aa2ae)', marginBottom: '0.6rem', lineHeight: 1.5 }}>
         נקודות שאבדו לשער בודד, ביחס למספר ההימורים. כולם נמדדים באותה דרך.
       </div>
 
       {!rows ? (
-        <div style={{ padding: '0.8rem', textAlign: 'center', fontSize: '11px', color: 'var(--text-4, #b6bcc6)' }}>
+        <div style={{ padding: '0.8rem', textAlign: 'center', fontSize: 'var(--fs-xs)', color: 'var(--text-4, #b6bcc6)' }}>
           טוען…
         </div>
       ) : (
@@ -101,30 +101,30 @@ function LuckTable({ meUserId }) {
               }}
             >
               <span style={{
-                minWidth: '18px', fontSize: '11px', fontWeight: 800,
+                minWidth: '18px', fontSize: 'var(--fs-xs)', fontWeight: 800,
                 color: r.rank === 1 ? ACCENT : 'var(--text-4, #b6bcc6)'
               }}>
                 {r.rank ? <Num>{r.rank}</Num> : '–'}
               </span>
 
               <span style={{
-                flex: 1, minWidth: 0, fontSize: '12px',
+                flex: 1, minWidth: 0, fontSize: 'var(--fs-xs)',
                 fontWeight: me ? 800 : 600, color: me ? 'var(--warn-fg, #5a3722)' : 'var(--text-2, #444)',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
               }}>
                 {r.name}
               </span>
 
-              <span style={{ fontSize: '10px', color: 'var(--text-4, #aab1bb)', minWidth: '52px', textAlign: 'left' }}>
+              <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aab1bb)', minWidth: '52px', textAlign: 'left' }}>
                 <Num>{r.nearRate}%</Num> מההימורים
               </span>
 
-              <span style={{ fontSize: '10.5px', color: 'var(--text-3, #8b93a0)', minWidth: '46px', textAlign: 'left' }}>
+              <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #8b93a0)', minWidth: '46px', textAlign: 'left' }}>
                 <Num>{r.lost}</Num> נק׳
               </span>
 
               <span style={{
-                fontSize: '13px', fontWeight: 800, color: me ? ACCENT : 'var(--text-2, #5a6472)',
+                fontSize: 'var(--fs-sm)', fontWeight: 800, color: me ? ACCENT : 'var(--text-2, #5a6472)',
                 minWidth: '34px', textAlign: 'left'
               }}>
                 <Num>{r.lostPerBet}</Num>
@@ -134,7 +134,7 @@ function LuckTable({ meUserId }) {
         })
       )}
 
-      <div style={{ fontSize: '9px', color: 'var(--text-4, #c3c8d0)', marginTop: '0.5rem', textAlign: 'center' }}>
+      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #c3c8d0)', marginTop: '0.5rem', textAlign: 'center' }}>
         המספר הימני: נקודות שאבדו לכל הימור
       </div>
     </Card>
@@ -163,13 +163,13 @@ function CourageTable({ meUserId }) {
 
   return (
     <Card title="מי הכי אמיץ" icon="🦁">
-      <div style={{ fontSize: '10.5px', color: 'var(--text-3, #9aa2ae)', marginBottom: '0.6rem', lineHeight: 1.5 }}>
+      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #9aa2ae)', marginBottom: '0.6rem', lineHeight: 1.5 }}>
         כמה הניחושים שלך הולכים נגד היחסים. המספר הימני: האם האומץ השתלם —
         ההפרש בנקודות בין ההימורים האמיצים שלך לזהירים שלך.
       </div>
 
       {!rows ? (
-        <div style={{ padding: '0.8rem', textAlign: 'center', fontSize: '11px', color: 'var(--text-4, #b6bcc6)' }}>
+        <div style={{ padding: '0.8rem', textAlign: 'center', fontSize: 'var(--fs-xs)', color: 'var(--text-4, #b6bcc6)' }}>
           טוען…
         </div>
       ) : (
@@ -188,32 +188,32 @@ function CourageTable({ meUserId }) {
               }}
             >
               <span style={{
-                minWidth: '18px', fontSize: '11px', fontWeight: 800,
+                minWidth: '18px', fontSize: 'var(--fs-xs)', fontWeight: 800,
                 color: r.rank === 1 ? ACCENT : 'var(--text-4, #b6bcc6)'
               }}>
                 {r.rank ? <Num>{r.rank}</Num> : '–'}
               </span>
 
               <span style={{
-                flex: 1, minWidth: 0, fontSize: '12px',
+                flex: 1, minWidth: 0, fontSize: 'var(--fs-xs)',
                 fontWeight: me ? 800 : 600, color: me ? 'var(--warn-fg, #5a3722)' : 'var(--text-2, #444)',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
               }}>
                 {r.name}
               </span>
 
-              <span style={{ fontSize: '10px', color: 'var(--text-4, #aab1bb)', minWidth: '60px', textAlign: 'left' }}>
+              <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aab1bb)', minWidth: '60px', textAlign: 'left' }}>
                 <Num>{r.braveBets}</Num> אמיצים
               </span>
 
-              <span style={{ fontSize: '10.5px', color: 'var(--text-3, #8b93a0)', minWidth: '40px', textAlign: 'left' }}>
+              <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #8b93a0)', minWidth: '40px', textAlign: 'left' }}>
                 <Num>{r.courage}</Num>
               </span>
 
               <span
                 title={paid == null ? 'אין מספיק הימורים משני הסוגים כדי להשוות' : ''}
                 style={{
-                  fontSize: '13px', fontWeight: 800, minWidth: '40px', textAlign: 'left',
+                  fontSize: 'var(--fs-sm)', fontWeight: 800, minWidth: '40px', textAlign: 'left',
                   color: paid == null
                     ? 'var(--text-4, #c3c8d0)'
                     : paid > 0 ? 'var(--good-fg, #1e7e34)' : paid < 0 ? 'var(--bad-fg, #b23b3b)' : 'var(--text-3, #8b93a0)'
@@ -226,7 +226,7 @@ function CourageTable({ meUserId }) {
         })
       )}
 
-      <div style={{ fontSize: '9px', color: 'var(--text-4, #c3c8d0)', marginTop: '0.5rem', textAlign: 'center' }}>
+      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #c3c8d0)', marginTop: '0.5rem', textAlign: 'center' }}>
         אמיץ = ניחוש בכיוון שהיחסים נתנו לו פחות מ-50%
       </div>
     </Card>
@@ -241,10 +241,10 @@ function NearMissView({ nearMisses, userId }) {
       <Card>
         <div style={{ textAlign: 'center', padding: '1.5rem 0.5rem', color: 'var(--text-3, #8b93a0)' }}>
           <div style={{ fontSize: '32px', marginBottom: '0.5rem' }}>🎯</div>
-          <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-2, #555)', marginBottom: '0.3rem' }}>
+          <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--text-2, #555)', marginBottom: '0.3rem' }}>
             אין עדיין החמצות קרובות
           </div>
-          <div style={{ fontSize: '12px' }}>
+          <div style={{ fontSize: 'var(--fs-xs)' }}>
             כאן יופיעו ההימורים שהיו שער אחד מבול, וכמה הם עלו לך.
           </div>
         </div>
@@ -262,23 +262,23 @@ function NearMissView({ nearMisses, userId }) {
           textAlign: 'center', padding: '0.6rem 0.4rem 0.4rem',
           background: ACCENT_SOFT, borderRadius: '12px', marginBottom: '0.6rem'
         }}>
-          <div style={{ fontSize: '11px', color: 'var(--warn-fg, #a1613c)', fontWeight: 600 }}>
+          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--warn-fg, #a1613c)', fontWeight: 600 }}>
             שער אחד הפריד בינך לבין
           </div>
           <div style={{ fontSize: '38px', fontWeight: 900, color: ACCENT, lineHeight: 1.15 }}>
             <Num>{lostToOneGoal}</Num>
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--warn-fg, #a1613c)', fontWeight: 600 }}>נקודות נוספות</div>
+          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--warn-fg, #a1613c)', fontWeight: 600 }}>נקודות נוספות</div>
         </div>
 
         <div style={{ display: 'flex', gap: '6px' }}>
           <div style={{ flex: 1, textAlign: 'center', padding: '0.5rem 0.3rem', background: 'var(--surface-2, #f8f9fc)', borderRadius: '12px' }}>
-            <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text, #333)' }}><Num>{nearCount}</Num></div>
-            <div style={{ fontSize: '10px', color: 'var(--text-3, #888)', fontWeight: 600 }}>פעמים שער אחד</div>
+            <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 800, color: 'var(--text, #333)' }}><Num>{nearCount}</Num></div>
+            <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', fontWeight: 600 }}>פעמים שער אחד</div>
           </div>
           <div style={{ flex: 1, textAlign: 'center', padding: '0.5rem 0.3rem', background: 'var(--surface-2, #f8f9fc)', borderRadius: '12px' }}>
-            <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text, #333)' }}><Num>{totalMisses}</Num></div>
-            <div style={{ fontSize: '10px', color: 'var(--text-3, #888)', fontWeight: 600 }}>החמצות בסך הכל</div>
+            <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 800, color: 'var(--text, #333)' }}><Num>{totalMisses}</Num></div>
+            <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', fontWeight: 600 }}>החמצות בסך הכל</div>
           </div>
         </div>
       </Card>
@@ -291,13 +291,13 @@ function NearMissView({ nearMisses, userId }) {
             background: 'var(--warn-bg, #fff5ed)',
             border: '1px solid #f6d5bd'
           }}>
-            <div style={{ fontSize: '11px', color: 'var(--warn-fg, #a1613c)', fontWeight: 700, marginBottom: '0.35rem' }}>
+            <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--warn-fg, #a1613c)', fontWeight: 700, marginBottom: '0.35rem' }}>
               💔 השער שעלה הכי הרבה
             </div>
-            <div style={{ fontSize: '13.5px', color: 'var(--warn-fg, #5a3722)', fontWeight: 700, marginBottom: '0.3rem' }}>
+            <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--warn-fg, #5a3722)', fontWeight: 700, marginBottom: '0.3rem' }}>
               {biggestRankMiss.team1} נגד {biggestRankMiss.team2}
             </div>
-            <div style={{ fontSize: '12.5px', color: 'var(--warn-fg, #5a3722)', fontWeight: 500, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--warn-fg, #5a3722)', fontWeight: 500, lineHeight: 1.6 }}>
               ניחשת <Score pair={biggestRankMiss.predicted} style={{ fontWeight: 800 }} />,
               {' '}יצא <Score pair={biggestRankMiss.actual} style={{ fontWeight: 800 }} />.
               {' '}המשחק הזה לבדו היה מקפיץ אותך ב{biggestRankMiss.weekName ? `${biggestRankMiss.weekName} ` : ''}
@@ -321,13 +321,13 @@ function NearMissView({ nearMisses, userId }) {
           >
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
-                fontSize: '12px', fontWeight: 700, color: 'var(--text, #333)',
+                fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--text, #333)',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
               }}>
                 {m.team1} נגד {m.team2}
               </div>
               {m.weekName && (
-                <div style={{ fontSize: '9.5px', color: 'var(--text-4, #aab1bb)', marginTop: '1px' }}>{m.weekName}</div>
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aab1bb)', marginTop: '1px' }}>{m.weekName}</div>
               )}
             </div>
 
@@ -336,7 +336,7 @@ function NearMissView({ nearMisses, userId }) {
 
             <span style={{
               minWidth: '42px', textAlign: 'center',
-              fontSize: '12px', fontWeight: 800, color: ACCENT
+              fontSize: 'var(--fs-xs)', fontWeight: 800, color: ACCENT
             }}>
               <Num>-{m.lost}</Num>
             </span>
@@ -353,7 +353,7 @@ function NearMissView({ nearMisses, userId }) {
       {/* השבועות שבהם הכי הרבה ברח - בלי טענות על מקומות */}
       {weeks.length > 0 && (
         <Card title="השבועות שהכי ברחו" icon="📉">
-          <div style={{ fontSize: '10.5px', color: 'var(--text-3, #9aa2ae)', marginBottom: '0.5rem', lineHeight: 1.5 }}>
+          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #9aa2ae)', marginBottom: '0.5rem', lineHeight: 1.5 }}>
             כמה נקודות עלו לך שערים בודדים, שבוע אחרי שבוע.
           </div>
 
@@ -368,13 +368,13 @@ function NearMissView({ nearMisses, userId }) {
                 }}
               >
                 <div style={{
-                  flex: 1, minWidth: 0, fontSize: '12px', fontWeight: 600, color: 'var(--text-2, #444)',
+                  flex: 1, minWidth: 0, fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--text-2, #444)',
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
                 }}>
                   {w.weekName || 'שבוע'}
                 </div>
 
-                <span style={{ fontSize: '10.5px', color: 'var(--text-4, #aab1bb)', minWidth: '58px', textAlign: 'left' }}>
+                <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aab1bb)', minWidth: '58px', textAlign: 'left' }}>
                   <Num>{w.nearCount}</Num> החמצות
                 </span>
 
@@ -386,7 +386,7 @@ function NearMissView({ nearMisses, userId }) {
                   }} />
                 </span>
 
-                <span style={{ fontSize: '12px', fontWeight: 800, color: ACCENT, minWidth: '38px', textAlign: 'left' }}>
+                <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 800, color: ACCENT, minWidth: '38px', textAlign: 'left' }}>
                   <Num>-{w.lost}</Num>
                 </span>
               </div>

@@ -89,7 +89,7 @@ function GroupedPicker({
             {label()}
           </span>
         </span>
-        <span style={{ fontSize: '11px', color: 'var(--text-4, #aaa)', flexShrink: 0 }}>
+        <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', flexShrink: 0 }}>
           {open ? '▲' : '▼'}
         </span>
       </button>
@@ -109,7 +109,7 @@ function GroupedPicker({
           ))}
 
           {groups.length === 0 && (
-            <div style={{ padding: '0.6rem', fontSize: '12px', color: 'var(--text-4, #aaa)', textAlign: 'center' }}>
+            <div style={{ padding: '0.6rem', fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', textAlign: 'center' }}>
               אין אפשרויות
             </div>
           )}
@@ -127,8 +127,8 @@ function GroupedPicker({
                 >
                   {group.icon && <span>{group.icon}</span>}
                   <span style={{ flex: 1 }}>{group.label}</span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-4, #aaa)' }}>{group.items.length}</span>
-                  <span style={{ fontSize: '10px', color: 'var(--text-4, #aaa)' }}>{isOpen ? '▲' : '▼'}</span>
+                  <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)' }}>{group.items.length}</span>
+                  <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)' }}>{isOpen ? '▲' : '▼'}</span>
                 </button>
 
                 {isOpen && (

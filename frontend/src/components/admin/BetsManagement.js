@@ -116,8 +116,8 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
     return (
       <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
         <div style={{ fontSize: '40px', marginBottom: '0.5rem' }}>🎯</div>
-        <h2 style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-3, #666)' }}>יש לבחור שבוע לעריכת הימורים</h2>
-        <p style={{ color: 'var(--text-4, #999)', fontSize: '13px' }}>בחר שבוע מהרשימה למעלה</p>
+        <h2 style={{ fontSize: 'var(--fs-md)', fontWeight: '600', color: 'var(--text-3, #666)' }}>יש לבחור שבוע לעריכת הימורים</h2>
+        <p style={{ color: 'var(--text-4, #999)', fontSize: 'var(--fs-sm)' }}>בחר שבוע מהרשימה למעלה</p>
       </div>
     );
   }
@@ -131,7 +131,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
     <div>
       {/* Header + Actions */}
       <div className="card" style={{ marginBottom: '0.75rem' }}>
-        <h2 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
+        <h2 style={{ fontSize: 'var(--fs-md)', margin: '0 0 0.5rem 0', fontWeight: '700' }}>
           🎯 עריכת הימורים - {selectedWeek.name}
         </h2>
 
@@ -140,7 +140,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
             padding: '0.4rem 0.7rem',
             background: 'linear-gradient(135deg, #28a745, #20c997)',
             color: 'white', border: 'none', borderRadius: '8px',
-            fontSize: '12px', fontWeight: '700', cursor: 'pointer'
+            fontSize: 'var(--fs-xs)', fontWeight: '700', cursor: 'pointer'
           }}>
             🔄 רענן
           </button>
@@ -154,7 +154,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
             padding: '0.4rem 0.7rem',
             background: 'linear-gradient(135deg, #ffc107, #ffb300)',
             color: 'white', border: 'none', borderRadius: '8px',
-            fontSize: '12px', fontWeight: '700', cursor: 'pointer'
+            fontSize: 'var(--fs-xs)', fontWeight: '700', cursor: 'pointer'
           }}>
             🧮 חשב ניקוד
           </button>
@@ -163,7 +163,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
           }} style={{
             padding: '0.4rem 0.7rem', backgroundColor: '#6c757d',
             color: 'white', border: 'none', borderRadius: '8px',
-            fontSize: '12px', fontWeight: '600', cursor: 'pointer'
+            fontSize: 'var(--fs-xs)', fontWeight: '600', cursor: 'pointer'
           }}>
             🔍 קונסול
           </button>
@@ -180,7 +180,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
           ].map(stat => (
             <span key={stat.label} style={{
               padding: '3px 10px', borderRadius: '20px',
-              fontSize: '11px', fontWeight: '700',
+              fontSize: 'var(--fs-xs)', fontWeight: '700',
               background: `${stat.color}15`, color: stat.color,
               border: `1px solid ${stat.color}30`
             }}>
@@ -192,7 +192,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
         {weekStatus && (
           <div style={{
             marginTop: '0.5rem', padding: '0.5rem 0.7rem', borderRadius: '10px',
-            fontSize: '13px', fontWeight: '600',
+            fontSize: 'var(--fs-sm)', fontWeight: '600',
             backgroundColor: weekStatus.type === 'admin-override' ? 'var(--warn-bg, #fff3cd)' :
               weekStatus.type === 'locked' ? 'var(--bad-bg, #fee2e2)' : 'var(--good-bg, #dcfce7)',
             color: weekStatus.type === 'admin-override' ? 'var(--warn-fg, #92400e)' :
@@ -207,7 +207,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
 
       {/* Bets - Card per match */}
       {matches.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-4, #999)', fontSize: '14px' }}>
+        <div className="card" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-4, #999)', fontSize: 'var(--fs-sm)' }}>
           אין משחקים בשבוע זה. יש להוסיף משחקים תחילה.
         </div>
       ) : (
@@ -233,12 +233,12 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text, #333)', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                      <div style={{ fontWeight: '700', fontSize: 'var(--fs-sm)', color: 'var(--text, #333)', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
                         <TeamLogo name={match.team1} src={match.team1LogoUrl} />
                         {match.team1} נגד {match.team2}
                         <TeamLogo name={match.team2} src={match.team2LogoUrl} />
                       </div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-3, #888)', marginTop: '1px' }}>
+                      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', marginTop: '1px' }}>
                         <span style={{
                           display: 'inline-flex', alignItems: 'center',
                           marginLeft: '4px', verticalAlign: 'middle'
@@ -258,14 +258,14 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                         <span style={{
                           padding: '3px 10px', borderRadius: '20px',
                           background: 'var(--good-bg, #dcfce7)',
-                          color: 'var(--good-fg, #16a34a)', fontSize: '13px', fontWeight: '800',
+                          color: 'var(--good-fg, #16a34a)', fontSize: 'var(--fs-sm)', fontWeight: '800',
                           border: '1px solid #86efac'
                         }}>
                           <Score home={match.result.team1Goals} away={match.result.team2Goals} />
                         </span>
                       )}
                       <span style={{
-                        fontSize: '14px', transition: 'transform 0.2s ease',
+                        fontSize: 'var(--fs-sm)', transition: 'transform 0.2s ease',
                         transform: expandedMatches[match._id] ? 'rotate(180deg)' : 'rotate(0deg)',
                         color: 'var(--text-4, #999)'
                       }}>▼</span>
@@ -292,7 +292,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                         marginBottom: '2px'
                       }}>
                         <span style={{
-                          fontWeight: '600', fontSize: '13px', color: 'var(--text-2, #444)',
+                          fontWeight: '600', fontSize: 'var(--fs-sm)', color: 'var(--text-2, #444)',
                           minWidth: '70px', flexShrink: 0
                         }}>
                           {player.name}
@@ -306,14 +306,14 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                             disabled={!canEdit}
                             style={{
                               width: '34px', textAlign: 'center', padding: '4px 2px',
-                              fontSize: '13px', borderRadius: '8px',
+                              fontSize: 'var(--fs-sm)', borderRadius: '8px',
                               border: '1.5px solid #e0e0e0',
                               fontWeight: '700', color: 'var(--text, #333)',
                               backgroundColor: !canEdit ? 'var(--surface-3, #f5f5f5)' : 'var(--surface, #fff)'
                             }}
                             placeholder="-"
                           />
-                          <span style={{ fontSize: '12px', color: 'var(--text-4, #ccc)', fontWeight: '700' }}>-</span>
+                          <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #ccc)', fontWeight: '700' }}>-</span>
                           <input
                             id={`bet-${player._id}-${match._id}-team2`}
                             type="number" min="0" max="20"
@@ -321,7 +321,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                             disabled={!canEdit}
                             style={{
                               width: '34px', textAlign: 'center', padding: '4px 2px',
-                              fontSize: '13px', borderRadius: '8px',
+                              fontSize: 'var(--fs-sm)', borderRadius: '8px',
                               border: '1.5px solid #e0e0e0',
                               fontWeight: '700', color: 'var(--text, #333)',
                               backgroundColor: !canEdit ? 'var(--surface-3, #f5f5f5)' : 'var(--surface, #fff)'
@@ -348,7 +348,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                                   ? 'linear-gradient(135deg, #ffc107, #ffb300)'
                                   : 'linear-gradient(135deg, #007bff, #0056d2)',
                               color: 'white', border: 'none', borderRadius: '6px',
-                              fontSize: '10px', fontWeight: '700',
+                              fontSize: 'var(--fs-xs)', fontWeight: '700',
                               cursor: !canEdit ? 'not-allowed' : 'pointer',
                               minWidth: '36px'
                             }}
@@ -360,7 +360,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                           {badge && (
                             <span style={{
                               padding: '2px 6px', borderRadius: '10px',
-                              fontSize: '9px', fontWeight: '800',
+                              fontSize: 'var(--fs-xs)', fontWeight: '800',
                               backgroundColor: badge.bg, color: badge.color,
                               border: `1px solid ${badge.border}`,
                               whiteSpace: 'nowrap', minWidth: '42px', textAlign: 'center'
