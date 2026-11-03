@@ -169,8 +169,9 @@ function AdminHeader({ user, onLogout }) {
                     color: 'white',
                     border: '1px solid rgba(255,255,255,0.3)',
                     borderRadius: '20px',
-                    padding: '2px 10px',
-                    fontSize: '11px',
+                    padding: '4px 12px',
+                    minHeight: '32px',
+                    fontSize: '12px',
                     fontWeight: '600',
                     cursor: 'pointer',
                     WebkitAppearance: 'none'

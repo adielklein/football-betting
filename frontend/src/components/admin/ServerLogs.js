@@ -227,8 +227,8 @@ function ServerLogs() {
           <button type="button" className="btn btn-secondary" onClick={load} title="רענן" style={{ margin: 0 }}>🔄</button>
         </div>
 
-        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-3, #777)', marginBottom: '0.5rem' }}>
-          <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} />
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', minHeight: '36px', fontSize: '12px', color: 'var(--text-3, #777)', marginBottom: '0.5rem', cursor: 'pointer' }}>
+          <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} style={{ width: '24px', height: '24px', margin: 0 }} />
           רענון אוטומטי כל 10 שניות
         </label>
 

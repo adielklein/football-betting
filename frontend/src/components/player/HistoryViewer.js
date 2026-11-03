@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import TeamLogo from '../TeamLogo';
 import LeagueLogo from '../LeagueLogo';
 import Score from '../Score';
+import { formatScore } from '../../services/liveNumbers';
 
 function HistoryViewer({ weeks, user }) {
   const [selectedHistoryWeek, setSelectedHistoryWeek] = useState(null);
@@ -97,9 +98,10 @@ function HistoryViewer({ weeks, user }) {
 
   const calculateUserWeekScore = () => {
     if (!selectedHistoryWeek || !historyData.allBets.length) return 0;
-    return historyData.allBets
+    // מעוגל: סכום של נקודות שבריות מייצר ערכים כמו 3.4000000000000004
+    return Math.round(historyData.allBets
       .filter(bet => bet.userId && bet.userId._id === user.id)
-      .reduce((total, bet) => total + (bet.points || 0), 0);
+      .reduce((total, bet) => total + (bet.points || 0), 0) * 10) / 10;
   };
 
   const getScoreboardData = () => {
@@ -360,7 +362,7 @@ function HistoryViewer({ weeks, user }) {
                         fontWeight: '800', fontSize: isTop3 ? '16px' : '14px', flexShrink: 0,
                         padding: '2px 10px', background: isTop3 ? 'var(--overlay, rgba(255,255,255,0.72))' : 'var(--surface-3, #f5f5f5)',
                         borderRadius: '10px', color: rowFg
-                      }}>{player.score}</span>
+                      }}>{formatScore(player.score)}</span>
                     </div>
                   );
                 })}

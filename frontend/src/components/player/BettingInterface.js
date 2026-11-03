@@ -376,21 +376,20 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
             }}>
               נסגר בעוד
             </span>
-            <div style={{ display: 'flex', gap: '3px' }}>
+            {/* ימים במילה, והשאר כשעון: קודם כל יחידה הייתה תיבה עם אות אחת,
+                ו"ש" סימנה גם שעות וגם שניות ("3י 11ש 24ד 36ש") */}
+            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
               {timeLeft.days > 0 && (
-                <span style={countdownBoxStyle(timeLeft.total)}>{timeLeft.days}<small>י</small></span>
+                <span style={countdownBoxStyle(timeLeft.total)}>
+                  {timeLeft.days === 1 ? 'יום אחד' : `${timeLeft.days} ימים`}
+                </span>
               )}
-              <span style={countdownBoxStyle(timeLeft.total)}>
-                {String(timeLeft.hours).padStart(2, '0')}<small>ש</small>
-              </span>
-              <span style={{ ...countdownBoxStyle(timeLeft.total), minWidth: '32px' }}>
-                {String(timeLeft.minutes).padStart(2, '0')}<small>ד</small>
-              </span>
-              <span style={{
-                ...countdownBoxStyle(timeLeft.total), minWidth: '32px',
-                animation: 'pulse 1s ease infinite'
+              <span dir="ltr" style={{
+                ...countdownBoxStyle(timeLeft.total),
+                // הדופק רק בשעה האחרונה, כשזה באמת דחוף
+                animation: timeLeft.total < 3600000 ? 'pulse 1s ease infinite' : undefined
               }}>
-                {String(timeLeft.seconds).padStart(2, '0')}<small>ש</small>
+                {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
               </span>
             </div>
           </div>
@@ -602,9 +601,10 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                   fontWeight: '700',
                   background: hasChanges && isComplete
                     ? 'linear-gradient(135deg, #28a745, #20c997)'
-                    : (isSaved ? '#f0faf0' : 'var(--surface-3, #f5f5f5)'),
+                    : (isSaved ? 'var(--good-bg, #f0faf0)' : 'var(--surface-3, #f5f5f5)'),
                   color: hasChanges && isComplete ? 'white' : (isSaved ? 'var(--good-fg, #2e7d32)' : 'var(--text-4, #aaa)'),
-                  opacity: (!isComplete || !hasChanges) ? 0.85 : 1,
+                  // "נשמר" הוא מצב סופי, לא כפתור כבוי - בלי עמעום, אחרת הוא נבלע במצב כהה
+                  opacity: isSaved && !hasChanges ? 1 : ((!isComplete || !hasChanges) ? 0.85 : 1),
                   cursor: (!isComplete || !hasChanges) ? 'default' : 'pointer',
                   transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                   WebkitAppearance: 'none',

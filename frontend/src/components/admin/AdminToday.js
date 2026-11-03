@@ -109,7 +109,7 @@ function AdminToday() {
               <div key={w.weekId} className="card" style={{ marginBottom: '0.75rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                   <button type="button" onClick={() => navigate(`/admin/week?week=${w.weekId}`)} style={{
-                    flex: 1, minWidth: 0, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'start',
+                    flex: 1, minWidth: 0, minHeight: '36px', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'start',
                     fontSize: '15px', fontWeight: 800, color: 'var(--text, #222)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
                   }}>
                     {w.name}

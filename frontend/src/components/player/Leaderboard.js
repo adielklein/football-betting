@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import LiveTable from './LiveTable';
+import { formatScore } from '../../services/liveNumbers';
 
 function Leaderboard({ leaderboard, user }) {
   const [monthlyScores, setMonthlyScores] = useState([]);
@@ -120,6 +121,8 @@ function Leaderboard({ leaderboard, user }) {
       }
     });
 
+    // סכום של נקודות שבריות - מעוגל, אחרת 1.6 + 1.8 מוצג כ-3.4000000000000004
+    Object.values(userScores).forEach((u) => { u.monthlyScore = Math.round(u.monthlyScore * 10) / 10; });
     const monthlyArray = Object.values(userScores).sort((a, b) => b.monthlyScore - a.monthlyScore);
     setMonthlyScores(monthlyArray);
   };
@@ -170,6 +173,7 @@ function Leaderboard({ leaderboard, user }) {
       userScores[userId].seasonalScore += score.weeklyScore || 0;
     });
 
+    Object.values(userScores).forEach((u) => { u.seasonalScore = Math.round(u.seasonalScore * 10) / 10; });
     const seasonalArray = Object.values(userScores).sort((a, b) => b.seasonalScore - a.seasonalScore);
     setSeasonalScores(seasonalArray);
   };
@@ -261,7 +265,7 @@ function Leaderboard({ leaderboard, user }) {
   const renderPlayerRow = (player, index, scoreKey, isMe, animDelay) => {
     const rank = getRankStyle(index);
     const isTop3 = index < 3;
-    const score = player[scoreKey] !== undefined ? player[scoreKey] : player.score;
+    const score = formatScore(player[scoreKey] !== undefined ? player[scoreKey] : player.score);
 
     // לשורה עם רקע משלה יש גם טקסט משלה. שורה רגילה יורשת את הרגיל.
     const rowFg = isMe ? 'var(--me-fg, #14508f)' : (isTop3 ? rank.fg : 'var(--text, #333)');

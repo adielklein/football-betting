@@ -295,7 +295,7 @@ function UsersManagement({ users, loadData, user }) {
           onClick={() => setAddUserOpen(prev => !prev)}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            cursor: 'pointer', userSelect: 'none'
+            cursor: 'pointer', userSelect: 'none', minHeight: '44px'
           }}
         >
           <h2 style={{ fontSize: '0.95rem', margin: 0, fontWeight: '700' }}>
@@ -402,7 +402,7 @@ function UsersManagement({ users, loadData, user }) {
           onClick={() => setExclusionsOpen(prev => !prev)}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            cursor: 'pointer', userSelect: 'none'
+            cursor: 'pointer', userSelect: 'none', minHeight: '44px'
           }}
         >
           <h2 style={{ fontSize: '0.95rem', margin: 0, fontWeight: '700' }}>
@@ -492,7 +492,7 @@ function UsersManagement({ users, loadData, user }) {
           onClick={() => setUserListOpen(prev => !prev)}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            cursor: 'pointer', userSelect: 'none'
+            cursor: 'pointer', userSelect: 'none', minHeight: '44px'
           }}
         >
           <h2 style={{ fontSize: '0.95rem', margin: 0, fontWeight: '700' }}>

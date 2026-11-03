@@ -59,9 +59,10 @@ export function StatusItem({ item, now, onAction, busy }) {
         {item.detail && <div style={{ fontSize: '11px', color: 'var(--text-3, #777)', marginTop: '2px' }}>{item.detail}</div>}
         {item.names?.length > 0 && (
           <>
+            {/* מקום לחיצה של 28px לפחות - קודם זה היה 17×12, קטן מהמינימום (24) */}
             <button type="button" onClick={() => setShowNames((v) => !v)} style={{
-              background: 'none', border: 'none', padding: 0, marginTop: '3px', cursor: 'pointer',
-              fontSize: '11px', color: 'var(--theme-primary, #007bff)'
+              background: 'none', border: 'none', padding: '6px 10px', margin: '0 -10px -6px', minHeight: '28px', cursor: 'pointer',
+              fontSize: '12px', fontWeight: 600, color: 'var(--theme-primary, #007bff)'
             }}>
               {showNames ? 'הסתר' : 'מי?'}
             </button>

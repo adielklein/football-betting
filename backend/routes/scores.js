@@ -12,6 +12,10 @@ const { calculateMatchPoints } = require('../services/scoring');
 const { describeEvent, eventKey, selectMatchEndRecipients } = require('../services/matchEvents');
 const router = express.Router();
 
+// סכום של נקודות שבריות (1.6 + 0.8 + ...) מייצר בנקודה צפה ערכים כמו
+// 3.4000000000000004, וזה בדיוק מה שהופיע בטבלה. מעגלים בכל מקום שסוכם
+const round1 = (n) => Math.round((n || 0) * 10) / 10;
+
 // Calculate scores for a week
 router.post('/calculate/:weekId', requireAdmin, async (req, res) => {
   try {
@@ -110,7 +114,7 @@ router.post('/calculate/:weekId', requireAdmin, async (req, res) => {
     const scoreOps = users.map((u) => ({
       updateOne: {
         filter: { userId: u._id, weekId },
-        update: { $set: { weeklyScore: weeklyByUser.get(u._id.toString()) || 0, updatedAt: now } },
+        update: { $set: { weeklyScore: round1(weeklyByUser.get(u._id.toString())), updatedAt: now } },
         upsert: playedMatches.length > 0
       }
     }));
@@ -123,7 +127,7 @@ router.post('/calculate/:weekId', requireAdmin, async (req, res) => {
     if (totals.length > 0) {
       await Score.bulkWrite(
         totals.map((t) => ({
-          updateMany: { filter: { userId: t._id }, update: { $set: { totalScore: t.total } } }
+          updateMany: { filter: { userId: t._id }, update: { $set: { totalScore: round1(t.total) } } }
         }))
       );
     }
@@ -307,7 +311,7 @@ router.get('/leaderboard', async (req, res) => {
       }
     ]);
     
-    res.json(scores);
+    res.json(scores.map((row) => ({ ...row, totalScore: round1(row.totalScore) })));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

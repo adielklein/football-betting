@@ -947,7 +947,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
       <div className="card" id="create-week-section" style={{ scrollMarginTop: '1rem' }}>
         <div onClick={() => setCreateWeekOpen(prev => !prev)} style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          cursor: 'pointer', userSelect: 'none'
+          cursor: 'pointer', userSelect: 'none', minHeight: '44px'
         }}>
           <h3 style={{ margin: 0 }}>צור שבוע חדש</h3>
           <span style={{ fontSize: '18px', transition: 'transform 0.2s ease',
@@ -1154,7 +1154,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
             <div onClick={() => setAddMatchOpen(prev => !prev)} style={{
               display: 'flex', alignItems: 'center', gap: '0.5rem',
-              cursor: 'pointer', userSelect: 'none', flex: 1
+              cursor: 'pointer', userSelect: 'none', flex: 1, minHeight: '44px'
             }}>
               <h3 style={{ margin: 0 }}>הוסף משחק ל-{selectedWeek.name}</h3>
               <span style={{ fontSize: '18px', transition: 'transform 0.2s ease',
@@ -1275,7 +1275,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem'
           }}>
             <div onClick={() => setMatchListOpen(prev => !prev)} style={{
-              display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', userSelect: 'none', flex: 1
+              display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', userSelect: 'none', flex: 1, minHeight: '44px'
             }}>
               <h2 style={{ margin: 0 }}>משחקי {selectedWeek.name}</h2>
               <span style={{ fontSize: '18px', transition: 'transform 0.2s ease',
