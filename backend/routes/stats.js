@@ -12,6 +12,10 @@ const { buildParticipation } = require('../services/participation');
 const { buildWeeklyTimeline } = require('../services/weeklyTimeline');
 const { buildBettingTwins } = require('../services/bettingTwins');
 const User = require('../models/User');
+const League = require('../models/League');
+const MonthExclusion = require('../models/MonthExclusion');
+const { sameTeam } = require('../utils/teamMatch');
+const { goalsTendency, byLeague, teamBias, vsCrowd, rankHistory } = require('../services/playerInsights');
 
 // GET /api/stats/user/:userId - סטטיסטיקות של שחקן
 router.get('/user/:userId', async (req, res) => {
@@ -205,7 +209,75 @@ router.get('/user/:userId', async (req, res) => {
       comparablePlayers
     );
 
+    // === תובנות נוספות ===
+    // פריט אחיד לכל הימור שהסתיים, שממנו כל התובנות מחושבות
+    const insightItems = completedBets.map((b) => ({
+      matchId: String(b.matchId._id),
+      prediction: b.prediction,
+      result: b.matchId.result,
+      points: b.points || 0,
+      leagueId: b.matchId.leagueId ? String(b.matchId.leagueId._id || b.matchId.leagueId) : null,
+      team1: b.matchId.team1,
+      team2: b.matchId.team2,
+      label: `${b.matchId.team1} - ${b.matchId.team2}`,
+    }));
+
+    const leagueIds = [...new Set(insightItems.map((x) => x.leagueId).filter(Boolean))];
+    const leagueRows = leagueIds.length ? await League.find({ _id: { $in: leagueIds } }, 'name color').lean() : [];
+    const leagueMap = new Map(leagueRows.map((l) => [String(l._id), { name: l.name, color: l.color }]));
+
+    // הקבוצה של ערכת הנושא. שמות הערכות חיים רק בצד הלקוח, ולכן השם
+    // מגיע בבקשה. בלי שם (ערכת ברירת מחדל) - אין כרטיס
+    const themeTeam = typeof req.query.team === 'string' ? req.query.team.trim().slice(0, 60) : '';
+
+    // נגד הקהל: רק משחקים בשבועות נעולים (otherBets כבר מסונן כך), ורק
+    // שחקנים אמיתיים - בלי אדמינים, בדיוק כמו בתאום
+    const comparableIds = new Set(comparablePlayers.map((p) => String(p._id)));
+    const othersByMatch = new Map();
+    for (const b of otherBets) {
+      if (!comparableIds.has(String(b.userId))) continue;
+      const key = String(b.matchId);
+      if (!othersByMatch.has(key)) othersByMatch.set(key, []);
+      othersByMatch.get(key).push(b.prediction);
+    }
+    const closedSet = new Set(closedMatchIds.map(String));
+
+    // המקום בטבלה העונתית לאורך העונה הנוכחית (העונה של השבוע האחרון
+    // שבו השחקן קיבל ניקוד)
+    const weekTime = (w) => new Date(w.lockTime || w.createdAt || 0).getTime();
+    let seasonRank = [];
+    const latestScored = scores
+      .filter((s) => s.weekId)
+      .sort((a, b) => weekTime(b.weekId) - weekTime(a.weekId))[0];
+    if (latestScored) {
+      const season = latestScored.weekId.season;
+      // אותם כללים כמו הטבלה העונתית: רק שבועות פעילים, ושחקן שהוחרג
+      // מחודש מסוים לא נספר בשבועות של אותו חודש
+      const seasonWeeks = (await Week.find({ season, active: true }, 'name month lockTime createdAt').lean())
+        .sort((a, b) => weekTime(a) - weekTime(b));
+      const [seasonScores, exclusions] = await Promise.all([
+        Score.find(
+          { weekId: { $in: seasonWeeks.map((w) => w._id) }, userId: { $nin: adminIds } },
+          'userId weekId weeklyScore'
+        ).lean(),
+        MonthExclusion.find({ season }, 'userId month').lean(),
+      ]);
+      const excluded = new Set(exclusions.map((e) => `${e.userId}:${e.month}`));
+      const monthOf = new Map(seasonWeeks.map((w) => [String(w._id), w.month || new Date(w.createdAt).getMonth() + 1]));
+      const counted = seasonScores.filter((sc) => !excluded.has(`${sc.userId}:${monthOf.get(String(sc.weekId))}`));
+      seasonRank = rankHistory(seasonWeeks, counted, userId);
+    }
+
+    const insights = {
+      goals: goalsTendency(insightItems),
+      leagues: byLeague(insightItems, leagueMap),
+      themeTeam: themeTeam ? teamBias(insightItems, themeTeam, sameTeam) : null,
+      crowd: vsCrowd(insightItems.filter((x) => closedSet.has(x.matchId)), othersByMatch),
+      seasonRank,
+    };
+
     res.json({
+      insights,
       overview: {
         totalBets: completedBets.length,
         exactCount,

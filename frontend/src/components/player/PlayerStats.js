@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import NearMissView from './NearMissView';
 import TeamLogo from '../TeamLogo';
+import { getTheme } from '../../themes';
+import { GoalsCard, CrowdCard, SeasonRankCard, LeaguesCard, ThemeTeamCard } from './InsightCards';
 
 // נקודות יכולות להיות שבריות (ניקוד לפי יחסים), ולכן ספרה אחת אחרי הנקודה
 const pts = (n) => Math.round((n || 0) * 10) / 10;
@@ -314,13 +316,17 @@ function PlayerStats({ user }) {
 
   useEffect(() => {
     loadStats();
-  }, [user]);
+  }, [user, user?.theme]);
 
   const loadStats = async () => {
     try {
       setLoading(true);
       const userId = user._id || user.id;
-      const response = await fetch(`${API_URL}/stats/user/${userId}`);
+      // הקבוצה של ערכת הנושא, לכרטיס "אתה והקבוצה שלך". לערכות שאינן
+      // קבוצה (ברירת המחדל) אין כרטיס
+      const themeTeam = user.theme && user.theme !== 'default' ? getTheme(user.theme).name : '';
+      const query = themeTeam ? `?team=${encodeURIComponent(themeTeam)}` : '';
+      const response = await fetch(`${API_URL}/stats/user/${userId}${query}`);
       const data = await response.json();
       setStats(data);
     } catch (error) {
@@ -359,6 +365,7 @@ function PlayerStats({ user }) {
   }
 
   const { overview, weeklyTimeline, predictionDistribution, topPredictions, bestTeams, worstTeams, bestHitStreak, currentHitStreak, nearMisses, bettingTwins } = stats;
+  const insights = stats.insights || {};
 
   // סכום רץ אמיתי לכל שבוע. גם אם השרת עדיין לא שולח cumulativeScore
   // (גרסה קודמת), הגרף המצטבר לא נשאר שטוח
@@ -603,6 +610,9 @@ function PlayerStats({ user }) {
             </Card>
           )}
 
+          <GoalsCard goals={insights.goals} />
+          <CrowdCard crowd={insights.crowd} />
+
           {/* Prediction Distribution */}
           <Card title="התפלגות ניחושים" icon="🎲">
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
@@ -649,6 +659,8 @@ function PlayerStats({ user }) {
       {/* === TIMELINE === */}
       {activeSection === 'timeline' && (
         <div style={{ animation: 'scaleIn 0.2s ease' }}>
+          <SeasonRankCard history={insights.seasonRank} />
+
           <Card title="ניקוד שבועי" icon="📊">
             <WeeklyBarChart weeks={timelineWeeks} activeIndex={activeWeek} onSelect={setSelectedWeek} />
           </Card>
@@ -711,6 +723,9 @@ function PlayerStats({ user }) {
       {/* === TEAMS === */}
       {activeSection === 'teams' && (
         <div style={{ animation: 'scaleIn 0.2s ease' }}>
+          <ThemeTeamCard data={insights.themeTeam} />
+          <LeaguesCard leagues={insights.leagues} />
+
           {/* Best Teams */}
           <Card title="הכי טוב מנחש" icon="🏆">
             {bestTeams.length > 0 ? (
