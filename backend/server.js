@@ -76,6 +76,8 @@ app.use('/api/scores', scoresRoutes);
 app.use('/api/leagues', leaguesRoutes);
 app.use('/api/exclusions', exclusionsRoutes);
 app.use('/api/external', externalRoutes);
+// 📋 מסך "היום" ומצב שבוע - למנהלים בלבד
+app.use('/api/admin', require('./routes/admin'));
 
 // Audit log endpoint - רק לאדמין הראשי
 // 📜 לוגים: השורות האחרונות שהשרת כתב, ומצב החיבור ל-365

@@ -13,6 +13,8 @@ const ALL_LEAGUES = '__all__';
 // ובחירה של קבוצה שלמה - כל הגביעים, כל תחרויות הנבחרות. זה מה שבאמת
 // עושים כשבונים שבוע: לא ליגה אחת ולא הכל, אלא סוג אחד
 const GROUP_PREFIX = '__group__:';
+// הליגות שהיו בשבוע הקודם - הבחירה הנפוצה ביותר משבוע לשבוע
+const LAST_WEEK = '__last_week__';
 
 // 365 חוסמים לפי IP על ריבוי בקשות בו-זמנית, ולכן מושכים כמה ליגות במקביל
 // ולא את כולן יחד. חמש ולא שלוש: 16 ליגות בשלישיות היו כחצי דקה של המתנה
@@ -32,7 +34,7 @@ const addDays = (d, n) => {
   return copy;
 };
 
-function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
+function ImportMatchesModal({ week, previousWeek = null, leagues, adminId, onClose, onImported }) {
   const importableLeagues = useMemo(
     () => (leagues || []).filter((l) => l.footballDataCode || l.scores365CompetitionId || l.sportsDbLeagueId || l.sofaScoreTournamentId || l.espnLeagueCode),
     [leagues]
@@ -64,12 +66,33 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
   // כדי שהאדמין יראה מה בדיוק לא נוסף במקום שהחלון ייסגר כאילו הכל עבר
   const [skipped, setSkipped] = useState(null);
 
+  // התחרויות של השבוע הקודם, מתוך המשחקים שבו. לא נבחרות מראש - הן רק
+  // אפשרות אחת ברשימה, כדי שהייבוא לא ימשוך כלום עד שבוחרים
+  const [lastWeekLeagueIds, setLastWeekLeagueIds] = useState([]);
+  useEffect(() => {
+    if (!previousWeek?._id) return undefined;
+    let cancelled = false;
+    Promise.resolve(api.getMatches(previousWeek._id))
+      .then((list) => {
+        if (cancelled || !Array.isArray(list)) return;
+        const ids = [...new Set(list.map((m) => String(m.leagueId?._id || m.leagueId || '')).filter(Boolean))];
+        setLastWeekLeagueIds(ids);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [previousWeek?._id]);
+  const lastWeekLeagues = useMemo(
+    () => importableLeagues.filter((l) => lastWeekLeagueIds.includes(String(l._id))),
+    [importableLeagues, lastWeekLeagueIds]
+  );
+
   const groups = useMemo(() => groupLeagues(importableLeagues), [importableLeagues]);
   const pickerGroups = useMemo(() => leaguePickerGroups(importableLeagues), [importableLeagues]);
 
   // הבחירה היא אחת משלוש: הכל, קבוצה שלמה, או תחרות אחת
   const resolveTargets = () => {
     if (leagueId === ALL_LEAGUES) return importableLeagues;
+    if (leagueId === LAST_WEEK) return lastWeekLeagues;
     if (leagueId.startsWith(GROUP_PREFIX)) {
       const key = leagueId.slice(GROUP_PREFIX.length);
       return (groups.find((g) => g.key === key)?.leagues) || [];
@@ -77,7 +100,7 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
     return importableLeagues.filter((l) => l._id === leagueId);
   };
 
-  const isMulti = leagueId === ALL_LEAGUES || leagueId.startsWith(GROUP_PREFIX);
+  const isMulti = leagueId === ALL_LEAGUES || leagueId === LAST_WEEK || leagueId.startsWith(GROUP_PREFIX);
 
   const loadFixtures = async ({ refresh = false } = {}) => {
     if (!leagueId) return;
@@ -329,6 +352,9 @@ function ImportMatchesModal({ week, leagues, adminId, onClose, onImported }) {
                 ? { value: ALL_LEAGUES, label: `🌍 כל התחרויות (${importableLeagues.length})` }
                 : null}
               groupAllPrefix={GROUP_PREFIX}
+              extraOptions={lastWeekLeagues.length > 0
+                ? [{ value: LAST_WEEK, label: `🔁 כמו ב${previousWeek.name} (${lastWeekLeagues.length})` }]
+                : []}
               placeholder={importableLeagues.length === 0 ? 'אין תחרויות עם מזהה חיצוני' : 'בחר תחרות'}
             />
           </div>

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import TeamLogo from '../TeamLogo';
 import LeagueLogo from '../LeagueLogo';
 import ImportMatchesModal from './ImportMatchesModal';
@@ -7,6 +8,8 @@ import GroupedPicker from '../GroupedPicker';
 import { leaguePickerGroups } from '../../utils/leagueGroups';
 import { toast } from '../../services/toast';
 import Score from '../Score';
+import WeekStepper from './WeekStepper';
+import { fetchWeekStatus, syncResults, recalcSilently, nudgePending } from '../../services/weekActions';
 
 // אותה קביעה כמו בכל שאר המסכים. קודם זה הסתמך על משתנה סביבה של CRA,
 // והנפילה לברירת המחדל הייתה localhost - כלומר מסך ניהול השבועות היה
@@ -42,6 +45,36 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
   // אותה חלוקה שבמסך הייבוא: ליגות, גביעים, אירופאיות, נבחרות
   const leagueGroups = useMemo(() => leaguePickerGroups(leagues), [leagues]);
 
+  // ── קישורים ממסך "היום" ─────────────────────────────────────────
+  // ‎?week=<id>&step=<matches|activate|results|close>  או  ‎?create=1
+  // השבוע נבחר, ואחרי שהמשחקים שלו נטענו - מגיעים לשלב. אז הכתובת מתנקה,
+  // כדי שרענון לא יחזור על הפעולה (למשל יפתח שוב את חלון ההפעלה).
+  const location = useLocation();
+  const navigate = useNavigate();
+  const focus = useMemo(() => {
+    const q = new URLSearchParams(location.search);
+    return { weekId: q.get('week'), step: q.get('step'), create: q.get('create') === '1' };
+  }, [location.search]);
+  const focusRef = useRef(focus);
+  focusRef.current = focus;
+
+  // רק הטעינה האחרונה כותבת למסך. כשמגיעים מקישור נטענים שני שבועות כמעט
+  // יחד (ברירת המחדל והמבוקש), ואחרת זה שחוזר אחרון קובע אילו משחקים יוצגו
+  const loadSeq = useRef(0);
+  const [loadedWeekId, setLoadedWeekId] = useState(null);
+
+  // מצב השבוע לפס השלבים - מהשרת, אותו חישוב של מסך "היום"
+  const [weekStatus, setWeekStatus] = useState(null);
+  const [stepBusy, setStepBusy] = useState(null);
+  const refreshStatus = async (weekId) => {
+    try {
+      const st = await fetchWeekStatus(weekId);
+      setWeekStatus((prev) => (st.weekId === weekId ? st : prev));
+    } catch (err) {
+      console.warn('week status unavailable:', err.message);
+    }
+  };
+
   useEffect(() => {
     loadData();
   }, []);
@@ -68,8 +101,12 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
       const reversedWeeks = data.reverse();
       setWeeks(reversedWeeks);
       
+      // הגענו מקישור לשבוע מסוים - הוא נבחר, ולא ברירת המחדל
+      const wanted = focusRef.current.weekId && reversedWeeks.find((w) => w._id === focusRef.current.weekId);
+      if (wanted) {
+        handleSelectWeek(wanted);
       // בחר את השבוע האחרון (החדש ביותר) כבררת מחדל
-      if (reversedWeeks.length > 0 && !selectedWeek) {
+      } else if (reversedWeeks.length > 0 && !selectedWeek) {
         const latestWeek = reversedWeeks[0];
         setSelectedWeek(latestWeek);
         if (onWeekSelect) {
@@ -104,12 +141,16 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
   };
 
   const loadWeekData = async (weekId) => {
+    const seq = ++loadSeq.current;
     try {
       const response = await fetch(`${API_URL}/matches/week/${weekId}`);
       if (!response.ok) throw new Error('Failed to fetch matches');
       
       const data = await response.json();
+      if (seq !== loadSeq.current) return; // נבחר בינתיים שבוע אחר
       setMatches(data);
+      setLoadedWeekId(weekId);
+      refreshStatus(weekId);
       
       const initEditingState = {};
       data.forEach(match => {
@@ -123,6 +164,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
       setEditingMatch(initEditingState);
     } catch (error) {
       console.error('Error loading matches:', error);
+      if (seq !== loadSeq.current) return;
       setMatches([]);
     }
   };
@@ -139,6 +181,87 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
     } else {
       setMatches([]);
     }
+  };
+
+  const scrollToId = (elementId) => {
+    setTimeout(() => {
+      document.getElementById(elementId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  };
+
+  // מעבר לשלב: פותח את החלק הרלוונטי במסך וגולל אליו
+  const goStep = (step) => {
+    if (step === 'matches') {
+      setAddMatchOpen(true);
+      scrollToId('add-match-section');
+    } else if (step === 'activate') {
+      if (selectedWeek && !selectedWeek.active && !selectedWeek.locked && matches.length > 0) activateWeek();
+      else scrollToId('week-actions');
+    } else if (step === 'results') {
+      if (matches.length === 0) return goStep('matches');
+      setMatchListOpen(true);
+      scrollToId('matches-section');
+    } else {
+      scrollToId('week-stepper');
+    }
+    return undefined;
+  };
+
+  // שבוע מקישור, כשהמסך כבר טעון (הטעינה הראשונה מטופלת ב-loadWeeks)
+  useEffect(() => {
+    if (!focus.weekId || weeks.length === 0 || selectedWeek?._id === focus.weekId) return;
+    const target = weeks.find((w) => w._id === focus.weekId);
+    if (target) handleSelectWeek(target);
+  }, [focus.weekId, weeks]);
+
+  // והשלב - רק אחרי שהמשחקים של השבוע המבוקש נטענו
+  useEffect(() => {
+    if (focus.create) {
+      setCreateWeekOpen(true);
+      scrollToId('create-week-section');
+      navigate('/admin/week', { replace: true });
+      return;
+    }
+    if (!focus.weekId || selectedWeek?._id !== focus.weekId || loadedWeekId !== focus.weekId) return;
+    goStep(focus.step || 'close');
+    navigate('/admin/week', { replace: true });
+  }, [focus.create, focus.weekId, focus.step, selectedWeek?._id, loadedWeekId]);
+
+  // שינוי מצב השבוע (הפעלה, כיבוי, נעילה) מרענן את פס השלבים
+  useEffect(() => {
+    if (selectedWeek?._id) refreshStatus(selectedWeek._id);
+  }, [selectedWeek?._id, selectedWeek?.active, selectedWeek?.locked, selectedWeek?.lockTime]);
+
+  // כפתורי הפעולה שמתחת לפס השלבים - אותן פעולות של מסך "היום"
+  const onStepAction = async (a) => {
+    if (a.type === 'goto') return goStep(a.step);
+    const key = `${a.type}:${a.weekId || ''}`;
+    let task = null;
+    let done = null;
+    if (a.type === 'nudge') {
+      if (!window.confirm(`לשלוח תזכורת ל-${a.count} שחקנים שעוד לא סיימו להמר?`)) return undefined;
+      task = () => nudgePending(a.weekId);
+      done = (r) => `נשלח ל-${r.users ?? 0} שחקנים`;
+    } else if (a.type === 'sync') {
+      task = () => syncResults(a.weekId);
+      done = (r) => (r.updated > 0 ? `עודכנו ${r.updated} תוצאות והניקוד חושב` : `אין תוצאות חדשות (${r.notFinished || 0} עוד לא הסתיימו)`);
+    } else if (a.type === 'recalc') {
+      if (!window.confirm('לחשב מחדש את הניקוד של השבוע לפי התוצאות השמורות? לא נשלחות התראות.')) return undefined;
+      task = () => recalcSilently(a.weekId);
+      done = () => 'הניקוד חושב מחדש';
+    }
+    if (!task) return undefined;
+    setStepBusy(key);
+    try {
+      const r = await task();
+      toast.success(done(r));
+      await loadWeekData(a.weekId);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setStepBusy(null);
+    }
+    return undefined;
   };
 
   const handleEditWeek = async (weekId, name, month, season) => {
@@ -821,7 +944,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
       <h2>ניהול שבועות</h2>
 
       {/* יצירת שבוע חדש */}
-      <div className="card">
+      <div className="card" id="create-week-section" style={{ scrollMarginTop: '1rem' }}>
         <div onClick={() => setCreateWeekOpen(prev => !prev)} style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           cursor: 'pointer', userSelect: 'none'
@@ -882,7 +1005,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
       </div>
 
       {/* בחירת שבוע - Dropdown מקונן */}
-      <div className="card" style={{ position: 'relative', zIndex: 100 }}>
+      <div className="card" id="week-actions" style={{ position: 'relative', zIndex: 100, scrollMarginTop: '1rem' }}>
         <h3>בחר שבוע לניהול</h3>
         
         <WeekPicker
@@ -1015,6 +1138,16 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
         )}
       </div>
 
+      {/* פס השלבים של השבוע הנבחר */}
+      {selectedWeek && (
+        <WeekStepper
+          status={weekStatus?.weekId === selectedWeek._id ? weekStatus : null}
+          onStep={goStep}
+          onAction={onStepAction}
+          busyKey={stepBusy}
+        />
+      )}
+
       {/* הוסף משחק */}
       {selectedWeek && (
         <div className="card" id="add-match-section" style={{ scrollMarginTop: '1rem' }}>
@@ -1137,7 +1270,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
 
       {/* רשימת משחקים */}
       {selectedWeek && matches.length > 0 && (
-        <div className="card">
+        <div className="card" id="matches-section" style={{ scrollMarginTop: '1rem' }}>
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem'
           }}>
@@ -1876,6 +2009,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
       {showImportModal && selectedWeek && (
         <ImportMatchesModal
           week={selectedWeek}
+          previousWeek={weeks[weeks.findIndex((w) => w._id === selectedWeek._id) + 1] || null}
           leagues={leagues}
           adminId={user?._id || user?.id}
           onClose={() => setShowImportModal(false)}

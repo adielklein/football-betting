@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { runningCommit } from '../../services/appVersion';
 import { api } from '../../services/api';
 import AdminHeader from './AdminHeader';
@@ -10,6 +11,8 @@ import PushManagement from './PushManagement';
 import AdminStats from './AdminStats';
 import AuditLog from './AuditLog';
 import ServerLogs from './ServerLogs';
+import AdminToday from './AdminToday';
+import SubTabs from './SubTabs';
 import LoadingSpinner from './LoadingSpinner';
 import useTabRoute from '../../services/useTabRoute';
 import { syncPushSubscription } from '../../services/pushSync';
@@ -20,12 +23,26 @@ function AdminView({ user, onLogout }) {
   const [matches, setMatches] = useState([]);
   const [allBets, setAllBets] = useState([]);
   const [users, setUsers] = useState([]);
-  // בקידומת admin כדי שלשוניות הניהול לא יתנגשו באלה של השחקן
+  // חמש לשוניות במקום שמונה: מה שקשור לשחקנים ב"שחקנים", וכל מה שהוא
+  // תשתית (התראות, לוגים, פעולות, סטטיסטיקה) ב"מערכת". בקידומת admin כדי
+  // שלא יתנגשו בלשוניות של השחקן
   const [activeTab, setActiveTab] = useTabRoute(
-    ['weeks', 'leagues', 'users', 'bets', 'push', 'stats', 'audit', 'logs'],
-    'weeks',
+    ['today', 'week', 'players', 'leagues', 'system'],
+    'today',
     { prefix: 'admin' }
   );
+
+  // כתובות מהמבנה הקודם (מועדפים, קישורים בהתראות) ממשיכות להגיע לאותו מסך
+  const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    const legacy = {
+      weeks: 'week', users: 'players/users', bets: 'players/bets',
+      push: 'system/push', stats: 'system/stats', audit: 'system/audit', logs: 'system/logs'
+    };
+    const m = location.pathname.match(/^\/admin\/(\w+)\/?$/);
+    if (m && legacy[m[1]]) navigate(`/admin/${legacy[m[1]]}${location.search}`, { replace: true });
+  }, [location.pathname, location.search, navigate]);
   const [loading, setLoading] = useState(true);
   const [auditCount, setAuditCount] = useState(0);
 
@@ -152,22 +169,28 @@ function AdminView({ user, onLogout }) {
     setUsers
   };
 
-  const allTabs = [
-    { key: 'weeks', label: 'שבועות', icon: '📅' },
+  const tabs = [
+    { key: 'today', label: 'היום', icon: '📋' },
+    { key: 'week', label: 'שבוע', icon: '📅' },
+    { key: 'players', label: 'שחקנים', icon: '👥' },
     { key: 'leagues', label: 'ליגות', icon: '🏆' },
-    { key: 'users', label: 'משתמשים', icon: '👥' },
-    { key: 'bets', label: 'הימורים', icon: '🎯' },
-    { key: 'push', label: 'התראות', icon: '📢' },
-    { key: 'stats', label: 'סטטיסטיקה', icon: '📊' },
-    { key: 'audit', label: 'פעולות', icon: '🔍' },
-    { key: 'logs', label: 'לוגים', icon: '📜' }
+    { key: 'system', label: 'מערכת', icon: '⚙️' }
   ];
 
-  // לוגים של השרת עלולים להכיל פרטים על משתמשים ומכשירים - כמו "פעולות",
-  // רק למנהל הראשי
-  const tabs = isPrimaryAdmin
-    ? allTabs
-    : allTabs.filter(t => t.key !== 'stats' && t.key !== 'audit' && t.key !== 'logs');
+  // לוגים, יומן פעולות וסטטיסטיקה עלולים להכיל פרטים על משתמשים ומכשירים -
+  // רק למנהל הראשי. מנהל אחר רואה ב"מערכת" רק התראות
+  const systemTabs = [
+    { key: 'push', label: 'התראות', icon: '📢' },
+    ...(isPrimaryAdmin ? [
+      { key: 'logs', label: 'לוגים', icon: '📜' },
+      { key: 'audit', label: 'פעולות', icon: '🔍', badge: auditCount },
+      { key: 'stats', label: 'סטטיסטיקה', icon: '📊' }
+    ] : [])
+  ];
+  const playerTabs = [
+    { key: 'users', label: 'משתמשים', icon: '👥' },
+    { key: 'bets', label: 'הימורים', icon: '🎯' }
+  ];
 
   return (
     <div>
@@ -177,9 +200,7 @@ function AdminView({ user, onLogout }) {
         {/* iOS-style segmented tab bar */}
         <div style={{
           display: 'grid',
-          // עד שש לשוניות בשורה אחת; מעבר לזה שתי שורות, אחרת בטלפון
-          // התוויות נדחסות ונכנסות זו בזו
-          gridTemplateColumns: `repeat(${tabs.length > 6 ? Math.ceil(tabs.length / 2) : tabs.length}, 1fr)`,
+          gridTemplateColumns: `repeat(${tabs.length}, 1fr)`,
           gap: '3px',
           marginBottom: '0.75rem',
           padding: '3px',
@@ -218,7 +239,7 @@ function AdminView({ user, onLogout }) {
               >
                 <span style={{ fontSize: '15px', lineHeight: 1 }}>{tab.icon}</span>
                 <span>{tab.label}</span>
-                {tab.key === 'audit' && auditCount > 0 && (
+                {tab.key === 'system' && isPrimaryAdmin && auditCount > 0 && (
                   <span style={{
                     position: 'absolute',
                     top: '2px',
@@ -242,14 +263,26 @@ function AdminView({ user, onLogout }) {
         </div>
 
         <div style={{ animation: 'scaleIn 0.2s ease' }}>
-          {activeTab === 'weeks' && <WeeksManagement {...sharedProps} />}
+          {activeTab === 'today' && <AdminToday />}
+          {activeTab === 'week' && <WeeksManagement {...sharedProps} />}
+          {activeTab === 'players' && (
+            <SubTabs parent="players" tabs={playerTabs}>
+              {(sub) => (sub === 'bets' ? <BetsManagement {...sharedProps} /> : <UsersManagement {...sharedProps} />)}
+            </SubTabs>
+          )}
           {activeTab === 'leagues' && <LeaguesManagement />}
-          {activeTab === 'users' && <UsersManagement {...sharedProps} />}
-          {activeTab === 'bets' && <BetsManagement {...sharedProps} />}
-          {activeTab === 'push' && <PushManagement />}
-          {activeTab === 'stats' && <AdminStats />}
-          {activeTab === 'audit' && <AuditLog />}
-          {activeTab === 'logs' && isPrimaryAdmin && <ServerLogs />}
+          {activeTab === 'system' && (
+            <SubTabs parent="system" tabs={systemTabs}>
+              {(sub) => (
+                <>
+                  {sub === 'push' && <PushManagement />}
+                  {sub === 'logs' && isPrimaryAdmin && <ServerLogs />}
+                  {sub === 'audit' && isPrimaryAdmin && <AuditLog />}
+                  {sub === 'stats' && isPrimaryAdmin && <AdminStats />}
+                </>
+              )}
+            </SubTabs>
+          )}
         </div>
 
         {/* חתימת הגרסה שרצה. אחרי דיפלוי, זו התשובה ל"האם אני כבר על

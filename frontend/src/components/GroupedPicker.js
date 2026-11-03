@@ -22,7 +22,9 @@ function GroupedPicker({
   disabled = false,
   placeholder = 'בחר',
   allOption = null,
-  groupAllPrefix = null
+  groupAllPrefix = null,
+  // בחירות נוספות בראש הרשימה, מתחת ל"הכל" (למשל "כמו בשבוע הקודם")
+  extraOptions = []
 }) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(null);
@@ -30,6 +32,7 @@ function GroupedPicker({
 
   const groupOfValue = () => {
     if (!value || (allOption && value === allOption.value)) return null;
+    if (extraOptions.some((o) => o.value === value)) return null;
     if (groupAllPrefix && String(value).startsWith(groupAllPrefix)) {
       return String(value).slice(groupAllPrefix.length);
     }
@@ -38,6 +41,8 @@ function GroupedPicker({
 
   const label = () => {
     if (allOption && value === allOption.value) return allOption.label;
+    const extra = extraOptions.find((o) => o.value === value);
+    if (extra) return extra.label;
     if (groupAllPrefix && value && String(value).startsWith(groupAllPrefix)) {
       const group = groups.find((g) => g.key === String(value).slice(groupAllPrefix.length));
       return group ? `${group.icon || ''} כל ה${group.label} (${group.items.length})`.trim() : placeholder;
@@ -96,6 +101,12 @@ function GroupedPicker({
               <span style={{ flex: 1 }}>{allOption.label}</span>
             </button>
           )}
+
+          {extraOptions.map((o) => (
+            <button key={o.value} type="button" onClick={() => pick(o.value)} style={rowStyle(value === o.value)}>
+              <span style={{ flex: 1 }}>{o.label}</span>
+            </button>
+          ))}
 
           {groups.length === 0 && (
             <div style={{ padding: '0.6rem', fontSize: '12px', color: 'var(--text-4, #aaa)', textAlign: 'center' }}>
