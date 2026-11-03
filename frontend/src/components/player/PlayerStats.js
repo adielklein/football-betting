@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import NearMissView from './NearMissView';
 import TeamLogo from '../TeamLogo';
 import { getTheme } from '../../themes';
+import useReturnRefresh from '../../services/useReturnRefresh';
 import { GoalsCard, CrowdCard, SeasonRankCard, LeaguesCard, ThemeTeamCard, accuracyBar, accuracyText } from './InsightCards';
 
 // נקודות יכולות להיות שבריות (ניקוד לפי יחסים), ולכן ספרה אחת אחרי הנקודה
@@ -304,7 +305,7 @@ const BettingTwins = ({ data }) => {
   );
 };
 
-function PlayerStats({ user }) {
+function PlayerStats({ user, active = true }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('overview');
@@ -315,13 +316,16 @@ function PlayerStats({ user }) {
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
 
+  // הלשונית נשארת טעונה; חזרה אליה אחרי יותר מדקה מרעננת ברקע
+  useReturnRefresh(active, () => loadStats({ silent: true }));
+
   useEffect(() => {
     loadStats();
   }, [user, user?.theme]);
 
-  const loadStats = async () => {
+  const loadStats = async ({ silent = false } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const userId = user._id || user.id;
       // הקבוצה של ערכת הנושא, לכרטיס "אתה והקבוצה שלך". לערכות שאינן
       // קבוצה (ברירת המחדל) אין כרטיס

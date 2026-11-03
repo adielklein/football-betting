@@ -4,9 +4,10 @@ import LeagueLogo from '../LeagueLogo';
 import Score from '../Score';
 import { textOn } from '../../services/readableColor';
 import { formatScore } from '../../services/liveNumbers';
+import useReturnRefresh from '../../services/useReturnRefresh';
 import { placesFor, anyScored } from '../../services/ranking';
 
-function HistoryViewer({ weeks, user }) {
+function HistoryViewer({ weeks, user, active = true }) {
   const [selectedHistoryWeek, setSelectedHistoryWeek] = useState(null);
   const [historyData, setHistoryData] = useState({ matches: [], bets: [], allBets: [] });
   const [loading, setLoading] = useState(false);
@@ -20,6 +21,9 @@ function HistoryViewer({ weeks, user }) {
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
+
+  // הלשונית נשארת טעונה; חזרה אליה אחרי יותר מדקה מרעננת ברקע
+  useReturnRefresh(active, () => selectedHistoryWeek && loadHistoryData(selectedHistoryWeek._id, { silent: true }));
 
   useEffect(() => {
     if (!weeks || weeks.length === 0) return;
@@ -61,9 +65,9 @@ function HistoryViewer({ weeks, user }) {
     }
   }, [weeks, selectedSeason, selectedMonth]);
 
-  const loadHistoryData = async (weekId) => {
+  const loadHistoryData = async (weekId, { silent = false } = {}) => {
     if (!weekId) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const [matchesResponse, userBetsResponse, allBetsResponse] = await Promise.all([
         fetch(`${API_URL}/matches/week/${weekId}`),

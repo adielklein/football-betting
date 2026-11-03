@@ -14,7 +14,12 @@ const API_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:5000/api'
   : 'https://football-betting-backend.onrender.com/api';
 
-export default function useLiveScores(weekId) {
+/**
+ * @param weekId השבוע
+ * @param active false כשהמסך מוסתר (לשונית אחרת). הנתונים נשמרים, רק
+ *               הבדיקות נעצרות - ומתחדשות מיד כשחוזרים
+ */
+export default function useLiveScores(weekId, active = true) {
   const [byMatchId, setByMatchId] = useState({});
   const [anyLive, setAnyLive] = useState(false);
   // מתי נכנס שער בכל משחק. חותמת הזמן היא שמפעילה את ההבזק מחדש,
@@ -22,14 +27,16 @@ export default function useLiveScores(weekId) {
   const [goalAt, setGoalAt] = useState({});
   const lastGames = useRef({});
 
+  // החלפת שבוע מאפסת. הסתרת המסך לא - בחזרה רואים את מה שהיה, ומתעדכנים
   useEffect(() => {
-    if (!weekId) {
-      setByMatchId({});
-      setAnyLive(false);
-      setGoalAt({});
-      lastGames.current = {};
-      return undefined;
-    }
+    setByMatchId({});
+    setAnyLive(false);
+    setGoalAt({});
+    lastGames.current = {};
+  }, [weekId]);
+
+  useEffect(() => {
+    if (!weekId || !active) return undefined;
 
     let cancelled = false;
     let timer = null;
@@ -71,7 +78,7 @@ export default function useLiveScores(weekId) {
       clearTimeout(timer);
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [weekId]);
+  }, [weekId, active]);
 
   return { liveByMatchId: byMatchId, anyLive, goalAtByMatchId: goalAt };
 }

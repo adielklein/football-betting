@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { api } from '../../services/api';
 import { applyTheme } from '../../themes';
 import PlayerHeader from './PlayerHeader';
@@ -45,14 +45,14 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
   }, [activeTab]);
 
   const toggleSettings = () => {
-    setActiveTab(activeTab === 'settings' ? lastVisibleTab.current : 'settings');
+    goTab(activeTab === 'settings' ? lastVisibleTab.current : 'settings');
   };
 
   // החלקה בין לשוניות. עוברת דרך setActiveTab ולא דרך הניווט ישירות, ולכן
   // אזהרת "הימור לא שמור" חלה עליה בדיוק כמו על לחיצה על לשונית.
   const swipe = useSwipeNav((intent) => {
     const next = stepTab(VISIBLE_TABS, activeTab, intent);
-    if (next) setActiveTab(next);
+    if (next) goTab(next);
   });
 
   // מאיזה צד המסך החדש נכנס. נגזר מהמרחק בין הלשוניות, ולכן גם לחיצה על
@@ -178,6 +178,43 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
     setBets((prev) => ({ ...prev, [matchId]: { ...(prev[matchId] || {}), ...prediction } }));
   };
 
+  // === לשוניות שנשארות טעונות ===
+  // לשונית נבנית בביקור הראשון ונשארת בזיכרון, מוסתרת כשעוברים לאחרת. כך
+  // מעבר בין לשוניות מיידי, בלי ספינר, והבחירות (שבוע, משחק פתוח, מיקום
+  // גלילה) נשמרות. כל לשונית מרעננת את עצמה ברקע כשחוזרים אליה אחרי זמן
+  // (useReturnRefresh), ולשונית מוסתרת לא בודקת תוצאות חיות.
+  const [visitedTabs, setVisitedTabs] = useState(() => new Set([activeTab]));
+  useEffect(() => {
+    setVisitedTabs((prev) => (prev.has(activeTab) ? prev : new Set(prev).add(activeTab)));
+  }, [activeTab]);
+
+  // מיקום הגלילה של כל לשונית. נשמר ברגע היציאה ממנה ומוחזר בחזרה אליה
+  const scrollByTab = useRef({});
+  const goTab = (key) => {
+    scrollByTab.current[activeTab] = window.scrollY;
+    setActiveTab(key);
+  };
+  useLayoutEffect(() => {
+    window.scrollTo(0, scrollByTab.current[activeTab] || 0);
+  }, [activeTab]);
+
+  const tabAnimation = tabDelta === 0
+    ? 'scaleIn 0.2s ease'
+    : `${tabDelta > 0 ? 'tabInNext' : 'tabInPrev'} 0.24s ease`;
+
+  const tabPane = (key, node) => {
+    const isActive = activeTab === key;
+    if (!isActive && !visitedTabs.has(key)) return null;
+    return (
+      // display:none -> block מפעיל את אנימציית הכניסה מחדש בכל חזרה
+      <div key={key} style={{ display: isActive ? 'block' : 'none', animation: isActive ? tabAnimation : undefined }}>
+        <ErrorBoundary name={`player:${key}`} resetKey={isActive ? 'shown' : 'hidden'}>
+          {node}
+        </ErrorBoundary>
+      </div>
+    );
+  };
+
   const tabs = [
     { key: 'betting', label: 'הימורים', icon: '⚽' },
     { key: 'allbets', label: 'כל ההימורים', icon: '👥' },
@@ -231,18 +268,11 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
       <div className="container">
         <div
           {...swipe}
-          key={activeTab}
           /* אין כאן touchAction בכוונה. ההחלקה נמדדת מהתחלה לסוף בלבד
              ולא קוראת ל-preventDefault, ולכן אין מה להגביל - ו-pan-y היה
              דווקא מכבה גלילה לרוחב בטבלאות הרחבות שבפנים. */
-          style={{
-            animation: tabDelta === 0
-              ? 'scaleIn 0.2s ease'
-              : `${tabDelta > 0 ? 'tabInNext' : 'tabInPrev'} 0.24s ease`
-          }}
         >
-          <ErrorBoundary name={`player:${activeTab}`} resetKey={activeTab}>
-          {activeTab === 'betting' && (
+          {tabPane('betting', (
             <BettingInterface
               selectedWeek={selectedWeek}
               matches={matches}
@@ -250,46 +280,38 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
               user={user}
               onBetUpdate={handleBetUpdate}
               onBetSaved={handleBetSaved}
+              active={activeTab === 'betting'}
             />
-          )}
+          ))}
 
-          {activeTab === 'allbets' && (
-            <AllBetsViewer
-              weeks={weeks}
-              user={user}
-            />
-          )}
+          {tabPane('allbets', (
+            <AllBetsViewer weeks={weeks} user={user} active={activeTab === 'allbets'} />
+          ))}
 
-          {activeTab === 'leaderboard' && (
-            <Leaderboard
-              leaderboard={leaderboard}
-              user={user}
-            />
-          )}
+          {tabPane('leaderboard', (
+            <Leaderboard leaderboard={leaderboard} user={user} active={activeTab === 'leaderboard'} />
+          ))}
 
-          {activeTab === 'history' && (
-            <HistoryViewer
-              weeks={weeks}
-              user={user}
-            />
-          )}
+          {tabPane('history', (
+            <HistoryViewer weeks={weeks} user={user} active={activeTab === 'history'} />
+          ))}
 
-          {activeTab === 'stats' && (
-            <PlayerStats user={user} />
-          )}
+          {tabPane('stats', (
+            <PlayerStats user={user} active={activeTab === 'stats'} />
+          ))}
 
-          {activeTab === 'settings' && (
+          {/* ההגדרות נבנות מחדש בכל פתיחה, כדי שטופס לא יישאר עם ערכים ישנים */}
+          {activeTab === 'settings' && tabPane('settings', (
             <SettingsView
               user={user}
               onThemeChange={onThemeChange}
               onProfileChange={onProfileChange}
             />
-          )}
-          </ErrorBoundary>
+          ))}
         </div>
       </div>
 
-      <BottomNav tabs={tabs} activeTab={activeTab} onSelect={setActiveTab} />
+      <BottomNav tabs={tabs} activeTab={activeTab} onSelect={goTab} />
     </div>
   );
 }

@@ -6,12 +6,13 @@ import ResultNote from '../ResultNote';
 import LiveScore from './LiveScore';
 import GoalFlash from './GoalFlash';
 import useLiveScores from '../../services/useLiveScores';
+import useReturnRefresh from '../../services/useReturnRefresh';
 import { showsLiveBadge } from '../../services/liveBetStatus';
 import MatchInsightsModal from './MatchInsightsModal';
 import Score from '../Score';
 import { textOn } from '../../services/readableColor';
 
-function AllBetsViewer({ weeks, user }) {
+function AllBetsViewer({ weeks, user, active = true }) {
   const [selectedWeek, setSelectedWeek] = useState(null);
   const [matches, setMatches] = useState([]);
   const [allBets, setAllBets] = useState([]);
@@ -34,7 +35,7 @@ function AllBetsViewer({ weeks, user }) {
   // ברירת המחדל שחזרה מאוחר דורסת את השבוע שההתראה הפנתה אליו
   const loadSeq = useRef(0);
 
-  const { liveByMatchId, goalAtByMatchId } = useLiveScores(selectedWeek?._id);
+  const { liveByMatchId, goalAtByMatchId } = useLiveScores(selectedWeek?._id, active);
   const [insightsFor, setInsightsFor] = useState(null);
 
   const [selectedSeason, setSelectedSeason] = useState('');
@@ -46,6 +47,9 @@ function AllBetsViewer({ weeks, user }) {
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
+
+  // הלשונית נשארת טעונה; חזרה אליה אחרי יותר מדקה מרעננת ברקע
+  useReturnRefresh(active, () => selectedWeek && loadWeekData(selectedWeek._id, { silent: true }));
 
   useEffect(() => {
     if (!weeks || weeks.length === 0) return;
@@ -136,11 +140,11 @@ function AllBetsViewer({ weeks, user }) {
     return () => clearTimeout(timer);
   }, [matches, focusMatchId, search]);
 
-  const loadWeekData = async (weekId) => {
+  const loadWeekData = async (weekId, { silent = false } = {}) => {
     const seq = ++loadSeq.current;
     if (!weekId) { setMatches([]); setAllBets([]); setUsers([]); return; }
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const [matchesResponse, betsResponse, usersResponse] = await Promise.all([
         fetch(`${API_URL}/matches/week/${weekId}`),
         fetch(`${API_URL}/bets/week/${weekId}`),

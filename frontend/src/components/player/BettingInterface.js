@@ -84,7 +84,7 @@ const describeSaveError = (serverMessage) => {
 // לפני שסוגרים את האפליקציה.
 const AUTOSAVE_DELAY = 900;
 
-function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBetSaved }) {
+function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBetSaved, active = true }) {
   const [insightsFor, setInsightsFor] = useState(null);
   const [localBets, setLocalBets] = useState({});
   // מצב שמירה לכל משחק: 'saving' בזמן שליחה, 'error' אחרי כישלון
@@ -96,7 +96,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
   // עם המציאות מיד, בלי להמתין לטעינה מחדש של השבוע.
   const [lockedByServer, setLockedByServer] = useState(false);
 
-  const { liveByMatchId, goalAtByMatchId } = useLiveScores(selectedWeek?._id);
+  const { liveByMatchId, goalAtByMatchId } = useLiveScores(selectedWeek?._id, active);
 
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'

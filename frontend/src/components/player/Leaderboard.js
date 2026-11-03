@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import LiveTable from './LiveTable';
 import { formatScore } from '../../services/liveNumbers';
+import useReturnRefresh from '../../services/useReturnRefresh';
 import { placesFor, anyScored } from '../../services/ranking';
 
-function Leaderboard({ leaderboard, user }) {
+function Leaderboard({ leaderboard, user, active = true }) {
   const [monthlyScores, setMonthlyScores] = useState([]);
   const [seasonalScores, setSeasonalScores] = useState([]);
   const [selectedWeekScores, setSelectedWeekScores] = useState([]);
@@ -18,6 +19,12 @@ function Leaderboard({ leaderboard, user }) {
   const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
     : 'https://football-betting-backend.onrender.com/api';
+
+  // הלשונית נשארת טעונה; חזרה אליה אחרי יותר מדקה מרעננת ברקע
+  useReturnRefresh(active, () => {
+    loadScoresData({ silent: true });
+    if (selectedWeekId) loadWeekScores();
+  });
 
   useEffect(() => {
     if (selectedMonth === null && selectedSeason === null) {
@@ -34,8 +41,8 @@ function Leaderboard({ leaderboard, user }) {
     }
   }, [selectedWeekId]);
 
-  const loadScoresData = async () => {
-    setLoading(true);
+  const loadScoresData = async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
     try {
       const [scoresResponse, weeksResponse] = await Promise.all([
         fetch(`${API_URL}/scores/detailed`),
