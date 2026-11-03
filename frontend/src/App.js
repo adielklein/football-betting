@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Login from './components/Login';
-import AdminView from './components/admin/AdminView';
 import PlayerView from './components/player/PlayerView';
 import { applyTheme } from './themes'; // 🎨 יבוא פונקציית ערכות הנושא
 import UpdateBanner from './components/UpdateBanner';
@@ -9,7 +8,12 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { HashRouter } from 'react-router-dom';
 import { onSchemeChange } from './services/colorScheme';
 import { getToken, setToken, clearToken, AUTH_EXPIRED_EVENT } from './services/authSession';
+import { lazyWithReload } from './services/lazyWithReload';
 import './index.css';
+
+// מסכי הניהול נטענים בנפרד: שחקן לא מוריד את הקוד שלהם בכלל, וזה מקצר
+// את הטעינה בטלפון. רק אדמין שנכנס מוריד אותם, פעם אחת.
+const AdminView = lazyWithReload(() => import('./components/admin/AdminView'));
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -289,7 +293,9 @@ function App() {
       {!currentUser ? (
         <Login onLogin={handleLogin} notice={loginNotice} />
       ) : currentUser.role === 'admin' ? (
-        <AdminView user={currentUser} onLogout={handleLogout} />
+        <Suspense fallback={<div className="loading" style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-3, #5f6670)' }}>טוען...</div>}>
+          <AdminView user={currentUser} onLogout={handleLogout} />
+        </Suspense>
       ) : (
         <PlayerView
           user={currentUser}

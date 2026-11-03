@@ -171,6 +171,12 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
     }
   };
 
+  // שמירה אוטומטית של הימור: מעדכנים רק אותו במקום לטעון את כל השבוע
+  // והטבלה מחדש אחרי כל הקלדה. הניקוד לא משתנה מהימור, רק מתוצאה.
+  const handleBetSaved = (matchId, prediction) => {
+    setBets((prev) => ({ ...prev, [matchId]: { ...(prev[matchId] || {}), ...prediction } }));
+  };
+
   const getUserTotalScore = () => {
     const userEntry = leaderboard.find(entry => entry.user._id === user.id);
     return userEntry ? userEntry.totalScore : 0;
@@ -294,6 +300,7 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
               bets={bets}
               user={user}
               onBetUpdate={handleBetUpdate}
+              onBetSaved={handleBetSaved}
             />
           )}
 

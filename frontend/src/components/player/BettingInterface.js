@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import TeamLogo from '../TeamLogo';
 import LeagueLogo from '../LeagueLogo';
 import MatchInsightsModal from './MatchInsightsModal';
@@ -52,12 +52,15 @@ function TeamPicker({ name, logo, onClick }) {
       {/* הסמל שנשמר בייבוא מ-365 הוא של הקבוצה הנכונה. בלעדיו הרכיב
           מנחש לפי השם מול מקור אחר, וזה מה שהיה כאן עד עכשיו */}
       <TeamLogo name={name} src={logo} />
+      {/* עד שתי שורות, ורק אז שלוש נקודות. בשורה אחת "מנצ'סטר סיטי" נחתך
+          ל"מנצ'סטר ..." - ובדיוק המילה השנייה מבדילה בין שתי הקבוצות */}
       <span style={{
-        display: 'inline-flex', alignItems: 'center', gap: '3px',
-        fontWeight: 700, maxWidth: '100%'
+        fontWeight: 700, maxWidth: '100%',
+        display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2,
+        overflow: 'hidden', overflowWrap: 'anywhere'
       }}>
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
-        <span style={{ fontSize: 'var(--fs-xs)', opacity: 0.5, flexShrink: 0 }} aria-hidden="true">📊</span>
+        {name}
+        <span style={{ fontSize: 'var(--fs-xs)', opacity: 0.5, marginInlineStart: '3px' }} aria-hidden="true">📊</span>
       </span>
     </button>
   );
@@ -76,10 +79,17 @@ const describeSaveError = (serverMessage) => {
   const hit = SAVE_ERRORS.find((e) => e.match.test(serverMessage || ''));
   return hit || { text: 'שגיאה בשמירת ההימור', closed: false };
 };
-function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
+// כמה זמן אחרי ההקשה האחרונה ההימור נשמר. מספיק כדי להקליד תוצאה
+// דו-ספרתית ולעבור לשדה השני בלי שמירת ביניים, וקצר מספיק כדי שיישמר
+// לפני שסוגרים את האפליקציה.
+const AUTOSAVE_DELAY = 900;
+
+function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBetSaved }) {
   const [insightsFor, setInsightsFor] = useState(null);
   const [localBets, setLocalBets] = useState({});
-  const [savingMatch, setSavingMatch] = useState(null);
+  // מצב שמירה לכל משחק: 'saving' בזמן שליחה, 'error' אחרי כישלון
+  const [saveStatus, setSaveStatus] = useState({});
+  const timersRef = useRef({});
   const [savedAnimation, setSavedAnimation] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
   // השרת דחה שמירה בגלל סגירה. הדגל מקומי בכוונה - הוא מסנכרן את המסך
@@ -115,17 +125,27 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
 
   useEffect(() => { setLockedByServer(false); }, [selectedWeek?._id]);
 
+  // ההימורים מהשרת נכנסים לטופס רק במשחקים שהמשתמש לא נוגע בהם כרגע.
+  // עם שמירה אוטומטית ההימורים מתעדכנים תוך כדי הקלדה, והחלפה מלאה של
+  // הטופס הייתה מוחקת ספרה שהוקלדה הרגע במשחק אחר.
+  const prevBetsRef = useRef({});
   useEffect(() => {
-    const existingBets = {};
-    Object.keys(bets).forEach(matchId => {
-      if (bets[matchId].team1Goals !== undefined && bets[matchId].team2Goals !== undefined) {
-        existingBets[matchId] = {
-          team1Goals: bets[matchId].team1Goals.toString(),
-          team2Goals: bets[matchId].team2Goals.toString()
-        };
-      }
+    const prevServer = prevBetsRef.current;
+    setLocalBets((prev) => {
+      const next = { ...prev };
+      Object.keys(bets).forEach((matchId) => {
+        const b = bets[matchId];
+        if (b.team1Goals === undefined || b.team2Goals === undefined) return;
+        const local = prev[matchId];
+        const old = prevServer[matchId];
+        const dirty = local && (old
+          ? local.team1Goals !== String(old.team1Goals) || local.team2Goals !== String(old.team2Goals)
+          : (local.team1Goals || '') !== '' || (local.team2Goals || '') !== '');
+        if (!dirty) next[matchId] = { team1Goals: String(b.team1Goals), team2Goals: String(b.team2Goals) };
+      });
+      return next;
     });
-    setLocalBets(existingBets);
+    prevBetsRef.current = bets;
   }, [bets]);
 
   // הקלט מוגבל לספרות בלבד ולשתי תווים. עם inputMode מספרי הדפדפן פותח
@@ -141,6 +161,8 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
         [field]: digits
       }
     }));
+    // שינוי אחרי כישלון הוא ניסיון חדש
+    setSaveStatus((prev) => (prev[matchId] === 'error' ? { ...prev, [matchId]: undefined } : prev));
 
     // אין כאן מעבר אוטומטי לשדה השני בכוונה. ניסיתי, וזה חוסך הקשה אחת
     // אבל מזיז את הסמן מתחת לאצבע: מי שמקליד תוצאה דו-ספרתית מקבל ספרה
@@ -152,51 +174,38 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
   // מיקוד בוחר את התוכן, כך שהקלדה מחליפה במקום להוסיף בסוף
   const selectOnFocus = (e) => e.target.select();
 
-  const saveSingleBet = async (matchId) => {
-    if (selectedWeek?.locked) {
-      toast.error('ההימורים נעולים לשבוע זה');
-      return;
-    }
-
-    if (selectedWeek?.lockTime) {
-      const lockTime = new Date(selectedWeek.lockTime);
-      const now = new Date();
-      if (now >= lockTime) {
-        toast.error('זמן ההימורים הסתיים לשבוע זה');
-        return;
-      }
-    }
-
-    const bet = localBets[matchId];
-    if (!bet || bet.team1Goals === '' || bet.team2Goals === '') {
-      toast.warning('יש למלא את שני הצדדים של ההימור');
-      return;
-    }
-
-    setSavingMatch(matchId);
+  // שמירה של משחק אחד. נקראת אוטומטית אחרי הקלדה, ומכפתור "נסה שוב".
+  // keepalive מאפשר לבקשה להסתיים גם כשהדף נסגר באמצע.
+  const saveBet = async (matchId, bet, { keepalive = false } = {}) => {
+    setSaveStatus((prev) => ({ ...prev, [matchId]: 'saving' }));
+    const prediction = {
+      team1Goals: parseInt(bet.team1Goals, 10) || 0,
+      team2Goals: parseInt(bet.team2Goals, 10) || 0
+    };
 
     try {
       const response = await fetch(`${API_URL}/bets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        keepalive,
         body: JSON.stringify({
           userId: user.id,
           matchId: matchId,
           weekId: selectedWeek._id,
-          team1Goals: parseInt(bet.team1Goals) || 0,
-          team2Goals: parseInt(bet.team2Goals) || 0
+          ...prediction
         })
       });
 
       if (response.ok) {
-        await onBetUpdate();
+        setSaveStatus((prev) => ({ ...prev, [matchId]: undefined }));
         setSavedAnimation(matchId);
-        setTimeout(() => setSavedAnimation(null), 1500);
-
-        toast.success('ההימור נשמר בהצלחה!');
+        setTimeout(() => setSavedAnimation((cur) => (cur === matchId ? null : cur)), 1500);
+        if (onBetSaved) onBetSaved(matchId, prediction);
+        else await onBetUpdate();
       } else {
         const body = await response.json().catch(() => null);
         const reason = describeSaveError(body?.message);
+        setSaveStatus((prev) => ({ ...prev, [matchId]: 'error' }));
         toast.error(reason.text);
 
         // נסגר בזמן שהמסך היה פתוח: אין טעם להשאיר טופס חי שכל שמירה בו
@@ -205,9 +214,8 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
       }
     } catch (error) {
       console.error('Error saving bet:', error);
-      toast.error('שגיאה בשמירת ההימור');
-    } finally {
-      setSavingMatch(null);
+      setSaveStatus((prev) => ({ ...prev, [matchId]: 'error' }));
+      toast.error('ההימור לא נשמר - בדקו את החיבור ונסו שוב');
     }
   };
 
@@ -259,14 +267,58 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
 
   const isBetComplete = (matchId) => {
     const bet = localBets[matchId];
-    return bet && bet.team1Goals !== '' && bet.team2Goals !== '';
+    // שדה שלא נגעו בו הוא undefined ולא מחרוזת ריקה - שניהם "לא מולא".
+    // בלי זה הימור עם צד אחד נשמר כאילו בצד השני הוקלד 0.
+    const filled = (v) => v !== undefined && v !== null && v !== '';
+    return !!bet && filled(bet.team1Goals) && filled(bet.team2Goals);
   };
 
-  // ההימורים לא נשמרים אוטומטית, ולכן מעבר לשונית או סגירת הדף עלולים
-  // לאבד תוצאה שהוקלדה. הבודק נרשם גלובלית כי הוא נדרש גם מחוץ למסך הזה.
+  // משחקים שההימור בהם שלם, שונה מהשמור, ולא נמצא כרגע בשליחה או בכישלון
+  const pendingIds = () => matches
+    .map((m) => m._id)
+    .filter((id) => isBetChanged(id) && isBetComplete(id) && !saveStatus[id]);
+
+  // שמירה אוטומטית: כל הקלדה מאפסת את הטיימר של המשחק שלה
+  useEffect(() => {
+    if (isLocked()) return undefined;
+    const timers = timersRef.current;
+    Object.values(timers).forEach(clearTimeout);
+    timersRef.current = {};
+    pendingIds().forEach((id) => {
+      const bet = localBets[id];
+      timersRef.current[id] = setTimeout(() => saveBet(id, bet), AUTOSAVE_DELAY);
+    });
+    return () => Object.values(timersRef.current).forEach(clearTimeout);
+  }, [localBets, bets, saveStatus, matches, lockedByServer, selectedWeek?._id]);
+
+  // יציאה מהמסך, מעבר לאפליקציה אחרת או סגירה לפני שהטיימר הספיק:
+  // שומרים מיד את מה שממתין, במקום לאבד אותו
+  const flushRef = useRef(() => {});
+  flushRef.current = () => {
+    if (isLocked()) return;
+    pendingIds().forEach((id) => {
+      clearTimeout(timersRef.current[id]);
+      saveBet(id, localBets[id], { keepalive: true });
+    });
+  };
+  useEffect(() => {
+    const onHide = () => { if (document.visibilityState === 'hidden') flushRef.current(); };
+    const onPageHide = () => flushRef.current();
+    document.addEventListener('visibilitychange', onHide);
+    window.addEventListener('pagehide', onPageHide);
+    return () => {
+      document.removeEventListener('visibilitychange', onHide);
+      window.removeEventListener('pagehide', onPageHide);
+      flushRef.current();
+    };
+  }, []);
+
+  // מה שהשמירה האוטומטית לא יכולה להציל: הימור שמולא רק בצד אחד, או
+  // שמירה שנכשלה. רק עליהם שואלים לפני יציאה.
   useEffect(
-    () => setUnsavedChecker(() => matches.some((m) => isBetChanged(m._id))),
-    [matches, localBets, bets]
+    () => setUnsavedChecker(() => matches.some((m) =>
+      isBetChanged(m._id) && (!isBetComplete(m._id) || saveStatus[m._id] === 'error'))),
+    [matches, localBets, bets, saveStatus]
   );
 
   const countdownBoxStyle = (total) => ({
@@ -328,7 +380,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
           <span style={{
             fontSize: 'var(--fs-xs)',
             color: savedCount === matches.length ? '#fff' : 'var(--good-fg, #28a745)',
-            backgroundColor: savedCount === matches.length ? '#28a745' : 'var(--good-bg, #e8f5e9)',
+            backgroundColor: savedCount === matches.length ? '#1a6b35' : 'var(--good-bg, #e8f5e9)',
             padding: '3px 10px',
             borderRadius: '12px',
             fontWeight: '700',
@@ -353,6 +405,10 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
             borderRadius: '2px',
             transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
           }}></div>
+        </div>
+
+        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #5f6670)', marginTop: '0.3rem', textAlign: 'center' }}>
+          ההימורים נשמרים אוטומטית
         </div>
 
         {/* Countdown Timer */}
@@ -404,7 +460,8 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
           const hasResult = match.result?.team1Goals !== undefined;
           const hasChanges = isBetChanged(match._id);
           const isComplete = isBetComplete(match._id);
-          const isSaving = savingMatch === match._id;
+          const isSaving = saveStatus[match._id] === 'saving';
+          const saveFailed = saveStatus[match._id] === 'error';
           const isSaved = existingBet.team1Goals !== undefined;
           const justSaved = savedAnimation === match._id;
           const live = liveByMatchId[match._id];
@@ -541,7 +598,6 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                     }}
                     className="input"
                     placeholder="?"
-                    disabled={isSaving}
                   />
                   <span style={{
                     fontSize: 'var(--fs-lg)',
@@ -578,7 +634,6 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                     }}
                     className="input"
                     placeholder="?"
-                    disabled={isSaving}
                   />
                 </div>
 
@@ -589,49 +644,34 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate }) {
                 />
               </div>
 
-              {/* כפתור שמירה */}
-              <button
-                onClick={() => saveSingleBet(match._id)}
-                disabled={isSaving || !isComplete || !hasChanges}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  border: 'none',
-                  borderRadius: '10px',
-                  fontSize: 'var(--fs-sm)',
-                  fontWeight: '700',
-                  background: hasChanges && isComplete
-                    ? 'linear-gradient(135deg, #28a745, #20c997)'
-                    : (isSaved ? 'var(--good-bg, #f0faf0)' : 'var(--surface-3, #f5f5f5)'),
-                  color: hasChanges && isComplete ? 'white' : (isSaved ? 'var(--good-fg, #2e7d32)' : 'var(--text-4, #aaa)'),
-                  // "נשמר" הוא מצב סופי, לא כפתור כבוי - בלי עמעום, אחרת הוא נבלע במצב כהה
-                  opacity: isSaved && !hasChanges ? 1 : ((!isComplete || !hasChanges) ? 0.85 : 1),
-                  cursor: (!isComplete || !hasChanges) ? 'default' : 'pointer',
-                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                  WebkitAppearance: 'none',
-                  touchAction: 'manipulation',
-                  boxShadow: hasChanges && isComplete ? '0 4px 12px rgba(40,167,69,0.25)' : 'none',
-                  letterSpacing: '0.3px'
-                }}
-              >
-                {isSaving ? '⏳ שומר...' : isSaved ? (hasChanges ? '💾 עדכן' : '✅ נשמר') : '💾 שמור'}
-              </button>
-
-              {/* הימור קודם אם קיים ושונה */}
-              {isSaved && hasChanges && (
-                <div style={{
-                  textAlign: 'center',
-                  fontSize: 'var(--fs-xs)',
-                  color: 'var(--warn-fg, #856404)',
-                  marginTop: '0.3rem',
-                  backgroundColor: 'var(--warn-bg, #fff8e1)',
-                  padding: '4px 8px',
-                  borderRadius: '8px',
-                  border: '1px solid #ffe082'
-                }}>
-                  <Score home={existingBet.team1Goals} away={existingBet.team2Goals} /> ← <Score home={currentBet.team1Goals} away={currentBet.team2Goals} />
-                </div>
-              )}
+              {/* מצב שמירה: שורה קטנה במקום כפתור. גובה קבוע כדי שהכרטיס לא יקפוץ */}
+              <div aria-live="polite" style={{
+                minHeight: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: '0.4rem', fontSize: 'var(--fs-xs)', fontWeight: '700'
+              }}>
+                {saveFailed ? (
+                  <>
+                    <span style={{ color: 'var(--bad-fg, #a81f17)' }}>⚠️ לא נשמר</span>
+                    <button
+                      onClick={() => saveBet(match._id, localBets[match._id])}
+                      style={{
+                        minHeight: '32px', padding: '0 12px', borderRadius: '8px',
+                        border: '1px solid var(--bad-fg, #a81f17)', background: 'var(--bad-bg, #fdecea)',
+                        color: 'var(--bad-fg, #a81f17)', fontSize: 'var(--fs-xs)', fontWeight: '700',
+                        cursor: 'pointer', WebkitAppearance: 'none', touchAction: 'manipulation'
+                      }}
+                    >
+                      נסה שוב
+                    </button>
+                  </>
+                ) : (isSaving || (hasChanges && isComplete)) ? (
+                  <span style={{ color: 'var(--text-3, #5f6670)' }}>שומר...</span>
+                ) : hasChanges ? (
+                  <span style={{ color: 'var(--text-3, #5f6670)', fontWeight: '600' }}>מלאו את שני הצדדים</span>
+                ) : isSaved ? (
+                  <span style={{ color: 'var(--good-fg, #1a6b35)' }}>✓ נשמר</span>
+                ) : null}
+              </div>
 
               {/* תוצאה סופית */}
               {hasResult && (
