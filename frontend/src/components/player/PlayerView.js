@@ -8,6 +8,7 @@ import HistoryViewer from './HistoryViewer';
 import AllBetsViewer from './AllBetsViewer';
 import PlayerStats from './PlayerStats';
 import SettingsView from './SettingsView';
+import ErrorBoundary from '../ErrorBoundary';
 import { confirmLeave } from '../../services/unsavedGuard';
 import useTabRoute from '../../services/useTabRoute';
 import useSwipeNav from '../../services/useSwipeNav';
@@ -285,6 +286,7 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
               : `${tabDelta > 0 ? 'tabInNext' : 'tabInPrev'} 0.24s ease`
           }}
         >
+          <ErrorBoundary name={`player:${activeTab}`} resetKey={activeTab}>
           {activeTab === 'betting' && (
             <BettingInterface
               selectedWeek={selectedWeek}
@@ -327,6 +329,7 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
               onProfileChange={onProfileChange}
             />
           )}
+          </ErrorBoundary>
         </div>
       </div>
     </div>

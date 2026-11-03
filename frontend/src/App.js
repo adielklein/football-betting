@@ -5,6 +5,7 @@ import PlayerView from './components/player/PlayerView';
 import { applyTheme } from './themes'; // 🎨 יבוא פונקציית ערכות הנושא
 import UpdateBanner from './components/UpdateBanner';
 import ToastHost from './components/ToastHost';
+import ErrorBoundary from './components/ErrorBoundary';
 import { HashRouter } from 'react-router-dom';
 import { onSchemeChange } from './services/colorScheme';
 import { getToken, setToken, clearToken, AUTH_EXPIRED_EVENT } from './services/authSession';
@@ -282,6 +283,8 @@ function App() {
     // נתיבים עמוקים אל index.html, ולכן ‎/leaderboard היה מחזיר 404
     // ברענון או בפתיחת קישור. עם hash הכל עובד בלי הגדרות בשרת.
     <HashRouter>
+      {/* רשת ביטחון אחרונה: גם תקלה מחוץ ללשוניות (כותרת, ניווט) לא תשאיר דף לבן */}
+      <ErrorBoundary name="app" fullScreen>
       <div className="App">
       {!currentUser ? (
         <Login onLogin={handleLogin} notice={loginNotice} />
@@ -347,6 +350,7 @@ function App() {
         </div>
       )}
       </div>
+      </ErrorBoundary>
     </HashRouter>
   );
 }

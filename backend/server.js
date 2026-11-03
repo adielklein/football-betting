@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const notificationRoutes = require('./routes/notifications');
 require('dotenv').config();
-const { authenticate, requireAdmin, INTERNAL_TOKEN } = require('./middleware/requireAdmin');
+const { authenticate, requireAdmin, requireUser, INTERNAL_TOKEN } = require('./middleware/requireAdmin');
 
 const app = express();
 
@@ -92,6 +92,23 @@ app.get('/api/logs', requireAdmin, (req, res) => {
     liveBackoff: liveScores.backoffStatus(),
     now: new Date()
   });
+});
+
+// 💥 תקלה במסך אצל משתמש (ErrorBoundary). נכתבת ללוג, כדי שתופיע בלשונית
+// "לוגים" - למכשירים של השחקנים אין לנו גישה. מוגבל: עד 10 לדקה למשתמש
+const clientErrorBudget = new Map();
+app.post('/api/logs/client', requireUser, (req, res) => {
+  const uid = String(req.authUser?._id || 'internal');
+  const now = Date.now();
+  const b = clientErrorBudget.get(uid);
+  const budget = b && now - b.at < 60000 ? b : { at: now, n: 0 };
+  budget.n += 1;
+  clientErrorBudget.set(uid, budget);
+  if (budget.n > 10) return res.status(429).json({ message: 'יותר מדי דיווחים' });
+  const { screen, message, stack, url } = req.body || {};
+  const clip = (v, n) => String(v || '').slice(0, n);
+  console.error(`💥 [UI] ${req.authUser?.name || '?'} · ${clip(screen, 60)} · ${clip(url, 80)}: ${clip(message, 300)}${stack ? `\n${clip(stack, 600)}` : ''}`);
+  res.json({ ok: true });
 });
 
 // בדיקה יזומה: קריאה אחת ל-365 עכשיו, והתשובה כפי שהיא

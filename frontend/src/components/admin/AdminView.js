@@ -13,6 +13,7 @@ import AuditLog from './AuditLog';
 import ServerLogs from './ServerLogs';
 import AdminToday from './AdminToday';
 import SubTabs from './SubTabs';
+import ErrorBoundary from '../ErrorBoundary';
 import LoadingSpinner from './LoadingSpinner';
 import useTabRoute from '../../services/useTabRoute';
 import { syncPushSubscription } from '../../services/pushSync';
@@ -263,6 +264,8 @@ function AdminView({ user, onLogout }) {
         </div>
 
         <div style={{ animation: 'scaleIn 0.2s ease' }}>
+          {/* תקלה במסך אחד מוחלפת בהודעה, ולא מוחקת את כל מסך הניהול */}
+          <ErrorBoundary name={`admin:${location.pathname.replace(/^\/admin\/?/, '') || 'today'}`} resetKey={location.pathname}>
           {activeTab === 'today' && <AdminToday />}
           {activeTab === 'week' && <WeeksManagement {...sharedProps} />}
           {activeTab === 'players' && (
@@ -283,6 +286,7 @@ function AdminView({ user, onLogout }) {
               )}
             </SubTabs>
           )}
+          </ErrorBoundary>
         </div>
 
         {/* חתימת הגרסה שרצה. אחרי דיפלוי, זו התשובה ל"האם אני כבר על
