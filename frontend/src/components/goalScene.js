@@ -8,7 +8,15 @@
 // שדה של מצלמה, ערפל אור באוויר, כמה צללים חלשים מכל זרקור, טשטוש תנועה
 // על הכדור, וגרעין עדין של צילום.
 //
-// createGoalScene(canvas, { onGoal, onDone, reduced }) -> { play, skip, destroy }
+// createGoalScene(canvas, { onGoal, onDone, reduced }) -> { play, skip, destroy, ... }
+//
+// אותה סצנה היא גם המגרש של משחק הבעיטות (enterGame): השוער קם, הכדור
+// חוזר לנקודה, וממשיכים באותו אצטדיון בלי מעבר. הפיזיקה וההחלטות של
+// השוער ב-services/penalty.js.
+
+import {
+  START as SHOT_START, KEEPER_Z, blendPose, keeperAt, keeperHands, ballPath, playShot, isGoal
+} from '../services/penalty';
 
 export function createGoalScene(canvas, { onGoal, onDone, reduced = false } = {}) {
   const ctx = canvas.getContext('2d');
@@ -63,6 +71,11 @@ export function createGoalScene(canvas, { onGoal, onDone, reduced = false } = {}
     };
   };
   let ball = { ...START }, ballSpin = 0;
+  let ballHidden = false;
+
+  // ===== מצב משחק =====
+  let mode = 'intro';
+  const G = { phase: 'idle', clock: 0, t0: 0, from: null, kickAt: 0, res: null, path: null, phys: null, netHit: false, onResult: null, resultFired: false, keeper: null };
 
   // ===== מידות =====
   function resize() {
@@ -363,6 +376,10 @@ export function createGoalScene(canvas, { onGoal, onDone, reduced = false } = {}
     dive: { sh: 0.53, head: [0.03, 0.78], el: [0.0, 0.98], er: [-0.1, 0.94], hl: [0.08, 1.3], hr: [-0.12, 1.25], kl: [-0.08, -0.48], kr: [0.18, -0.42], fl: [-0.16, -0.95], fr: [0.14, -0.9] }
   };
   function keeperState() {
+    if (mode === 'game' && G.keeper) return G.keeper;
+    return introKeeper();
+  }
+  function introKeeper() {
     const d = easeInOut(span(T.keeper0, T.keeper1));
     const pre = span(0.15, 0.45);
     const sway = t < T.keeper0 ? Math.sin(t * 7) * 0.12 * pre : 0;
@@ -566,12 +583,12 @@ export function createGoalScene(canvas, { onGoal, onDone, reduced = false } = {}
     }
 
     drawNet(light);
-    drawBallShadows(ball, light);
-    const flying = t > T.kick && t < T.impact;
-    if (ball.z < 0) drawBall(ball, light, false);
+    const flying = mode === 'game' ? G.phase === 'flight' : t > T.kick && t < T.impact;
+    if (!ballHidden) drawBallShadows(ball, light);
+    if (ball.z < 0 && !ballHidden) drawBall(ball, light, false);
     drawPosts(light);
     drawKeeper(light);
-    if (ball.z >= 0) {
+    if (ball.z >= 0 && !ballHidden) {
       const b = drawBall(ball, light, flying);
       if (b && flying) { trail.push(b); if (trail.length > 4) trail.shift(); }
     }
@@ -623,6 +640,7 @@ export function createGoalScene(canvas, { onGoal, onDone, reduced = false } = {}
 
   // ===== עדכון מצב לפי הזמן =====
   function update(dt) {
+    if (mode === 'game') { updateGame(dt); updateFx(dt); return; }
     if (t < T.kick) {
       ball = { ...START }; ballSpin = 0;
     } else if (t < T.impact) {
@@ -645,6 +663,10 @@ export function createGoalScene(canvas, { onGoal, onDone, reduced = false } = {}
       ballSpin += dt * Math.max(0, 6 - since * 8);
       trail.length = 0;
     }
+    updateFx(dt);
+    if (!doneFired && t >= T.done) { doneFired = true; if (onDone) onDone(); }
+  }
+  function updateFx(dt) {
     stepNet(Math.min(dt, 1 / 20));
     shake = Math.max(0, shake - dt * 20);
     flash = Math.max(0, flash - dt * 0.9);
@@ -655,8 +677,118 @@ export function createGoalScene(canvas, { onGoal, onDone, reduced = false } = {}
       sparks[i].a -= dt * 2.4;
       if (sparks[i].a <= 0) sparks.splice(i, 1);
     }
-    if (!doneFired && t >= T.done) { doneFired = true; if (onDone) onDone(); }
   }
+
+  // ===== משחק הבעיטות =====
+  const readyKeeper = () => ({
+    x: Math.sin(t * 2.1) * 0.14,
+    y: 0.95 + Math.abs(Math.sin(t * 4.2)) * 0.025,
+    rot: 0, pose: blendPose(0), d: 0
+  });
+  const mixKeeper = (a, b, k) => {
+    const pose = { sh: a.pose.sh + (b.pose.sh - a.pose.sh) * k };
+    for (const j of ['head', 'el', 'er', 'hl', 'hr', 'kl', 'kr', 'fl', 'fr']) {
+      pose[j] = [a.pose[j][0] + (b.pose[j][0] - a.pose[j][0]) * k, a.pose[j][1] + (b.pose[j][1] - a.pose[j][1]) * k];
+    }
+    return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, rot: a.rot + (b.rot - a.rot) * k, pose, d: a.d + (b.d - a.d) * k };
+  };
+  // השוער בזמן הבעיטה, ואחרי שהקפיצה נגמרת - נוחת על הדשא
+  function flightKeeper(tt) {
+    const { plan, shot, skill } = G.res;
+    const k = keeperAt(tt, plan, shot, skill);
+    const landAt = plan.start + 0.75;
+    if (tt > landAt && k.d > 0.45) {
+      const L = easeOut(clamp01((tt - landAt) / 0.35));
+      k.y += (0.24 - k.y) * L;
+      k.rot += Math.sign(k.rot) * 0.25 * L;
+    }
+    return k;
+  }
+
+  function resetShot() {
+    G.phase = 'aim'; G.res = null; G.phys = null; G.netHit = false; G.resultFired = false;
+    ball = { ...SHOT_START }; ballSpin = 0; ballHidden = false; trail.length = 0;
+  }
+
+  function updateGame(dt) {
+    G.clock += dt;
+    if (G.phase === 'enter') {
+      // השוער קם ממקום הנחיתה וחוזר למרכז; הכדור מונח על הנקודה
+      const k = easeInOut(clamp01((G.clock - G.t0) / 0.85));
+      G.keeper = mixKeeper(G.from, readyKeeper(), k);
+      const since = G.clock - G.t0;
+      if (since > 0.3) {
+        const b = clamp01((since - 0.3) / 0.5);
+        ballHidden = false;
+        ball = { ...SHOT_START, y: SHOT_START.y + Math.abs(Math.cos(b * Math.PI * 1.5)) * (1 - b) * 0.45 };
+      }
+      if (k >= 1 && since > 0.8) resetShot();
+      return;
+    }
+    if (G.phase === 'aim' || G.phase === 'idle') {
+      G.keeper = readyKeeper();
+      return;
+    }
+    const tt = G.clock - G.kickAt;
+    G.keeper = flightKeeper(tt);
+    const { res } = G;
+    if (G.phase === 'flight') {
+      if (tt < res.tHit) {
+        ball = G.path(tt);
+        ballSpin += dt * (16 + 18 * res.shot.power);
+        return;
+      }
+      // הרגע שבו הכדור מגיע לשוער או לקו השער
+      const p = G.path(res.tHit), q = G.path(res.tHit - 1 / 120);
+      const v = { x: (p.x - q.x) * 120, y: (p.y - q.y) * 120, z: (p.z - q.z) * 120 };
+      const o = res.outcome;
+      if (o === 'save') {
+        const away = Math.sign(p.x - G.keeper.x) || (Math.random() < 0.5 ? -1 : 1);
+        v.x = away * (1.6 + Math.random() * 2.4); v.y = 1.6 + Math.random() * 2.6; v.z = 3 + Math.random() * 3;
+        flash = 0.06;
+      } else if (o === 'post-in' || o === 'post-out' || o === 'bar-out') {
+        const nearBar = Math.abs(p.y - 2.44) < Math.abs(Math.abs(p.x) - HALF);
+        if (o === 'post-in') {
+          if (nearBar) v.y = -Math.abs(v.y) - 2.5; else v.x = -Math.sign(p.x) * (1.2 + Math.abs(v.x) * 0.4);
+        } else if (nearBar) { v.y = Math.abs(v.y) * 0.5 + 2.5; v.z *= 0.35; }
+        else { v.x = Math.sign(p.x) * (2 + Math.abs(v.x) * 0.3); v.z *= 0.45; }
+        shake = 3; flash = 0.08;
+        try { navigator.vibrate && navigator.vibrate(18); } catch (e) { /* ignore */ }
+      }
+      G.phys = { p: { ...p }, v };
+      G.phase = 'after';
+      fireResult();
+    }
+    // אחרי: פיזיקה פשוטה - כובד, רשת, קפיצות על הדשא
+    if (res.outcome === 'catch') {
+      const [hx, hy] = keeperHands(G.keeper);
+      ball = { x: hx, y: Math.max(BALL_R, hy), z: KEEPER_Z + 0.12 };
+    } else if (G.phys) {
+      const { p, v } = G.phys;
+      p.x += v.x * dt; p.y += v.y * dt; p.z += v.z * dt;
+      v.y -= 9.8 * dt;
+      const inGoal = isGoal(res.outcome);
+      if (inGoal && !G.netHit && p.z <= -1.7) {
+        G.netHit = true;
+        hitNet(p.x, Math.min(p.y, 2.2), 5 + res.shot.power * 5);
+        v.z = 0.5; v.x *= 0.3; v.y *= 0.3;
+        shake = 3 + res.shot.power * 3; flash = 0.1;
+        for (let i = 0; i < 40; i++) spawnSpark();
+      }
+      if (G.netHit) p.z = Math.max(p.z, -1.75 + netDzAt(p.x, Math.min(p.y, 2.2)) * 0.5);
+      if (p.y < BALL_R) { p.y = BALL_R; v.y = Math.abs(v.y) * 0.42; v.x *= 0.82; v.z *= 0.82; }
+      ball = { ...p };
+      ballSpin += dt * Math.hypot(v.x, v.z) * 1.5;
+      if (p.z < -9) ballHidden = true;
+    }
+    if (tt > res.tHit + 1.5) resetShot();
+  }
+  function fireResult() {
+    if (G.resultFired) return;
+    G.resultFired = true;
+    if (G.onResult) G.onResult(G.res.outcome, G.res);
+  }
+
   function spawnSpark() {
     if (!crowdImg) return;
     sparks.push({ x: Math.random() * W, y: crowdImg.top + crowdImg.h * 0.08 + Math.random() * crowdImg.h * 0.85, r: 0.7 + Math.random() * 1.1, a: 0.95 });
@@ -671,7 +803,7 @@ export function createGoalScene(canvas, { onGoal, onDone, reduced = false } = {}
     update(dt);
     draw();
     // אחרי הרצף האצטדיון ממשיך לחיות כמה שניות (רשת נרגעת, הבזקים), ואז נעצר
-    if (t > T.done + 8) { running = false; return; }
+    if (mode === 'game' ? G.phase === 'idle' && G.clock > G.stopAt : t > T.done + 8) { running = false; return; }
     raf = requestAnimationFrame(frame);
   }
 
@@ -691,14 +823,59 @@ export function createGoalScene(canvas, { onGoal, onDone, reduced = false } = {}
       raf = requestAnimationFrame(frame);
     },
     skip() {
-      if (!running) return;
+      // במשחק אין פתיחה לדלג עליה - ועצירת הלולאה הייתה מקפיאה אותו
+      if (!running || mode === 'game') return;
       const fireGoal = !goalFired;
       setFinal(); draw();
       if (fireGoal && onGoal) onGoal({ skipped: true });
       if (onDone) onDone();
       running = false; cancelAnimationFrame(raf);
     },
-    destroy() { cancelAnimationFrame(raf); running = false; window.removeEventListener('resize', resize); }
+    destroy() { cancelAnimationFrame(raf); running = false; window.removeEventListener('resize', resize); },
+
+    // ===== משחק =====
+    // instant: בלי מעבר (משחק שנפתח ישר, לא ממסך הכניסה)
+    enterGame({ onResult, instant = false } = {}) {
+      if (running && mode !== 'game') { setFinal(); }
+      if (t < T.done) setFinal();
+      const from = mode === 'game' && G.keeper ? G.keeper : introKeeper();
+      mode = 'game';
+      G.onResult = onResult || null;
+      G.clock = 0; G.t0 = 0; G.from = from;
+      if (instant || reduced) { resetShot(); G.keeper = readyKeeper(); }
+      else G.phase = 'enter';
+      if (!running) { running = true; last = performance.now(); raf = requestAnimationFrame(frame); }
+      if (!running || reduced) draw();
+    },
+    exitGame() {
+      G.onResult = null;
+      if (G.phase !== 'enter') { resetShot(); }
+      G.phase = 'idle';
+      G.stopAt = G.clock + 1.2;
+    },
+    // בעיטה. מחזיר false אם הבעיטה הקודמת עוד באוויר
+    shoot(input, streak = 0) {
+      if (mode !== 'game') return false;
+      if (G.phase === 'after' && G.clock - G.kickAt > G.res.tHit + 0.35) { fireResult(); resetShot(); }
+      if (G.phase !== 'aim') return false;
+      const r = playShot(input, streak);
+      G.res = r;
+      G.path = ballPath(r.shot);
+      G.kickAt = G.clock;
+      G.phase = 'flight';
+      trail.length = 0;
+      return true;
+    },
+    // מסך -> מטרים על קו השער
+    goalPoint(sx, sy) {
+      const s0 = F / CAM.z;
+      return { x: (sx - CX) / s0 + CAM.x, y: CAM.y - (sy - Y0) / s0 };
+    },
+    layout() {
+      const b = proj(SHOT_START.x, SHOT_START.y, SHOT_START.z);
+      const g0 = proj(-HALF, 0, 0), g1 = proj(HALF, GOAL_H, 0);
+      return { ball: { x: b.x, y: b.y, r: BALL_R * b.s }, goal: { left: g0.x, right: g1.x, top: g1.y, ground: g0.y } };
+    }
   };
 
   window.addEventListener('resize', resize);

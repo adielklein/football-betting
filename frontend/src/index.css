@@ -887,6 +887,9 @@ tr:hover {
 }
 .login-card.up { animation: loginCardUp .7s cubic-bezier(.16, 1, .3, 1) forwards; }
 @keyframes loginCardUp { from { transform: translateY(calc(100% + 40px)); } to { transform: translateY(0); } }
+/* אחרי שהכרטיס עלה: בלי אנימציה, כדי שגרירה (transform בסגנון) תזיז אותו */
+.login-card.up.settled { animation: none; transform: none; }
+@keyframes gameHudIn { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
   .login-card { transform: none; }
   .login-card.up { animation: none; }

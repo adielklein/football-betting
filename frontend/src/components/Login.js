@@ -1,5 +1,5 @@
 import React, { Suspense, useState, useEffect, useRef } from 'react';
-import PenaltyGame from './LazyPenaltyGame';
+import PenaltyGame, { loadGame } from './LazyPenaltyGame';
 import { applyTheme } from '../themes';
 import { hapticError } from '../services/haptics';
 import { play, reducedMotion } from '../services/motion';
@@ -48,22 +48,75 @@ function Login({ onLogin, notice = null }) {
   }, []);
   const skipIntro = () => sceneRef.current && sceneRef.current.skip();
 
-  // סוד: גרירה על המגרש, למעלה או למטה (לא על הכרטיס), פותחת את משחק הבעיטות.
-  // אין לזה שום רמז על המסך, בכוונה.
+  // סוד: גוררים את כרטיס הכניסה למטה (או את המגרש), הוא יורד מהמסך, והשוער
+  // קם לעוד סיבוב - משחק הבעיטות, באותו אצטדיון. אין לזה שום רמז על המסך.
   // אירועי מגע ולא pointer: הדפדפן מבטל pointer ברגע שהוא מחליט לגלול,
-  // ו-touchend מגיע תמיד. בלי preventDefault - הגלילה הרגילה לא נפגעת
+  // ו-touchmove/touchend מגיעים תמיד
   const [playing, setPlaying] = useState(false);
-  const swipeFrom = useRef(null);
-  const swipeStart = (x, y, target) => {
-    const onCard = cardRef.current && cardRef.current.contains(target);
-    swipeFrom.current = onCard ? null : { x, y, at: Date.now() };
+  const [settled, setSettled] = useState(false);
+  const drag = useRef(null);
+
+  // במסך הכניסה אין מה לרענן, ו"משוך לרענון" של הדפדפן היה חוטף את הגרירה
+  useEffect(() => {
+    const root = document.documentElement;
+    const prev = root.style.overscrollBehaviorY;
+    root.style.overscrollBehaviorY = 'none';
+    return () => { root.style.overscrollBehaviorY = prev; };
+  }, []);
+  // קובץ המשחק נטען ברקע אחרי שהכרטיס עלה, כדי שהמעבר יהיה מיידי
+  useEffect(() => {
+    if (!cardUp) return undefined;
+    const id = setTimeout(() => { loadGame().catch(() => {}); }, 1500);
+    return () => clearTimeout(id);
+  }, [cardUp]);
+
+  const setCard = (transform, transition) => {
+    const card = cardRef.current;
+    if (!card) return;
+    card.style.transition = transition;
+    card.style.transform = transform;
   };
-  const swipeEnd = (x, y) => {
-    const from = swipeFrom.current;
-    swipeFrom.current = null;
-    if (!from) return;
-    const dx = x - from.x, dy = y - from.y;
-    if (Math.abs(dy) > 50 && Math.abs(dx) < Math.abs(dy) * 1.2 && Date.now() - from.at < 1200) setPlaying(true);
+  const dragStart = (x, y, target) => {
+    drag.current = null;
+    if (!cardUp || success || playing) return;
+    if (target.closest && target.closest('input, button, a, select, textarea, label')) return;
+    // מקלדת פתוחה: גרירה היא גלילה, לא משחק
+    const ae = document.activeElement;
+    if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) return;
+    const now = performance.now();
+    drag.current = { x, y, dy: 0, active: false, lastY: y, lastT: now, v: 0 };
+  };
+  const dragMove = (x, y) => {
+    const d = drag.current;
+    if (!d) return;
+    const dy = y - d.y, dx = x - d.x;
+    if (!d.active) {
+      if (dy > 8 && dy > Math.abs(dx)) d.active = true;
+      else if (Math.abs(dx) > 14 || dy < -14) { drag.current = null; return; }
+      else return;
+    }
+    const now = performance.now();
+    d.v = (y - d.lastY) / Math.max(1, now - d.lastT);
+    d.lastY = y; d.lastT = now;
+    d.dy = Math.max(0, dy);
+    setCard(`translateY(${d.dy}px)`, 'none');
+  };
+  const dragEnd = () => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d || !d.active) return;
+    if (d.dy > 110 || (d.v > 0.6 && d.dy > 70)) openGame();
+    else setCard('translateY(0)', reducedMotion() ? 'none' : 'transform .45s cubic-bezier(.2,1.35,.4,1)');
+  };
+  const openGame = () => {
+    const card = cardRef.current;
+    const off = (card ? card.getBoundingClientRect().height : 400) + window.innerHeight * 0.15;
+    setCard(`translateY(${off}px)`, reducedMotion() ? 'none' : 'transform .42s cubic-bezier(.4,0,.2,1)');
+    setPlaying(true);
+  };
+  const closeGame = () => {
+    setPlaying(false);
+    setCard('translateY(0)', reducedMotion() ? 'none' : 'transform .6s cubic-bezier(.16,1,.3,1)');
   };
 
   const handleSubmit = async (e) => {
@@ -115,13 +168,16 @@ function Login({ onLogin, notice = null }) {
     <div
       className="login-stage"
       onPointerDown={(e) => {
+        if (playing) return; // מגע בתוך המשחק מגיע לכאן דרך העץ של React
         if (!cardRef.current || !cardRef.current.contains(e.target)) skipIntro();
-        if (e.pointerType === 'mouse') swipeStart(e.clientX, e.clientY, e.target);
+        if (e.pointerType === 'mouse') dragStart(e.clientX, e.clientY, e.target);
       }}
-      onPointerUp={(e) => { if (e.pointerType === 'mouse') swipeEnd(e.clientX, e.clientY); }}
-      onTouchStart={(e) => { if (e.touches.length === 1) swipeStart(e.touches[0].clientX, e.touches[0].clientY, e.target); else swipeFrom.current = null; }}
-      onTouchEnd={(e) => { const t = e.changedTouches[0]; if (t) swipeEnd(t.clientX, t.clientY); }}
-      onTouchCancel={() => { swipeFrom.current = null; }}
+      onPointerMove={(e) => { if (e.pointerType === 'mouse' && e.buttons) dragMove(e.clientX, e.clientY); }}
+      onPointerUp={(e) => { if (e.pointerType === 'mouse') dragEnd(); }}
+      onTouchStart={(e) => { if (e.touches.length === 1) dragStart(e.touches[0].clientX, e.touches[0].clientY, e.target); else drag.current = null; }}
+      onTouchMove={(e) => { const t = e.touches[0]; if (t) dragMove(t.clientX, t.clientY); }}
+      onTouchEnd={dragEnd}
+      onTouchCancel={dragEnd}
       style={{
         minHeight: '100dvh',
         background: '#02040a',
@@ -152,7 +208,9 @@ function Login({ onLogin, notice = null }) {
         </button>
       )}
 
-      <div ref={cardRef} className={`login-card${cardUp ? ' up' : ''}`} style={{
+      <div ref={cardRef} className={`login-card${cardUp ? ' up' : ''}${settled ? ' settled' : ''}`}
+        onAnimationEnd={(e) => { if (e.target === cardRef.current && e.animationName === 'loginCardUp') setSettled(true); }}
+        style={{
         position: 'relative',
         zIndex: 1,
         width: '100%',
@@ -332,7 +390,7 @@ function Login({ onLogin, notice = null }) {
 
       {playing && (
         <Suspense fallback={null}>
-          <PenaltyGame onClose={() => setPlaying(false)} />
+          <PenaltyGame scene={sceneRef.current} onClose={closeGame} />
         </Suspense>
       )}
     </div>
