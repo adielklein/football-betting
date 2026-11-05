@@ -34,7 +34,7 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
   const [activeTab, setActiveTab] = useTabRoute(
     TAB_KEYS,
     preferredTab,
-    { onBeforeChange: () => confirmLeave() }
+    { onBeforeChange: () => confirmLeave(), scrollToTop: false }
   );
 
   // מאיפה נכנסנו להגדרות, כדי שגלגל השיניים יחזיר לשם. אין במסך הזה
@@ -195,7 +195,9 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
     setActiveTab(key);
   };
   useLayoutEffect(() => {
-    window.scrollTo(0, scrollByTab.current[activeTab] || 0);
+    // גלילה אחת בלבד, ורק אם המיקום באמת שונה
+    const target = scrollByTab.current[activeTab] || 0;
+    if (Math.abs(window.scrollY - target) > 1) window.scrollTo(0, target);
   }, [activeTab]);
 
   const tabAnimation = tabDelta === 0

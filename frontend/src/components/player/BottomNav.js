@@ -28,15 +28,34 @@ function BottomNav({ tabs, activeTab, onSelect }) {
   const activeIndex = tabs.findIndex((t) => t.key === activeTab);
   const still = reducedMotion();
 
+  // מתחבא רק כשהמקלדת באמת פתוחה: שדה הקלדה בפוקוס *וגם* גובה המסך הנראה
+  // התכווץ. באנדרואיד, סגירת המקלדת בכפתור "חזור" משאירה את השדה בפוקוס -
+  // כשהסתמכנו על הפוקוס בלבד הסרגל נשאר מוסתר, והופיע בבת אחת בלחיצה הבאה
   useEffect(() => {
-    const onIn = (e) => setTyping(isTypingTarget(e.target));
-    // focusout מגיע לפני שהפוקוס עובר לשדה הבא; בודקים אחרי שהתייצב
-    const onOut = () => setTimeout(() => setTyping(isTypingTarget(document.activeElement)), 0);
-    document.addEventListener('focusin', onIn);
-    document.addEventListener('focusout', onOut);
+    const vv = window.visualViewport;
+    const height = () => (vv ? vv.height : window.innerHeight);
+    let fullHeight = height();
+    const check = () => {
+      const h = height();
+      if (h > fullHeight) fullHeight = h;
+      const focused = isTypingTarget(document.activeElement);
+      // בלי visualViewport (דפדפנים ישנים) - נשארים עם הפוקוס בלבד
+      const keyboardOpen = vv ? h < fullHeight - 120 : true;
+      setTyping(focused && keyboardOpen);
+    };
+    const later = () => setTimeout(check, 0);
+    const onRotate = () => setTimeout(() => { fullHeight = height(); check(); }, 300);
+    document.addEventListener('focusin', later);
+    document.addEventListener('focusout', later);
+    if (vv) vv.addEventListener('resize', check);
+    window.addEventListener('resize', check);
+    window.addEventListener('orientationchange', onRotate);
     return () => {
-      document.removeEventListener('focusin', onIn);
-      document.removeEventListener('focusout', onOut);
+      document.removeEventListener('focusin', later);
+      document.removeEventListener('focusout', later);
+      if (vv) vv.removeEventListener('resize', check);
+      window.removeEventListener('resize', check);
+      window.removeEventListener('orientationchange', onRotate);
     };
   }, []);
 

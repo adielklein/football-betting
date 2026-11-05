@@ -17,7 +17,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
  * @param prefix   קידומת אופציונלית, כדי שלשוניות המנהל לא יתנגשו בשל השחקן
  * @param onBeforeChange בדיקה שיכולה לבטל את המעבר (למשל הימור לא שמור)
  */
-export default function useTabRoute(tabKeys, fallback, { prefix = '', onBeforeChange } = {}) {
+export default function useTabRoute(tabKeys, fallback, { prefix = '', onBeforeChange, scrollToTop = true } = {}) {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -32,9 +32,11 @@ export default function useTabRoute(tabKeys, fallback, { prefix = '', onBeforeCh
     if (!tabKeys.includes(key)) return;
     if (onBeforeChange && !onBeforeChange(key)) return;
     navigate(`${base}/${key}`);
-    // מעבר לשונית הוא מעבר מסך מבחינת המשתמש, ולכן חוזרים לראש הדף
-    window.scrollTo({ top: 0, behavior: 'auto' });
-  }, [navigate, base, tabKeys, onBeforeChange]);
+    // מעבר לשונית הוא מעבר מסך מבחינת המשתמש, ולכן חוזרים לראש הדף.
+    // מסך שמנהל גלילה בעצמו (השחקן שומר מיקום לכל לשונית) מכבה את זה -
+    // שתי גלילות רצופות גרמו לסרגלי הדפדפן בטלפון לקפוץ
+    if (scrollToTop) window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [navigate, base, tabKeys, onBeforeChange, scrollToTop]);
 
   return [activeTab, setActiveTab];
 }
