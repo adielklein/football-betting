@@ -18,7 +18,7 @@ const BEST_KEY = 'penalty-best';
 const readBest = () => { try { return Number(localStorage.getItem(BEST_KEY)) || 0; } catch (e) { return 0; } };
 const writeBest = (n) => { try { localStorage.setItem(BEST_KEY, String(n)); } catch (e) { /* ignore */ } };
 
-const PULL_READY = 130;
+const PULL_READY = 90;
 
 function PenaltyGame({ onClose, online = false, scene: sharedScene = null }) {
   const canvasRef = useRef(null);
@@ -29,9 +29,7 @@ function PenaltyGame({ onClose, online = false, scene: sharedScene = null }) {
   const [pull, setPull] = useState(0);
   const [dragging, setDragging] = useState(false);
   const streakRef = useRef(0);
-  const pullRef = useRef(0);
   const msgTimer = useRef(0);
-  pullRef.current = pull;
 
   useEffect(() => {
     let own = null;
@@ -71,47 +69,65 @@ function PenaltyGame({ onClose, online = false, scene: sharedScene = null }) {
   }, [onClose]);
 
   // ===== מחוות =====
+  // אצבע: אירועי מגע (touch). בטלפון אמיתי הדפדפן מבטל לפעמים אירועי
+  // pointer באמצע תנועה, ו"משוך לרענון" נעלם. touchend מגיע תמיד.
+  // עכבר: אירועי pointer.
   const gesture = useRef(null);
-  const onDown = (e) => {
-    if (e.button !== undefined && e.button !== 0) return;
-    gesture.current = { id: e.pointerId, path: [{ x: e.clientX, y: e.clientY, t: e.timeStamp }], pulling: false };
-    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  const begin = (id, x, y, t) => {
+    gesture.current = { id, path: [{ x, y, t }], pulling: false };
   };
-  const onMove = (e) => {
+  const move = (id, x, y, t) => {
     const g = gesture.current;
-    if (!g || g.id !== e.pointerId) return;
-    g.path.push({ x: e.clientX, y: e.clientY, t: e.timeStamp });
+    if (!g || g.id !== id) return;
+    g.path.push({ x, y, t });
     const S = g.path[0];
-    const dy = e.clientY - S.y, dx = e.clientX - S.x;
+    const dy = y - S.y, dx = x - S.x;
     // גרירה למטה = משוך לרענון
-    if (!g.pulling && dy > 14 && dy > Math.abs(dx) * 1.2) { g.pulling = true; setDragging(true); }
-    if (g.pulling) setPull(Math.max(0, dy));
+    if (!g.pulling && dy > 10 && dy > Math.abs(dx) * 1.2) { g.pulling = true; setDragging(true); }
+    if (g.pulling) { g.pull = Math.max(0, dy); setPull(g.pull); }
   };
-  const onUp = (e) => {
+  const end = (id, x, y, t, cancelled = false) => {
     const g = gesture.current;
+    if (!g || g.id !== id) return;
     gesture.current = null;
     setDragging(false);
-    if (!g || g.id !== e.pointerId) return;
     if (g.pulling) {
-      if (pullRef.current >= PULL_READY) {
-        setTimeout(() => window.location.reload(), 150);
+      // גם מגע שבוטל באמצע נחשב שחרור: מי שמשך מספיק - מרענן
+      if ((g.pull || 0) >= PULL_READY) {
+        setPull(PULL_READY + 10);
+        setTimeout(() => window.location.reload(), 120);
       } else setPull(0);
       return;
     }
-    g.path.push({ x: e.clientX, y: e.clientY, t: e.timeStamp });
+    if (cancelled) return;
+    g.path.push({ x, y, t });
     const scene = sceneRef.current;
     if (!scene) return;
     const L = scene.layout();
     const shot = shotFromGesture(g.path, {
-      goalPt: (x, y) => scene.goalPoint(x, y),
+      goalPt: (px, py) => scene.goalPoint(px, py),
       groundY: L.goal.ground,
       ball: L.ball
     });
     if (shot && scene.shoot(shot, streakRef.current)) setMessage(null);
   };
-  const onCancel = () => { gesture.current = null; setDragging(false); setPull(0); };
+  const touchOf = (e) => e.changedTouches && e.changedTouches[0];
+  const handlers = {
+    onTouchStart: (e) => { const t = touchOf(e); if (t && e.touches.length === 1) begin('t' + t.identifier, t.clientX, t.clientY, e.timeStamp); else gesture.current = null; },
+    onTouchMove: (e) => { const t = touchOf(e); if (t) move('t' + t.identifier, t.clientX, t.clientY, e.timeStamp); },
+    onTouchEnd: (e) => { const t = touchOf(e); if (t) end('t' + t.identifier, t.clientX, t.clientY, e.timeStamp); },
+    onTouchCancel: (e) => { const t = touchOf(e); if (t) end('t' + t.identifier, t.clientX, t.clientY, e.timeStamp, true); },
+    onPointerDown: (e) => {
+      if (e.pointerType === 'touch' || (e.button !== undefined && e.button !== 0)) return;
+      begin('p' + e.pointerId, e.clientX, e.clientY, e.timeStamp);
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    },
+    onPointerMove: (e) => { if (e.pointerType !== 'touch') move('p' + e.pointerId, e.clientX, e.clientY, e.timeStamp); },
+    onPointerUp: (e) => { if (e.pointerType !== 'touch') end('p' + e.pointerId, e.clientX, e.clientY, e.timeStamp); },
+    onPointerCancel: (e) => { if (e.pointerType !== 'touch') end('p' + e.pointerId, e.clientX, e.clientY, e.timeStamp, true); }
+  };
 
-  const pullShown = Math.min(pull * 0.55, 96);
+  const pullShown = Math.min(pull * 0.8, 96);
   const ready = pull >= PULL_READY;
 
   return (
@@ -123,14 +139,7 @@ function PenaltyGame({ onClose, online = false, scene: sharedScene = null }) {
       {!sharedScene && <canvas ref={canvasRef} aria-hidden="true" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }} />}
 
       {/* שכבת המגע: כל המסך */}
-      <div
-        data-game-touch
-        onPointerDown={onDown}
-        onPointerMove={onMove}
-        onPointerUp={onUp}
-        onPointerCancel={onCancel}
-        style={{ position: 'absolute', inset: 0, touchAction: 'none' }}
-      />
+      <div data-game-touch {...handlers} style={{ position: 'absolute', inset: 0, touchAction: 'none' }} />
 
       {/* משוך לרענון */}
       <div aria-hidden="true" style={{
@@ -138,11 +147,19 @@ function PenaltyGame({ onClose, online = false, scene: sharedScene = null }) {
         borderRadius: '50%', background: '#fff', boxShadow: '0 4px 14px rgba(0,0,0,.35)',
         display: 'grid', placeItems: 'center', color: ready ? '#15803d' : '#4b5563', fontSize: '20px', fontWeight: 700,
         transform: `translateY(${pullShown - 44}px) rotate(${pull * 2}deg) scale(${ready ? 1.1 : 1})`,
-        opacity: Math.min(1, pull / 60), pointerEvents: 'none',
+        opacity: Math.min(1, pull / 40), pointerEvents: 'none',
         transition: dragging ? 'none' : 'transform .25s ease, opacity .25s ease'
       }}>
         ↻
       </div>
+      {ready && (
+        <div aria-hidden="true" style={{
+          position: 'absolute', left: 0, right: 0, top: `${pullShown + 6}px`, textAlign: 'center', pointerEvents: 'none',
+          color: '#fff', fontSize: 'var(--fs-xs)', fontWeight: 700, textShadow: '0 2px 8px rgba(0,0,0,.7)'
+        }}>
+          שחררו לרענון
+        </div>
+      )}
 
       <div style={{
         position: 'absolute', top: 'max(12px, env(safe-area-inset-top, 0px))', left: '12px', right: '12px',
