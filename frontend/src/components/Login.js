@@ -48,7 +48,7 @@ function Login({ onLogin, notice = null }) {
   }, []);
   const skipIntro = () => sceneRef.current && sceneRef.current.skip();
 
-  // סוד: החלקה למעלה על המגרש (לא על הכרטיס) פותחת את משחק הבעיטות.
+  // סוד: גרירה על המגרש, למעלה או למטה (לא על הכרטיס), פותחת את משחק הבעיטות.
   // אין לזה שום רמז על המסך, בכוונה.
   // אירועי מגע ולא pointer: הדפדפן מבטל pointer ברגע שהוא מחליט לגלול,
   // ו-touchend מגיע תמיד. בלי preventDefault - הגלילה הרגילה לא נפגעת
@@ -63,7 +63,7 @@ function Login({ onLogin, notice = null }) {
     swipeFrom.current = null;
     if (!from) return;
     const dx = x - from.x, dy = y - from.y;
-    if (dy < -50 && Math.abs(dx) < -dy * 1.2 && Date.now() - from.at < 900) setPlaying(true);
+    if (Math.abs(dy) > 50 && Math.abs(dx) < Math.abs(dy) * 1.2 && Date.now() - from.at < 1200) setPlaying(true);
   };
 
   const handleSubmit = async (e) => {
@@ -135,7 +135,9 @@ function Login({ onLogin, notice = null }) {
       }}
     >
       {/* האצטדיון. קבוע למסך, כך שהמקלדת יכולה לגלול את הכרטיס בלי להזיז אותו */}
-      <canvas ref={canvasRef} aria-hidden="true" style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', display: 'block' }} />
+      {/* touchAction none: גרירה שמתחילה על המגרש שייכת למשחק. בלי זה כרום
+          תופס גרירה למטה כ"משוך לרענון", מבטל את המגע, והמשחק לא נפתח */}
+      <canvas ref={canvasRef} aria-hidden="true" style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', display: 'block', touchAction: 'none' }} />
 
       {!cardUp && (
         <button type="button" onClick={skipIntro} style={{
