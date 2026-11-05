@@ -110,7 +110,9 @@ function Login({ onLogin, notice = null }) {
   };
   const openGame = () => {
     const card = cardRef.current;
-    const off = (card ? card.getBoundingClientRect().height : 400) + window.innerHeight * 0.15;
+    // עד שהכרטיס יוצא כולו מתחתית המסך, מכל מקום שבו הוא עומד
+    // offsetTop: המקום של הכרטיס בלי הגרירה (transform לא משפיע עליו)
+    const off = window.innerHeight - (card ? card.offsetTop - window.scrollY : 0) + 40;
     setCard(`translateY(${off}px)`, reducedMotion() ? 'none' : 'transform .42s cubic-bezier(.4,0,.2,1)');
     setPlaying(true);
   };
@@ -183,7 +185,8 @@ function Login({ onLogin, notice = null }) {
         background: '#02040a',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'flex-end',
+        // הכרטיס באמצע המסך, כמו שהיה לפני האצטדיון
+        justifyContent: 'center',
         alignItems: 'center',
         padding: '16px 16px max(18px, env(safe-area-inset-bottom, 0px))',
         position: 'relative',
