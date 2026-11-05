@@ -3,6 +3,10 @@ import Login from './components/Login';
 import PlayerView from './components/player/PlayerView';
 import { applyTheme } from './themes'; // 🎨 יבוא פונקציית ערכות הנושא
 import UpdateBanner from './components/UpdateBanner';
+import { cleanUpdateParam } from './services/appVersion';
+
+// אחרי עדכון גרסה הכתובת מגיעה עם ?v=... - מנקים אותה מיד
+cleanUpdateParam();
 import ToastHost from './components/ToastHost';
 import ErrorBoundary from './components/ErrorBoundary';
 import { HashRouter } from 'react-router-dom';

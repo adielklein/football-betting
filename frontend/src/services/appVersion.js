@@ -46,10 +46,29 @@ const runningBundle = () => {
 
 const servedBundle = async () => {
   // no-store וגם פרמטר משתנה: בלי זה הדפדפן עלול להגיש את הדף מהקאש
-  // ואז לעולם לא נראה את הגרסה החדשה
-  const res = await fetch(`/index.html?t=${Date.now()}`, { cache: 'no-store' });
+  // ואז לעולם לא נראה את הגרסה החדשה. "/" ולא "/index.html": זו הכתובת
+  // שהאפליקציה נפתחת בה בפועל
+  const res = await fetch(`/?t=${Date.now()}`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`index ${res.status}`);
   return bundleFromHtml(await res.text());
+};
+
+// עדכון שכבר נוסה בסשן הזה. אם אחרי הטעינה עדיין רצה גרסה ישנה (קאש של
+// הדפדפן או של ה-CDN שעוד לא התעדכן), לא מציקים שוב על אותה גרסה - אחרת
+// הרצועה חוזרת בלי סוף, וזה בדיוק מה שקרה
+const TRIED_KEY = 'app-update-tried';
+const triedFor = () => { try { return sessionStorage.getItem(TRIED_KEY); } catch (e) { return null; } };
+const markTried = (bundle) => { try { sessionStorage.setItem(TRIED_KEY, bundle || '1'); } catch (e) { /* ignore */ } };
+let latestServed = null;
+
+// אחרי עדכון הכתובת מכילה ?v=... כדי לעקוף קאש. מנקים אותה מהשורה
+export const cleanUpdateParam = () => {
+  try {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has('v')) return;
+    url.searchParams.delete('v');
+    window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+  } catch (e) { /* ignore */ }
 };
 
 // מפעיל את onUpdateAvailable פעם אחת כשמתגלה גרסה חדשה. מחזיר פונקציית ניקוי.
@@ -65,6 +84,8 @@ export const watchForUpdates = (onUpdateAvailable) => {
     try {
       const served = await servedBundle();
       if (served && served !== running) {
+        latestServed = served;
+        if (triedFor() === served) return; // כבר ניסינו לעדכן לגרסה הזו
         stopped = true;
         onUpdateAvailable();
       }
@@ -86,17 +107,22 @@ export const watchForUpdates = (onUpdateAvailable) => {
   };
 };
 
-// טעינה נקייה: מנקים קאשים שנשארו מגרסאות קודמות ואז טוענים מחדש
+// טעינה נקייה: מנקים קאשים, ונטענים מכתובת חדשה (?v=...) ולא ב-reload.
+// reload רגיל יכול לקבל את הדף הישן מהקאש של הדפדפן או של ה-CDN, ואז
+// האפליקציה נשארת בגרסה הישנה והרצועה "עדכן" חוזרת שוב ושוב
 export const applyUpdate = async () => {
+  markTried(latestServed);
   try {
     if ('caches' in window) {
       const keys = await caches.keys();
       await Promise.all(keys.map((k) => caches.delete(k)));
     }
   } catch (err) {
-    // לא קריטי - הריענון עצמו הוא מה שחשוב
+    // לא קריטי - הטעינה עצמה היא מה שחשוב
   }
-  window.location.reload();
+  const url = new URL(window.location.href);
+  url.searchParams.set('v', String(Date.now()));
+  window.location.replace(url.toString());
 };
 
 // חתימת הקוד שרץ עכשיו, כפי שנחתמה בבנייה. לתצוגה במסך הניהול: השאלה
