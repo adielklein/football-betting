@@ -251,7 +251,9 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
   }
 
   return (
-    <div>
+    // clip ולא hidden: חותך גלישה לרוחב (אנימציית לשונית) בלי להפוך את
+    // העטיפה למכל גלילה, כך ש-sticky בפנים ממשיך לעבוד
+    <div style={{ overflowX: 'clip' }}>
       <PlayerHeader
         user={user}
         selectedWeek={selectedWeek}
