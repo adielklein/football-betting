@@ -1,20 +1,8 @@
-import React, { Suspense, lazy, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
+import PenaltyGame, { loadGame } from './LazyPenaltyGame';
 import { isOffline, onConnectivityChange } from '../services/connectivity';
 
-// המשחק נטען רק כשפותחים אותו - ומרגע שנטען פעם אחת הוא בקאש, כך שגם בלי
-// קליטה הוא נפתח. בגלל זה הוא נטען מראש ברקע ברגע שיש חיבור (ראו למטה)
-const loadGame = () => import('./PenaltyGame');
-// אם הקובץ לא נטען (לא הספיק להישמר לפני שהקליטה נעלמה) - הודעה קצרה
-// במקום רענון: רענון בלי קליטה היה תוקע את המשתמש
-const Unavailable = ({ onClose }) => (
-  <div role="dialog" aria-modal="true" onClick={onClose} style={{
-    position: 'fixed', inset: 0, zIndex: 12000, background: 'rgba(3,5,12,.92)', color: '#fff',
-    display: 'grid', placeItems: 'center', padding: '24px', textAlign: 'center', fontSize: 'var(--fs-md)'
-  }}>
-    המשחק יהיה זמין אחרי שהאפליקציה תיפתח פעם אחת עם קליטה.
-  </div>
-);
-const PenaltyGame = lazy(() => loadGame().catch(() => ({ default: Unavailable })));
+// המשחק נטען מראש ברקע ברגע שיש חיבור (ראו למטה), כדי שיהיה זמין בלי קליטה
 
 // פס קטן כשאין חיבור: מסביר שמה שעל המסך הם הנתונים האחרונים שנטענו, ולא
 // "אין משחקים" או "אין נתונים", ומציע משחק בעיטות בינתיים.

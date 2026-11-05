@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { Suspense, useState, useEffect, useRef } from 'react';
+import PenaltyGame from './LazyPenaltyGame';
 import { applyTheme } from '../themes';
 import { hapticError } from '../services/haptics';
 import { play, reducedMotion } from '../services/motion';
@@ -46,6 +47,23 @@ function Login({ onLogin, notice = null }) {
     return () => scene.destroy();
   }, []);
   const skipIntro = () => sceneRef.current && sceneRef.current.skip();
+
+  // החלקה למעלה על המגרש (לא על הכרטיס) פותחת את משחק הבעיטות.
+  // אירועי מגע ולא pointer: הדפדפן מבטל pointer ברגע שהוא מחליט לגלול,
+  // ו-touchend מגיע תמיד. בלי preventDefault - הגלילה הרגילה לא נפגעת
+  const [playing, setPlaying] = useState(false);
+  const swipeFrom = useRef(null);
+  const swipeStart = (x, y, target) => {
+    const onCard = cardRef.current && cardRef.current.contains(target);
+    swipeFrom.current = onCard ? null : { x, y, at: Date.now() };
+  };
+  const swipeEnd = (x, y) => {
+    const from = swipeFrom.current;
+    swipeFrom.current = null;
+    if (!from) return;
+    const dx = x - from.x, dy = y - from.y;
+    if (dy < -50 && Math.abs(dx) < -dy * 1.2 && Date.now() - from.at < 900) setPlaying(true);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -95,7 +113,14 @@ function Login({ onLogin, notice = null }) {
   return (
     <div
       className="login-stage"
-      onPointerDown={(e) => { if (!cardRef.current || !cardRef.current.contains(e.target)) skipIntro(); }}
+      onPointerDown={(e) => {
+        if (!cardRef.current || !cardRef.current.contains(e.target)) skipIntro();
+        if (e.pointerType === 'mouse') swipeStart(e.clientX, e.clientY, e.target);
+      }}
+      onPointerUp={(e) => { if (e.pointerType === 'mouse') swipeEnd(e.clientX, e.clientY); }}
+      onTouchStart={(e) => { if (e.touches.length === 1) swipeStart(e.touches[0].clientX, e.touches[0].clientY, e.target); else swipeFrom.current = null; }}
+      onTouchEnd={(e) => { const t = e.changedTouches[0]; if (t) swipeEnd(t.clientX, t.clientY); }}
+      onTouchCancel={() => { swipeFrom.current = null; }}
       style={{
         minHeight: '100dvh',
         background: '#02040a',
@@ -121,6 +146,21 @@ function Login({ onLogin, notice = null }) {
           padding: '6px 14px', minHeight: '32px', borderRadius: '999px', cursor: 'pointer'
         }}>
           דלג
+        </button>
+      )}
+
+      {/* רמז למשחק: מופיע אחרי שהכרטיס עלה. גם לחיצה עליו פותחת את המשחק,
+          למי שלא יכול או לא רוצה להחליק */}
+      {cardUp && !success && (
+        <button type="button" onClick={() => setPlaying(true)} style={{
+          position: 'relative', zIndex: 1, marginBottom: '14px',
+          font: 'inherit', fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'rgba(255,255,255,.92)',
+          background: 'rgba(0,0,0,.28)', border: '1px solid rgba(255,255,255,.22)',
+          WebkitBackdropFilter: 'blur(6px)', backdropFilter: 'blur(6px)',
+          padding: '6px 14px', minHeight: '32px', borderRadius: '999px', cursor: 'pointer',
+          animation: 'loginHint .5s .6s ease-out both'
+        }}>
+          ⚽ החליקו למעלה לבעיטה
         </button>
       )}
 
@@ -301,6 +341,12 @@ function Login({ onLogin, notice = null }) {
           פנה למנהל המערכת לקבלת פרטי התחברות
         </p>
       </div>
+
+      {playing && (
+        <Suspense fallback={null}>
+          <PenaltyGame onClose={() => setPlaying(false)} />
+        </Suspense>
+      )}
     </div>
   );
 }

@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 
 // "בעיטות לשער": משחק קטן למצב בלי קליטה, במקום הדינוזאור של הדפדפן.
 //
-// מקישים על נקודה בשער והכדור עף אליה. השוער מגיב אחרי השהייה קצרה וקופץ -
+// מקישים על נקודה בשער והכדור עף אליה, או מחליקים מהכדור למעלה - הכיוון
+// קובע את הצד, והאורך את הגובה (החלקה ארוכה מדי עפה מעל המשקוף). השוער מגיב אחרי השהייה קצרה וקופץ -
 // לפעמים לצד הנכון. ככל שהרצף עולה הוא מגיב מהר יותר ומנחש טוב יותר.
 // הרצף הכי ארוך נשמר במכשיר.
 //
@@ -16,7 +17,7 @@ const writeBest = (n) => { try { localStorage.setItem(BEST_KEY, String(n)); } ca
 const easeOut = (k) => 1 - Math.pow(1 - k, 3);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-function PenaltyGame({ onClose, online }) {
+function PenaltyGame({ onClose, online = false }) {
   const canvasRef = useRef(null);
   const [streak, setStreak] = useState(0);
   const [best, setBest] = useState(readBest);
@@ -256,20 +257,43 @@ function PenaltyGame({ onClose, online }) {
       raf = requestAnimationFrame(loop);
     };
 
-    const onPointer = (e) => {
+    // הקשה: בועטים לנקודה. החלקה למעלה: ממשיכים את קו האצבע עד הגובה
+    // שנקבע לפי אורך ההחלקה
+    let down = null;
+    const onDown = (e) => {
       if (e.target !== canvas) return;
-      shoot(e.clientX, Math.min(e.clientY, G.ground - G.rb * 0.6));
+      down = { x: e.clientX, y: e.clientY };
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
     };
+    const onUp = (e) => {
+      if (!down) return;
+      const dx = e.clientX - down.x, dy = e.clientY - down.y;
+      const from = down;
+      down = null;
+      if (Math.hypot(dx, dy) < 14) {
+        shoot(from.x, Math.min(from.y, G.ground - G.rb * 0.6));
+        return;
+      }
+      if (dy > -24 || Math.abs(dx) > -dy * 2.2) return; // לא החלקה למעלה
+      const ty = G.ground - G.gh * clamp(-dy / (H * 0.36), 0.12, 1.3);
+      const tx = G.ballX + dx * ((G.ballY - ty) / -dy);
+      shoot(tx, ty);
+    };
+    const onCancel = () => { down = null; };
 
     layout();
     reset();
     raf = requestAnimationFrame(loop);
-    canvas.addEventListener('pointerdown', onPointer);
+    canvas.addEventListener('pointerdown', onDown);
+    canvas.addEventListener('pointerup', onUp);
+    canvas.addEventListener('pointercancel', onCancel);
     const onResize = () => { layout(); reset(); };
     window.addEventListener('resize', onResize);
     return () => {
       cancelAnimationFrame(raf);
-      canvas.removeEventListener('pointerdown', onPointer);
+      canvas.removeEventListener('pointerdown', onDown);
+      canvas.removeEventListener('pointerup', onUp);
+      canvas.removeEventListener('pointercancel', onCancel);
       window.removeEventListener('resize', onResize);
     };
   }, []);
@@ -327,7 +351,7 @@ function PenaltyGame({ onClose, online }) {
             החיבור חזר · חזרה לאפליקציה
           </button>
         ) : (
-          <div style={{ color: 'rgba(255,255,255,.85)', fontSize: 'var(--fs-sm)' }}>הקישו על השער כדי לבעוט</div>
+          <div style={{ color: 'rgba(255,255,255,.85)', fontSize: 'var(--fs-sm)' }}>הקישו על השער או החליקו למעלה כדי לבעוט</div>
         )}
       </div>
     </div>
