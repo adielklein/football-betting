@@ -3,6 +3,7 @@ import Login from './components/Login';
 import PlayerView from './components/player/PlayerView';
 import { applyTheme } from './themes'; // 🎨 יבוא פונקציית ערכות הנושא
 import UpdateBanner from './components/UpdateBanner';
+import OfflineBanner from './components/OfflineBanner';
 import { cleanUpdateParam } from './services/appVersion';
 
 // אחרי עדכון גרסה הכתובת מגיעה עם ?v=... - מנקים אותה מיד
@@ -226,6 +227,8 @@ function App() {
     try {
       console.log('🚪 מתנתק...');
       setJustLoggedIn(false); // כדי שאנימציית הכניסה תרוץ שוב בהתחברות הבאה
+      // הנתונים שנשמרו לשימוש בלי קליטה שייכים למשתמש הזה בלבד
+      if ('caches' in window) caches.delete('gamball-api-v1').catch(() => {});
       clearToken();
       localStorage.removeItem('football_betting_user');
       setCurrentUser(null);
@@ -310,6 +313,7 @@ function App() {
 
       <ToastHost />
       <UpdateBanner />
+      <OfflineBanner />
 
       {inAppNotification && (
         <div style={{

@@ -44,7 +44,7 @@ function AdminHeader({ user, onLogout }) {
       // 2. רשום service worker אם אין
       let reg = await navigator.serviceWorker.getRegistration();
       if (!reg) {
-        reg = await navigator.serviceWorker.register('/sw.js');
+        reg = await navigator.serviceWorker.register('/service-worker.js');
         await navigator.serviceWorker.ready;
       }
 

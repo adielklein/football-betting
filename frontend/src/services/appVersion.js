@@ -113,9 +113,10 @@ export const watchForUpdates = (onUpdateAvailable) => {
 export const applyUpdate = async () => {
   markTried(latestServed);
   try {
+    // הנתונים השמורים (gamball-api) נשארים - הם מה שמוצג כשאין קליטה
     if ('caches' in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.map((k) => caches.delete(k)));
+      await Promise.all(keys.filter((k) => !k.startsWith('gamball-api')).map((k) => caches.delete(k)));
     }
   } catch (err) {
     // לא קריטי - הטעינה עצמה היא מה שחשוב

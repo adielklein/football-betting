@@ -79,7 +79,7 @@ function AuditLog() {
 
       let reg = await navigator.serviceWorker.getRegistration();
       if (!reg) {
-        reg = await navigator.serviceWorker.register('/sw.js');
+        reg = await navigator.serviceWorker.register('/service-worker.js');
         await new Promise(resolve => setTimeout(resolve, 1000));
         reg = await navigator.serviceWorker.ready;
       }

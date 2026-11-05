@@ -8,6 +8,7 @@
 // ישירות - ולכן העטיפה יושבת במקום גלובלי אחד.
 
 import { getToken, setToken, signalExpired } from './authSession';
+import { reportOffline, reportOnline } from './connectivity';
 
 const originalFetch = window.fetch.bind(window);
 
@@ -26,7 +27,17 @@ window.fetch = async (input, init = {}) => {
     request = { ...init, headers };
   }
 
-  const response = await originalFetch(input, request);
+  let response;
+  try {
+    response = await originalFetch(input, request);
+  } catch (err) {
+    // אין רשת בכלל (ואין גם תשובה שמורה)
+    if (err && err.name !== 'AbortError') reportOffline();
+    throw err;
+  }
+  // תשובה מהקאש של ה-Service Worker = אין חיבור, אבל יש נתונים אחרונים
+  if (response.headers.get('X-From-Cache')) reportOffline();
+  else reportOnline();
 
   // טוקן שהתחדש (או טוקן חדש אחרי החלפת סיסמה) מגיע בכותרת
   const renewed = response.headers.get('X-Auth-Token');
