@@ -887,7 +887,6 @@ tr:hover {
 }
 .login-card.up { animation: loginCardUp .7s cubic-bezier(.16, 1, .3, 1) forwards; }
 @keyframes loginCardUp { from { transform: translateY(calc(100% + 40px)); } to { transform: translateY(0); } }
-@keyframes loginHint { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   .login-card { transform: none; }
   .login-card.up { animation: none; }

@@ -48,7 +48,8 @@ function Login({ onLogin, notice = null }) {
   }, []);
   const skipIntro = () => sceneRef.current && sceneRef.current.skip();
 
-  // החלקה למעלה על המגרש (לא על הכרטיס) פותחת את משחק הבעיטות.
+  // סוד: החלקה למעלה על המגרש (לא על הכרטיס) פותחת את משחק הבעיטות.
+  // אין לזה שום רמז על המסך, בכוונה.
   // אירועי מגע ולא pointer: הדפדפן מבטל pointer ברגע שהוא מחליט לגלול,
   // ו-touchend מגיע תמיד. בלי preventDefault - הגלילה הרגילה לא נפגעת
   const [playing, setPlaying] = useState(false);
@@ -146,21 +147,6 @@ function Login({ onLogin, notice = null }) {
           padding: '6px 14px', minHeight: '32px', borderRadius: '999px', cursor: 'pointer'
         }}>
           דלג
-        </button>
-      )}
-
-      {/* רמז למשחק: מופיע אחרי שהכרטיס עלה. גם לחיצה עליו פותחת את המשחק,
-          למי שלא יכול או לא רוצה להחליק */}
-      {cardUp && !success && (
-        <button type="button" onClick={() => setPlaying(true)} style={{
-          position: 'relative', zIndex: 1, marginBottom: '14px',
-          font: 'inherit', fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'rgba(255,255,255,.92)',
-          background: 'rgba(0,0,0,.28)', border: '1px solid rgba(255,255,255,.22)',
-          WebkitBackdropFilter: 'blur(6px)', backdropFilter: 'blur(6px)',
-          padding: '6px 14px', minHeight: '32px', borderRadius: '999px', cursor: 'pointer',
-          animation: 'loginHint .5s .6s ease-out both'
-        }}>
-          ⚽ החליקו למעלה לבעיטה
         </button>
       )}
 
