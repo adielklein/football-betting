@@ -28,21 +28,24 @@ const smart = (power) => (r) => {
   return { aim: { x: side * (2.3 + r() * 0.8), y: 0.4 + r() * 1.5 }, power };
 };
 
-test('בעיטות טובות ומגוונות: בערך כמו פנדלים אמיתיים (כ-75%)', () => {
+test('בעיטות טובות ומגוונות: קצת פחות מפנדלים אמיתיים (כ-65%)', () => {
   const r = goalRate(smart(0.65), 0);
-  assert.ok(r > 0.66 && r < 0.84, `goal rate ${r}`);
+  assert.ok(r > 0.57 && r < 0.73, `goal rate ${r}`);
 });
 
-test('אין נקודה אחת שמנצחת תמיד: פינה עליונה או אמצע לא עוברים 62%', () => {
+test('אין נקודה אחת שמנצחת תמיד: פינה עליונה או אמצע לא עוברים 55%', () => {
   const spots = {
     'top-right p.6': () => ({ aim: { x: 3.35, y: 2.2 }, power: 0.6 }),
     'top-right p.3': () => ({ aim: { x: 3.35, y: 2.2 }, power: 0.3 }),
     'top-left p.45 (tap)': () => ({ aim: { x: -3.35, y: 2.2 }, power: 0.45 }),
     'center low p.8': () => ({ aim: { x: 0, y: 0.4 }, power: 0.8 })
   };
+  spots['tap low corner'] = () => ({ aim: { x: 3.2, y: 0.3 }, power: 0.45 });
+  spots['tap low corner'].limit = 0.66;
   for (const [name, gen] of Object.entries(spots)) {
+    if (gen.limit) { const r = goalRate(gen, 0); assert.ok(r < gen.limit, `${name}: ${r}`); continue; }
     const r = goalRate(gen, 0);
-    assert.ok(r < 0.62, `${name}: ${r}`);
+    assert.ok(r < 0.55, `${name}: ${r}`);
   }
 });
 

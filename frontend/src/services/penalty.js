@@ -59,9 +59,9 @@ export function blendPose(d, mirror = false) {
 export function keeperSkill(streak = 0) {
   const s = Math.max(0, streak);
   return {
-    react: 0.3 - Math.min(0.1, s * 0.012),   // שניות עד שהוא מזהה לאן הכדור הולך
-    vAdj: 2.4 + Math.min(1.4, s * 0.15),      // מהירות התיקון אחרי שזיהה (מ'/ש')
-    read: Math.min(0.3, s * 0.03)              // סיכוי "לקרוא" את הבועט מראש
+    react: 0.25 - Math.min(0.09, s * 0.011),   // שניות עד שהוא מזהה לאן הכדור הולך
+    vAdj: 3.0 + Math.min(1.4, s * 0.15),      // מהירות התיקון אחרי שזיהה (מ'/ש')
+    read: Math.min(0.32, 0.06 + s * 0.026)     // סיכוי "לקרוא" את הבועט מראש
   };
 }
 
@@ -96,7 +96,7 @@ export function keeperPlan(shotTarget, skill, rand = Math.random) {
 const DIVE_T = 0.68;
 // קפיצה מתחילה לאט (דחיפה מהקרקע) ומאיצה
 const diveEase = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
-const REACH = 2.45; // מהאגן לכפות בקפיצה מלאה, פחות האורך של הכפפות
+const REACH = 2.6; // מהאגן לכפות בקפיצה מלאה, פחות האורך של הכפפות
 
 export function keeperAt(t, plan, ballTarget, skill) {
   // התיקון: אחרי זמן התגובה הוא נמשך לכיוון הכדור, כמה שהזמן מאפשר
@@ -123,20 +123,26 @@ export function keeperAt(t, plan, ballTarget, skill) {
   const vx = hx - lx, vy = hy - ly;
   const ul = Math.hypot(vx, vy) || 1;
   // כמה "שכוב" הוא: רק בקפיצה רחוקה הוא באמת נמתח לאורך
-  const ext = clamp(Math.hypot(gx - lx, gy - ly) / 1.4, 0, 1) * e;
+  // כדור נמוך מחייב לשכב עד הסוף, גם כשהוא קרוב לגוף
+  const ext = clamp(Math.max(Math.hypot(gx - lx, gy - ly) / 1.4, (ly - gy) / 0.65), 0, 1) * e;
   // כיוון הגוף, עד אופקי לכל היותר. לכדור נמוך באמצע הוא נופל הצידה
   // עליו - לא מתהפך עם הרגליים למעלה
   const dir = vx > 0.02 ? 1 : vx < -0.02 ? -1 : (Math.sign(ballTarget.x) || 1);
   const ang = clamp(Math.atan2(-vx, vy), -1.55, 1.55) || 0;
   const a = Math.abs(ang) < 0.01 && vy < 0 ? -1.55 * dir : ang;
   const ux = -Math.sin(a), uy = Math.cos(a);
-  const rot = a * ext;
+  // קפיצה לצד רק לכדור שרחוק הצידה. כדור קרוב לגוף נחסם בהתכופפות -
+  // סיבוב של הגוף היה מעיף את הרגליים בדיוק מהמקום שאליו הכדור מגיע
+  const lateral = clamp((Math.abs(gx - lx) - 0.35) / 0.9, 0, 1);
+  const dive = ext * lateral;
+  const rot = a * dive;
   // האגן נמצא מאחורי הידיים לאורך הגוף, אבל לא מעבר לנקודת הזינוק
   const back = Math.min(1.3, ul);
-  const x = lerp(0, hx - ux * back, ext);
-  const y = Math.max(0.2, lerp(0.95, hy - uy * back, ext));
-  const pose = blendPose(ext, ux < 0);
-  return { x, y, rot, pose, d: ext };
+  const x = lerp(0, hx - ux * back, dive) + (1 - lateral) * clamp(gx, -0.35, 0.35) * e;
+  const crouch = lerp(0.95, clamp(gy + 0.35, 0.5, 0.95), e);
+  const y = Math.max(0.2, lerp(crouch, hy - uy * back, dive));
+  const pose = blendPose(dive, ux < 0);
+  return { x, y, rot, pose, d: dive };
 }
 
 // נקודה בגוף השוער (מטרים ביחס לאגן) -> עולם
@@ -172,7 +178,7 @@ export function executeShot({ aim, power, curl = 0 }, rand = Math.random) {
     while (v === 0) v = rand();
     return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
   };
-  const sigma = 0.2 + 0.5 * power * power + 0.06 * Math.abs(curl);
+  const sigma = 0.21 + 0.58 * power * power + 0.06 * Math.abs(curl);
   // להרים כדור גבוה פחות מדויק מלבעוט נמוך
   const sigmaY = sigma * (0.75 + 0.45 * Math.min(1, aim.y / GOAL_H));
   return {
