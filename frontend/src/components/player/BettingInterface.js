@@ -10,6 +10,7 @@ import { setUnsavedChecker } from '../../services/unsavedGuard';
 import { toast } from '../../services/toast';
 import { pop, confettiFrom, once } from '../../services/motion';
 import { hapticError } from '../../services/haptics';
+import { formatCountdown, formatLockMoment } from '../../services/countdown';
 import Score from '../Score';
 import { textOn } from '../../services/readableColor';
 
@@ -352,13 +353,6 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
     return () => clearTimeout(t);
   }, [bets, matches.length, doneNow, selectedWeek?._id]);
 
-  const countdownBoxStyle = (total) => ({
-    padding: '2px 5px', borderRadius: '6px', fontSize: 'var(--fs-sm)', fontWeight: '800',
-    fontVariantNumeric: 'tabular-nums', textAlign: 'center',
-    background: total < 3600000 ? '#fecaca' : total < 86400000 ? '#fde68a' : '#bfdbfe',
-    color: total < 3600000 ? '#991b1b' : total < 86400000 ? '#92400e' : '#1e3a5f',
-  });
-
   if (!selectedWeek?.active) {
     return (
       <div className="card" style={{
@@ -451,46 +445,37 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
           </div>
         )}
 
-        {/* Countdown Timer */}
-        {timeLeft && (
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            gap: '6px', marginTop: '0.5rem', padding: '0.45rem 0.6rem',
-            background: timeLeft.total < 3600000
-              ? 'var(--bad-bg, #fef2f2)'
-              : timeLeft.total < 86400000
-                ? 'var(--warn-bg, #fffbeb)'
-                : 'var(--info-bg, #eff6ff)',
-            borderRadius: '12px',
-            border: `1px solid ${timeLeft.total < 3600000 ? '#fca5a5' : timeLeft.total < 86400000 ? '#fde68a' : '#bfdbfe'}`
-          }}>
-            <span style={{ fontSize: 'var(--fs-sm)' }}>
-              {timeLeft.total < 3600000 ? '🔥' : timeLeft.total < 86400000 ? '⏳' : '⏰'}
-            </span>
-            <span style={{
-              fontSize: 'var(--fs-xs)', fontWeight: '600',
-              color: timeLeft.total < 3600000 ? 'var(--bad-fg, #dc2626)' : timeLeft.total < 86400000 ? 'var(--warn-fg, #92400e)' : 'var(--info-fg, #2563eb)'
+        {/* ספירה לאחור: משפט כשנשאר יותר מיום, שעון ביום האחרון, ומתחת -
+            מתי בדיוק ההימורים נסגרים. קודם היו שתי תיבות ("יום אחד" ו-
+            "17:22:22") שלא היה ברור שהן זמן אחד */}
+        {timeLeft && (() => {
+          const urgent = timeLeft.total < 3600000;
+          const today = timeLeft.total < 86400000;
+          const fg = urgent ? 'var(--bad-fg, #a81f17)' : today ? 'var(--warn-fg, #7c5306)' : 'var(--info-fg, #1560ad)';
+          const cd = formatCountdown(timeLeft);
+          return (
+            <div role="timer" aria-live="off" style={{
+              marginTop: '0.5rem', padding: '0.5rem 0.7rem', borderRadius: '12px', textAlign: 'center',
+              background: urgent ? 'var(--bad-bg, #fef2f2)' : today ? 'var(--warn-bg, #fffbeb)' : 'var(--info-bg, #eff6ff)',
+              border: `1px solid ${urgent ? '#fca5a5' : today ? '#fde68a' : '#bfdbfe'}`
             }}>
-              נסגר בעוד
-            </span>
-            {/* ימים במילה, והשאר כשעון: קודם כל יחידה הייתה תיבה עם אות אחת,
-                ו"ש" סימנה גם שעות וגם שניות ("3י 11ש 24ד 36ש") */}
-            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-              {timeLeft.days > 0 && (
-                <span style={countdownBoxStyle(timeLeft.total)}>
-                  {timeLeft.days === 1 ? 'יום אחד' : `${timeLeft.days} ימים`}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: fg }}>
+                <span aria-hidden="true" style={{ fontSize: 'var(--fs-sm)' }}>{urgent ? '🔥' : today ? '⏳' : '⏰'}</span>
+                <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }}>נסגר בעוד</span>
+                <span dir={cd.clock ? 'ltr' : undefined} style={{
+                  fontSize: 'var(--fs-md)', fontWeight: 800, fontVariantNumeric: 'tabular-nums',
+                  // הדופק רק בשעה האחרונה, כשזה באמת דחוף
+                  animation: urgent ? 'pulse 1s ease infinite' : undefined
+                }}>
+                  {cd.text}
                 </span>
-              )}
-              <span dir="ltr" style={{
-                ...countdownBoxStyle(timeLeft.total),
-                // הדופק רק בשעה האחרונה, כשזה באמת דחוף
-                animation: timeLeft.total < 3600000 ? 'pulse 1s ease infinite' : undefined
-              }}>
-                {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
-              </span>
+              </div>
+              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #5f6670)', marginTop: '2px' }}>
+                {formatLockMoment(selectedWeek.lockTime)}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
