@@ -169,6 +169,14 @@
   padding: 0;
 }
 
+/* בלי "מתיחה" בקצה הדף. באנדרואיד 12 ומעלה גלילה מעבר לקצה מותחת את כל
+   המסך - כולל אלמנטים קבועים כמו סרגל הניווט התחתון - ובאייפון הדף קופץ
+   (rubber-band). כל הקשה כוללת תזוזה זעירה של האצבע, ובדף קצר או בקצה
+   הדף היא נספרה כגלילה מעבר לקצה: הסרגל כולו "קפץ" קצת בלחיצה עליו */
+html, body {
+  overscroll-behavior-y: none;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',

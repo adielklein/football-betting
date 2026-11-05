@@ -88,7 +88,12 @@ function BottomNav({ tabs, activeTab, onSelect }) {
           boxShadow: '0 -4px 16px rgba(0,0,0,0.08)',
           // iOS: שכבה משלו, כדי שלא ירצד בגלילה עם מומנטום
           transform: 'translateZ(0)',
-          WebkitTransform: 'translateZ(0)'
+          WebkitTransform: 'translateZ(0)',
+          // תזוזת אצבע שמתחילה על הסרגל לא גוללת את הדף. בלי זה, הקשה עם
+          // תזוזה קטנה גללה את הדף מתחת, ובקצה הדף גם מתחה את הכל.
+          // הלחיצות עצמן עובדות כרגיל
+          touchAction: 'none',
+          overscrollBehavior: 'contain'
         }}
       >
         {/* פס אחד מעל הלשונית הפעילה, שמחליק אליה במעבר. הוא סימון שנקרא גם
