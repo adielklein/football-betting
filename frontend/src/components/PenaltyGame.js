@@ -26,6 +26,8 @@ function PenaltyGame({ onClose, online = false, scene: sharedScene = null }) {
   const [streak, setStreak] = useState(0);
   const [best, setBest] = useState(readBest);
   const [message, setMessage] = useState(null);
+  // לוח התוצאות של הסיבוב הזה: שערים מתוך בעיטות, ו-10 הבעיטות האחרונות
+  const [score, setScore] = useState({ goals: 0, shots: 0, last: [] });
   const [pull, setPull] = useState(0);
   const [dragging, setDragging] = useState(false);
   const streakRef = useRef(0);
@@ -50,6 +52,8 @@ function PenaltyGame({ onClose, online = false, scene: sharedScene = null }) {
           s.current = 0;
         }
         setStreak(s.current);
+        const goal = isGoal(outcome);
+        setScore((sc) => ({ goals: sc.goals + (goal ? 1 : 0), shots: sc.shots + 1, last: [...sc.last, goal].slice(-10) }));
         setMessage({ text: OUTCOME_TEXT[outcome], good: isGoal(outcome), key: Date.now() });
         clearTimeout(msgTimer.current);
         msgTimer.current = setTimeout(() => setMessage(null), 1300);
@@ -163,12 +167,41 @@ function PenaltyGame({ onClose, online = false, scene: sharedScene = null }) {
 
       <div style={{
         position: 'absolute', top: 'max(12px, env(safe-area-inset-top, 0px))', left: '12px', right: '12px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', color: '#fff', pointerEvents: 'none',
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', color: '#fff', pointerEvents: 'none',
         textShadow: '0 2px 8px rgba(0,0,0,.6)'
       }}>
         <div>
           <div style={{ fontWeight: 800, fontSize: 'var(--fs-md)' }}>בעיטות לשער</div>
           <div style={{ fontSize: 'var(--fs-xs)', opacity: 0.9 }}>רצף {streak} · שיא {best}</div>
+        </div>
+        {/* לוח תוצאות, כמו באצטדיון */}
+        <div role="status" aria-label={`${score.goals} שערים מתוך ${score.shots} בעיטות`} style={{
+          position: 'absolute', left: '50%', top: 0, transform: 'translateX(-50%)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+          padding: '6px 12px 7px', borderRadius: '12px', minWidth: '84px',
+          background: 'rgba(4,8,18,.62)', border: '1px solid rgba(255,255,255,.14)',
+          WebkitBackdropFilter: 'blur(6px)', backdropFilter: 'blur(6px)', textShadow: 'none'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px', direction: 'ltr', fontVariantNumeric: 'tabular-nums' }}>
+            <span key={score.goals} style={{
+              fontWeight: 900, fontSize: '26px', lineHeight: 1, color: '#facc15',
+              animation: score.goals ? 'doneIn .35s ease-out both' : undefined
+            }}>{score.goals}</span>
+            <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, opacity: 0.75 }}>/ {score.shots}</span>
+          </div>
+          <div style={{ fontSize: '11px', fontWeight: 600, opacity: 0.8, letterSpacing: '.3px' }}>שערים</div>
+          {score.last.length > 0 && (
+            // מהבעיטה הראשונה מימין, כמו כל השורה
+            <div aria-hidden="true" style={{ display: 'flex', gap: '3px' }}>
+              {score.last.map((g, i) => (
+                <span key={score.shots - score.last.length + i} style={{
+                  width: '7px', height: '7px', borderRadius: '50%',
+                  background: g ? '#22c55e' : 'rgba(255,255,255,.28)',
+                  boxShadow: g ? '0 0 6px rgba(34,197,94,.7)' : 'none'
+                }} />
+              ))}
+            </div>
+          )}
         </div>
         <button type="button" onClick={onClose} aria-label="סגור את המשחק" style={{
           pointerEvents: 'auto', width: '44px', height: '44px', borderRadius: '50%', border: '1px solid rgba(255,255,255,.25)',
