@@ -486,6 +486,18 @@ function LeaguesManagement() {
                 </div>
               )}
 
+              {/* ערוצי שידור: האם 365 מחזירים באיזה ערוץ ישראלי המשחק משודר */}
+              {probe.tv && (
+                <div style={{ fontSize: 'var(--fs-xs)', marginTop: '3px', color: probe.tv.games ? 'var(--good-fg, #1a6b35)' : 'var(--text-3, #888)' }}>
+                  📺 ערוצי שידור: {probe.tv.games} מתוך {probe.games} משחקים
+                  {probe.tv.examples.map((ex, i) => (
+                    <div key={i} style={{ fontFamily: 'monospace', color: 'var(--text-2, #555)', marginTop: '2px', wordBreak: 'break-all' }}>
+                      {ex.game}: {ex.fields.map((f) => `${f.key} = ${f.value}`).join(' | ')}
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* מבנה אובייקט המשחק: זה מה שאומר אילו נתונים בכלל אפשר
                   להוציא מהספק - למשל אם יש שדה שמסביר ביטול שער */}
               {probe.gameKeys && (

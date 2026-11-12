@@ -73,6 +73,21 @@ router.get('/health', (req, res) => {
 // רק נתיבים שהמערכת באמת משתמשת בהם. נתיב משוער שמחזיר 404 מוסיף
 // אזהרה אדומה על משהו שאיש לא תלוי בו, וזה בדיוק הרעש שהבדיקה הזו
 // אמורה לחסוך.
+// שדות שנראים כמו ערוץ שידור (tvNetworks וכדומה), בכל עומק עד 3.
+// אין לזה תיעוד, ולכן מחפשים לפי השם ומחזירים את הערך כמו שהוא
+const TV_KEY = /tv|broadcast|channel|stream/i;
+const findTvFields = (obj, depth = 0, prefix = '') => {
+  if (!obj || typeof obj !== 'object' || depth > 3) return [];
+  const found = [];
+  for (const [key, value] of Object.entries(obj)) {
+    const path = prefix ? `${prefix}.${key}` : key;
+    const empty = value == null || value === false || (Array.isArray(value) && value.length === 0) || value === '';
+    if (TV_KEY.test(key) && !empty) found.push({ key: path, value: JSON.stringify(value).slice(0, 500) });
+    else if (value && typeof value === 'object' && !Array.isArray(value)) found.push(...findTvFields(value, depth + 1, path));
+  }
+  return found;
+};
+
 router.get('/365-health', requireAdmin, async (req, res) => {
   const League = require('../models/League');
 
@@ -180,6 +195,23 @@ router.get('/365-health', requireAdmin, async (req, res) => {
         row.samples = games.slice(0, 3).map((g) =>
           `${g.homeCompetitor?.name || '?'} - ${g.awayCompetitor?.name || '?'}`
         );
+
+        // ערוצי שידור: באילו משחקים 365 מחזירים ערוץ (לפי userCountryId=6, ישראל)
+        const withTv = games
+          .map((g) => ({ g, tv: findTvFields(g) }))
+          .filter((x) => x.tv.length > 0);
+        row.tv = {
+          games: withTv.length,
+          examples: withTv.slice(0, 4).map(({ g, tv }) => ({
+            game: `${g.homeCompetitor?.name || '?'} - ${g.awayCompetitor?.name || '?'}`,
+            startTime: g.startTime,
+            fields: tv.slice(0, 3)
+          }))
+        };
+
+        // משחק עתידי, לבדיקת ערוצים במשחק בודד: שידורים מתפרסמים לפני המשחק
+        const upcoming = games.find((g) => new Date(g.startTime).getTime() > Date.now());
+        row.upcomingGameId = upcoming?.id || null;
       }
 
       return row;
@@ -206,6 +238,13 @@ router.get('/365-health', requireAdmin, async (req, res) => {
     results.push(await check({
       name: 'משחק בודד (game)',
       path: `/game/?${base}&gameId=${sampleGameId}`
+    }));
+  }
+  const upcomingGameId = results.map((row) => row.upcomingGameId).find(Boolean);
+  if (upcomingGameId && upcomingGameId !== sampleGameId) {
+    results.push(await check({
+      name: 'משחק עתידי בודד (ערוצים)',
+      path: `/game/?${base}&gameId=${upcomingGameId}`
     }));
   }
 
