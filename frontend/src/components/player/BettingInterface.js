@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import TeamLogo from '../TeamLogo';
 import LeagueLogo from '../LeagueLogo';
+import TvChannels from '../TvChannels';
 import MatchInsightsModal from './MatchInsightsModal';
 import LiveScore from './LiveScore';
 import GoalFlash from './GoalFlash';
@@ -536,13 +537,16 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                     {getLeagueName(match)}
                   </span>
                 </div>
-                {showsLiveBadge(live, match.result) ? (
-                  <LiveScore live={live} prediction={existingBet} result={match.result} />
-                ) : (
-                  <span style={{ color: 'var(--text-4, #aaa)', fontSize: 'var(--fs-xs)', fontWeight: '500' }}>
-                    {match.date} • {match.time}
-                  </span>
-                )}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                  {showsLiveBadge(live, match.result) ? (
+                    <LiveScore live={live} prediction={existingBet} result={match.result} />
+                  ) : (
+                    <span style={{ color: 'var(--text-4, #aaa)', fontSize: 'var(--fs-xs)', fontWeight: '500' }}>
+                      {match.date} • {match.time}
+                    </span>
+                  )}
+                  <TvChannels match={match} />
+                </div>
               </div>
 
               {/* יחסים */}

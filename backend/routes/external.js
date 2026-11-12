@@ -7,6 +7,7 @@ const sofaScoreApi = require('../services/sofaScoreApi');
 const sportsDbApi = require('../services/sportsDbApi');
 const scores365Api = require('../services/scores365Api');
 const liveScores = require('../services/liveScores');
+const { syncWeekTv } = require('../services/tvChannels');
 
 // בוחר ספק לפי השדה הזמין על הליגה
 // עדיפות: 365scores (ראשון - שמות בעברית) > football-data > ESPN > TheSportsDB > SofaScore
@@ -741,6 +742,16 @@ router.get('/debug/:leagueId', requireAdmin, async (req, res) => {
     }
   } catch (err) {
     res.status(500).json({ message: err.message, stack: err.stack });
+  }
+});
+
+// 📺 רענון ערוצי שידור לשבוע (בלי לחכות לסבב האוטומטי של כל שלוש שעות)
+router.post('/sync-tv/:weekId', requireAdmin, async (req, res) => {
+  try {
+    res.json(await syncWeekTv(req.params.weekId));
+  } catch (err) {
+    console.error('📺 [TV] week sync failed:', err.message);
+    res.status(500).json({ message: err.message });
   }
 });
 

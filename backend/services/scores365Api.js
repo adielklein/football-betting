@@ -724,7 +724,24 @@ const searchCompetitions = async (query, { refresh = false } = {}) => {
   };
 };
 
+// באיזה ערוץ ישראלי המשחק משודר. ברשימות המשחקים יש רק דגל hasTVNetworks,
+// והשמות עצמם מגיעים רק בנתיב של משחק בודד. countryId=6 הוא ישראל.
+// מחזיר [{ name, website }] - ריק אם אין שידור ידוע
+const pickIsraeliChannels = (game) => (Array.isArray(game?.tvNetworks) ? game.tvNetworks : [])
+  .filter((n) => n && n.name && (n.countryId === 6 || n.countryId == null))
+  .map((n) => ({ name: String(n.name).trim(), website: n.website || null }))
+  .filter((n, i, all) => all.findIndex((x) => x.name === n.name) === i);
+
+const fetchTvChannels = async (externalId) => {
+  if (!externalId) return [];
+  const id = String(externalId).startsWith('365_') ? String(externalId).slice(4) : String(externalId);
+  const json = await apiGet(`/game/?appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&gameId=${id}`);
+  return pickIsraeliChannels(json?.game);
+};
+
 module.exports = {
+  pickIsraeliChannels,
+  fetchTvChannels,
   // מיוצא לבדיקה: פורמט תאריך שגוי בטווח מחזיר רשימה ריקה ולא שגיאה,
   // וזה נשבר בשקט
   toApiDate,

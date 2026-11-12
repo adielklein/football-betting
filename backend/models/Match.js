@@ -121,6 +121,14 @@ const matchSchema = new mongoose.Schema({
   resultSource: { type: String, default: null },          // 'manual' / 'auto:365scores' / ...
   resultUpdatedAt: { type: Date, default: null },
 
+  // באיזה ערוץ ישראלי המשחק משודר, לפי 365 (userCountryId=6). מתעדכן
+  // מעצמו כל כמה שעות עד המשחק (services/tvChannels.js)
+  tvChannels: {
+    type: [{ _id: false, name: { type: String }, website: { type: String, default: null } }],
+    default: undefined
+  },
+  tvCheckedAt: { type: Date, default: null },
+
   createdAt: {
     type: Date,
     default: Date.now

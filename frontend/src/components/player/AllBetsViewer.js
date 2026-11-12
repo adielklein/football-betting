@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import TeamLogo from '../TeamLogo';
 import LeagueLogo from '../LeagueLogo';
+import TvChannels from '../TvChannels';
 import ResultNote from '../ResultNote';
 import LiveScore from './LiveScore';
 import GoalFlash from './GoalFlash';
@@ -355,11 +356,14 @@ function AllBetsViewer({ weeks, user, active = true }) {
                               backgroundColor: myBadge.bg, color: myBadge.color
                             }}>{myBadge.text}</span>
                         )}
-                        {showsLiveBadge(liveByMatchId[match._id], match.result) ? (
-                          <LiveScore live={liveByMatchId[match._id]} prediction={myBet && myBet.prediction} result={match.result} compact />
-                        ) : (
-                          <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', fontWeight: '500' }}>{match.date} • {match.time}</span>
-                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                          {showsLiveBadge(liveByMatchId[match._id], match.result) ? (
+                            <LiveScore live={liveByMatchId[match._id]} prediction={myBet && myBet.prediction} result={match.result} compact />
+                          ) : (
+                            <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', fontWeight: '500' }}>{match.date} • {match.time}</span>
+                          )}
+                          <TvChannels match={match} />
+                        </div>
                       </div>
                     </div>
 

@@ -9,6 +9,7 @@ import { leaguePickerGroups } from '../../utils/leagueGroups';
 import { toast } from '../../services/toast';
 import Score from '../Score';
 import { textOn } from '../../services/readableColor';
+import TvChannels from '../TvChannels';
 import WeekStepper from './WeekStepper';
 import { fetchWeekStatus, syncResults, recalcSilently, nudgePending } from '../../services/weekActions';
 
@@ -46,6 +47,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
   const [showImportModal, setShowImportModal] = useState(false);
   const [syncingResults, setSyncingResults] = useState(false);
   const [syncingOdds, setSyncingOdds] = useState(false);
+  const [syncingTv, setSyncingTv] = useState(false);
   // תפריט "עוד" של השבוע (עריכת שם, מחיקה) - הרחק מהכפתורים היומיומיים
   const [weekMenuOpen, setWeekMenuOpen] = useState(false);
   const weekMenuRef = useRef(null);
@@ -1411,6 +1413,33 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
             >
               {syncingOdds ? '⏳ מושך...' : '💰 עדכן יחסי ווינר'}
             </button>
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (syncingTv) return;
+                setSyncingTv(true);
+                try {
+                  const res = await fetch(`${API_URL}/external/sync-tv/${selectedWeek._id}`, { method: 'POST' });
+                  const r = await res.json().catch(() => ({}));
+                  if (!res.ok) throw new Error(r.message || `HTTP ${res.status}`);
+                  let msg = `📺 נבדקו ${r.checked || 0} משחקים · ${r.withTv || 0} עם ערוץ`;
+                  if (r.updated) msg += ` · ${r.updated} עודכנו`;
+                  if (r.failed) msg += `\n⚠️ ${r.failed} נכשלו`;
+                  toast.info(msg);
+                  await loadWeekData(selectedWeek._id);
+                } catch (err) {
+                  toast.error('❌ שגיאה בעדכון הערוצים: ' + err.message);
+                } finally {
+                  setSyncingTv(false);
+                }
+              }}
+              className="btn"
+              disabled={syncingTv}
+              style={{ fontSize: 'var(--fs-sm)' }}
+              title="מושך מ-365 באיזה ערוץ ישראלי כל משחק משודר. מתעדכן גם מעצמו כל שלוש שעות"
+            >
+              {syncingTv ? '⏳ בודק...' : '📺 עדכן ערוצים'}
+            </button>
           </div>
           {!matchListOpen ? null : (<div style={{ marginTop: '0.6rem' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -1483,6 +1512,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                           📊 {match.odds.homeWin || '-'} · {match.odds.draw || '-'} · {match.odds.awayWin || '-'}
                         </span>
                       )}
+                      <TvChannels match={match} />
                     </div>
                   </div>
 

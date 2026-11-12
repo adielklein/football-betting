@@ -329,6 +329,13 @@ router.post('/bulk', requireAdmin, async (req, res) => {
     }
 
     res.status(201).json({ created: populated.length, matches: populated, duplicates, errors });
+
+    // ערוצי שידור למשחקים החדשים - ברקע, אחרי שהתשובה כבר יצאה
+    const fromProvider = inserted.filter((m) => m.externalProvider === '365scores' && m.externalId);
+    if (fromProvider.length > 0) {
+      require('../services/tvChannels').syncTvForMatches(fromProvider)
+        .catch((e) => console.warn('📺 [TV] import sync failed:', e.message));
+    }
   } catch (error) {
     console.error('Error bulk creating matches:', error);
     res.status(500).json({ message: error.message });

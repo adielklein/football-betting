@@ -332,6 +332,14 @@ const runResultsSync = async () => {
 cron.schedule('17 * * * *', runResultsSync, { timezone: 'Asia/Jerusalem' });
 console.log('🕐 Cron registered: sync-results every hour at minute 17');
 
+// 📺 ערוצי שידור מ-365: כל שלוש שעות, ופעם אחת דקה וחצי אחרי עליית השרת -
+// כך שגם השבוע שכבר באוויר מקבל ערוצים מיד אחרי פריסה
+const { syncUpcomingTv } = require('./services/tvChannels');
+const runTvSync = () => syncUpcomingTv().catch((e) => console.warn('📺 [TV] sync failed:', e.message));
+cron.schedule('41 */3 * * *', runTvSync, { timezone: 'Asia/Jerusalem' });
+setTimeout(runTvSync, 90 * 1000);
+console.log('📺 Cron registered: TV channels every 3 hours at minute 41');
+
 // 🔴 סריקת מצב חי כל 10 שניות.
 //
 // כל משחקי השבוע נשלפים מ-365 בבקשה אחת - לא אחת למשחק - וכשיש משחקים
