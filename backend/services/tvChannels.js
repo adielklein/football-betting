@@ -38,20 +38,13 @@ const syncTvForMatches = async (matches) => {
   return summary;
 };
 
-// משחקים מהימים הקרובים שלא נבדקו לאחרונה, ומשחקים מהשבועיים האחרונים
-// שמעולם לא נבדקו (השלמה חד-פעמית - הערוץ מוצג גם אחרי המשחק)
-const syncUpcomingTv = async ({ days = 10, backDays = 14, maxAgeHours = 2.5 } = {}) => {
+// משחקים שעוד לא נגמרו בימים הקרובים, שלא נבדקו לאחרונה
+const syncUpcomingTv = async ({ days = 10, maxAgeHours = 2.5 } = {}) => {
   const now = Date.now();
-  const recent = new Date(now - 3 * 3600e3);
   const matches = await Match.find({
     ...is365,
-    $or: [
-      {
-        fullDate: { $gte: recent, $lte: new Date(now + days * 864e5) },
-        $or: [{ tvCheckedAt: null }, { tvCheckedAt: { $lt: new Date(now - maxAgeHours * 3600e3) } }]
-      },
-      { fullDate: { $gte: new Date(now - backDays * 864e5), $lt: recent }, tvCheckedAt: null }
-    ]
+    fullDate: { $gte: new Date(now - 3 * 3600e3), $lte: new Date(now + days * 864e5) },
+    $or: [{ tvCheckedAt: null }, { tvCheckedAt: { $lt: new Date(now - maxAgeHours * 3600e3) } }]
   }, 'externalId team1 team2 tvChannels').lean();
   if (matches.length === 0) return { checked: 0, withTv: 0, updated: 0, failed: 0 };
   const summary = await syncTvForMatches(matches);
@@ -59,9 +52,13 @@ const syncUpcomingTv = async ({ days = 10, backDays = 14, maxAgeHours = 2.5 } = 
   return summary;
 };
 
-// כל משחקי שבוע מסוים, גם כאלה שכבר שוחקו - מכפתור המנהל
+// כל משחקי שבוע מסוים שעוד לא נגמרו - מכפתור המנהל, בלי לחכות לסבב הבא
 const syncWeekTv = async (weekId) => {
-  const matches = await Match.find({ ...is365, weekId }, 'externalId team1 team2 tvChannels').lean();
+  const matches = await Match.find({
+    ...is365,
+    weekId,
+    $or: [{ fullDate: null }, { fullDate: { $gte: new Date(Date.now() - 3 * 3600e3) } }]
+  }, 'externalId team1 team2 tvChannels').lean();
   return syncTvForMatches(matches);
 };
 

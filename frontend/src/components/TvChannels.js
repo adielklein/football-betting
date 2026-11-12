@@ -1,10 +1,12 @@
 import React from 'react';
 
-// באיזה ערוץ ישראלי המשחק משודר (מ-365, דרך השרת). מוצג גם אחרי המשחק -
-// למשל למי שרוצה לחפש את התקציר. ערוץ עם אתר הוא קישור
+// באיזה ערוץ ישראלי המשחק משודר (מ-365, דרך השרת). אחרי שהמשחק נגמר זה
+// כבר לא מעניין, ולכן לא מוצג. ערוץ עם אתר הוא קישור, למי שרוצה לצפות שם
 export default function TvChannels({ match, style }) {
   const list = match && match.tvChannels;
   if (!list || list.length === 0) return null;
+  const r = match.result;
+  if (r && r.team1Goals !== undefined && r.team1Goals !== null) return null;
   return (
     <span
       aria-label={`משודר ב${list.map((c) => c.name).join(' וב')}`}
