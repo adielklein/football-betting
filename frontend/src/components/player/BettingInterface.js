@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { nextScoreValue } from '../../services/scoreInput';
 import TeamLogo from '../TeamLogo';
 import LeagueLogo from '../LeagueLogo';
 import TvChannels from '../TvChannels';
@@ -176,8 +177,18 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
     // הקשה אחת לא שווה ספק כזה.
   };
 
-  // מיקוד בוחר את התוכן, כך שהקלדה מחליפה במקום להוסיף בסוף
-  const selectOnFocus = (e) => e.target.select();
+  // ההקשה הראשונה אחרי כניסה לשדה מחליפה את הספרה שבו. פעם זה נעשה
+  // בסימון התוכן, אבל באנדרואיד סימון מקפיץ תפריט Cut/Copy/Share. ראה
+  // services/scoreInput.js
+  const freshFieldRef = useRef(null);
+  const markFresh = (e) => { freshFieldRef.current = e.target.id; };
+  const handleScoreInput = (e, matchId, field) => {
+    const el = e.target;
+    const fresh = freshFieldRef.current === el.id;
+    freshFieldRef.current = null;
+    const prev = localBets[matchId]?.[field] ?? '';
+    handleBetChange(matchId, field, nextScoreValue({ prev, raw: el.value, caret: el.selectionStart, fresh }));
+  };
 
   // שמירה של משחק אחד. נקראת אוטומטית אחרי הקלדה, ומכפתור "נסה שוב".
   // keepalive מאפשר לבקשה להסתיים גם כשהדף נסגר באמצע.
@@ -600,14 +611,13 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                 }}>
                   <input
                     id={`bet-${match._id}-1`}
-                    type="text"
+                    type="tel"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    maxLength={2}
                     autoComplete="off"
                     value={currentBet.team1Goals || ''}
-                    onFocus={selectOnFocus}
-                    onChange={(e) => handleBetChange(match._id, 'team1Goals', e.target.value)}
+                    onFocus={markFresh}
+                    onChange={(e) => handleScoreInput(e, match._id, 'team1Goals')}
                     style={{
                       width: '46px',
                       height: '42px',
@@ -636,14 +646,13 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                   }}>:</span>
                   <input
                     id={`bet-${match._id}-2`}
-                    type="text"
+                    type="tel"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    maxLength={2}
                     autoComplete="off"
                     value={currentBet.team2Goals || ''}
-                    onFocus={selectOnFocus}
-                    onChange={(e) => handleBetChange(match._id, 'team2Goals', e.target.value)}
+                    onFocus={markFresh}
+                    onChange={(e) => handleScoreInput(e, match._id, 'team2Goals')}
                     style={{
                       width: '46px',
                       height: '42px',
