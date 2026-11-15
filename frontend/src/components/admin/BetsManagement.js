@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { scoreFieldProps } from '../../services/scoreInput';
 import TeamLogo from '../TeamLogo';
 import LeagueLogo from '../LeagueLogo';
 import { toast } from '../../services/toast';
@@ -301,7 +302,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                           <input
                             id={`bet-${player._id}-${match._id}-team1`}
-                            type="number" min="0" max="20"
+                            {...scoreFieldProps()}
                             defaultValue={bet?.prediction?.team1Goals ?? ''}
                             disabled={!canEdit}
                             style={{
@@ -316,7 +317,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                           <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #ccc)', fontWeight: '700' }}>-</span>
                           <input
                             id={`bet-${player._id}-${match._id}-team2`}
-                            type="number" min="0" max="20"
+                            {...scoreFieldProps()}
                             defaultValue={bet?.prediction?.team2Goals ?? ''}
                             disabled={!canEdit}
                             style={{

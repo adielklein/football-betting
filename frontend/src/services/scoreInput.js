@@ -20,3 +20,25 @@ export const nextScoreValue = ({ prev = '', raw = '', caret = null, fresh = fals
   }
   return rawStr.replace(/\D/g, '').slice(0, 2);
 };
+
+// אותה התנהגות לשדות במסכי האדמין, שאין להם מצב משלהם לדגל "הקשה ראשונה":
+// הדגל נשמר על השדה עצמו. onValue מקבל את הערך החדש; בלעדיו (שדה לא
+// מבוקר) הערך נכתב ישירות לשדה.
+export const scoreFieldProps = (onValue) => ({
+  type: 'tel',
+  inputMode: 'numeric',
+  pattern: '[0-9]*',
+  autoComplete: 'off',
+  onFocus: (e) => {
+    e.target.dataset.fresh = '1';
+    e.target.dataset.prev = e.target.value;
+  },
+  onChange: (e) => {
+    const el = e.target;
+    const v = nextScoreValue({ prev: el.dataset.prev || '', raw: el.value, caret: el.selectionStart, fresh: el.dataset.fresh === '1' });
+    el.dataset.fresh = '';
+    el.dataset.prev = v;
+    if (onValue) onValue(v);
+    else el.value = v;
+  },
+});

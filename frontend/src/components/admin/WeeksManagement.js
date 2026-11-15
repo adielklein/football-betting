@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { scoreFieldProps } from '../../services/scoreInput';
 import { useLocation, useNavigate } from 'react-router-dom';
 import TeamLogo from '../TeamLogo';
 import LeagueLogo from '../LeagueLogo';
@@ -1701,19 +1702,14 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                           <React.Fragment key={field}>
                             {i === 1 && <div aria-hidden="true" style={{ textAlign: 'center', fontSize: 'var(--fs-lg)', fontWeight: 'bold' }}>-</div>}
                             <input
-                              type="text"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              maxLength={2}
-                              aria-label={`שערים של ${team}`}
-                              value={currentResult[field]}
-                              onChange={(e) => {
-                                const v = e.target.value.replace(/\D/g, '');
+                              {...scoreFieldProps((v) => {
                                 setEditingMatch(prev => ({
                                   ...prev,
                                   [match._id]: { ...(prev[match._id] || { team1Goals: '', team2Goals: '' }), [field]: v }
                                 }));
-                              }}
+                              })}
+                              aria-label={`שערים של ${team}`}
+                              value={currentResult[field]}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' && canSave) updateMatchResult(match._id, currentResult.team1Goals, currentResult.team2Goals);
                               }}
