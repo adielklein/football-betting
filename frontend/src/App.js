@@ -24,8 +24,8 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [inAppNotification, setInAppNotification] = useState(null);
-  // למה מוצג מסך הכניסה: 'security' - חיבור ישן מלפני הטוקנים, 'expired' -
-  // השרת דחה את הטוקן (פג או שהסיסמה הוחלפה). בלי הסבר זה נראה כמו תקלה
+  // למה מוצג מסך הכניסה: 'expired' - השרת דחה את הטוקן (פג או שהסיסמה
+  // הוחלפה). בלי הסבר זה נראה כמו תקלה
   const [loginNotice, setLoginNotice] = useState(null);
 
   const API_URL = window.location.hostname === 'localhost' 
@@ -38,10 +38,10 @@ function App() {
     // בדוק אם יש משתמש שמור בLocalStorage
     const savedUser = localStorage.getItem('football_betting_user');
     // חיבור ששמור מלפני עדכון האבטחה: יש משתמש אבל אין טוקן, והשרת כבר לא
-    // מקבל זיהוי בלעדיו. התחברות מחדש חד-פעמית - הנתונים עצמם בשרת
+    // מקבל זיהוי בלעדיו. התחברות מחדש חד-פעמית - הנתונים עצמם בשרת. ההודעה
+    // על עדכון האבטחה הוסרה: כולם כבר עברו את זה, ומי שנשאר פשוט מתחבר
     if (savedUser && !getToken()) {
       localStorage.removeItem('football_betting_user');
-      setLoginNotice('security');
       applyTheme(null);
       setLoading(false);
       return;
@@ -251,7 +251,7 @@ function App() {
   // כמה בקשות שנדחו בבת אחת מגיעות לכאן כמה פעמים, וזה בסדר: ההתנתקות זהה
   useEffect(() => {
     const onExpired = (e) => {
-      setLoginNotice(e.detail?.reason === 'missing' ? 'security' : 'expired');
+      setLoginNotice('expired');
       handleLogout();
     };
     window.addEventListener(AUTH_EXPIRED_EVENT, onExpired);

@@ -244,17 +244,8 @@ function Login({ onLogin, notice = null }) {
             background: 'var(--info-bg, #eef4ff)', color: 'var(--info-fg, #1e40af)',
             border: '1px solid var(--info-border, #c7d7fe)', fontSize: 'var(--fs-sm)', lineHeight: 1.5
           }}>
-            {notice === 'security' ? (
-              <>
-                <strong>🔒 עדכון אבטחה – צריך להתחבר מחדש פעם אחת.</strong>
-                <br />ההימורים, הניקוד וההגדרות שלך שמורים. שכחת סיסמה? פנה למנהל.
-              </>
-            ) : (
-              <>
-                <strong>החיבור הסתיים – צריך להתחבר מחדש.</strong>
-                <br />זה קורה למשל כשהסיסמה הוחלפה.
-              </>
-            )}
+            <strong>החיבור הסתיים – צריך להתחבר מחדש.</strong>
+            <br />זה קורה למשל כשהסיסמה הוחלפה.
           </div>
         )}
 
