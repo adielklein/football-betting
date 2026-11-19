@@ -297,6 +297,95 @@ body.has-image-logo::after {
   display: block;
 }
 
+/* סמל תלת-ממדי מסתובב בכותרת השחקן. מחליף את הסמל השטוח שב-::before/::after.
+   השקיפות על העוטף החיצוני והתלת-ממד על הפנימי: שקיפות על אלמנט שמחזיק
+   את התלת-ממד בעצמו משטיחה אותו, והשכבות היו מתמזגות לתמונה אחת */
+.header--crest::before,
+.header--crest.has-image-logo::after { display: none; }
+
+.header-crest {
+  position: absolute;
+  top: 50%; left: 50%;
+  /* בגובה הכותרת, כמו הסמל השטוח שהיה, ולא יותר מ-96px */
+  height: 80px;
+  height: min(96px, calc(100% - 0.5rem));
+  aspect-ratio: 1 / 1;
+  width: 80px;
+  width: auto;
+  -webkit-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+  opacity: 0.32;
+  z-index: 1;
+  pointer-events: none;
+  -webkit-perspective: 420px;
+  perspective: 420px;
+}
+
+.header-crest__spin {
+  position: relative;
+  width: 100%; height: 100%;
+  -webkit-transform-style: preserve-3d;
+  transform-style: preserve-3d;
+  -webkit-transform: rotateY(-25deg);
+  transform: rotateY(-25deg);
+}
+
+.header-crest__layer {
+  position: absolute;
+  inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background-image: var(--theme-icon-image);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  -webkit-transform: translateZ(var(--z));
+  transform: translateZ(var(--z));
+  /* שכבות הביניים הן דופן המטבע - כהות יותר מהפנים */
+  -webkit-filter: brightness(0.55);
+  filter: brightness(0.55);
+}
+
+.header-crest__layer.is-front,
+.header-crest__layer.is-back {
+  -webkit-filter: none;
+  filter: none;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* הגב מסובב חצי סיבוב, כך שמאחור רואים את הסמל ישר ולא במראה */
+.header-crest__layer.is-back {
+  -webkit-transform: translateZ(var(--z)) rotateY(180deg);
+  transform: translateZ(var(--z)) rotateY(180deg);
+}
+
+/* ערכות עם אמוג'י במקום תמונה */
+.header-crest__layer::before {
+  content: var(--theme-icon);
+  font-size: 72px;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .header-crest__spin {
+    -webkit-animation: crestSpin 9s linear infinite;
+    animation: crestSpin 9s linear infinite;
+  }
+}
+
+@-webkit-keyframes crestSpin {
+  from { -webkit-transform: rotateY(0deg); transform: rotateY(0deg); }
+  to { -webkit-transform: rotateY(360deg); transform: rotateY(360deg); }
+}
+@keyframes crestSpin {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(360deg); }
+}
+
+@media (max-width: 480px) {
+  .header-crest__layer::before { font-size: 56px; }
+}
+
 .header h1 {
   margin: 0;
   font-size: 2rem;

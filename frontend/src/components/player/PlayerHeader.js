@@ -2,6 +2,10 @@ import React, { useEffect } from 'react';
 import { applyTheme } from '../../themes';
 import ColorSchemeToggle from '../ColorSchemeToggle';
 
+// עומק המטבע בפיקסלים: שכבה כל 1.5px מ-4.5- עד 4.5
+const CREST_FRONT = 4.5;
+const CREST_LAYERS = [-4.5, -3, -1.5, 0, 1.5, 3, 4.5];
+
 function PlayerHeader({ user, selectedWeek, onLogout, onOpenSettings, settingsOpen }) {
 
   useEffect(() => {
@@ -13,7 +17,21 @@ function PlayerHeader({ user, selectedWeek, onLogout, onOpenSettings, settingsOp
   }, [user, user?.theme]);
 
   return (
-    <div className="header" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))' }}>
+    <div className="header header--crest" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))' }}>
+      {/* סמל הקבוצה של ערכת הנושא כמטבע תלת-ממדי שמסתובב. כמה שכבות של
+          אותה תמונה זו מאחורי זו נותנות לו עובי, והשכבה האחורית הפוכה כדי
+          שהסמל לא ייראה כתמונת מראה כשהוא מראה את הגב. ראה index.css */}
+      <div className="header-crest" aria-hidden="true">
+        <div className="header-crest__spin">
+          {CREST_LAYERS.map((z) => (
+            <span
+              key={z}
+              className={`header-crest__layer${z === CREST_FRONT ? ' is-front' : z === -CREST_FRONT ? ' is-back' : ''}`}
+              style={{ '--z': `${z}px` }}
+            />
+          ))}
+        </div>
+      </div>
       <div className="container">
         <div style={{
           display: 'flex',
