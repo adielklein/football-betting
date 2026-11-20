@@ -2,9 +2,14 @@ import React, { useEffect } from 'react';
 import { applyTheme } from '../../themes';
 import ColorSchemeToggle from '../ColorSchemeToggle';
 
-// עומק המטבע בפיקסלים: שכבה כל 1.5px מ-4.5- עד 4.5
-const CREST_FRONT = 4.5;
-const CREST_LAYERS = [-4.5, -3, -1.5, 0, 1.5, 3, 4.5];
+// שכבות המטבע, לפי סדר הציור. כל צד הוא דפנות ואז פנים, וכל צד נראה רק
+// כשהוא פונה אלינו. הגב קודם, כך שפני החזית מצוירים אחרונים. עומק בפיקסלים
+const CREST_LAYERS = [
+  ...[-3, -1.5, 0, 1.5, 3].map((z) => ({ z, cls: 'is-edge is-backside' })),
+  { z: -4.5, cls: 'is-backside' },
+  ...[-3, -1.5, 0, 1.5, 3].map((z) => ({ z, cls: 'is-edge' })),
+  { z: 4.5, cls: '' },
+];
 
 function PlayerHeader({ user, selectedWeek, onLogout, onOpenSettings, settingsOpen }) {
 
@@ -19,18 +24,12 @@ function PlayerHeader({ user, selectedWeek, onLogout, onOpenSettings, settingsOp
   return (
     <div className="header header--crest" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))' }}>
       {/* סמל הקבוצה של ערכת הנושא כמטבע תלת-ממדי שמסתובב. כמה שכבות של
-          אותה תמונה זו מאחורי זו נותנות לו עובי, והשכבה האחורית הפוכה כדי
-          שהסמל לא ייראה כתמונת מראה כשהוא מראה את הגב. ראה index.css */}
+          אותה תמונה זו מאחורי זו נותנות לו עובי. ראה index.css למה כל
+          שכבה מסתובבת לבד ולא בתוך הקשר תלת-ממדי משותף */}
       <div className="header-crest" aria-hidden="true">
-        <div className="header-crest__spin">
-          {CREST_LAYERS.map((z) => (
-            <span
-              key={z}
-              className={`header-crest__layer${z === CREST_FRONT ? ' is-front' : z === -CREST_FRONT ? ' is-back' : ''}`}
-              style={{ '--z': `${z}px` }}
-            />
-          ))}
-        </div>
+        {CREST_LAYERS.map(({ z, cls }, i) => (
+          <span key={i} className={`header-crest__layer ${cls}`} style={{ '--z': `${z}px` }} />
+        ))}
       </div>
       <div className="container">
         <div style={{

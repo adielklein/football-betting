@@ -96,11 +96,14 @@ function App() {
       .catch(() => {});
   }, [currentUser, API_URL]);
 
+  // הסגירה קודמת לשמירה: אם האחסון בטלפון זורק (גלישה פרטית, אחסון מלא),
+  // החלון עדיין נסגר במקום להישאר תקוע עם כפתור שלא עושה כלום
   const dismissNotification = () => {
-    if (inAppNotification) {
-      localStorage.setItem('last_seen_notification', inAppNotification._id);
-    }
+    const id = inAppNotification?._id;
     setInAppNotification(null);
+    if (id) {
+      try { localStorage.setItem('last_seen_notification', id); } catch { /* נראה שוב בפעם הבאה */ }
+    }
   };
 
   // 🆕 פונקציה לבדיקת עדכוני ערכת נושא מהשרת
