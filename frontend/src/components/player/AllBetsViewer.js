@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import TeamLogo from '../TeamLogo';
 import TeamShirt from '../TeamShirt';
+import { shirtsForMatch } from '../../data/kits';
 import LeagueLogo from '../LeagueLogo';
 import TvChannels from '../TvChannels';
 import ResultNote from '../ResultNote';
@@ -380,8 +381,8 @@ function AllBetsViewer({ weeks, user, active = true }) {
                           WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation'
                         }}
                       >
-                        {match.team1Color ? (
-                          <TeamShirt color={match.team1Color} size={30}><TeamLogo name={match.team1} src={match.team1LogoUrl} size={13} /></TeamShirt>
+                        {shirtsForMatch(match).team1 ? (
+                          <TeamShirt {...shirtsForMatch(match).team1} size={30}><TeamLogo name={match.team1} src={match.team1LogoUrl} size={13} /></TeamShirt>
                         ) : (
                           <TeamLogo name={match.team1} src={match.team1LogoUrl} />
                         )}
@@ -401,8 +402,8 @@ function AllBetsViewer({ weeks, user, active = true }) {
                           WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation'
                         }}
                       >
-                        {match.team2Color ? (
-                          <TeamShirt color={match.team2Color} size={30}><TeamLogo name={match.team2} src={match.team2LogoUrl} size={13} /></TeamShirt>
+                        {shirtsForMatch(match).team2 ? (
+                          <TeamShirt {...shirtsForMatch(match).team2} size={30}><TeamLogo name={match.team2} src={match.team2LogoUrl} size={13} /></TeamShirt>
                         ) : (
                           <TeamLogo name={match.team2} src={match.team2LogoUrl} />
                         )}

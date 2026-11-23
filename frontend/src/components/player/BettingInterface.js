@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { nextScoreValue } from '../../services/scoreInput';
 import TeamLogo from '../TeamLogo';
 import TeamShirt from '../TeamShirt';
+import { shirtsForMatch } from '../../data/kits';
 import LeagueLogo from '../LeagueLogo';
 import TvChannels from '../TvChannels';
 import MatchInsightsModal from './MatchInsightsModal';
@@ -20,7 +21,7 @@ import { API_URL as API_BASE } from '../../config';
 
 // שם קבוצה לחיץ - פותח את חלון הנתונים. התג על הלוגו מסמן שאפשר ללחוץ
 // בלי להוסיף גובה לשורה הצפופה.
-function TeamPicker({ name, logo, color, onClick }) {
+function TeamPicker({ name, logo, shirt, onClick }) {
   return (
     <button
       type="button"
@@ -58,8 +59,8 @@ function TeamPicker({ name, logo, color, onClick }) {
           מהירה של שלושה-עשר משחקים. */}
       {/* הסמל שנשמר בייבוא מ-365 הוא של הקבוצה הנכונה. בלעדיו הרכיב
           מנחש לפי השם מול מקור אחר, וזה מה שהיה כאן עד עכשיו */}
-      {color ? (
-        <TeamShirt color={color}><TeamLogo name={name} src={logo} /></TeamShirt>
+      {shirt ? (
+        <TeamShirt kit={shirt.kit} color={shirt.color}><TeamLogo name={name} src={logo} /></TeamShirt>
       ) : (
         <TeamLogo name={name} src={logo} />
       )}
@@ -603,7 +604,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                 <TeamPicker
                   name={match.team1}
                   logo={match.team1LogoUrl}
-                  color={match.team1Color}
+                  shirt={shirtsForMatch(match).team1}
                   onClick={() => setInsightsFor({ match, focusTeam: 1 })}
                 />
 
@@ -650,7 +651,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                 <TeamPicker
                   name={match.team2}
                   logo={match.team2LogoUrl}
-                  color={match.team2Color}
+                  shirt={shirtsForMatch(match).team2}
                   onClick={() => setInsightsFor({ match, focusTeam: 2 })}
                 />
               </div>
