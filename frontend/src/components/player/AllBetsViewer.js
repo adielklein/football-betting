@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import TeamLogo from '../TeamLogo';
+import TeamShirt from '../TeamShirt';
 import LeagueLogo from '../LeagueLogo';
 import TvChannels from '../TvChannels';
 import ResultNote from '../ResultNote';
@@ -379,7 +380,11 @@ function AllBetsViewer({ weeks, user, active = true }) {
                           WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation'
                         }}
                       >
-                        <TeamLogo name={match.team1} src={match.team1LogoUrl} />
+                        {match.team1Color ? (
+                          <TeamShirt color={match.team1Color} size={30}><TeamLogo name={match.team1} src={match.team1LogoUrl} size={13} /></TeamShirt>
+                        ) : (
+                          <TeamLogo name={match.team1} src={match.team1LogoUrl} />
+                        )}
                         {match.team1}
                         <span style={{ fontSize: 'var(--fs-xs)', opacity: 0.55 }} aria-hidden="true">📊</span>
                       </button>
@@ -396,7 +401,11 @@ function AllBetsViewer({ weeks, user, active = true }) {
                           WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation'
                         }}
                       >
-                        <TeamLogo name={match.team2} src={match.team2LogoUrl} />
+                        {match.team2Color ? (
+                          <TeamShirt color={match.team2Color} size={30}><TeamLogo name={match.team2} src={match.team2LogoUrl} size={13} /></TeamShirt>
+                        ) : (
+                          <TeamLogo name={match.team2} src={match.team2LogoUrl} />
+                        )}
                         {match.team2}
                         <span style={{ fontSize: 'var(--fs-xs)', opacity: 0.55 }} aria-hidden="true">📊</span>
                       </button>
@@ -408,7 +417,8 @@ function AllBetsViewer({ weeks, user, active = true }) {
                           <span style={{
                             fontSize: 'var(--fs-xs)', padding: '1px 8px',
                             borderRadius: '999px', fontWeight: '800',
-                            backgroundColor: 'var(--me-bg, #e8f0fe)', color: 'var(--me-fg, #14508f)'
+                            // ההימור שלי בצבע ערכת הנושא, כמו השורה שלי בטבלה
+                            backgroundColor: 'var(--theme-tile, #3b5bdb)', color: 'var(--theme-tile-fg, #fff)'
                           }}>
                             <span style={{ fontSize: 'var(--fs-xs)', opacity: 0.7, fontWeight: 700 }}>שלך </span>
                             <Score home={myBet.prediction.team1Goals} away={myBet.prediction.team2Goals} />
@@ -468,23 +478,26 @@ function AllBetsViewer({ weeks, user, active = true }) {
                         <div key={player._id} style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                           padding: '0.3rem 0.4rem',
-                          backgroundColor: isMe ? 'var(--me-bg, #e8f0fe)' : 'transparent',
+                          // השורה שלי: פס בצבע ערכת הנושא, כמו בטבלה
+                          backgroundColor: isMe ? 'var(--theme-tile, #3b5bdb)' : 'transparent',
+                          backgroundImage: isMe ? 'linear-gradient(100deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 60%, rgba(0,0,0,0.12))' : undefined,
+                          boxShadow: isMe ? '0 2px 8px rgba(0,0,0,0.15)' : undefined,
                           borderRadius: '6px', fontSize: 'var(--fs-sm)'
                         }}>
                           <span style={{
                             fontWeight: isMe ? '700' : '400', flex: 1, minWidth: 0,
-                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: isMe ? 'var(--me-fg, #14508f)' : 'var(--text-2, #444)'
+                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: isMe ? 'var(--theme-tile-fg, #fff)' : 'var(--text-2, #444)'
                           }}>
                             {player.name}
-                            {isMe && <span style={{ color: 'var(--me-fg, #14508f)', opacity: 0.75, fontSize: 'var(--fs-xs)' }}> (אתה)</span>}
+                            {isMe && <span style={{ color: 'var(--theme-tile-fg, #fff)', opacity: 0.8, fontSize: 'var(--fs-xs)' }}> (אתה)</span>}
                           </span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
                             {bet && bet.prediction ? (
-                              <span style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: 'var(--fs-sm)', minWidth: '36px', textAlign: 'center', color: 'var(--text, #333)' }}>
+                              <span style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: 'var(--fs-sm)', minWidth: '36px', textAlign: 'center', color: isMe ? 'var(--theme-tile-fg, #fff)' : 'var(--text, #333)' }}>
                                 <Score home={bet.prediction.team1Goals} away={bet.prediction.team2Goals} />
                               </span>
                             ) : (
-                              <span style={{ color: 'var(--text-4, #ccc)', fontSize: 'var(--fs-xs)' }}>לא הימר</span>
+                              <span style={{ color: isMe ? 'var(--theme-tile-fg, #fff)' : 'var(--text-4, #ccc)', opacity: isMe ? 0.8 : 1, fontSize: 'var(--fs-xs)' }}>לא הימר</span>
                             )}
                             {bet && match.result && match.result.team1Goals !== undefined && (
                               <span style={{

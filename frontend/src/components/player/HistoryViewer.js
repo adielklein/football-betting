@@ -350,19 +350,22 @@ function HistoryViewer({ weeks, user, active = true }) {
                   const isMe = player.name === user.name;
                   const isTop3 = scored && place <= 3;
                   // לשורה עם רקע משלה יש גם טקסט משלה
-                  const rowFg = isMe ? 'var(--me-fg, #14508f)' : (isTop3 ? rank.fg : 'var(--text, #333)');
+                  // השורה שלי בצבע ערכת הנושא, כמו בטבלה הראשית
+                  const rowFg = isMe ? 'var(--theme-tile-fg, #fff)' : (isTop3 ? rank.fg : 'var(--text, #333)');
                   return (
                     <div key={player.name} style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: isTop3 ? '0.5rem 0.55rem' : '0.4rem 0.5rem',
-                      background: isMe ? 'var(--me-bg, #dbeafe)' : (isTop3 ? rank.bg : (index % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)')),
+                      backgroundColor: isMe ? 'var(--theme-tile, #3b5bdb)' : undefined,
+                      backgroundImage: isMe ? 'linear-gradient(100deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 60%, rgba(0,0,0,0.12))' : undefined,
+                      background: isMe ? undefined : (isTop3 ? rank.bg : (index % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)')),
                       borderRadius: isTop3 ? '10px' : '6px',
-                      border: isMe ? '2px solid #64b5f6' : (isTop3 ? `1px solid ${rank.border}` : 'none'),
-                      boxShadow: isMe ? '0 2px 8px rgba(33,150,243,0.15)' : 'none',
+                      border: isMe ? '1px solid rgba(0,0,0,0.1)' : (isTop3 ? `1px solid ${rank.border}` : 'none'),
+                      boxShadow: isMe ? '0 3px 12px rgba(0,0,0,0.18)' : 'none',
                       animation: `slideUp 0.2s ease ${index * 0.03}s both`
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, flex: 1 }}>
-                        <span style={{ fontSize: isTop3 ? 'var(--fs-lg)' : 'var(--fs-xs)', fontWeight: '800', minWidth: '24px', textAlign: 'center', color: !isTop3 ? 'var(--text-4, #bbb)' : rowFg }}>
+                        <span style={{ fontSize: isTop3 ? 'var(--fs-lg)' : 'var(--fs-xs)', fontWeight: '800', minWidth: '24px', textAlign: 'center', color: (!isTop3 && !isMe) ? 'var(--text-4, #bbb)' : rowFg }}>
                           {rank.icon || (scored ? place : '–')}
                         </span>
                         <span style={{ fontWeight: isMe ? '700' : '500', fontSize: 'var(--fs-sm)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: rowFg }}>
@@ -372,7 +375,7 @@ function HistoryViewer({ weeks, user, active = true }) {
                       </div>
                       <span style={{
                         fontWeight: '800', fontSize: isTop3 ? 'var(--fs-md)' : 'var(--fs-sm)', flexShrink: 0,
-                        padding: '2px 10px', background: isTop3 ? 'var(--overlay, rgba(255,255,255,0.72))' : 'var(--surface-3, #f5f5f5)',
+                        padding: '2px 10px', background: isMe ? 'rgba(255,255,255,0.2)' : (isTop3 ? 'var(--overlay, rgba(255,255,255,0.72))' : 'var(--surface-3, #f5f5f5)'),
                         borderRadius: '10px', color: rowFg
                       }}>{formatScore(player.score)}</span>
                     </div>
