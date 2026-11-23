@@ -44,11 +44,6 @@ function PlayerHeader({ user, selectedWeek, onLogout, onOpenSettings, settingsOp
       {/* סמל הקבוצה של ערכת הנושא כמטבע תלת-ממדי שמסתובב. כמה שכבות של
           אותה תמונה זו מאחורי זו נותנות לו עובי. ראה index.css למה כל
           שכבה מסתובבת לבד ולא בתוך הקשר תלת-ממדי משותף */}
-      {/* זרקורי אצטדיון: שתי אלומות אור עדינות שזזות לאט מאחורי הכל. ראה index.css */}
-      <div className="header-beams" aria-hidden="true">
-        <span className="header-beam header-beam--a" />
-        <span className="header-beam header-beam--b" />
-      </div>
       <div className="header-crest" aria-hidden="true">
         {CREST_LAYERS.map(({ z, cls }, i) => (
           <span key={i} className={`header-crest__layer ${cls}`} style={{ '--z': `${z}px` }} />

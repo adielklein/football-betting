@@ -1075,49 +1075,57 @@ tr:hover {
 }
 .stats-pill:active { transform: scale(0.96); background: var(--surface-3, #eef1f5); }
 
-/* ===== זרקורי אצטדיון בכותרת השחקן =====
-   שתי אלומות - משולש אור שיוצא מהפינה העליונה ומתרחב למטה - שמתנדנדות לאט
-   כמו זרקורים. סיבוב דו-ממדי בלבד: אחרי באג התלת-ממד של ספארי באייפון
-   (ראה .header-crest), שום אלמנט בכותרת לא יוצר הקשר תלת-ממדי.
-   במצב כהה הן בולטות יותר, ואצל מי שביקש פחות תנועה הן עומדות. */
-.header-beams {
-  position: absolute;
+/* ===== זרקורי אצטדיון על כל המסך =====
+   שכבה קבועה מעל כל המסך של השחקן: שתי אלומות אור שיוצאות מהפינות העליונות
+   ומתנדנדות לאט, כמו זרקורים במגרש. היא מעל התוכן (כך שהאור עובר גם על
+   הכרטיסים), מתחת לחלונות קופצים, ולא חוסמת לחיצות.
+
+   בלי filter: blur - טשטוש על שכבה בגודל המסך שזזה כל הזמן כבד לטלפון.
+   הרכות באה מהמעבר בצבע. סיבוב דו-ממדי בלבד (ראה באג התלת-ממד של ספארי
+   ב-.header-crest). במצב בהיר האור לבן על רקע בהיר, ולכן רואים אותו בעיקר על
+   הכותרת, הקוביות והחולצות; במצב כהה הוא עובר על הכל. */
+.stadium-lights {
+  position: fixed;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  z-index: 0;
+  z-index: 950;
 }
-.header-beam {
+.stadium-beam {
   position: absolute;
-  top: -30%;
-  width: 46%;
-  height: 190%;
-  background: linear-gradient(to bottom, rgba(255,255,255,0.55), rgba(255,255,255,0.08) 70%, rgba(255,255,255,0) 90%);
-  clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%);
-  -webkit-clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%);
-  opacity: 0.5;
+  top: -10vh;
+  width: 70vw;
+  height: 160vh;
+  background: linear-gradient(to bottom,
+    rgba(255,255,255,0.5) 0%,
+    rgba(255,255,255,0.18) 30%,
+    rgba(255,255,255,0.05) 60%,
+    rgba(255,255,255,0) 85%);
+  clip-path: polygon(47% 0, 53% 0, 100% 100%, 0 100%);
+  -webkit-clip-path: polygon(47% 0, 53% 0, 100% 100%, 0 100%);
   transform-origin: 50% 0;
-  filter: blur(5px);
+  opacity: 0.22;
+  will-change: transform;
 }
-.header-beam--a { left: 2%; transform: rotate(-24deg); }
-.header-beam--b { right: 2%; transform: rotate(24deg); }
+.stadium-beam--a { left: -30vw; transform: rotate(-22deg); }
+.stadium-beam--b { right: -30vw; transform: rotate(22deg); }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .header-beam { opacity: 0.75; }
+  :root:not([data-theme="light"]) .stadium-beam { opacity: 0.16; }
 }
-:root[data-theme="dark"] .header-beam { opacity: 0.75; }
+:root[data-theme="dark"] .stadium-beam { opacity: 0.16; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .header-beam--a { animation: beamSwayA 9s ease-in-out infinite alternate; }
-  .header-beam--b { animation: beamSwayB 11s ease-in-out infinite alternate; }
+  .stadium-beam--a { animation: beamSwayA 10s ease-in-out infinite alternate; }
+  .stadium-beam--b { animation: beamSwayB 13s ease-in-out infinite alternate; }
 }
 @keyframes beamSwayA {
   from { transform: rotate(-30deg); }
-  to { transform: rotate(-10deg); }
+  to { transform: rotate(-12deg); }
 }
 @keyframes beamSwayB {
   from { transform: rotate(12deg); }
-  to { transform: rotate(32deg); }
+  to { transform: rotate(30deg); }
 }
 
 /* התוכן והכפתורים מעל האלומות */

@@ -253,6 +253,12 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
     // clip ולא hidden: חותך גלישה לרוחב (אנימציית לשונית) בלי להפוך את
     // העטיפה למכל גלילה, כך ש-sticky בפנים ממשיך לעבוד
     <div style={{ overflowX: 'clip' }}>
+      {/* זרקורי אצטדיון על כל המסך - שכבת אור מעל התוכן שלא חוסמת לחיצות.
+          ראה stadium-lights ב-index.css */}
+      <div className="stadium-lights" aria-hidden="true">
+        <span className="stadium-beam stadium-beam--a" />
+        <span className="stadium-beam stadium-beam--b" />
+      </div>
       <PlayerHeader
         user={user}
         selectedWeek={selectedWeek}
