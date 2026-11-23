@@ -19,8 +19,8 @@ import Score from '../Score';
 import { textOn } from '../../services/readableColor';
 import { API_URL as API_BASE } from '../../config';
 
-// שם קבוצה לחיץ - פותח את חלון הנתונים. התג על הלוגו מסמן שאפשר ללחוץ
-// בלי להוסיף גובה לשורה הצפופה.
+// קבוצה לחיצה - פותחת את חלון הנתונים. חולצה ומתחתיה השם, באותם גדלים
+// ומרווחים כמו ב"כל ההימורים", כדי ששני המסכים ייראו אותו דבר.
 function TeamPicker({ name, logo, shirt, onClick }) {
   return (
     <button
@@ -31,7 +31,7 @@ function TeamPicker({ name, logo, shirt, onClick }) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 2,
+        gap: 3,
         textAlign: 'center',
         fontWeight: '700',
         fontSize: 'var(--fs-sm)',
@@ -60,7 +60,7 @@ function TeamPicker({ name, logo, shirt, onClick }) {
       {/* הסמל שנשמר בייבוא מ-365 הוא של הקבוצה הנכונה. בלעדיו הרכיב
           מנחש לפי השם מול מקור אחר, וזה מה שהיה כאן עד עכשיו */}
       {shirt ? (
-        <TeamShirt kit={shirt.kit} color={shirt.color} size={50}><TeamLogo name={name} src={logo} size={11} /></TeamShirt>
+        <TeamShirt kit={shirt.kit} color={shirt.color} size={42}><TeamLogo name={name} src={logo} size={9} /></TeamShirt>
       ) : (
         <TeamLogo name={name} src={logo} />
       )}

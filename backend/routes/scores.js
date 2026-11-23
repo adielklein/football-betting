@@ -317,6 +317,32 @@ router.get('/leaderboard', async (req, res) => {
   }
 });
 
+// GET /api/scores/standing/:userId - המקום שלי בטבלה החודשית, לכותרת.
+// אותם כללים כמו לשונית "חודשי" (services/standing.js)
+router.get('/standing/:userId', async (req, res) => {
+  try {
+    const { computeStanding } = require('../services/standing');
+    const weeks = await Week.find({ active: true }, 'month season createdAt active').lean();
+    if (weeks.length === 0) return res.json(null);
+    const peek = computeStanding({ weeks, scores: [], userId: req.params.userId });
+    const [players, exclusions, scores] = await Promise.all([
+      // רק שחקנים קיימים: הטבלה מדלגת על ניקוד של משתמש שנמחק ועל מנהלים
+      User.find({ role: { $ne: 'admin' } }, '_id').lean(),
+      MonthExclusion.find({ month: peek.month, season: peek.season }, 'userId').lean(),
+      Score.find({}, 'userId weekId weeklyScore').lean()
+    ]);
+    const playerIds = new Set(players.map((a) => String(a._id)));
+    res.json(computeStanding({
+      weeks,
+      scores: scores.filter((sc) => sc.userId && playerIds.has(String(sc.userId))),
+      excludedUserIds: exclusions.map((e) => e.userId),
+      userId: req.params.userId
+    }));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Get detailed scores - חדש!
 router.get('/detailed', async (req, res) => {
   try {

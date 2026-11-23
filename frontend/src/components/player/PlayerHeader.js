@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { API_URL } from '../../config';
 import { applyTheme } from '../../themes';
 import ColorSchemeToggle from '../ColorSchemeToggle';
 
@@ -21,11 +22,33 @@ function PlayerHeader({ user, selectedWeek, onLogout, onOpenSettings, settingsOp
     }
   }, [user, user?.theme]);
 
+  // המקום שלי בטבלה החודשית - כמו בסרטון, תמיד מול העיניים. נטען מחדש כשחוזרים
+  // לאפליקציה, כי הניקוד מתעדכן ברקע אחרי כל משחק
+  const [standing, setStanding] = useState(null);
+  useEffect(() => {
+    const uid = user?.id || user?._id;
+    if (!uid) return undefined;
+    let alive = true;
+    const load = () => fetch(`${API_URL}/scores/standing/${uid}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (alive) setStanding(j && j.rank ? j : null); })
+      .catch(() => {});
+    load();
+    const onVisible = () => { if (document.visibilityState === 'visible') load(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { alive = false; document.removeEventListener('visibilitychange', onVisible); };
+  }, [user?.id, user?._id, selectedWeek?._id]);
+
   return (
     <div className="header header--crest" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))' }}>
       {/* סמל הקבוצה של ערכת הנושא כמטבע תלת-ממדי שמסתובב. כמה שכבות של
           אותה תמונה זו מאחורי זו נותנות לו עובי. ראה index.css למה כל
           שכבה מסתובבת לבד ולא בתוך הקשר תלת-ממדי משותף */}
+      {/* זרקורי אצטדיון: שתי אלומות אור עדינות שזזות לאט מאחורי הכל. ראה index.css */}
+      <div className="header-beams" aria-hidden="true">
+        <span className="header-beam header-beam--a" />
+        <span className="header-beam header-beam--b" />
+      </div>
       <div className="header-crest" aria-hidden="true">
         {CREST_LAYERS.map(({ z, cls }, i) => (
           <span key={i} className={`header-crest__layer ${cls}`} style={{ '--z': `${z}px` }} />
@@ -58,6 +81,14 @@ function PlayerHeader({ user, selectedWeek, onLogout, onOpenSettings, settingsOp
               {selectedWeek?.name || 'אין שבוע פעיל'}
               {selectedWeek?.locked && ' (נעול)'}
             </p>
+            {standing && (
+              <div className="header-standing" title="המקום שלך בטבלה החודשית">
+                {/* במילים ולא "2/14": שבר בתוך שורה עברית מתהפך ונקרא "14/2" */}
+                <span className="header-standing__rank">מקום {standing.rank}</span>
+                <span className="header-standing__of">מתוך {standing.of}</span>
+                <span className="header-standing__pts">· {standing.points} נק' החודש</span>
+              </div>
+            )}
           </div>
           <div style={{
             display: 'flex',

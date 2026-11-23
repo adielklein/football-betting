@@ -1074,3 +1074,70 @@ tr:hover {
   transition: background-color 0.15s ease, transform 0.15s ease;
 }
 .stats-pill:active { transform: scale(0.96); background: var(--surface-3, #eef1f5); }
+
+/* ===== זרקורי אצטדיון בכותרת השחקן =====
+   שתי אלומות - משולש אור שיוצא מהפינה העליונה ומתרחב למטה - שמתנדנדות לאט
+   כמו זרקורים. סיבוב דו-ממדי בלבד: אחרי באג התלת-ממד של ספארי באייפון
+   (ראה .header-crest), שום אלמנט בכותרת לא יוצר הקשר תלת-ממדי.
+   במצב כהה הן בולטות יותר, ואצל מי שביקש פחות תנועה הן עומדות. */
+.header-beams {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.header-beam {
+  position: absolute;
+  top: -30%;
+  width: 46%;
+  height: 190%;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.32), rgba(255,255,255,0) 75%);
+  clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%);
+  -webkit-clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%);
+  opacity: 0.35;
+  transform-origin: 50% 0;
+  filter: blur(8px);
+}
+.header-beam--a { left: 2%; transform: rotate(-24deg); }
+.header-beam--b { right: 2%; transform: rotate(24deg); }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .header-beam { opacity: 0.55; }
+}
+:root[data-theme="dark"] .header-beam { opacity: 0.55; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .header-beam--a { animation: beamSwayA 9s ease-in-out infinite alternate; }
+  .header-beam--b { animation: beamSwayB 11s ease-in-out infinite alternate; }
+}
+@keyframes beamSwayA {
+  from { transform: rotate(-30deg); }
+  to { transform: rotate(-10deg); }
+}
+@keyframes beamSwayB {
+  from { transform: rotate(12deg); }
+  to { transform: rotate(32deg); }
+}
+
+/* התוכן והכפתורים מעל האלומות */
+.header--crest > .container { position: relative; z-index: 2; }
+
+/* המקום שלי בטבלה החודשית, מתחת לשם השבוע */
+.header-standing {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+  margin-top: 4px;
+  padding: 1px 9px 2px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.22);
+  color: #fff;
+  font-weight: 700;
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.header-standing__rank { color: #FFD84D; font-weight: 900; font-size: var(--fs-md); }
+.header-standing__of { color: #FFD84D; opacity: 0.85; font-weight: 700; margin-inline: 4px 6px; }
+.header-standing__pts { opacity: 0.95; }
