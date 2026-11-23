@@ -1260,9 +1260,9 @@ body:has(.pitch-stripes)::before { opacity: 0.35; }
 }
 /* אחרי המשחק: המנצחת זוהרת בזהב, המפסידה דוהה. על העטיפה החיצונית, כדי
    שהקפיצה וההיפוך (על .shirt-anim) ירוצו גם על חולצה כזו */
-.shirt--win { filter: drop-shadow(0 0 5px rgba(255, 196, 40, 0.9)); }
+.shirt--win { filter: drop-shadow(0 0 4px rgba(255, 196, 40, 1)) drop-shadow(0 0 10px rgba(255, 180, 0, 0.75)); }
 @keyframes shirtWinGlow {
-  from { filter: drop-shadow(0 0 3px rgba(255, 196, 40, 0.7)); }
-  to { filter: drop-shadow(0 0 8px rgba(255, 196, 40, 1)) drop-shadow(0 0 16px rgba(255, 196, 40, 0.55)); }
+  from { filter: drop-shadow(0 0 4px rgba(255, 196, 40, 0.95)) drop-shadow(0 0 9px rgba(255, 180, 0, 0.6)); }
+  to { filter: drop-shadow(0 0 6px rgba(255, 210, 60, 1)) drop-shadow(0 0 14px rgba(255, 180, 0, 0.95)) drop-shadow(0 0 24px rgba(255, 170, 0, 0.55)); }
 }
 .shirt--lose { filter: grayscale(0.7); opacity: 0.6; transform: scale(0.94); }
