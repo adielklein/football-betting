@@ -9,6 +9,9 @@ import { SkeletonCards } from '../Skeleton';
 import { placesFor, anyScored } from '../../services/ranking';
 import { API_URL as API_BASE } from '../../config';
 
+// השורה שלי: צבע ערכת הנושא, עם הדגשה עדינה מעליו
+const ME_ROW_BG = 'linear-gradient(100deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 60%, rgba(0,0,0,0.12)), var(--theme-tile, #3b5bdb)';
+
 function HistoryViewer({ weeks, user, active = true }) {
   const [selectedHistoryWeek, setSelectedHistoryWeek] = useState(null);
   const [historyData, setHistoryData] = useState({ matches: [], bets: [], allBets: [] });
@@ -356,9 +359,10 @@ function HistoryViewer({ weeks, user, active = true }) {
                     <div key={player.name} style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: isTop3 ? '0.5rem 0.55rem' : '0.4rem 0.5rem',
-                      backgroundColor: isMe ? 'var(--theme-tile, #3b5bdb)' : undefined,
-                      backgroundImage: isMe ? 'linear-gradient(100deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 60%, rgba(0,0,0,0.12))' : undefined,
-                      background: isMe ? undefined : (isTop3 ? rank.bg : (index % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)')),
+                      // מאפיין רקע אחד בלבד. שילוב של background עם backgroundColor נשבר:
+                      // כש-React מעדכן את השורה הוא מנקה את background, וזה מוחק גם את
+                      // הצבע - השורה שלי יצאה לבנה עם טקסט לבן, ונראתה ריקה
+                      background: isMe ? ME_ROW_BG : (isTop3 ? rank.bg : (index % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)')),
                       borderRadius: isTop3 ? '10px' : '6px',
                       border: isMe ? '1px solid rgba(0,0,0,0.1)' : (isTop3 ? `1px solid ${rank.border}` : 'none'),
                       boxShadow: isMe ? '0 3px 12px rgba(0,0,0,0.18)' : 'none',

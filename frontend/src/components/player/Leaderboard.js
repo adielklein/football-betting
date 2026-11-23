@@ -7,6 +7,9 @@ import { SkeletonRows } from '../Skeleton';
 import { placesFor, anyScored } from '../../services/ranking';
 import { API_URL as API_BASE } from '../../config';
 
+// השורה שלי: צבע ערכת הנושא, עם הדגשה עדינה מעליו
+const ME_ROW_BG = 'linear-gradient(100deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 60%, rgba(0,0,0,0.12)), var(--theme-tile, #3b5bdb)';
+
 function Leaderboard({ leaderboard, user, active = true }) {
   const [monthlyScores, setMonthlyScores] = useState([]);
   const [seasonalScores, setSeasonalScores] = useState([]);
@@ -311,9 +314,10 @@ function Leaderboard({ leaderboard, user, active = true }) {
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: isTop3 ? '0.6rem 0.65rem' : '0.45rem 0.6rem',
-        backgroundColor: isMe ? 'var(--theme-tile, #3b5bdb)' : undefined,
-        backgroundImage: isMe ? 'linear-gradient(100deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 60%, rgba(0,0,0,0.12))' : undefined,
-        background: isMe ? undefined : (isTop3 ? rank.bg : (index % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)')),
+        // מאפיין רקע אחד בלבד. שילוב של background עם backgroundColor נשבר:
+        // כש-React מעדכן את השורה הוא מנקה את background, וזה מוחק גם את
+        // הצבע - השורה שלי יצאה לבנה עם טקסט לבן, ונראתה ריקה
+        background: isMe ? ME_ROW_BG : (isTop3 ? rank.bg : (index % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)')),
         borderRadius: isTop3 ? '12px' : '8px',
         border: isMe ? '1px solid rgba(0,0,0,0.1)' : (isTop3 ? `1px solid ${rank.border}` : '1px solid #f0f0f0'),
         boxShadow: isMe ? '0 3px 12px rgba(0,0,0,0.18)' : rank.shadow,
