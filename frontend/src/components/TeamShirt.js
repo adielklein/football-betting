@@ -57,7 +57,7 @@ function Pattern({ kit }) {
 
 let uid = 0;
 
-function TeamShirt({ color, kit, size = 44, children }) {
+function TeamShirt({ color, kit, size = 44, shine = false, children }) {
   // מזהה ייחודי לכל מופע: אותה קבוצה יכולה להופיע כמה פעמים במסך, ו-clipPath
   // עם מזהה כפול מצייר את כולן לפי הראשון
   const [id] = React.useState(() => `shirt-${++uid}`);
@@ -69,6 +69,13 @@ function TeamShirt({ color, kit, size = 44, children }) {
       <svg viewBox="0 0 48 44" width={size} height={h} aria-hidden="true" style={{ display: 'block', overflow: 'visible' }}>
         <defs>
           <clipPath id={`${id}-c`}><path d={SHIRT} /></clipPath>
+          {shine && (
+            <linearGradient id="shirt-shine-g" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stopColor="#fff" stopOpacity="0" />
+              <stop offset="0.5" stopColor="#fff" stopOpacity="0.65" />
+              <stop offset="1" stopColor="#fff" stopOpacity="0" />
+            </linearGradient>
+          )}
           {/* אור מלמעלה-שמאל */}
           <linearGradient id={`${id}-g`} x1="0" y1="0" x2="0.6" y2="1">
             <stop offset="0" stopColor="#fff" stopOpacity="0.30" />
@@ -91,6 +98,8 @@ function TeamShirt({ color, kit, size = 44, children }) {
           <polygon points="47,15 40.5,21.5 39,20.3 45.4,13.6" fill="#000" opacity="0.22" />
           <rect x="11.5" y="40.3" width="25" height="1.7" fill="#000" opacity="0.14" />
           <path d={SHIRT} fill={`url(#${id}-g)`} />
+          {/* ברק סאטן שעובר על הבד מדי פעם, חתוך לצורת החולצה. ראה .shirt-shine */}
+          {shine && <rect className="shirt-shine" x="-30" y="-6" width="22" height="56" fill="url(#shirt-shine-g)" />}
         </g>
         {/* תפרי השרוולים */}
         <path d="M11.5 10 L11.5 18.5 M36.5 10 L36.5 18.5" style={outline} strokeWidth="0.8" />

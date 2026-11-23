@@ -1230,3 +1230,13 @@ body:has(.pitch-stripes)::before { opacity: 0.35; }
 }
 :root[data-theme="dark"] body.has-image-logo:has(.pitch-stripes)::after { opacity: 0.04; filter: grayscale(20%); }
 :root[data-theme="dark"] body:has(.pitch-stripes)::before { opacity: 0.03; }
+
+/* ברק סאטן על החולצה (TeamShirt shine). פס אור אלכסוני שחוצה את הבד ונח */
+.shirt-shine { transform: skewX(-20deg) translateX(0); }
+@media (prefers-reduced-motion: no-preference) {
+  .shirt-shine { animation: shirtShine 4s ease-in-out infinite; animation-delay: var(--shine-delay, 0s); }
+}
+@keyframes shirtShine {
+  0%, 60% { transform: skewX(-20deg) translateX(0); }
+  100% { transform: skewX(-20deg) translateX(95px); }
+}
