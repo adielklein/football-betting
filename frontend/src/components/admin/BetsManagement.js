@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { scoreFieldProps } from '../../services/scoreInput';
 import TeamLogo from '../TeamLogo';
+import TeamShirt from '../TeamShirt';
+import { shirtsForMatch } from '../../data/kits';
 import LeagueLogo from '../LeagueLogo';
 import { toast } from '../../services/toast';
 import Score from '../Score';
@@ -234,9 +236,13 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                       <div style={{ fontWeight: '700', fontSize: 'var(--fs-sm)', color: 'var(--text, #333)', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
-                        <TeamLogo name={match.team1} src={match.team1LogoUrl} />
+                        {shirtsForMatch(match).team1
+                          ? <TeamShirt {...shirtsForMatch(match).team1} size={28}><TeamLogo name={match.team1} src={match.team1LogoUrl} size={7} /></TeamShirt>
+                          : <TeamLogo name={match.team1} src={match.team1LogoUrl} />}
                         {match.team1} נגד {match.team2}
-                        <TeamLogo name={match.team2} src={match.team2LogoUrl} />
+                        {shirtsForMatch(match).team2
+                          ? <TeamShirt {...shirtsForMatch(match).team2} size={28}><TeamLogo name={match.team2} src={match.team2LogoUrl} size={7} /></TeamShirt>
+                          : <TeamLogo name={match.team2} src={match.team2LogoUrl} />}
                       </div>
                       <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #888)', marginTop: '1px' }}>
                         <span style={{
@@ -304,13 +310,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                             {...scoreFieldProps()}
                             defaultValue={bet?.prediction?.team1Goals ?? ''}
                             disabled={!canEdit}
-                            style={{
-                              width: '34px', textAlign: 'center', padding: '4px 2px',
-                              fontSize: 'var(--fs-sm)', borderRadius: '8px',
-                              border: '1.5px solid #e0e0e0',
-                              fontWeight: '700', color: 'var(--text, #333)',
-                              backgroundColor: !canEdit ? 'var(--surface-3, #f5f5f5)' : 'var(--surface, #fff)'
-                            }}
+                            className="score-tile score-tile--sm"
                             placeholder="-"
                           />
                           <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #ccc)', fontWeight: '700' }}>-</span>
@@ -319,13 +319,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                             {...scoreFieldProps()}
                             defaultValue={bet?.prediction?.team2Goals ?? ''}
                             disabled={!canEdit}
-                            style={{
-                              width: '34px', textAlign: 'center', padding: '4px 2px',
-                              fontSize: 'var(--fs-sm)', borderRadius: '8px',
-                              border: '1.5px solid #e0e0e0',
-                              fontWeight: '700', color: 'var(--text, #333)',
-                              backgroundColor: !canEdit ? 'var(--surface-3, #f5f5f5)' : 'var(--surface, #fff)'
-                            }}
+                            className="score-tile score-tile--sm"
                             placeholder="-"
                           />
 

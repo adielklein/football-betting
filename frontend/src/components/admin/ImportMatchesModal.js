@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { api } from '../../services/api';
 import { getHebrewNameByEnglish } from '../../utils/teamLogos';
 import TeamLogo from '../TeamLogo';
+import TeamShirt from '../TeamShirt';
+import { kitFor } from '../../data/kits';
 import { groupLeagues, leaguePickerGroups } from '../../utils/leagueGroups';
 import GroupedPicker from '../GroupedPicker';
 
@@ -562,7 +564,7 @@ function ImportMatchesModal({ week, previousWeek = null, leagues, adminId, onClo
                       style={{ width: '18px', height: '18px' }}
                     />
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flex: '1 1 200px', minWidth: '180px' }}>
-                      <TeamLogo name={f.team1} size={20} src={f.team1LogoUrl} />
+                      {(kitFor(f.team1ExternalId) || f.team1Color) ? <TeamShirt kit={kitFor(f.team1ExternalId)} color={f.team1Color} size={26}><TeamLogo name={f.team1} size={6} src={f.team1LogoUrl} /></TeamShirt> : <TeamLogo name={f.team1} size={20} src={f.team1LogoUrl} />}
                       <input
                         type="text"
                         value={f.team1}
@@ -573,7 +575,7 @@ function ImportMatchesModal({ week, previousWeek = null, leagues, adminId, onClo
                     </div>
                     <span style={{ color: 'var(--text-3, #888)', fontWeight: 'bold' }}>vs</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flex: '1 1 200px', minWidth: '180px' }}>
-                      <TeamLogo name={f.team2} size={20} src={f.team2LogoUrl} />
+                      {(kitFor(f.team2ExternalId) || f.team2Color) ? <TeamShirt kit={kitFor(f.team2ExternalId)} color={f.team2Color} size={26}><TeamLogo name={f.team2} size={6} src={f.team2LogoUrl} /></TeamShirt> : <TeamLogo name={f.team2} size={20} src={f.team2LogoUrl} />}
                       <input
                         type="text"
                         value={f.team2}

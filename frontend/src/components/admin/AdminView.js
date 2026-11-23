@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { runningCommit } from '../../services/appVersion';
 import { api } from '../../services/api';
 import AdminHeader from './AdminHeader';
+import { StadiumBackdrop } from '../StadiumDecor';
 import WeeksManagement from './WeeksManagement';
 import UsersManagement from './UsersManagement';
 import BetsManagement from './BetsManagement';
@@ -194,6 +195,8 @@ function AdminView({ user, onLogout }) {
 
   return (
     <div>
+      {/* דשא (מצב יום) וזרקורים, כמו במסך השחקן */}
+      <StadiumBackdrop />
       <AdminHeader user={user} onLogout={onLogout} />
 
       <div className="container">

@@ -2,15 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { API_URL } from '../../config';
 import { applyTheme } from '../../themes';
 import ColorSchemeToggle from '../ColorSchemeToggle';
-
-// שכבות המטבע, לפי סדר הציור. כל צד הוא דפנות ואז פנים, וכל צד נראה רק
-// כשהוא פונה אלינו. הגב קודם, כך שפני החזית מצוירים אחרונים. עומק בפיקסלים
-const CREST_LAYERS = [
-  ...[-3, -1.5, 0, 1.5, 3].map((z) => ({ z, cls: 'is-edge is-backside' })),
-  { z: -4.5, cls: 'is-backside' },
-  ...[-3, -1.5, 0, 1.5, 3].map((z) => ({ z, cls: 'is-edge' })),
-  { z: 4.5, cls: '' },
-];
+import { HeaderCrest } from '../StadiumDecor';
 
 function PlayerHeader({ user, selectedWeek, onLogout, onOpenSettings, settingsOpen }) {
 
@@ -44,11 +36,7 @@ function PlayerHeader({ user, selectedWeek, onLogout, onOpenSettings, settingsOp
       {/* סמל הקבוצה של ערכת הנושא כמטבע תלת-ממדי שמסתובב. כמה שכבות של
           אותה תמונה זו מאחורי זו נותנות לו עובי. ראה index.css למה כל
           שכבה מסתובבת לבד ולא בתוך הקשר תלת-ממדי משותף */}
-      <div className="header-crest" aria-hidden="true">
-        {CREST_LAYERS.map(({ z, cls }, i) => (
-          <span key={i} className={`header-crest__layer ${cls}`} style={{ '--z': `${z}px` }} />
-        ))}
-      </div>
+      <HeaderCrest />
       <div className="container">
         <div style={{
           display: 'flex',

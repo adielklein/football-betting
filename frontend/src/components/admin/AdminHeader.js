@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { applyTheme } from '../../themes';
 import { toast } from '../../services/toast';
 import ColorSchemeToggle from '../ColorSchemeToggle';
+import { HeaderCrest } from '../StadiumDecor';
 import { API_URL as API_BASE } from '../../config';
 
 const API_URL = API_BASE;
@@ -96,7 +97,9 @@ function AdminHeader({ user, onLogout }) {
   };
 
   return (
-    <div className="header" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))' }}>
+    <div className="header header--crest" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))' }}>
+      {/* אותו סמל מסתובב כמו בכותרת השחקן */}
+      <HeaderCrest />
       <div className="container">
         <div style={{
           display: 'flex',

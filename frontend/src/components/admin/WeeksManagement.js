@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { scoreFieldProps } from '../../services/scoreInput';
 import { useLocation, useNavigate } from 'react-router-dom';
 import TeamLogo from '../TeamLogo';
+import TeamShirt from '../TeamShirt';
+import { shirtsForMatch } from '../../data/kits';
 import LeagueLogo from '../LeagueLogo';
 import ImportMatchesModal from './ImportMatchesModal';
 import WeekPicker from './WeekPicker';
@@ -1693,7 +1695,11 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                         marginBottom: '0.75rem'
                       }}>
                         <div style={{ textAlign: 'center', fontWeight: 600, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', minWidth: 0 }}>
-                          <TeamLogo name={match.team1} src={match.team1LogoUrl} />
+                          {shirtsForMatch(match).team1 ? (
+                            <TeamShirt {...shirtsForMatch(match).team1} size={42}><TeamLogo name={match.team1} src={match.team1LogoUrl} size={9} /></TeamShirt>
+                          ) : (
+                            <TeamLogo name={match.team1} src={match.team1LogoUrl} />
+                          )}
                           <span style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.25, overflowWrap: 'anywhere' }}>{match.team1}</span>
                           <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #666)', fontWeight: 400 }}>בית</span>
                         </div>
@@ -1712,21 +1718,20 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' && canSave) updateMatchResult(match._id, currentResult.team1Goals, currentResult.team2Goals);
                               }}
-                              style={{
-                                width: '100%',
-                                minHeight: '44px',
-                                textAlign: 'center',
-                                fontSize: 'var(--fs-md)',
-                                fontWeight: 'bold'
-                              }}
-                              className="input"
+                              // אותה קובייה כמו בכרטיס ההימור של השחקן
+                              className="score-tile"
+                              data-filled={currentResult[field] !== '' && currentResult[field] != null ? '1' : '0'}
                               placeholder="–"
                               disabled={hasResult}
                             />
                           </React.Fragment>
                         ))}
                         <div style={{ textAlign: 'center', fontWeight: 600, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', minWidth: 0 }}>
-                          <TeamLogo name={match.team2} src={match.team2LogoUrl} />
+                          {shirtsForMatch(match).team2 ? (
+                            <TeamShirt {...shirtsForMatch(match).team2} size={42}><TeamLogo name={match.team2} src={match.team2LogoUrl} size={9} /></TeamShirt>
+                          ) : (
+                            <TeamLogo name={match.team2} src={match.team2LogoUrl} />
+                          )}
                           <span style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.25, overflowWrap: 'anywhere' }}>{match.team2}</span>
                           <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #666)', fontWeight: 400 }}>חוץ</span>
                         </div>
