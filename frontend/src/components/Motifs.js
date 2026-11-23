@@ -77,28 +77,84 @@ export function Medal({ place }) {
 }
 
 // ---------- כדור נכנס לרשת ("כל ההימורים הוזנו") ----------
+// שער בפרספקטיבה על דשא. הכדור בא מקרוב (גדול, מימין-למטה), מסתובב
+// ומתרחק אל הרשת, הרשת נמתחת אחורה סביב נקודת הפגיעה, והכדור נופל ומקפץ
+// בתוך השער. הצל שלו זז על הדשא. הכל באנימציה של SVG, פעם אחת (freeze).
+const NET = { x0: 19, x1: 61, y0: 12, y1: 35 }; // הרשת האחורית
+const HIT = { x: 46, y: 21 };
+const meshPath = (pull) => {
+  // רשת של קווים; בגרסה "נמתחת" נקודות ליד הפגיעה נמשכות אליה (מתרחקות לעומק)
+  const pt = (x, y) => {
+    const d = Math.hypot(x - HIT.x, y - HIT.y);
+    const k = pull * Math.max(0, 1 - d / 22) * 0.45;
+    return `${(x + (HIT.x - x) * k).toFixed(1)} ${(y + (HIT.y - y) * k).toFixed(1)}`;
+  };
+  const cols = [], rows = [];
+  for (let x = NET.x0; x <= NET.x1 + 0.1; x += 6) {
+    const seg = [];
+    for (let y = NET.y0; y <= NET.y1 + 0.1; y += 23 / 4) seg.push(pt(x, y));
+    cols.push(`M${seg.join(' L')}`);
+  }
+  for (let y = NET.y0; y <= NET.y1 + 0.1; y += 23 / 4) {
+    const seg = [];
+    for (let x = NET.x0; x <= NET.x1 + 0.1; x += 6) seg.push(pt(x, y));
+    rows.push(`M${seg.join(' L')}`);
+  }
+  return [...cols, ...rows].join(' ');
+};
+const MESH_FLAT = meshPath(0);
+const MESH_PULLED = meshPath(1);
+
 export function GoalNetShot() {
+  const T = '1.7s';
   return (
-    <svg className="goal-net" viewBox="0 0 54 30" width="62" height="34" aria-hidden="true">
+    <svg className="goal-net" viewBox="0 0 80 46" width="84" height="48" aria-hidden="true">
+      <defs>
+        <linearGradient id="gn-grass" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#6fb54c" />
+          <stop offset="1" stopColor="#4c8f30" />
+        </linearGradient>
+        <radialGradient id="gn-ball" cx="0.35" cy="0.3" r="0.8">
+          <stop offset="0" stopColor="#fff" />
+          <stop offset="0.6" stopColor="#f1f1f1" />
+          <stop offset="1" stopColor="#bdbdbd" />
+        </radialGradient>
+      </defs>
+      {/* דשא עם פסי כיסוח */}
+      <rect x="0" y="35" width="80" height="11" rx="2" fill="url(#gn-grass)" />
+      <path d="M8 35 L4 46 M24 35 L22 46 M40 35 V46 M56 35 L58 46 M72 35 L76 46" stroke="rgba(255,255,255,0.12)" strokeWidth="5" />
+      {/* רשתות הצד והגג */}
+      <path d="M14 8 L19 12 M66 8 L61 12 M14 37 L19 35 M66 37 L61 35" stroke="rgba(0,0,0,0.25)" strokeWidth="0.7" />
+      <path d="M14 8 H66 L61 12 H19 Z" fill="rgba(255,255,255,0.35)" stroke="rgba(0,0,0,0.18)" strokeWidth="0.5" />
+      {/* הרשת האחורית, שנמתחת בפגיעה */}
+      <rect x={NET.x0} y={NET.y0} width={NET.x1 - NET.x0} height={NET.y1 - NET.y0} fill="rgba(255,255,255,0.4)" />
+      <path d={MESH_FLAT} fill="none" stroke="rgba(40,48,58,0.45)" strokeWidth="0.6">
+        <animate attributeName="d" values={`${MESH_FLAT};${MESH_FLAT};${MESH_PULLED};${MESH_FLAT}`} keyTimes="0;0.42;0.52;1" dur={T} fill="freeze" calcMode="spline" keySplines="0 0 1 1;0.2 0.8 0.3 1;0.3 0 0.4 1" />
+      </path>
+      {/* צל הכדור על הדשא */}
+      <ellipse cx="0" cy="0" rx="4" ry="1.2" fill="rgba(0,0,0,0.3)">
+        <animateTransform attributeName="transform" type="translate" values="72 45;46 36;46 36;46 36" keyTimes="0;0.45;0.8;1" dur={T} fill="freeze" />
+      </ellipse>
+      {/* הכדור: מקרוב ורחוק, מסתובב, פוגע ברשת, נופל ומקפץ */}
       <g>
-        {/* הרשת מתנפחת כשהכדור פוגע בה */}
-        <rect x="5" y="5" width="44" height="23" fill="rgba(255,255,255,0.55)" />
-        <g stroke="rgba(0,0,0,0.32)" strokeWidth="0.7" fill="none">
-          {[8, 14, 20, 26, 32, 38, 44].map((x) => <line key={x} x1={x} y1="5" x2={x + 1} y2="28" />)}
-          {[9, 14, 19, 24].map((y) => <line key={y} x1="5" y1={y} x2="49" y2={y + 1} />)}
-          <animateTransform attributeName="transform" type="scale" values="1 1;1 1;1.06 1.1;0.98 0.97;1 1" keyTimes="0;0.5;0.62;0.78;1" dur="1.4s" fill="freeze" additive="sum" />
+        <g>
+          <circle r="3" fill="url(#gn-ball)" stroke="#333" strokeWidth="0.45" />
+          <g>
+            <polygon points={pentagon(0, 0, 1.25)} fill="#222" />
+            <polygon points={pentagon(0, -2.6, 0.9)} fill="#222" />
+            <polygon points={pentagon(2.4, 0.9, 0.9)} fill="#222" />
+            <polygon points={pentagon(-2.4, 0.9, 0.9)} fill="#222" />
+            <animateTransform attributeName="transform" type="rotate" values="0;-540;-600;-640" keyTimes="0;0.45;0.8;1" dur={T} fill="freeze" />
+          </g>
+          <animateTransform attributeName="transform" type="scale" values="1.9;1;1;1" keyTimes="0;0.45;0.8;1" dur={T} fill="freeze" />
         </g>
-        {/* קורות: קו כהה מתחת ולבן מעליו, כדי שייראו על כל רקע */}
-        <path d="M5 28 V5 H49 V28" fill="none" stroke="#4b5563" strokeWidth="3.4" strokeLinejoin="round" strokeLinecap="round" />
-        <path d="M5 28 V5 H49 V28" fill="none" stroke="#fff" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        <animateTransform attributeName="transform" type="translate"
+          values="74 41;60 13;46 21;46 32.5;46 29.5;46 32.5" keyTimes="0;0.25;0.45;0.68;0.82;1" dur={T} fill="freeze"
+          calcMode="spline" keySplines="0.2 0.6 0.5 1;0.4 0 0.8 0.6;0.5 0 1 1;0 0 0.5 1;0.5 0 1 1" />
       </g>
-      {/* הכדור: קשת מימין-למטה אל תוך השער, ומתכווץ בעומק */}
-      <g>
-        <circle r="4" fill="#fff" stroke="#222" strokeWidth="0.8" />
-        <polygon points={pentagon(0, 0, 1.8)} fill="#222" />
-        <animateMotion path="M60 30 Q40 -6 27 17" dur="0.75s" fill="freeze" keyPoints="0;1" keyTimes="0;1" calcMode="spline" keySplines="0.3 0 0.6 1" />
-        <animateTransform attributeName="transform" type="scale" values="1.3;0.85" dur="0.75s" fill="freeze" additive="sum" />
-      </g>
+      {/* הקורות - מעל הכל, קו כהה ולבן כדי שייראו על כל רקע */}
+      <path d="M14 37 V8 H66 V37" fill="none" stroke="#4b5563" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+      <path d="M14 37 V8 H66 V37" fill="none" stroke="#fff" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );
 }
