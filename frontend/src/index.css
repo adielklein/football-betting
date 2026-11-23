@@ -1198,3 +1198,21 @@ tr:hover {
 .header-standing__rank { color: #FFD84D; font-weight: 900; font-size: var(--fs-sm); }
 .header-standing__of { color: #FFD84D; opacity: 0.8; font-weight: 700; font-size: var(--fs-xs); }
 .header-standing__pts { opacity: 0.95; }
+
+/* ===== הסמל "מצויר" על הדשא (מצב יום, מסך השחקן) =====
+   סמל הרקע של ערכת הנושא בשקיפות 3-4% היה כמעט בלתי נראה. על הדשא הוא
+   מופיע בחצי שקיפות: הצבעים שלו נשמרים והדשא נראה דרכו, כמו סמל שצבוע על
+   מגרש. נבדקו גם מיזוגי soft-light ו-overlay - הם עיוותו את הצבעים.
+   ‎:has(.pitch-stripes)‎ - רק במסך שיש בו דשא, כלומר לא במסך המנהל */
+body.has-image-logo:has(.pitch-stripes)::after {
+  opacity: 0.5;
+  filter: saturate(0.9);
+}
+body:has(.pitch-stripes)::before { opacity: 0.35; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body.has-image-logo:has(.pitch-stripes)::after { opacity: 0.04; filter: grayscale(20%); }
+  :root:not([data-theme="light"]) body:has(.pitch-stripes)::before { opacity: 0.03; }
+}
+:root[data-theme="dark"] body.has-image-logo:has(.pitch-stripes)::after { opacity: 0.04; filter: grayscale(20%); }
+:root[data-theme="dark"] body:has(.pitch-stripes)::before { opacity: 0.03; }
