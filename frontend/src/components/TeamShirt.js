@@ -104,7 +104,7 @@ function TeamShirt({ color, kit, size = 44, children }) {
         <span style={{
           // גובה החזה, בערך מול קצה השרוול - שם יושב סמל בחולצה אמיתית
           position: 'absolute', left: '63%', top: '33%', transform: 'translate(-50%, -50%)',
-          width: size * 0.26, height: size * 0.26,
+          width: size * 0.22, height: size * 0.22,
           display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 0,
           filter: 'drop-shadow(0 0 0.5px rgba(255,255,255,0.8)) drop-shadow(0 0.5px 0.8px rgba(0,0,0,0.35))'
         }}>
