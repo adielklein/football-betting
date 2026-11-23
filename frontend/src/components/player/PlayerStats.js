@@ -516,7 +516,7 @@ function PlayerStats({ user, active = true }) {
     );
   }
 
-  const { overview, weeklyTimeline, predictionDistribution, topPredictions, bestTeams, worstTeams, bestHitStreak, currentHitStreak, nearMisses, bettingTwins } = stats;
+  const { overview, weeklyTimeline, predictionDistribution, topPredictions, bestTeams, worstTeams, bestHitStreak, currentHitStreak, bestExactStreak, currentExactStreak, nearMisses, bettingTwins } = stats;
   const insights = stats.insights || {};
 
   // סכום רץ אמיתי לכל שבוע. גם אם השרת עדיין לא שולח cumulativeScore
@@ -594,26 +594,28 @@ function PlayerStats({ user, active = true }) {
             <StatPill value={overview.exactRate} suffix="%" label="דיוק מלא" color="var(--info-fg, #1560ad)" bg="var(--info-bg, #eff6ff)" />
           </div>
 
-          {/* Streaks */}
+          {/* רצפים. "פגיעה" לבדה לא אמרה אם כיוון נספר, ולכן הכותרות מפורשות.
+              הסדר לפי מועד המשחק (backend/services/streaks.js) */}
           <Card title="רצפים" icon="🔥">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              <div style={{
-                textAlign: 'center', padding: '0.6rem',
-                background: 'var(--warn-bg, #fff7ed)',
-                borderRadius: '12px'
-              }}>
-                <div style={{ fontSize: 'var(--fs-xl)', fontWeight: '800', color: 'var(--warn-fg, #ea580c)' }}>{bestHitStreak}</div>
-                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--warn-fg, #9a3412)', fontWeight: '600' }}>שיא רצף פגיעות</div>
+            {[
+              { label: 'משחקים ברצף עם נקודות', hint: 'כיוון או בול', best: bestHitStreak, current: currentHitStreak, bg: 'var(--warn-bg, #fff7ed)', fg: 'var(--warn-fg, #9a3412)' },
+              // שרת ישן עוד לא שולח את רצף הבולים - אז השורה לא מוצגת
+              bestExactStreak != null && { label: 'בולים ברצף', hint: 'תוצאה מדויקת', best: bestExactStreak, current: currentExactStreak, bg: 'var(--good-bg, #e8f6ec)', fg: 'var(--good-fg, #1a6b35)' },
+            ].filter(Boolean).map((row) => (
+              <div key={row.label} style={{ marginBottom: '8px' }}>
+                <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--text-2, #444)', marginBottom: '4px' }}>
+                  {row.label} <span style={{ color: 'var(--text-3, #6b7280)', fontWeight: 600 }}>· {row.hint}</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  {[{ v: row.best, t: 'שיא' }, { v: row.current, t: 'עכשיו' }].map((c) => (
+                    <div key={c.t} style={{ textAlign: 'center', padding: '0.5rem', background: row.bg, borderRadius: '12px' }}>
+                      <div style={{ fontSize: 'var(--fs-xl)', fontWeight: '800', color: row.fg }}>{c.v ?? 0}</div>
+                      <div style={{ fontSize: 'var(--fs-xs)', color: row.fg, fontWeight: '600' }}>{c.t}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div style={{
-                textAlign: 'center', padding: '0.6rem',
-                background: 'var(--warn-bg, #fefce8)',
-                borderRadius: '12px'
-              }}>
-                <div style={{ fontSize: 'var(--fs-xl)', fontWeight: '800', color: 'var(--warn-fg, #8a5d00)' }}>{currentHitStreak}</div>
-                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--warn-fg, #854d0e)', fontWeight: '600' }}>רצף נוכחי</div>
-              </div>
-            </div>
+            ))}
           </Card>
 
           {/* התאום בהימורים. לא מוצג מול שרת ישן שעוד לא שולח את הנתון */}

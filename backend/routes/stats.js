@@ -11,6 +11,7 @@ const { buildCourageTable } = require('../services/courageTable');
 const { buildParticipation } = require('../services/participation');
 const { buildWeeklyTimeline } = require('../services/weeklyTimeline');
 const { buildBettingTwins } = require('../services/bettingTwins');
+const { computeStreaks } = require('../services/streaks');
 const User = require('../models/User');
 const League = require('../models/League');
 const MonthExclusion = require('../models/MonthExclusion');
@@ -127,34 +128,10 @@ router.get('/user/:userId', async (req, res) => {
       .slice(0, 5)
       .map(([score, count]) => ({ score, count }));
 
-    // === רצפים ===
-    let currentStreak = 0;
-    let bestStreak = 0;
-    let streakType = null; // 'hit' or 'miss'
-    let currentHitStreak = 0;
-    let bestHitStreak = 0;
-
-    const sortedBets = completedBets
-      .filter(b => b.matchId && b.matchId.createdAt)
-      .sort((a, b) => new Date(a.matchId.createdAt) - new Date(b.matchId.createdAt));
-
-    for (const bet of sortedBets) {
-      const match = bet.matchId;
-      const pred = bet.prediction;
-      if (!pred || pred.team1Goals == null) continue;
-
-      const isExact = (pred.team1Goals === match.result.team1Goals && pred.team2Goals === match.result.team2Goals);
-      const actualDir = match.result.team1Goals > match.result.team2Goals ? 'home' : match.result.team1Goals < match.result.team2Goals ? 'away' : 'draw';
-      const predDir = pred.team1Goals > pred.team2Goals ? 'home' : pred.team1Goals < pred.team2Goals ? 'away' : 'draw';
-      const isHit = isExact || (actualDir === predDir);
-
-      if (isHit) {
-        currentHitStreak++;
-        if (currentHitStreak > bestHitStreak) bestHitStreak = currentHitStreak;
-      } else {
-        currentHitStreak = 0;
-      }
-    }
+    // === רצפים === (services/streaks.js: לפי מועד המשחק, כולל רצף בולים)
+    const { bestHitStreak, currentHitStreak, bestExactStreak, currentExactStreak } = computeStreaks(
+      completedBets.map((bet) => ({ match: bet.matchId, prediction: bet.prediction }))
+    );
 
     // "כמה קרוב היית" - ניתוח ההחמצות. הניקודים של שאר השחקנים נדרשים
     // כדי לענות על השאלה המעניינת באמת: איזה מקום בטבלה השבועית היה
@@ -296,6 +273,8 @@ router.get('/user/:userId', async (req, res) => {
       teamStats: teamStatsArray.slice(0, 20),
       bestHitStreak,
       currentHitStreak,
+      bestExactStreak,
+      currentExactStreak,
       nearMisses,
       bettingTwins,
     });
