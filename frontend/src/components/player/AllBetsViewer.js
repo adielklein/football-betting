@@ -299,7 +299,7 @@ function AllBetsViewer({ weeks, user, active = true }) {
         <SkeletonCards cards={4} label="טוען הימורים..." />
       ) : (
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', padding: '0 0.15rem' }}>
+          <div className="pitch-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
             <span style={{ fontWeight: '700', fontSize: 'var(--fs-sm)', color: 'var(--text, #333)' }}>{selectedWeek.name}</span>
             <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--warn-fg, #f57f17)', backgroundColor: 'var(--warn-bg, #fff8e1)', padding: '3px 10px', borderRadius: '10px', fontWeight: '700', border: '1px solid #ffe082' }}>
               🔒 נעול

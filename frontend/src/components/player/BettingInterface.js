@@ -406,10 +406,9 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
 
   return (
     <div>
-      {/* כותרת + פרוגרס */}
-      <div style={{
-        marginBottom: '0.6rem',
-        padding: '0 0.15rem'
+      {/* כותרת + פרוגרס. על משטח משלה: במצב יום הרקע הוא דשא, וטקסט ישר עליו לא נקרא */}
+      <div className="pitch-panel" style={{
+        marginBottom: '0.6rem'
       }}>
         <div style={{
           display: 'flex',

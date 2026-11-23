@@ -1123,14 +1123,32 @@ tr:hover {
   opacity: 0.3;
 }
 
-/* פסי דשא כמו במגרש שכסחו בפסים. מאחורי הכל (z-index שלילי, כמו סמל הרקע),
-   ורואים אותם ברווחים בין הכרטיסים. רקע עומד - כמעט לא עולה כלום לטלפון */
+/* דשא של מגרש: פסי כיסוח בשני גוונים של ירוק, מרקם של עלי דשא (רעש מתוח
+   לאורך, כמו גבעולים) ומרקם עדין מעליו, והצללה טבעית - בהיר יותר במרכז.
+   המרקמים הם SVG עם feTurbulence שמצויר פעם אחת כאריח; השכבה עומדת, ולכן
+   כמעט לא עולה כלום לטלפון. מאחורי הכל (z-index שלילי, כמו סמל הרקע).
+
+   הירוק נבחר כך שטקסט כהה עדיין נקרא עליו (ניגודיות מעל 4.5). ירוק כהה
+   יותר נראה עוד יותר כמו מגרש, אבל הכותרות שיושבות ישר על הרקע נעלמו בו.
+   שורות טקסט כאלה יושבות על .pitch-panel */
 .pitch-stripes {
   position: fixed;
   inset: 0;
   z-index: -2;
   pointer-events: none;
-  background: repeating-linear-gradient(180deg, #eef6ef 0 72px, #e2efe3 72px 144px);
+  background:
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27160%27%20height%3D%27160%27%3E%3Cfilter%20id%3D%27b%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.9%200.08%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27/%3E%3CfeColorMatrix%20values%3D%270%200%200%200%200.9%20%200%200%200%200%201%20%200%200%200%200%200.7%20%200%200%200%200.34%200%27/%3E%3C/filter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23b%29%27/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27220%27%20height%3D%27220%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.9%27%20numOctaves%3D%273%27%20stitchTiles%3D%27stitch%27/%3E%3CfeColorMatrix%20values%3D%270%200%200%200%200.05%20%200%200%200%200%200.25%20%200%200%200%200%200.02%20%200%200%200%200.3%200%27/%3E%3C/filter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23n%29%27/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 50% 25%, rgba(255,255,255,0.18), rgba(0,0,0,0.12) 95%),
+    repeating-linear-gradient(180deg, #86c064 0 84px, #77b255 84px 168px);
+}
+
+/* משטח לשורות טקסט שיושבות על הרקע (שם השבוע, "נשמרים אוטומטית") */
+.pitch-panel {
+  background: var(--surface, #fff);
+  border-radius: 12px;
+  padding: 0.5rem 0.65rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 
 /* מצב לילה: זרקורים לבנים, בלי דשא */
