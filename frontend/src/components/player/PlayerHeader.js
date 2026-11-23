@@ -82,11 +82,13 @@ function PlayerHeader({ user, selectedWeek, onLogout, onOpenSettings, settingsOp
               {selectedWeek?.locked && ' (נעול)'}
             </p>
             {standing && (
-              <div className="header-standing" title="המקום שלך בטבלה החודשית">
-                {/* במילים ולא "2/14": שבר בתוך שורה עברית מתהפך ונקרא "14/2" */}
-                <span className="header-standing__rank">מקום {standing.rank}</span>
-                <span className="header-standing__of">מתוך {standing.of}</span>
-                <span className="header-standing__pts">· {standing.points} נק' החודש</span>
+              <div className="header-standing" title={`מקום ${standing.rank} מתוך ${standing.of} בטבלה החודשית · ${standing.points} נקודות`}>
+                {/* קצר בכוונה: התג חייב להיגמר לפני הסמל שבמרכז הכותרת.
+                    השבר בכיוון שמאל-לימין מבודד, אחרת בשורה עברית הוא מתהפך
+                    ונקרא "10/6" */}
+                <span aria-hidden="true">🏆</span>
+                <bdi dir="ltr" className="header-standing__rank">{standing.rank}<span className="header-standing__of">/{standing.of}</span></bdi>
+                <span className="header-standing__pts">· {standing.points} נק'</span>
               </div>
             )}
           </div>
