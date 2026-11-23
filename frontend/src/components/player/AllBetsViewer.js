@@ -382,12 +382,11 @@ function AllBetsViewer({ weeks, user, active = true }) {
                         }}
                       >
                         {shirtsForMatch(match).team1 ? (
-                          <TeamShirt {...shirtsForMatch(match).team1} size={30}><TeamLogo name={match.team1} src={match.team1LogoUrl} size={13} /></TeamShirt>
+                          <TeamShirt {...shirtsForMatch(match).team1} size={38}><TeamLogo name={match.team1} src={match.team1LogoUrl} size={13} /></TeamShirt>
                         ) : (
                           <TeamLogo name={match.team1} src={match.team1LogoUrl} />
                         )}
                         {match.team1}
-                        <span style={{ fontSize: 'var(--fs-xs)', opacity: 0.55 }} aria-hidden="true">📊</span>
                       </button>
                       <span style={{ color: 'var(--text-4, #999)', fontWeight: 500 }}>נגד</span>
                       <button
@@ -403,12 +402,11 @@ function AllBetsViewer({ weeks, user, active = true }) {
                         }}
                       >
                         {shirtsForMatch(match).team2 ? (
-                          <TeamShirt {...shirtsForMatch(match).team2} size={30}><TeamLogo name={match.team2} src={match.team2LogoUrl} size={13} /></TeamShirt>
+                          <TeamShirt {...shirtsForMatch(match).team2} size={38}><TeamLogo name={match.team2} src={match.team2LogoUrl} size={13} /></TeamShirt>
                         ) : (
                           <TeamLogo name={match.team2} src={match.team2LogoUrl} />
                         )}
                         {match.team2}
-                        <span style={{ fontSize: 'var(--fs-xs)', opacity: 0.55 }} aria-hidden="true">📊</span>
                       </button>
                       {/* ההימור שלך תמיד בשורה משלו מתחת לשמות. כשהוא ישב בסוף
                           השורה הוא קפץ לשורה הבאה רק כשהשמות ארוכים, וכל כרטיס

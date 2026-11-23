@@ -63,32 +63,49 @@ function TeamShirt({ color, kit, size = 44, children }) {
   const [id] = React.useState(() => `shirt-${++uid}`);
   const outline = { stroke: 'var(--shirt-outline, rgba(0,0,0,0.3))' };
   const shape = kit || { p: 'solid', body: color };
+  const h = size * 0.92;
   return (
-    <span style={{ position: 'relative', display: 'inline-block', width: size, height: size * 0.92, flexShrink: 0 }}>
-      <svg viewBox="0 0 48 44" width={size} height={size * 0.92} aria-hidden="true" style={{ display: 'block', overflow: 'visible' }}>
+    <span style={{ position: 'relative', display: 'inline-block', width: size, height: h, flexShrink: 0 }}>
+      <svg viewBox="0 0 48 44" width={size} height={h} aria-hidden="true" style={{ display: 'block', overflow: 'visible' }}>
         <defs>
           <clipPath id={`${id}-c`}><path d={SHIRT} /></clipPath>
-          <linearGradient id={`${id}-g`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#fff" stopOpacity="0.28" />
-            <stop offset="0.55" stopColor="#fff" stopOpacity="0" />
-            <stop offset="1" stopColor="#000" stopOpacity="0.18" />
+          {/* אור מלמעלה-שמאל */}
+          <linearGradient id={`${id}-g`} x1="0" y1="0" x2="0.6" y2="1">
+            <stop offset="0" stopColor="#fff" stopOpacity="0.30" />
+            <stop offset="0.5" stopColor="#fff" stopOpacity="0" />
+            <stop offset="1" stopColor="#000" stopOpacity="0.16" />
+          </linearGradient>
+          {/* גוף עגול: הצדדים כהים מהמרכז */}
+          <linearGradient id={`${id}-s`} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0.2" stopColor="#000" stopOpacity="0.20" />
+            <stop offset="0.38" stopColor="#000" stopOpacity="0" />
+            <stop offset="0.62" stopColor="#000" stopOpacity="0" />
+            <stop offset="0.8" stopColor="#000" stopOpacity="0.20" />
           </linearGradient>
         </defs>
         <g clipPath={`url(#${id}-c)`}>
           <Pattern kit={shape} />
+          <rect x="11.5" y="0" width="25" height="44" fill={`url(#${id}-s)`} />
+          {/* שוליים כהים בקצה השרוולים ובתחתית */}
+          <polygon points="1,15 7.5,21.5 9,20.3 2.6,13.6" fill="#000" opacity="0.22" />
+          <polygon points="47,15 40.5,21.5 39,20.3 45.4,13.6" fill="#000" opacity="0.22" />
+          <rect x="11.5" y="40.3" width="25" height="1.7" fill="#000" opacity="0.14" />
           <path d={SHIRT} fill={`url(#${id}-g)`} />
         </g>
+        {/* תפרי השרוולים */}
+        <path d="M11.5 10 L11.5 18.5 M36.5 10 L36.5 18.5" style={outline} strokeWidth="0.8" />
         {shape.collar && <path d={COLLAR} fill="none" stroke={shape.collar} strokeWidth="2.6" strokeLinecap="round" />}
-        <path d={SHIRT} fill="none" style={outline} strokeWidth="1.2" strokeLinejoin="round" />
-        <path d={COLLAR} fill="none" style={outline} strokeWidth="1" />
+        <path d={SHIRT} fill="none" style={outline} strokeWidth="1.1" strokeLinejoin="round" />
+        <path d={COLLAR} fill="none" style={outline} strokeWidth="0.9" />
       </svg>
       {children && (
+        // הסמל על החזה השמאלי של הלובש (מימין לצופה), קטן - כמו בחולצה
+        // אמיתית - כדי שהתבנית תישאר גלויה. צל דק מפריד אותו מהבד
         <span style={{
-          position: 'absolute', left: '50%', top: '56%', transform: 'translate(-50%, -50%)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          // הסמל על חולצה בגוון דומה לשלו מתמזג. עיגול לבן קטן מאחוריו שומר עליו
-          background: 'rgba(255,255,255,0.92)', borderRadius: '50%', padding: 2,
-          boxShadow: '0 1px 2px rgba(0,0,0,0.2)', lineHeight: 0
+          position: 'absolute', left: '64%', top: '38%', transform: 'translate(-50%, -50%)',
+          width: size * 0.34, height: size * 0.34,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 0,
+          filter: 'drop-shadow(0 0 1px rgba(255,255,255,0.9)) drop-shadow(0 1px 1px rgba(0,0,0,0.35))'
         }}>
           {children}
         </span>
