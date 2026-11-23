@@ -60,7 +60,7 @@ function TeamPicker({ name, logo, shirt, onClick }) {
       {/* הסמל שנשמר בייבוא מ-365 הוא של הקבוצה הנכונה. בלעדיו הרכיב
           מנחש לפי השם מול מקור אחר, וזה מה שהיה כאן עד עכשיו */}
       {shirt ? (
-        <TeamShirt kit={shirt.kit} color={shirt.color} size={50}><TeamLogo name={name} src={logo} size={17} /></TeamShirt>
+        <TeamShirt kit={shirt.kit} color={shirt.color} size={50}><TeamLogo name={name} src={logo} size={13} /></TeamShirt>
       ) : (
         <TeamLogo name={name} src={logo} />
       )}

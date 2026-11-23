@@ -395,7 +395,7 @@ function AllBetsViewer({ weeks, user, active = true }) {
                             }}
                           >
                             {shirt ? (
-                              <TeamShirt {...shirt} size={42}><TeamLogo name={name} src={logo} size={14} /></TeamShirt>
+                              <TeamShirt {...shirt} size={42}><TeamLogo name={name} src={logo} size={11} /></TeamShirt>
                             ) : (
                               <TeamLogo name={name} src={logo} size={24} />
                             )}
