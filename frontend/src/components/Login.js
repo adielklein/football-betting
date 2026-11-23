@@ -223,13 +223,20 @@ function Login({ onLogin, notice = null }) {
       }}>
         {/* לוגו */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
+          {/* כניסה: הלוגו מתגלגל פנימה כמו כדור, ואותיות השם נוחתות אחת-אחת
+              (login-logo-roll / login-letter ב-index.css) */}
           <img
+            className="login-logo-roll"
             src="/gamball-logo.jpeg"
             alt=""
             style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '13px', boxShadow: '0 4px 12px rgba(0,0,0,0.25)' }}
           />
           <div>
-            <h1 style={{ margin: 0, fontSize: 'var(--fs-lg)', fontWeight: 800, letterSpacing: '0.5px', color: 'var(--text, #1f2430)' }}>GAMBALL</h1>
+            <h1 dir="ltr" aria-label="GAMBALL" style={{ margin: 0, fontSize: 'var(--fs-lg)', fontWeight: 800, letterSpacing: '0.5px', color: 'var(--text, #1f2430)', textAlign: 'right' }}>
+              {'GAMBALL'.split('').map((ch, i) => (
+                <span key={i} aria-hidden="true" className="login-letter" style={{ '--i': i }}>{ch}</span>
+              ))}
+            </h1>
             <p style={{ margin: 0, color: 'var(--text-2, #4a505c)', fontSize: 'var(--fs-xs)', fontWeight: 500 }}>
               פרמיירליג • לה ליגה • ליגת העל
             </p>

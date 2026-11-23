@@ -11,6 +11,16 @@ import { reducedMotion } from '../../services/motion';
 
 const NAV_HEIGHT = 60;
 
+// לכל לשונית תנועה משלה כשבוחרים בה: הכדור מתגלגל, הקהל קופץ, הגביע מתרומם
+// ונוצץ, הלוח מתהפך והעמודות צומחות. לשונית אחרת - הקפיצה הרגילה
+const ICON_MOTION = {
+  betting: 'navRoll .55s cubic-bezier(.2,.9,.3,1.2)',
+  allbets: 'navCrowd .6s ease-out',
+  leaderboard: 'navTrophy .7s ease-out',
+  history: 'navFlip .5s ease-in-out',
+  stats: 'navBars .5s cubic-bezier(.2,1.4,.4,1)',
+};
+
 // שדה קלט בפוקוס = המקלדת פתוחה. באנדרואיד הסרגל היה נדחף מעל המקלדת
 // ומסתיר את המשחק שמקלידים בו, ובאייפון הוא קופץ באמצע המסך. מסתירים.
 // רק שדות שפותחים מקלדת. רשימה נפתחת (בחירת חודש/שבוע) נשארת בפוקוס
@@ -140,13 +150,18 @@ function BottomNav({ tabs, activeTab, onSelect }) {
             >
               {/* key משתנה כשהלשונית נבחרת, וזה מפעיל את קפיצת האייקון מחדש */}
               <span key={isActive ? 'on' : 'off'} aria-hidden="true" style={{
-                animation: isActive && !still ? 'navBounce .4s cubic-bezier(.2,1.5,.4,1)' : undefined,
+                animation: isActive && !still ? (ICON_MOTION[tab.key] || 'navBounce .4s cubic-bezier(.2,1.5,.4,1)') : undefined,
+                display: 'inline-block', position: 'relative',
                 fontSize: 'var(--fs-lg)',
                 lineHeight: 1,
                 transform: isActive ? 'scale(1.08)' : 'none',
                 transition: 'transform 0.2s ease'
               }}>
                 {tab.icon}
+                {/* ניצוץ קטן שעף מהגביע */}
+                {isActive && !still && tab.key === 'leaderboard' && (
+                  <span style={{ position: 'absolute', top: '-4px', insetInlineEnd: '-8px', fontSize: '11px', animation: 'navSparkle .8s ease-out .15s both', pointerEvents: 'none' }}>✨</span>
+                )}
               </span>
               <span>{tab.label}</span>
             </button>

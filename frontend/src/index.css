@@ -1266,3 +1266,107 @@ body:has(.pitch-stripes)::before { opacity: 0.35; }
   to { filter: drop-shadow(0 0 6px rgba(255, 210, 60, 1)) drop-shadow(0 0 14px rgba(255, 180, 0, 0.95)) drop-shadow(0 0 24px rgba(255, 170, 0, 0.55)); }
 }
 .shirt--lose { filter: grayscale(0.7); opacity: 0.6; transform: scale(0.94); }
+
+/* ===== אנימציות חתימה (components/Motifs.js) ===== */
+
+/* כדור טעינה: מתגלגל (הטלאים זזים בתוך ה-SVG) וקופץ, עם צל שמתכווץ למעלה */
+.ball-loader { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding-top: calc(var(--ball) * 0.32); }
+.ball-loader__ball { display: block; line-height: 0; }
+.ball-loader__shadow {
+  width: calc(var(--ball) * 0.7); height: calc(var(--ball) * 0.14);
+  border-radius: 50%; background: rgba(0,0,0,0.22);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ball-loader__ball { animation: ballBounce 0.9s cubic-bezier(.45,0,.55,1) infinite; transform-origin: 50% 100%; }
+  .ball-loader__shadow { animation: ballShadow 0.9s cubic-bezier(.45,0,.55,1) infinite; }
+}
+@keyframes ballBounce {
+  0%, 100% { transform: translateY(0) scale(1.06, 0.92); }
+  15% { transform: translateY(-2px) scale(1, 1); }
+  50% { transform: translateY(calc(var(--ball) * -0.3)); }
+  85% { transform: translateY(-2px) scale(1, 1); }
+}
+@keyframes ballShadow {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(0.55); opacity: 0.45; }
+}
+
+/* מדליה: סרט צבעוני ומטבע עבה שמסתובב. שלוש המדליות מסתובבות בגל - זהב,
+   כסף, ארד - פעם ב-7 שניות. כל שכבה מסתובבת לבד (ראה .header-crest) */
+.medal { position: relative; display: inline-flex; flex-direction: column; align-items: center; width: 28px; height: 34px; vertical-align: middle; }
+.medal__ribbon {
+  width: 16px; height: 11px; margin-bottom: -3px;
+  clip-path: polygon(0 0, 38% 0, 50% 55%, 62% 0, 100% 0, 75% 100%, 25% 100%);
+  -webkit-clip-path: polygon(0 0, 38% 0, 50% 55%, 62% 0, 100% 0, 75% 100%, 25% 100%);
+  background: linear-gradient(90deg, #2f6fd0 0 33%, #e63946 33% 67%, #2f6fd0 67%);
+}
+.medal__coin { position: relative; width: 24px; height: 24px; }
+.medal__layer {
+  --flip: 0deg;
+  position: absolute; inset: 0; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font: 900 12px/1 system-ui, sans-serif;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  transform: perspective(160px) rotateY(0deg) translateZ(var(--z)) rotateY(var(--flip));
+}
+.medal__layer.is-backside { --flip: 180deg; }
+.medal--gold .medal__layer.is-face { background: radial-gradient(circle at 35% 30%, #fff3b0, #f2c230 45%, #b8860b 100%); color: #6b4e00; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.45), inset 0 0 0 3.5px rgba(150,105,0,0.55); }
+.medal--silver .medal__layer.is-face { background: radial-gradient(circle at 35% 30%, #ffffff, #cfd4da 45%, #7f8790 100%); color: #3c434b; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.55), inset 0 0 0 3.5px rgba(90,98,108,0.5); }
+.medal--bronze .medal__layer.is-face { background: radial-gradient(circle at 35% 30%, #ffd9b0, #d1883f 45%, #7d4614 100%); color: #4f2a08; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.4), inset 0 0 0 3.5px rgba(110,60,15,0.55); }
+.medal--gold .medal__layer.is-edge { background: #a8790a; }
+.medal--silver .medal__layer.is-edge { background: #7f8790; }
+.medal--bronze .medal__layer.is-edge { background: #80461a; }
+@media (prefers-reduced-motion: no-preference) {
+  .medal__layer { animation: medalSpin 7s cubic-bezier(.5,0,.3,1) infinite; animation-delay: var(--medal-delay, 0s); }
+}
+@keyframes medalSpin {
+  0%, 80% { transform: perspective(160px) rotateY(0deg) translateZ(var(--z)) rotateY(var(--flip)); }
+  100% { transform: perspective(160px) rotateY(360deg) translateZ(var(--z)) rotateY(var(--flip)); }
+}
+
+/* כדור לרשת: נכנס פעם אחת כשכל ההימורים הוזנו */
+.goal-net { vertical-align: middle; overflow: visible; margin-inline-start: 6px; }
+
+/* טבעת הספירה לאחור: בחמש הדקות האחרונות היא פועמת */
+.countdown-ring { flex-shrink: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .countdown-ring.is-final { animation: pulse 1s ease infinite; }
+}
+
+/* מנעול: הקשת נופלת למקום, והמנעול רועד מהנקישה */
+.lock-snap { display: inline-block; line-height: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .lock-snap { animation: lockShake 0.5s ease 0.45s both; }
+}
+@keyframes lockShake {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-8deg); }
+  55% { transform: rotate(6deg); }
+  80% { transform: rotate(-3deg); }
+}
+
+/* אייקוני הסרגל התחתון: לכל לשונית תנועה משלה כשבוחרים בה */
+@keyframes navRoll { 0% { transform: translateX(14px) rotate(320deg) scale(1); } 70% { transform: translateX(-2px) rotate(-12deg) scale(1.1); } 100% { transform: translateX(0) rotate(0) scale(1.08); } }
+@keyframes navCrowd { 0% { transform: translateY(0) scale(1); } 25% { transform: translateY(-5px) scale(1.12); } 45% { transform: translateY(0) scale(1.04); } 65% { transform: translateY(-3px) scale(1.1); } 100% { transform: translateY(0) scale(1.08); } }
+@keyframes navTrophy { 0% { transform: translateY(0) rotate(0) scale(1); } 30% { transform: translateY(-6px) rotate(-12deg) scale(1.18); } 55% { transform: translateY(-4px) rotate(10deg) scale(1.16); } 80% { transform: translateY(-1px) rotate(-4deg) scale(1.1); } 100% { transform: translateY(0) rotate(0) scale(1.08); } }
+@keyframes navFlip { 0% { transform: scaleX(1); } 45% { transform: scaleX(-1) scale(1.1); } 100% { transform: scaleX(1) scale(1.08); } }
+@keyframes navBars { 0% { transform: scaleY(0.35); transform-origin: 50% 100%; } 60% { transform: scaleY(1.2); transform-origin: 50% 100%; } 100% { transform: scale(1.08); transform-origin: 50% 100%; } }
+@keyframes navSparkle { 0% { opacity: 0; transform: translate(0, 4px) scale(0.4) rotate(0); } 40% { opacity: 1; transform: translate(6px, -6px) scale(1) rotate(25deg); } 100% { opacity: 0; transform: translate(10px, -12px) scale(0.6) rotate(60deg); } }
+
+/* מסך הכניסה: הלוגו מתגלגל פנימה, האותיות נוחתות אחת-אחת. מתחיל אחרי
+   שהכרטיס עלה (0.8 שניות) */
+.login-letter { display: inline-block; }
+@media (prefers-reduced-motion: no-preference) {
+  .login-logo-roll { animation: loginLogoRoll 0.9s cubic-bezier(.2,.8,.3,1.1) 0.8s both; }
+  .login-letter { animation: loginLetterDrop 0.55s cubic-bezier(.3,1.6,.5,1) both; animation-delay: calc(1.2s + var(--i) * 0.07s); }
+}
+@keyframes loginLogoRoll {
+  0% { opacity: 0; transform: translateX(-140px) rotate(-540deg) scale(0.6); border-radius: 50%; }
+  70% { opacity: 1; transform: translateX(6px) rotate(12deg) scale(1.05); border-radius: 50%; }
+  100% { transform: none; border-radius: 13px; }
+}
+@keyframes loginLetterDrop {
+  0% { opacity: 0; transform: translateY(-18px) scale(0.6); }
+  60% { opacity: 1; transform: translateY(3px) scale(1.08); }
+  100% { transform: none; }
+}

@@ -18,6 +18,7 @@ import { formatCountdown, formatLockMoment } from '../../services/countdown';
 import Score from '../Score';
 import { textOn } from '../../services/readableColor';
 import { API_URL as API_BASE } from '../../config';
+import { CountdownRing, GoalNetShot, LockSnap } from '../Motifs';
 
 // קבוצה לחיצה - פותחת את חלון הנתונים. חולצה ומתחתיה השם, באותם גדלים
 // ומרווחים כמו ב"כל ההימורים", כדי ששני המסכים ייראו אותו דבר.
@@ -396,7 +397,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
         padding: '2.5rem 1rem',
         background: 'var(--warn-bg, #fff8f0)'
       }}>
-        <div style={{ fontSize: '40px', marginBottom: '0.75rem' }}>🔒</div>
+        <div style={{ marginBottom: '0.75rem' }}><LockSnap /></div>
         <h2 style={{ fontSize: 'var(--fs-md)', color: 'var(--text-2, #444)', marginBottom: '0.3rem' }}>ההימורים נסגרו</h2>
         <p style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-sm)' }}>
           ההימורים ל{selectedWeek.name} נסגרו עם תחילת המשחק הראשון
@@ -459,6 +460,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
             borderRadius: '10px', padding: '4px 8px', marginTop: '0.4rem', textAlign: 'center', animation: 'doneIn .45s ease-out both'
           }}>
             כל ההימורים הוזנו ✓
+            <GoalNetShot />
           </div>
         ) : (
           <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #5f6670)', marginTop: '0.3rem', textAlign: 'center' }}>
@@ -481,7 +483,10 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
               border: `1px solid ${urgent ? '#fca5a5' : today ? '#fde68a' : '#bfdbfe'}`
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: fg }}>
-                <span aria-hidden="true" style={{ fontSize: 'var(--fs-sm)' }}>{urgent ? '🔥' : today ? '⏳' : '⏰'}</span>
+                {/* בשעה האחרונה: טבעת שמתרוקנת, מכתום לאדום */}
+                {urgent
+                  ? <CountdownRing fraction={timeLeft.total / 3600000} />
+                  : <span aria-hidden="true" style={{ fontSize: 'var(--fs-sm)' }}>{today ? '⏳' : '⏰'}</span>}
                 <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }}>נסגר בעוד</span>
                 <span dir={cd.clock ? 'ltr' : undefined} style={{
                   fontSize: 'var(--fs-md)', fontWeight: 800, fontVariantNumeric: 'tabular-nums',

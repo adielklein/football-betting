@@ -6,6 +6,7 @@ import { useFlip } from '../../services/motion';
 import { SkeletonRows } from '../Skeleton';
 import { placesFor, anyScored } from '../../services/ranking';
 import { API_URL as API_BASE } from '../../config';
+import { Medal } from '../Motifs';
 
 // השורה שלי: צבע ערכת הנושא, עם הדגשה עדינה מעליו
 const ME_ROW_BG = 'linear-gradient(100deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 60%, rgba(0,0,0,0.12)), var(--theme-tile, #3b5bdb)';
@@ -332,7 +333,7 @@ function Leaderboard({ leaderboard, user, active = true }) {
             textAlign: 'center',
             color: (!isTop3 && !isMe) ? 'var(--text-4, #bbb)' : rowFg
           }}>
-            {rank.icon || (scored ? place : '–')}
+            {isTop3 ? <Medal place={place} /> : (scored ? place : '–')}
           </span>
           <span style={{
             fontWeight: isMe ? '700' : '500',

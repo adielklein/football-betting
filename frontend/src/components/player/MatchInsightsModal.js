@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { BallLoader } from '../Motifs';
 import { API_URL as API_BASE } from '../../config';
 
 const API_URL = API_BASE;
@@ -318,7 +319,7 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
         <div style={{ overflowY: 'auto', padding: '0.3rem 0.9rem 1.2rem', WebkitOverflowScrolling: 'touch' }}>
           {loading && (
             <div style={{ padding: '2.5rem 1rem', textAlign: 'center' }}>
-              <div style={{ fontSize: '26px', marginBottom: '0.5rem', animation: 'pulse 1s ease infinite' }}>📊</div>
+              <div style={{ marginBottom: '0.6rem' }}><BallLoader size={40} /></div>
               <div style={{ color: 'var(--text-3, #9aa2ae)', fontSize: 'var(--fs-sm)' }}>טוען נתונים מ-365scores...</div>
             </div>
           )}

@@ -16,6 +16,7 @@ import { getToken, setToken, clearToken, AUTH_EXPIRED_EVENT } from './services/a
 import { lazyWithReload } from './services/lazyWithReload';
 import './index.css';
 import { API_URL as API_BASE, IS_STAGING } from './config';
+import { BallLoader } from './components/Motifs';
 
 // מסכי הניהול נטענים בנפרד: שחקן לא מוריד את הקוד שלהם בכלל, וזה מקצר
 // את הטעינה בטלפון. רק אדמין שנכנס מוריד אותם, פעם אחת.
@@ -301,7 +302,7 @@ function App() {
       {!currentUser ? (
         <Login onLogin={handleLogin} notice={loginNotice} />
       ) : currentUser.role === 'admin' ? (
-        <Suspense fallback={<div className="loading" style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-3, #5f6670)' }}>טוען...</div>}>
+        <Suspense fallback={<div className="loading" style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-3, #5f6670)' }}><BallLoader size={48} /><div style={{ marginTop: '0.6rem' }}>טוען...</div></div>}>
           <AdminView user={currentUser} onLogout={handleLogout} />
         </Suspense>
       ) : (

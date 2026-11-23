@@ -8,6 +8,7 @@ import useReturnRefresh from '../../services/useReturnRefresh';
 import { SkeletonCards } from '../Skeleton';
 import { placesFor, anyScored } from '../../services/ranking';
 import { API_URL as API_BASE } from '../../config';
+import { Medal } from '../Motifs';
 
 // השורה שלי: צבע ערכת הנושא, עם הדגשה עדינה מעליו
 const ME_ROW_BG = 'linear-gradient(100deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 60%, rgba(0,0,0,0.12)), var(--theme-tile, #3b5bdb)';
@@ -370,7 +371,7 @@ function HistoryViewer({ weeks, user, active = true }) {
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, flex: 1 }}>
                         <span style={{ fontSize: isTop3 ? 'var(--fs-lg)' : 'var(--fs-xs)', fontWeight: '800', minWidth: '24px', textAlign: 'center', color: (!isTop3 && !isMe) ? 'var(--text-4, #bbb)' : rowFg }}>
-                          {rank.icon || (scored ? place : '–')}
+                          {isTop3 ? <Medal place={place} /> : (scored ? place : '–')}
                         </span>
                         <span style={{ fontWeight: isMe ? '700' : '500', fontSize: 'var(--fs-sm)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: rowFg }}>
                           {player.name}

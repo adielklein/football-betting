@@ -1,4 +1,5 @@
 import React from 'react';
+import { BallLoader } from './Motifs';
 
 // שלד טעינה: צורות אפורות מהבהבות במקום שבו התוכן יופיע. במקום ספינר
 // במסך ריק - זה מרגיש מהיר יותר, והמסך לא קופץ כשהתוכן מגיע.
@@ -15,9 +16,15 @@ export const SkeletonBar = ({ height = 14, width, radius }) => (
 );
 
 /** רשימת שורות (טבלה, היסטוריה) */
+// כדור מתגלגל מעל השלד - שיהיה ברור שמשהו בדרך, ושזה עדיין כדורגל
+const LoaderBall = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', padding: '0.4rem 0 0.2rem' }}><BallLoader size={34} /></div>
+);
+
 export function SkeletonRows({ rows = 6, label = 'טוען...' }) {
   return (
     <div className="card" role="status" aria-label={label} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <LoaderBall />
       <SkeletonBar height={18} width="45%" />
       {Array.from({ length: rows }, (_, i) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -34,6 +41,7 @@ export function SkeletonRows({ rows = 6, label = 'טוען...' }) {
 export function SkeletonCards({ cards = 4, label = 'טוען...' }) {
   return (
     <div role="status" aria-label={label} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      <LoaderBall />
       {Array.from({ length: cards }, (_, i) => (
         <div key={i} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '0.75rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -55,6 +63,7 @@ export function SkeletonCards({ cards = 4, label = 'טוען...' }) {
 export function SkeletonStats({ label = 'טוען סטטיסטיקות...' }) {
   return (
     <div role="status" aria-label={label} style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+      <LoaderBall />
       <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <SkeletonBar height={120} width="120px" radius={60} />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
