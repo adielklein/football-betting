@@ -3,6 +3,7 @@ import GroupedPicker from '../GroupedPicker';
 import ThemeIcon from '../ThemeIcon';
 import { getThemesByCategory, getTheme } from '../../themes';
 import { toast } from '../../services/toast';
+import { API_URL as API_BASE } from '../../config';
 
 function UsersManagement({ users, loadData, user }) {
   const [newUser, setNewUser] = useState({
@@ -25,9 +26,7 @@ function UsersManagement({ users, loadData, user }) {
   const [addUserOpen, setAddUserOpen] = useState(false);
   const [userListOpen, setUserListOpen] = useState(false);
 
-  const API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:5000/api'
-    : 'https://football-betting-backend.onrender.com/api';
+  const API_URL = API_BASE;
 
   const themeCategories = useMemo(() => getThemesByCategory(), []);
 

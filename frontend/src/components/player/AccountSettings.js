@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import GroupedPicker from '../GroupedPicker';
 import { toast } from '../../services/toast';
+import { API_URL as API_BASE } from '../../config';
 
 // החשבון של המשתמש: שם תצוגה, מסך פתיחה, וסיסמה.
 //
@@ -8,9 +9,7 @@ import { toast } from '../../services/toast';
 // להיכנס ישר לטבלה או להחליף סיסמה היה צריך לבקש ממנהל. שם נעול נשאר
 // בשליטת המנהל, ואז השדה מוצג אך אינו ניתן לעריכה, עם הסבר למה.
 
-const API_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:5000/api'
-  : 'https://football-betting-backend.onrender.com/api';
+const API_URL = API_BASE;
 
 // חייב להתאים לרשימת הלשוניות של מסך השחקן
 const TAB_OPTIONS = [

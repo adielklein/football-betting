@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from '../../services/toast';
 import LeagueLogo from '../LeagueLogo';
 import { api } from '../../services/api';
+import { API_URL as API_BASE } from '../../config';
 
 // הספק שבו הליגה תשתמש בפועל, באותו סדר עדיפויות של pickProvider בשרת.
 // 365 הוא היחיד שמזין יחסים, תובנות וטבלה חיה, ולכן ההבדל בין "365" לבין
@@ -142,9 +143,7 @@ function LeaguesManagement() {
   const [verification, setVerification] = useState(null);
   const [health, setHealth] = useState(null);
 
-  const API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:5000/api'
-    : 'https://football-betting-backend.onrender.com/api';
+  const API_URL = API_BASE;
 
   useEffect(() => { loadLeagues(); }, []);
 

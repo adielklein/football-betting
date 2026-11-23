@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PlayerStats from '../player/PlayerStats';
 import TeamLogo from '../TeamLogo';
+import { API_URL as API_BASE } from '../../config';
 
 function AdminStats() {
   const [stats, setStats] = useState(null);
@@ -9,9 +10,7 @@ function AdminStats() {
   const [players, setPlayers] = useState([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
 
-  const API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:5000/api'
-    : 'https://football-betting-backend.onrender.com/api';
+  const API_URL = API_BASE;
 
   useEffect(() => {
     loadStats();

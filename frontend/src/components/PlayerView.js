@@ -7,6 +7,7 @@ import Leaderboard from './Leaderboard';
 import HistoryViewer from './HistoryViewer';
 import AllBetsViewer from './AllBetsViewer';
 import NotificationSettings from '../NotificationSettings';
+import { API_URL as API_BASE } from '../config';
 
 function PlayerView({ user, onLogout }) {
   const [weeks, setWeeks] = useState([]);
@@ -17,9 +18,7 @@ function PlayerView({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('betting');
   const [loading, setLoading] = useState(true);
 
-  const API_URL = window.location.hostname === 'localhost' 
-    ? 'http://localhost:5000/api'
-    : 'https://football-betting-backend.onrender.com/api';
+  const API_URL = API_BASE;
 
   useEffect(() => {
     console.log('🎨 PlayerView: מחיל ערכת נושא למשתמש:', user);

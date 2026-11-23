@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { applyTheme } from '../../themes';
 import { toast } from '../../services/toast';
 import ColorSchemeToggle from '../ColorSchemeToggle';
+import { API_URL as API_BASE } from '../../config';
 
-const API_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:5000/api'
-  : 'https://football-betting-backend.onrender.com/api';
+const API_URL = API_BASE;
 
 function AdminHeader({ user, onLogout }) {
   const [pushEnabled, setPushEnabled] = useState(false);

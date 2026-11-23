@@ -15,6 +15,7 @@ import useSwipeNav from '../../services/useSwipeNav';
 import BottomNav from './BottomNav';
 import { stepTab } from '../../services/swipeNav';
 import { syncPushSubscription } from '../../services/pushSync';
+import { API_URL as API_BASE } from '../../config';
 
 function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
   const [weeks, setWeeks] = useState([]);
@@ -62,9 +63,7 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
   useEffect(() => { previousTab.current = activeTab; }, [activeTab]);
   const [loading, setLoading] = useState(true);
 
-  const API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:5000/api'
-    : 'https://football-betting-backend.onrender.com/api';
+  const API_URL = API_BASE;
 
   useEffect(() => {
     applyTheme(user);

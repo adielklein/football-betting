@@ -5,6 +5,7 @@ import useReturnRefresh from '../../services/useReturnRefresh';
 import { useFlip } from '../../services/motion';
 import { SkeletonRows } from '../Skeleton';
 import { placesFor, anyScored } from '../../services/ranking';
+import { API_URL as API_BASE } from '../../config';
 
 function Leaderboard({ leaderboard, user, active = true }) {
   const [monthlyScores, setMonthlyScores] = useState([]);
@@ -18,9 +19,7 @@ function Leaderboard({ leaderboard, user, active = true }) {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('monthly');
 
-  const API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:5000/api'
-    : 'https://football-betting-backend.onrender.com/api';
+  const API_URL = API_BASE;
 
   // הלשונית נשארת טעונה; חזרה אליה אחרי יותר מדקה מרעננת ברקע
   useReturnRefresh(active, () => {

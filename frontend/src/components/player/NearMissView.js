@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Score from '../Score';
+import { API_URL as API_BASE } from '../../config';
 
 // "כמה קרוב היית" - הניקוד שברח בגלל שער בודד.
 //
@@ -7,9 +8,7 @@ import Score from '../Score';
 // שמעליך נבנה מהחמצות של שער אחד, ושהן לא מתחלקות שווה בשווה בין השחקנים.
 // המסך הזה מראה בדיוק את זה.
 
-const API_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:5000/api'
-  : 'https://football-betting-backend.onrender.com/api';
+const API_URL = API_BASE;
 
 const ACCENT = '#c2410c';       // הצבע של "כמעט" - חם, לא אדום של שגיאה
 const ACCENT_SOFT = '#fff5ed';

@@ -13,6 +13,7 @@ const {
   vapidKeys,
   checkRoute
 } = require('../services/pushNotifications');
+const { APP_ENV } = require('../services/environment');
 
 // 🔧 פונקציית עזר - מחזירה את כל ה-subscriptions (תומך בשני המבנים)
 function getUserSubscriptions(user) {
@@ -209,7 +210,9 @@ router.post('/subscribe', requireSelfOrAdmin((req) => req.body?.userId), async (
         userAgent: userAgent || previous.userAgent || null,
         model: clientModel || previous.model || null,
         addedAt: previous.addedAt || now,
-        lastSeenAt: now
+        lastSeenAt: now,
+        // באיזו סביבה המכשיר נרשם. שרת הניסוי שולח רק למכשירים שנרשמו אצלו
+        env: APP_ENV
       };
     } else {
       console.log(`➕ Adding new subscription (total will be ${user.pushSettings.subscriptions.length + 1})`);
@@ -218,7 +221,9 @@ router.post('/subscribe', requireSelfOrAdmin((req) => req.body?.userId), async (
         userAgent: userAgent || null,
         model: clientModel,
         addedAt: now,
-        lastSeenAt: now
+        lastSeenAt: now,
+        // באיזו סביבה המכשיר נרשם. שרת הניסוי שולח רק למכשירים שנרשמו אצלו
+        env: APP_ENV
       });
     }
     

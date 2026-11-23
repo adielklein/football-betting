@@ -1,4 +1,5 @@
 const webpush = require('web-push');
+const { IS_STAGING } = require('./environment');
 const fetch = require('node-fetch');
 const User = require('../models/User');
 const { styleFor } = require('./notificationStyle');
@@ -155,6 +156,13 @@ const payloadFor = (subscription, payload) => {
 };
 
 async function sendNotification(subscription, payload, errorSink = null) {
+  // שרת הניסוי לא שולח לאף מכשיר שלא נרשם אצלו, גם אם מנוי אמיתי הגיע
+  // למסד שלו איכשהו. ההעתקה ממילא מוחקת את המנויים - זו רשת ביטחון שנייה
+  if (IS_STAGING && subscription?.env !== 'staging') {
+    console.log('🧪 [PUSH] סביבת ניסוי - לא נשלח למכשיר שלא נרשם בניסוי');
+    if (errorSink) errorSink.push({ statusCode: null, detail: 'staging: device not registered in staging', endpoint: subscription?.endpoint || null, endpointHost: null });
+    return false;
+  }
   try {
     console.log('📤 [PUSH] Sending notification...');
 

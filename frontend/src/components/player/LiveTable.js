@@ -1,6 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Score from '../Score';
 import RollingNumber from '../RollingNumber';
+import { API_URL as API_BASE } from '../../config';
 
 // טבלה חיה: הדירוג כפי שהיה נראה אילו הכל היה נגמר עכשיו.
 //
@@ -17,9 +18,7 @@ import RollingNumber from '../RollingNumber';
 // הרכיב מציג את עצמו רק כשבאמת יש משחק שמתנהל. בשאר הזמן הוא לא מצייר
 // דבר - טבלה "חיה" שזהה לרגילה היא רק רעש.
 
-const API_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:5000/api'
-  : 'https://football-betting-backend.onrender.com/api';
+const API_URL = API_BASE;
 
 const REFRESH_MS = 60 * 1000;
 const SLIDE_MS = 520;

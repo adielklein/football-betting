@@ -15,6 +15,7 @@ import { onSchemeChange } from './services/colorScheme';
 import { getToken, setToken, clearToken, AUTH_EXPIRED_EVENT } from './services/authSession';
 import { lazyWithReload } from './services/lazyWithReload';
 import './index.css';
+import { API_URL as API_BASE, IS_STAGING } from './config';
 
 // מסכי הניהול נטענים בנפרד: שחקן לא מוריד את הקוד שלהם בכלל, וזה מקצר
 // את הטעינה בטלפון. רק אדמין שנכנס מוריד אותם, פעם אחת.
@@ -28,9 +29,7 @@ function App() {
   // הוחלפה). בלי הסבר זה נראה כמו תקלה
   const [loginNotice, setLoginNotice] = useState(null);
 
-  const API_URL = window.location.hostname === 'localhost' 
-    ? 'http://localhost:5000/api'
-    : 'https://football-betting-backend.onrender.com/api';
+  const API_URL = API_BASE;
 
   useEffect(() => {
     console.log('🎨 App.js - התחלת טעינה, מחפש משתמש שמור...');
@@ -317,6 +316,19 @@ function App() {
       <ToastHost />
       <UpdateBanner />
       <OfflineBanner />
+
+      {/* סביבת ניסוי: תווית קבועה, כדי שאף פעם לא יתבלבלו בינה לבין האמיתית */}
+      {IS_STAGING && (
+        <div aria-hidden="true" style={{
+          position: 'fixed', top: 'max(4px, env(safe-area-inset-top, 0px))', left: '50%',
+          transform: 'translateX(-50%)', zIndex: 20000, pointerEvents: 'none',
+          background: '#f59e0b', color: '#1f1300', fontWeight: 800,
+          fontSize: '11px', padding: '2px 10px', borderRadius: '999px',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.25)'
+        }}>
+          🧪 סביבת ניסוי
+        </div>
+      )}
 
       {inAppNotification && (
         <div style={{

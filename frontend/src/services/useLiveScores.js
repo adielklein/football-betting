@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { goalTimestamps } from './liveNumbers';
+import { API_URL as API_BASE } from '../config';
 
 // מצב חי לשבוע: תוצאה ודקת משחק, מתעדכן כל עוד יש משחק שמתנהל.
 //
@@ -10,9 +11,7 @@ import { goalTimestamps } from './liveNumbers';
 const LIVE_INTERVAL_MS = 60 * 1000;
 const IDLE_INTERVAL_MS = 10 * 60 * 1000;
 
-const API_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:5000/api'
-  : 'https://football-betting-backend.onrender.com/api';
+const API_URL = API_BASE;
 
 /**
  * @param weekId השבוע

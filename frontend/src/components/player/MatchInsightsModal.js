@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { API_URL as API_BASE } from '../../config';
 
-const API_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:5000/api'
-  : 'https://football-betting-backend.onrender.com/api';
+const API_URL = API_BASE;
 
 const OUTCOME_STYLE = {
   W: { bg: '#e8f6ec', border: '#8fd6a4', color: '#1e7a3c', label: 'נ' },

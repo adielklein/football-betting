@@ -1,3 +1,4 @@
+import { API_URL as API_BASE } from '../config';
 // סנכרון מנוי ההתראות מול השרת, בכל פתיחה של האפליקציה.
 //
 // זה היה קודם בתוך NotificationSettings, שהיה מורכב מעל כל מסך. משהעבירו
@@ -13,9 +14,7 @@
 //
 // לכן זה יושב כאן, נקרא מהמסך הראשי, ולא תלוי בשום לשונית.
 
-const API_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:5000/api'
-  : 'https://football-betting-backend.onrender.com/api';
+const API_URL = API_BASE;
 
 const urlBase64ToUint8Array = (base64String) => {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);

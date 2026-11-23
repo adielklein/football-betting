@@ -13,13 +13,12 @@ import { textOn } from '../../services/readableColor';
 import TvChannels from '../TvChannels';
 import WeekStepper from './WeekStepper';
 import { fetchWeekStatus, syncResults, recalcSilently, nudgePending } from '../../services/weekActions';
+import { API_URL as API_BASE } from '../../config';
 
 // אותה קביעה כמו בכל שאר המסכים. קודם זה הסתמך על משתנה סביבה של CRA,
 // והנפילה לברירת המחדל הייתה localhost - כלומר מסך ניהול השבועות היה
 // מתנתק לגמרי בייצור אם המשתנה לא היה מוגדר בדיוק בשם הזה.
-const API_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:5000/api'
-  : 'https://football-betting-backend.onrender.com/api';
+const API_URL = API_BASE;
 
 // תוצאה תקינה: מספר שלם 0-20. שדה ריק אינו 0 - כך לא נשמרת בטעות תוצאה
 // 0:0 (או 2:0 כשמילאו רק צד אחד)

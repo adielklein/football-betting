@@ -15,6 +15,7 @@ import { hapticError } from '../../services/haptics';
 import { formatCountdown, formatLockMoment } from '../../services/countdown';
 import Score from '../Score';
 import { textOn } from '../../services/readableColor';
+import { API_URL as API_BASE } from '../../config';
 
 // שם קבוצה לחיץ - פותח את חלון הנתונים. התג על הלוגו מסמן שאפשר ללחוץ
 // בלי להוסיף גובה לשורה הצפופה.
@@ -103,9 +104,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
 
   const { liveByMatchId, goalAtByMatchId } = useLiveScores(selectedWeek?._id, active);
 
-  const API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:5000/api'
-    : 'https://football-betting-backend.onrender.com/api';
+  const API_URL = API_BASE;
 
   // Live countdown timer
   useEffect(() => {

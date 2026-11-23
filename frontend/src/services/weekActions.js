@@ -1,9 +1,8 @@
+import { API_URL as API_BASE } from '../config';
 // פעולות על שבוע שמופעלות מכמה מסכים (מסך "היום", פס השלבים). במקום אחד,
 // כדי שכפתור "סנכרן תוצאות" יתנהג בדיוק אותו דבר בכל מקום.
 
-const API_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:5000/api'
-  : 'https://football-betting-backend.onrender.com/api';
+const API_URL = API_BASE;
 
 const postJson = async (path, body) => {
   const res = await fetch(`${API_URL}${path}`, {

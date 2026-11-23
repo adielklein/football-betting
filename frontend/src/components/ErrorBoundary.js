@@ -1,8 +1,7 @@
 import React from 'react';
+import { API_URL as API_BASE } from '../config';
 
-const API_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:5000/api'
-  : 'https://football-betting-backend.onrender.com/api';
+const API_URL = API_BASE;
 
 // תקלה במסך אחד לא מפילה את כל האפליקציה.
 //

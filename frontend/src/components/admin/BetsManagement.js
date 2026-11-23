@@ -4,6 +4,7 @@ import TeamLogo from '../TeamLogo';
 import LeagueLogo from '../LeagueLogo';
 import { toast } from '../../services/toast';
 import Score from '../Score';
+import { API_URL as API_BASE } from '../../config';
 
 function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, user }) {
   const [savingBet, setSavingBet] = useState(null);
@@ -14,9 +15,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
     setExpandedMatches(prev => ({ ...prev, [matchId]: !prev[matchId] }));
   };
 
-  const API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:5000/api'
-    : 'https://football-betting-backend.onrender.com/api';
+  const API_URL = API_BASE;
 
   const weekId = selectedWeek?._id;
   const weekMonth = selectedWeek?.month;

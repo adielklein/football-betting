@@ -17,6 +17,7 @@ import ErrorBoundary from '../ErrorBoundary';
 import LoadingSpinner from './LoadingSpinner';
 import useTabRoute from '../../services/useTabRoute';
 import { syncPushSubscription } from '../../services/pushSync';
+import { API_URL as API_BASE } from '../../config';
 
 function AdminView({ user, onLogout }) {
   const [weeks, setWeeks] = useState([]);
@@ -47,9 +48,7 @@ function AdminView({ user, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [auditCount, setAuditCount] = useState(0);
 
-  const API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:5000/api'
-    : 'https://football-betting-backend.onrender.com/api';
+  const API_URL = API_BASE;
 
   const isPrimaryAdmin = user?.username === 'adielklein';
 

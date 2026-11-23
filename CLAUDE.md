@@ -54,6 +54,18 @@ cd frontend && npm test           # Jest + React Testing Library
 
 **Theme system** (`frontend/src/themes.js` + `backend/themes.js`): 20+ team-branded themes applied via CSS variables on `document.documentElement`. The `applyTheme(user)` function handles iOS Safari compatibility.
 
+## Staging (סביבת ניסוי)
+
+Two extra Render services track the dev branch, so changes can be tried on a phone before merging to `main`:
+- `football-betting-staging` (static site, root `frontend`) → https://football-betting-staging.onrender.com
+- `football-betting-backend-staging` (web service, root `backend`), env `APP_ENV=staging`
+
+How it's wired:
+- `frontend/src/config.js` picks the API by hostname: any host containing `staging` → staging backend. All screens import `API_URL` from there (never hardcode the backend URL). Staging shows a "🧪 סביבת ניסוי" badge.
+- `backend/services/environment.js` exposes `IS_STAGING`. In staging: CORS accepts only the staging site, no keep-alive ping (it should sleep — free-tier hours are shared with production), and push is sent only to devices registered on staging (`subscription.env === 'staging'`).
+- Internal cron calls go to `127.0.0.1:PORT` (the server itself), never to a fixed production URL.
+- `backend/services/stagingSeed.js`: on startup, if `SEED_FROM_MONGODB_URI` is set, copies all collections from production (read-only) into staging's own database, dropping users' push devices. Runs again only when `STAGING_SEED_VERSION` changes. Refuses if source and target are the same database.
+
 ## Key Business Logic
 
 ### Week Lifecycle

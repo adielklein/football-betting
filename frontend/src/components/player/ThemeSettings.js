@@ -3,6 +3,7 @@ import GroupedPicker from '../GroupedPicker';
 import { getThemesByCategory, getTheme, applyTheme } from '../../themes';
 import ThemeIcon from '../ThemeIcon';
 import { toast } from '../../services/toast';
+import { API_URL as API_BASE } from '../../config';
 
 // בחירת ערכת נושא על ידי השחקן עצמו.
 //
@@ -12,9 +13,7 @@ import { toast } from '../../services/toast';
 // והבחירה נעשית לפי מראה ולא לפי שם: כל שורה נושאת את הגרדיאנט האמיתי
 // של הכותרת ואת סמל הקבוצה, כך שרואים מה מקבלים לפני שבוחרים.
 
-const API_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:5000/api'
-  : 'https://football-betting-backend.onrender.com/api';
+const API_URL = API_BASE;
 
 function ThemeSettings({ user, onThemeChange }) {
   const [saving, setSaving] = useState(false);

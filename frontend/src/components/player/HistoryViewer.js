@@ -7,6 +7,7 @@ import { formatScore } from '../../services/liveNumbers';
 import useReturnRefresh from '../../services/useReturnRefresh';
 import { SkeletonCards } from '../Skeleton';
 import { placesFor, anyScored } from '../../services/ranking';
+import { API_URL as API_BASE } from '../../config';
 
 function HistoryViewer({ weeks, user, active = true }) {
   const [selectedHistoryWeek, setSelectedHistoryWeek] = useState(null);
@@ -19,9 +20,7 @@ function HistoryViewer({ weeks, user, active = true }) {
   const [availableMonths, setAvailableMonths] = useState([]);
   const [filteredWeeks, setFilteredWeeks] = useState([]);
 
-  const API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:5000/api'
-    : 'https://football-betting-backend.onrender.com/api';
+  const API_URL = API_BASE;
 
   // הלשונית נשארת טעונה; חזרה אליה אחרי יותר מדקה מרעננת ברקע
   useReturnRefresh(active, () => selectedHistoryWeek && loadHistoryData(selectedHistoryWeek._id, { silent: true }));

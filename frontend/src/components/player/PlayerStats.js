@@ -6,6 +6,7 @@ import TeamLogo from '../TeamLogo';
 import { getTheme } from '../../themes';
 import useReturnRefresh from '../../services/useReturnRefresh';
 import { GoalsCard, CrowdCard, SeasonRankCard, LeaguesCard, ThemeTeamCard, accuracyBar, accuracyText } from './InsightCards';
+import { API_URL as API_BASE } from '../../config';
 
 // נקודות יכולות להיות שבריות (ניקוד לפי יחסים), ולכן ספרה אחת אחרי הנקודה
 const pts = (n) => Math.round((n || 0) * 10) / 10;
@@ -470,9 +471,7 @@ function PlayerStats({ user, active = true }) {
   // השבוע שהכתובית בגרפים מציגה. null = השבוע האחרון
   const [selectedWeek, setSelectedWeek] = useState(null);
 
-  const API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:5000/api'
-    : 'https://football-betting-backend.onrender.com/api';
+  const API_URL = API_BASE;
 
   // הלשונית נשארת טעונה; חזרה אליה אחרי יותר מדקה מרעננת ברקע
   useReturnRefresh(active, () => loadStats({ silent: true }));

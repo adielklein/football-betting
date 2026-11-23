@@ -4,6 +4,7 @@ import { applyTheme } from '../themes';
 import { hapticError } from '../services/haptics';
 import { play, reducedMotion } from '../services/motion';
 import { createGoalScene } from './goalScene';
+import { API_URL as API_BASE } from '../config';
 
 function Login({ onLogin, notice = null }) {
   const [usernameState, setUsername] = useState('');
@@ -23,9 +24,7 @@ function Login({ onLogin, notice = null }) {
     ], { duration: 440, easing: 'ease-in-out', composite: 'add' });
   };
 
-  const API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:5000/api'
-    : 'https://football-betting-backend.onrender.com/api';
+  const API_URL = API_BASE;
 
   useEffect(() => {
     applyTheme(null);

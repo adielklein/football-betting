@@ -10,13 +10,19 @@ const { authenticate, requireAdmin, requireUser, INTERNAL_TOKEN } = require('./m
 
 const app = express();
 
+const { IS_STAGING } = require('./services/environment');
+
 // CORS Configuration
+// שרת הניסוי מקבל בקשות רק מאתר הניסוי, והשרת האמיתי רק מהאתרים האמיתיים -
+// כך אתר הניסוי לא יכול בטעות לכתוב לנתונים האמיתיים
 app.use(cors({
-  origin: [
-    'https://football-betting-frontend.onrender.com',
-    'https://football-betting-app.onrender.com', 
-    'http://localhost:3000'
-  ],
+  origin: IS_STAGING
+    ? ['https://football-betting-staging.onrender.com', 'http://localhost:3000']
+    : [
+        'https://football-betting-frontend.onrender.com',
+        'https://football-betting-app.onrender.com',
+        'http://localhost:3000'
+      ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Id', 'X-Internal-Token'],
@@ -42,6 +48,19 @@ const connectMongoDB = async () => {
     
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('✅ Connected to MongoDB successfully!');
+
+    // סביבת ניסוי: העתקת הנתונים מהמסד האמיתי (ראה services/stagingSeed)
+    if (IS_STAGING) {
+      console.log('🧪 סביבת ניסוי (APP_ENV=staging)');
+      const { seedStagingFromProduction } = require('./services/stagingSeed');
+      const r = await seedStagingFromProduction({
+        mongoose,
+        sourceUri: process.env.SEED_FROM_MONGODB_URI,
+        targetUri: process.env.MONGODB_URI,
+        version: process.env.STAGING_SEED_VERSION || '1'
+      }).catch((e) => ({ error: e.message }));
+      console.log('🧪 [SEED]', JSON.stringify(r));
+    }
     
     const User = require('./models/User');
     const userCount = await User.countDocuments();
@@ -274,10 +293,9 @@ const weekHasUnscoredResults = async (week) => {
   return newest.resultUpdatedAt > week.scoresCalculatedAt;
 };
 
-const INTERNAL_BASE = () =>
-  process.env.NODE_ENV === 'development'
-    ? `http://localhost:${process.env.PORT || 5000}`
-    : 'https://football-betting-backend.onrender.com';
+// קריאות פנימיות הולכות לשרת הזה עצמו, ולא לכתובת קבועה: אחרת שרת הניסוי
+// היה מסנכרן ומחשב ניקוד בשרת האמיתי
+const INTERNAL_BASE = () => `http://127.0.0.1:${process.env.PORT || 5000}`;
 
 // מסנכרן תוצאות לשבוע אחד, ומחשב ניקוד אם נכנס משהו חדש.
 // משמש גם את הסריקה השעתית וגם את הסריקה הדקתית של מצב חי.
@@ -643,7 +661,9 @@ app.listen(PORT, () => {
 
   // Keep-alive: ping ourselves every 14 minutes to prevent Render from sleeping
   // Disabled between 01:00-07:00 Israel time to save Render hours
-  if (process.env.NODE_ENV !== 'development') {
+  // לא בסביבת הניסוי: היא אמורה להירדם כשלא משתמשים בה. שירות ער כל הזמן
+  // אוכל שעות מהמכסה החודשית של Render, שמשותפת לשרת האמיתי
+  if (process.env.NODE_ENV !== 'development' && !IS_STAGING) {
     const RENDER_URL = 'https://football-betting-backend.onrender.com';
     setInterval(() => {
       const israelHour = new Date().toLocaleString('en-US', { timeZone: 'Asia/Jerusalem', hour: 'numeric', hour12: false });

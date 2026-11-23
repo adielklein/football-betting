@@ -14,6 +14,7 @@ import { showsLiveBadge } from '../../services/liveBetStatus';
 import MatchInsightsModal from './MatchInsightsModal';
 import Score from '../Score';
 import { textOn } from '../../services/readableColor';
+import { API_URL as API_BASE } from '../../config';
 
 function AllBetsViewer({ weeks, user, active = true }) {
   const [selectedWeek, setSelectedWeek] = useState(null);
@@ -47,9 +48,7 @@ function AllBetsViewer({ weeks, user, active = true }) {
   const [availableMonths, setAvailableMonths] = useState([]);
   const [filteredWeeks, setFilteredWeeks] = useState([]);
 
-  const API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:5000/api'
-    : 'https://football-betting-backend.onrender.com/api';
+  const API_URL = API_BASE;
 
   // הלשונית נשארת טעונה; חזרה אליה אחרי יותר מדקה מרעננת ברקע
   useReturnRefresh(active, () => selectedWeek && loadWeekData(selectedWeek._id, { silent: true }));

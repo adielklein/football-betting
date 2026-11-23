@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from '../services/toast';
 import { syncPushSubscription } from '../services/pushSync';
+import { API_URL as API_BASE } from '../config';
 
 // שורת מתג אחת. הופקה מהמתג שהיה כאן inline, כדי שכל ההתראות ייראו אותו
 // דבר במקום שכל אחת תצייר מתג משלה
@@ -61,7 +62,7 @@ function NotificationSettings({ user, embedded = false }) {
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(embedded);
 
-  const API_URL = 'https://football-betting-backend.onrender.com/api';
+  const API_URL = API_BASE;
 
   const getUserId = () => {
     if (!user) return null;
