@@ -410,7 +410,20 @@ function AllBetsViewer({ weeks, user, active = true }) {
                         return team;
                       })}
                       <div style={{ gridColumn: 2, gridRow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ color: 'var(--text-4, #999)', fontWeight: 600, fontSize: 'var(--fs-xs)' }}>נגד</span>
+                        {/* כמו בסרטון: התוצאה גדולה באמצע בין שתי החולצות, וההימור
+                            שלך קטן מתחתיה. לפני שיש תוצאה - "נגד" */}
+                        {match.result && match.result.team1Goals !== undefined ? (
+                          <>
+                            <span style={{
+                              fontSize: 'calc(var(--fs-lg) * 1.35)', fontWeight: 900, lineHeight: 1,
+                              color: 'var(--text, #222)', letterSpacing: '1px', whiteSpace: 'nowrap'
+                            }}>
+                              <Score home={match.result.team1Goals} away={match.result.team2Goals} />
+                            </span>
+                          </>
+                        ) : (
+                          <span style={{ color: 'var(--text-4, #999)', fontWeight: 600, fontSize: 'var(--fs-xs)' }}>נגד</span>
+                        )}
                         {myBet && myBet.prediction && (
                           <span style={{
                             fontSize: 'var(--fs-xs)', padding: '1px 8px', whiteSpace: 'nowrap',
@@ -424,21 +437,12 @@ function AllBetsViewer({ weeks, user, active = true }) {
                         )}
                       </div>
                     </div>
-
-                    {/* התוצאה עלתה מתוך האזור הנפתח: היא הדבר הראשון שמחפשים,
-                        ולחיצה כדי לראות אותה היא לחיצה מיותרת. */}
+                    {/* משחק שנמשך מעבר ל-90: בלי ההערה התוצאה נראתה שגויה מול
+                        הטלוויזיה. מתחת לשורה ולא באמצע, כי הטקסט ארוך */}
                     {match.result && match.result.team1Goals !== undefined && (
-                      <div style={{
-                        textAlign: 'center', padding: '3px 8px',
-                        background: 'var(--good-bg, #e8f5e9)', borderRadius: '8px',
-                        fontSize: 'var(--fs-sm)', fontWeight: '700', color: 'var(--good-fg, #2e7d32)'
-                      }}>
-                        תוצאה: <Score home={match.result.team1Goals} away={match.result.team2Goals} />
-                        {/* המסך היחיד שלא אמר שהמשחק נמשך מעבר ל-90, ולכן
-                            כאן התוצאה נראתה פשוט שגויה מול הטלוויזיה */}
-                        <ResultNote result={match.result} />
-                      </div>
+                      <ResultNote result={match.result} style={{ textAlign: 'center', marginBottom: '0.2rem' }} />
                     )}
+
                   </div>
                     );
                   })()}
