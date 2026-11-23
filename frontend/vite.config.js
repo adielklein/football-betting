@@ -15,8 +15,22 @@ const stampCommit = () => ({
   ]
 });
 
+// אתר הניסוי ב-Render נבנה עם APP_ENV=staging. השם והאייקון של האפליקציה
+// במסך הבית נקבעים ברגע ההוספה, מתוך index.html וה-manifest - ולכן הם
+// מוחלפים כבר בבנייה, כדי שאפשר יהיה להבדיל בין שתי האפליקציות בטלפון
+const IS_STAGING_BUILD = process.env.APP_ENV === 'staging';
+
+const stagingIdentity = () => ({
+  name: 'staging-identity',
+  transformIndexHtml: (html) => !IS_STAGING_BUILD ? html : html
+    .replace('href="/manifest.json"', 'href="/manifest-staging.json"')
+    .replace('href="/logo192.png"', 'href="/logo192-staging.png"')
+    .replace(/(name="apple-mobile-web-app-title" content=")[^"]*"/, '$1סביבת עבודה"')
+    .replace(/<title>[^<]*<\/title>/, '<title>🧪 סביבת עבודה - הימורי כדורגל</title>')
+});
+
 export default defineConfig({
-  plugins: [react(), stampCommit()],
+  plugins: [react(), stampCommit(), stagingIdentity()],
 
   // כל קבצי המקור כאן הם .js גם כשיש בהם JSX. Vite קובע איך לפרסר קובץ לפי
   // הסיומת בלבד, ועל .js הוא מריץ loader של JS רגיל שלא יודע לקרוא JSX -
