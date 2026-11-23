@@ -54,6 +54,13 @@ cd frontend && npm test           # Jest + React Testing Library
 
 **Theme system** (`frontend/src/themes.js` + `backend/themes.js`): 20+ team-branded themes applied via CSS variables on `document.documentElement`. The `applyTheme(user)` function handles iOS Safari compatibility.
 
+## Deploy Workflow (mandatory)
+
+**Every change goes to staging first, and to production only after the user explicitly approves.**
+1. Commit and push to the dev branch `claude/seasonal-leaderboard-football-6l7qqs`. Both staging services auto-deploy from it.
+2. Tell the user what to check on https://football-betting-staging.onrender.com.
+3. Merge to `main` (production, Render auto-deploys) **only** after the user approves that specific change (e.g. "מזג", "תעלה לפרוד"). Never merge to `main` on your own, even for small fixes.
+
 ## Staging (סביבת ניסוי)
 
 Two extra Render services track the dev branch, so changes can be tried on a phone before merging to `main`:
