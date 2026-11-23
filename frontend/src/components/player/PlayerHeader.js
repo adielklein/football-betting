@@ -82,6 +82,8 @@ function PlayerHeader({ user, selectedWeek, onLogout, onOpenSettings, settingsOp
                     השבר בכיוון שמאל-לימין מבודד, אחרת בשורה עברית הוא מתהפך
                     ונקרא "10/6" */}
                 <span aria-hidden="true">🏆</span>
+                {/* "מקום" במפורש: בלעדיו "6/10" נקרא כמו 6 משחקים מתוך 10 */}
+                <span className="header-standing__label">מקום</span>
                 <bdi dir="ltr" className="header-standing__rank">{standing.rank}<span className="header-standing__of">/{standing.of}</span></bdi>
                 <span className="header-standing__pts">· {standing.points} נק'</span>
               </div>

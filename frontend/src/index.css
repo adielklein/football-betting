@@ -1198,6 +1198,7 @@ tr:hover {
 .header-standing__rank { color: #FFD84D; font-weight: 900; font-size: var(--fs-sm); }
 .header-standing__of { color: #FFD84D; opacity: 0.8; font-weight: 700; font-size: var(--fs-xs); }
 .header-standing__pts { opacity: 0.95; }
+.header-standing__label { color: #FFD84D; font-weight: 800; margin-inline-end: -2px; }
 
 /* ===== הסמל "מצויר" על הדשא (מצב יום, מסך השחקן) =====
    סמל הרקע של ערכת הנושא בשקיפות 3-4% היה כמעט בלתי נראה. על הדשא הוא
