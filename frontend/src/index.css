@@ -1110,10 +1110,42 @@ tr:hover {
 .stadium-beam--a { left: -30vw; transform: rotate(-22deg); }
 .stadium-beam--b { right: -30vw; transform: rotate(22deg); }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .stadium-beam { opacity: 0.16; }
+/* מצב יום: אותן אלומות, בגוון זהוב של שמש אחר הצהריים. אור לבן לא נראה על
+   רקע בהיר, וצבע חם כן. נבחר מתוך ארבע גרסאות (שמש, דשא, שניהם, צבעי
+   הקבוצה): השמש לבדה בעוצמה מלאה הפכה את הטקסט בכרטיסים לחום, ולכן היא
+   חלשה ודועכת מהר */
+.stadium-beam {
+  background: linear-gradient(to bottom,
+    rgba(255,190,70,0.6) 0%,
+    rgba(255,200,90,0.22) 30%,
+    rgba(255,210,120,0.05) 55%,
+    rgba(255,220,140,0) 75%);
+  opacity: 0.3;
 }
-:root[data-theme="dark"] .stadium-beam { opacity: 0.16; }
+
+/* פסי דשא כמו במגרש שכסחו בפסים. מאחורי הכל (z-index שלילי, כמו סמל הרקע),
+   ורואים אותם ברווחים בין הכרטיסים. רקע עומד - כמעט לא עולה כלום לטלפון */
+.pitch-stripes {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background: repeating-linear-gradient(180deg, #eef6ef 0 72px, #e2efe3 72px 144px);
+}
+
+/* מצב לילה: זרקורים לבנים, בלי דשא */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .stadium-beam {
+    opacity: 0.16;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.18) 30%, rgba(255,255,255,0.05) 60%, rgba(255,255,255,0) 85%);
+  }
+  :root:not([data-theme="light"]) .pitch-stripes { display: none; }
+}
+:root[data-theme="dark"] .stadium-beam {
+  opacity: 0.16;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.18) 30%, rgba(255,255,255,0.05) 60%, rgba(255,255,255,0) 85%);
+}
+:root[data-theme="dark"] .pitch-stripes { display: none; }
 
 @media (prefers-reduced-motion: no-preference) {
   .stadium-beam--a { animation: beamSwayA 10s ease-in-out infinite alternate; }

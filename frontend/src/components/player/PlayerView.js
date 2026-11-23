@@ -255,6 +255,8 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
     <div style={{ overflowX: 'clip' }}>
       {/* זרקורי אצטדיון על כל המסך - שכבת אור מעל התוכן שלא חוסמת לחיצות.
           ראה stadium-lights ב-index.css */}
+      {/* מצב יום: פסי דשא של מגרש ברקע, מאחורי הכרטיסים */}
+      <div className="pitch-stripes" aria-hidden="true" />
       <div className="stadium-lights" aria-hidden="true">
         <span className="stadium-beam stadium-beam--a" />
         <span className="stadium-beam stadium-beam--b" />
