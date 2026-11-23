@@ -1235,18 +1235,14 @@ body:has(.pitch-stripes)::before { opacity: 0.35; }
    כולן כבויות אצל מי שביקש פחות תנועה, חוץ מהזוהר הסטטי של המנצחת. */
 .shirt-anim { display: block; width: 100%; height: 100%; position: relative; transform-origin: 50% 90%; }
 
-/* ברק סאטן: פס אור אלכסוני שחוצה את הבד פעם ב-9 שניות, בהשהיה שונה לכל חולצה */
-.shirt-shine { transform: skewX(-20deg) translateX(0); }
+/* ברק סאטן: רץ באנימציה של SVG עצמו (ראה TeamShirt). כאן רק ההסתרה */
+@media (prefers-reduced-motion: reduce) {
+  .shirt-shine { display: none; }
+}
 @media (prefers-reduced-motion: no-preference) {
-  .shirt-shine { animation: shirtShine 9s ease-in-out infinite; animation-delay: var(--shine-delay, 0s); }
-  .shirt-cloth { filter: url(#shirt-wave); }
   .shirt-jump { animation: shirtJump 1.3s cubic-bezier(.3,1.6,.5,1) 2; }
   .shirt-flip { animation: shirtFlip 0.45s ease-in-out; }
   .shirt--win { animation: shirtWinGlow 2.4s ease-in-out infinite alternate; }
-}
-@keyframes shirtShine {
-  0%, 82% { transform: skewX(-20deg) translateX(0); }
-  100% { transform: skewX(-20deg) translateX(95px); }
 }
 /* גול: קפיצה למעלה, נחיתה רכה וקפיצה קטנה */
 @keyframes shirtJump {

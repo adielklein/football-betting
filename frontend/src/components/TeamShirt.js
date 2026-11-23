@@ -67,12 +67,11 @@ export const resultState = (match, side) => {
 
 // אנימציות (ההסברים והתזמונים ב-index.css, "אנימציות חולצה"):
 //   shine   - ברק סאטן שעובר על הבד מדי פעם, בתזמון שונה לכל חולצה
-//   cloth   - הבד מתנופף קלות (פילטר משותף #shirt-wave, StadiumDecor)
 //   state   - 'win' / 'lose' אחרי המשחק
 //   jumpAt  - חותמת זמן של גול של הקבוצה הזו: החולצה קופצת
 //   flipAt  - חותמת זמן של לחיצה: החולצה מתהפכת
 // חותמת חדשה מחליפה את המפתח של העטיפה, וזה מה שמריץ את האנימציה מחדש
-function TeamShirt({ color, kit, size = 44, shine = false, cloth = false, state = null, jumpAt = 0, flipAt = 0, children }) {
+function TeamShirt({ color, kit, size = 44, shine = false, state = null, jumpAt = 0, flipAt = 0, children }) {
   // מזהה ייחודי לכל מופע: אותה קבוצה יכולה להופיע כמה פעמים במסך, ו-clipPath
   // עם מזהה כפול מצייר את כולן לפי הראשון
   const [id] = React.useState(() => `shirt-${++uid}`);
@@ -80,19 +79,19 @@ function TeamShirt({ color, kit, size = 44, shine = false, cloth = false, state 
   const shape = kit || { p: 'solid', body: color };
   const h = size * 0.92;
   // השהיה שונה לכל חולצה, כדי שהברק לא יעבור על כולן באותו רגע
-  const shineDelay = `${(uid * 1.7) % 9}s`;
+  const shineDelay = `${((uid * 1.3) % 6).toFixed(1)}s`;
   const recent = (t) => t && Date.now() - t < 4000;
   const motion = [recent(jumpAt) && 'shirt-jump', recent(flipAt) && 'shirt-flip'].filter(Boolean).join(' ');
   return (
     <span className={state ? `shirt--${state}` : undefined} style={{ position: 'relative', display: 'inline-block', width: size, height: h, flexShrink: 0 }}>
     <span key={`${jumpAt}-${flipAt}`} className={`shirt-anim ${motion}`}>
-      <svg viewBox="0 0 48 44" width={size} height={h} aria-hidden="true" className={cloth ? 'shirt-cloth' : undefined} style={{ display: 'block', overflow: 'visible' }}>
+      <svg viewBox="0 0 48 44" width={size} height={h} aria-hidden="true" style={{ display: 'block', overflow: 'visible' }}>
         <defs>
           <clipPath id={`${id}-c`}><path d={SHIRT} /></clipPath>
           {shine && (
             <linearGradient id="shirt-shine-g" x1="0" y1="0" x2="1" y2="0">
               <stop offset="0" stopColor="#fff" stopOpacity="0" />
-              <stop offset="0.5" stopColor="#fff" stopOpacity="0.65" />
+              <stop offset="0.5" stopColor="#fff" stopOpacity="0.9" />
               <stop offset="1" stopColor="#fff" stopOpacity="0" />
             </linearGradient>
           )}
@@ -119,7 +118,15 @@ function TeamShirt({ color, kit, size = 44, shine = false, cloth = false, state 
           <rect x="11.5" y="40.3" width="25" height="1.7" fill="#000" opacity="0.14" />
           <path d={SHIRT} fill={`url(#${id}-g)`} />
           {/* ברק סאטן שעובר על הבד מדי פעם, חתוך לצורת החולצה. ראה .shirt-shine */}
-          {shine && <rect className="shirt-shine" x="-30" y="-6" width="22" height="56" fill="url(#shirt-shine-g)" style={{ '--shine-delay': shineDelay }} />}
+          {/* ברק: האנימציה של SVG עצמו (animate) ולא CSS - טרנספורם CSS על אלמנט
+              בתוך SVG לא רץ בכל הטלפונים. מוסתר אצל מי שביקש פחות תנועה */}
+          {shine && (
+            <g className="shirt-shine" transform="skewX(-20)">
+              <rect x="-40" y="-6" width="16" height="56" fill="url(#shirt-shine-g)">
+                <animate attributeName="x" values="-40;-40;75" keyTimes="0;0.6;1" dur="6s" begin={shineDelay} repeatCount="indefinite" />
+              </rect>
+            </g>
+          )}
         </g>
         {/* תפרי השרוולים */}
         <path d="M11.5 10 L11.5 18.5 M36.5 10 L36.5 18.5" style={outline} strokeWidth="0.8" />

@@ -402,7 +402,7 @@ function AllBetsViewer({ weeks, user, active = true }) {
                           >
                             {shirt ? (
                               <TeamShirt
-                                {...shirt} size={42} shine cloth
+                                {...shirt} size={42} shine
                                 state={resultState(match, n)}
                                 jumpAt={goalByMatchId[match._id]?.side === n ? goalByMatchId[match._id].at : 0}
                                 flipAt={flipAt[`${match._id}-${n}`] || 0}

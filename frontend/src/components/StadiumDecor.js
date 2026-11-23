@@ -30,16 +30,6 @@ export function StadiumBackdrop() {
   return (
     <>
       <div className="pitch-stripes" aria-hidden="true" />
-      {/* פילטר "בד ברוח" אחד משותף לכל החולצות (TeamShirt cloth). פילטר
-          לכל חולצה בנפרד היה מכפיל את העבודה בכל מסגרת */}
-      <svg width="0" height="0" aria-hidden="true" style={{ position: 'absolute' }}>
-        <filter id="shirt-wave" x="-10%" y="-10%" width="120%" height="120%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.02 0.07" numOctaves="2" seed="4">
-            <animate attributeName="baseFrequency" dur="5s" values="0.02 0.07;0.026 0.09;0.02 0.07" repeatCount="indefinite" />
-          </feTurbulence>
-          <feDisplacementMap in="SourceGraphic" scale="2.6" />
-        </filter>
-      </svg>
       <div className="stadium-lights" aria-hidden="true">
         <span className="stadium-beam stadium-beam--a" />
         <span className="stadium-beam stadium-beam--b" />
