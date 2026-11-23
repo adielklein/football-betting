@@ -356,6 +356,10 @@ const { syncUpcomingTv } = require('./services/tvChannels');
 const runTvSync = () => syncUpcomingTv().catch((e) => console.warn('📺 [TV] sync failed:', e.message));
 cron.schedule('41 */3 * * *', runTvSync, { timezone: 'Asia/Jerusalem' });
 setTimeout(runTvSync, 90 * 1000);
+// 👕 צבעי חולצות למשחקים שיובאו לפני שהצבעים נשמרו. אחרי סבב הערוצים, כדי
+// לא לפנות ל-365 משני המקומות באותו זמן. אחרי שהכל הושלם - לא עושה כלום
+const { backfillKitColors } = require('./services/tvChannels');
+setTimeout(() => backfillKitColors().catch((e) => console.warn('👕 [KIT] backfill failed:', e.message)), 4 * 60 * 1000);
 console.log('📺 Cron registered: TV channels every 3 hours at minute 41');
 
 // 🔴 סריקת מצב חי כל 10 שניות.

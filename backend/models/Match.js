@@ -40,6 +40,8 @@ const matchSchema = new mongoose.Schema({
   // שכבר יובאו - בסבב ערוצי השידור (services/tvChannels.js)
   team1Color: { type: String, default: null },
   team2Color: { type: String, default: null },
+  // מתי נבדקו הצבעים בהשלמה החד-פעמית (services/tvChannels.js, backfillKitColors)
+  kitColorsCheckedAt: { type: Date, default: null },
 
   // תמונת המצב האחרונה שנראתה בסריקה החיה. ממנה נגזרים אירועי שער/אדום/
   // פתיחה/סיום, והיא נשמרת כאן ולא בזיכרון כדי שהפעלה מחדש של השרת לא

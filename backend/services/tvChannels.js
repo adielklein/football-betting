@@ -70,4 +70,36 @@ const syncWeekTv = async (weekId) => {
   return syncTvForMatches(matches);
 };
 
-module.exports = { syncTvForMatches, syncUpcomingTv, syncWeekTv };
+// השלמת צבעי חולצות לכל המשחקים מ-365 שאין להם עדיין - גם משחקים שכבר
+// עברו, כדי שהחולצות יופיעו גם ב"כל ההימורים" ובשבועות קודמים. רק הצבעים
+// נכתבים: ערוצי שידור למשחק שנגמר לא מעניינים אף אחד.
+//
+// רץ פעם אחת אחרי עליית השרת, מהחדש לישן, באותו קצב איטי של סבב הערוצים.
+// משחק שהספק לא החזיר לו צבע מסומן כנבדק, כדי שלא יישאל שוב בכל הפעלה.
+const backfillKitColors = async ({ limit = 600 } = {}) => {
+  const matches = await Match.find(
+    { ...is365, team1Color: null, kitColorsCheckedAt: null },
+    'externalId team1ExternalId'
+  ).sort({ fullDate: -1 }).limit(limit).lean();
+  const summary = { checked: 0, colored: 0, failed: 0 };
+  for (const m of matches) {
+    summary.checked++;
+    try {
+      const { colors } = await fetchGameExtras(m.externalId, m.team1ExternalId);
+      const set = { kitColorsCheckedAt: new Date() };
+      if (colors.team1Color) set.team1Color = colors.team1Color;
+      if (colors.team2Color) set.team2Color = colors.team2Color;
+      if (colors.team1Color || colors.team2Color) summary.colored++;
+      await Match.updateOne({ _id: m._id }, { $set: set });
+    } catch (err) {
+      summary.failed++;
+    }
+    await sleep(PAUSE_MS);
+  }
+  if (summary.checked) {
+    console.log(`👕 [KIT] checked ${summary.checked}, colored ${summary.colored}, failed ${summary.failed}`);
+  }
+  return summary;
+};
+
+module.exports = { syncTvForMatches, syncUpcomingTv, syncWeekTv, backfillKitColors };
