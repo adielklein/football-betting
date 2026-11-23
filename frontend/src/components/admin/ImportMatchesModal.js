@@ -276,7 +276,10 @@ function ImportMatchesModal({ week, previousWeek = null, leagues, adminId, onClo
             team1LogoUrl: f.team1LogoUrl,
             team2LogoUrl: f.team2LogoUrl,
             team1ExternalId: f.team1ExternalId,
-            team2ExternalId: f.team2ExternalId
+            team2ExternalId: f.team2ExternalId,
+            // צבעי החולצות מ-365, לתצוגת החולצה בכרטיס ההימור
+            team1Color: f.team1Color || null,
+            team2Color: f.team2Color || null
           };
           if (includeOdds) {
             const odds = {};

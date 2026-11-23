@@ -252,3 +252,35 @@ test('שגיאה שאינה חולפת (404) לא מנוסה שוב', async () =
     assert.equal(calls.results['131'], 1);
   });
 });
+
+// צבעי חולצות
+const { pickKitColors, kitColorsForMatch } = require('./scores365Api');
+
+test('kit colors: home main, away main when they differ', () => {
+  assert.deepEqual(
+    pickKitColors({ color: '#1532c1', awayColor: '#0a0a0a' }, { color: '#FDF9F9', awayColor: '#F4F330' }),
+    { homeColor: '#1532C1', awayColor: '#FDF9F9' }
+  );
+});
+
+test('kit colors: away switches to second kit on a clash', () => {
+  // טוטנהאם בלבן מול פולהאם בלבן - פולהאם עוברת לאדום
+  assert.deepEqual(
+    pickKitColors({ color: '#FFFFFF', awayColor: '#192840' }, { color: '#FFFFFF', awayColor: '#E13637' }),
+    { homeColor: '#FFFFFF', awayColor: '#E13637' }
+  );
+});
+
+test('kit colors: missing or broken values', () => {
+  assert.deepEqual(pickKitColors({}, null), { homeColor: null, awayColor: null });
+  assert.deepEqual(pickKitColors({ color: 'red' }, { awayColor: '#00ff00' }), { homeColor: null, awayColor: '#00FF00' });
+});
+
+test('kit colors follow our team order when the match was saved flipped', () => {
+  const game = { homeCompetitor: { id: 108, color: '#C8102E' }, awayCompetitor: { id: 104, color: '#EF0107' } };
+  // ליברפול (108) במארחת, ארסנל (104) באורחת; אצלנו ארסנל היא team1
+  const c = kitColorsForMatch(game, '104');
+  assert.equal(c.team2Color, '#C8102E');
+  assert.ok(c.team1Color);
+  assert.deepEqual(kitColorsForMatch(game, '108').team1Color, '#C8102E');
+});

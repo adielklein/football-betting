@@ -261,6 +261,9 @@ router.post('/bulk', requireAdmin, async (req, res) => {
       if (m.team2LogoUrl) data.team2LogoUrl = String(m.team2LogoUrl);
       if (m.team1ExternalId) data.team1ExternalId = String(m.team1ExternalId);
       if (m.team2ExternalId) data.team2ExternalId = String(m.team2ExternalId);
+      const hex = (c) => (/^#[0-9A-Fa-f]{6}$/.test(String(c || '')) ? String(c).toUpperCase() : null);
+      if (hex(m.team1Color)) data.team1Color = hex(m.team1Color);
+      if (hex(m.team2Color)) data.team2Color = hex(m.team2Color);
 
       if (m.odds) {
         const oddsData = {};

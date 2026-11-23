@@ -299,7 +299,9 @@ function Leaderboard({ leaderboard, user, active = true }) {
     const score = formatScore(player[scoreKey] !== undefined ? player[scoreKey] : player.score);
 
     // לשורה עם רקע משלה יש גם טקסט משלה. שורה רגילה יורשת את הרגיל.
-    const rowFg = isMe ? 'var(--me-fg, #14508f)' : (isTop3 ? rank.fg : 'var(--text, #333)');
+    // השורה שלי: פס בצבע ערכת הנושא, כדי שכל שחקן ימצא את עצמו מיד. הצבע
+    // והטקסט שעליו נבחרים ב-themes.js (‎--theme-tile‎ / ‎--theme-tile-fg‎)
+    const rowFg = isMe ? 'var(--theme-tile-fg, #fff)' : (isTop3 ? rank.fg : 'var(--text, #333)');
 
     return (
       <div key={player.name} data-flip-key={player.name} style={{
@@ -309,10 +311,12 @@ function Leaderboard({ leaderboard, user, active = true }) {
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: isTop3 ? '0.6rem 0.65rem' : '0.45rem 0.6rem',
-        background: isMe ? 'var(--me-bg, #dbeafe)' : (isTop3 ? rank.bg : (index % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)')),
+        backgroundColor: isMe ? 'var(--theme-tile, #3b5bdb)' : undefined,
+        backgroundImage: isMe ? 'linear-gradient(100deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 60%, rgba(0,0,0,0.12))' : undefined,
+        background: isMe ? undefined : (isTop3 ? rank.bg : (index % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)')),
         borderRadius: isTop3 ? '12px' : '8px',
-        border: isMe ? '2px solid #64b5f6' : (isTop3 ? `1px solid ${rank.border}` : '1px solid #f0f0f0'),
-        boxShadow: isMe ? '0 2px 8px rgba(33,150,243,0.15)' : rank.shadow,
+        border: isMe ? '1px solid rgba(0,0,0,0.1)' : (isTop3 ? `1px solid ${rank.border}` : '1px solid #f0f0f0'),
+        boxShadow: isMe ? '0 3px 12px rgba(0,0,0,0.18)' : rank.shadow,
         animation: `slideUp 0.25s ease ${animDelay}s both`,
         transition: 'all 0.2s ease'
       }}>
@@ -322,7 +326,7 @@ function Leaderboard({ leaderboard, user, active = true }) {
             fontWeight: '800',
             minWidth: '28px',
             textAlign: 'center',
-            color: !isTop3 ? 'var(--text-4, #bbb)' : rowFg
+            color: (!isTop3 && !isMe) ? 'var(--text-4, #bbb)' : rowFg
           }}>
             {rank.icon || (scored ? place : '–')}
           </span>
@@ -345,7 +349,7 @@ function Leaderboard({ leaderboard, user, active = true }) {
           fontSize: isTop3 ? 'var(--fs-lg)' : 'var(--fs-md)',
           color: rowFg,
           flexShrink: 0,
-          background: isTop3 ? 'var(--overlay, rgba(255,255,255,0.72))' : 'var(--surface-3, #f5f5f5)',
+          background: isMe ? 'rgba(255,255,255,0.2)' : (isTop3 ? 'var(--overlay, rgba(255,255,255,0.72))' : 'var(--surface-3, #f5f5f5)'),
           padding: '2px 12px',
           borderRadius: '10px',
           minWidth: '40px',

@@ -202,7 +202,12 @@ const fetchUpcomingFixtures = async ({ scores365CompetitionId, fromDate, toDate,
         team2En: g.awayCompetitor?.name || 'Unknown',
         team2He: g.awayCompetitor?.name || null,
         team2LogoUrl: competitorImg(g.awayCompetitor?.id),
-        team2ExternalId: g.awayCompetitor?.id != null ? String(g.awayCompetitor.id) : null
+        team2ExternalId: g.awayCompetitor?.id != null ? String(g.awayCompetitor.id) : null,
+        // צבעי החולצות, לתצוגת חולצה מאחורי הסמל
+        ...(() => {
+          const { homeColor, awayColor } = pickKitColors(g.homeCompetitor, g.awayCompetitor);
+          return { team1Color: homeColor, team2Color: awayColor };
+        })()
       };
     })
     .filter(Boolean);
@@ -732,6 +737,53 @@ const pickIsraeliChannels = (game) => (Array.isArray(game?.tvNetworks) ? game.tv
   .map((n) => ({ name: String(n.name).trim(), website: n.website || null }))
   .filter((n, i, all) => all.findIndex((x) => x.name === n.name) === i);
 
+// צבעי החולצות של שתי הקבוצות. לכל קבוצה ב-365 יש color (תלבושת ראשית)
+// ו-awayColor (תלבושת שנייה). המארחת בצבע הראשי. האורחת בצבע הראשי שלה,
+// אלא אם הוא קרוב מדי לזה של המארחת - אז בתלבושת השנייה, כמו במגרש.
+const HEX = /^#?([0-9a-f]{6})$/i;
+const normHex = (c) => {
+  const m = HEX.exec(String(c || '').trim());
+  return m ? `#${m[1].toUpperCase()}` : null;
+};
+const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+const colorDistance = (a, b) => {
+  const [r1, g1, b1] = rgb(a);
+  const [r2, g2, b2] = rgb(b);
+  return Math.sqrt((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2);
+};
+const CLASH = 110;
+
+const pickKitColors = (home, away) => {
+  const homeColor = normHex(home?.color) || normHex(home?.awayColor);
+  const awayMain = normHex(away?.color);
+  const awaySecond = normHex(away?.awayColor);
+  let awayColor = awayMain || awaySecond;
+  if (homeColor && awayMain && awaySecond && colorDistance(homeColor, awayMain) < CLASH
+      && colorDistance(homeColor, awaySecond) > colorDistance(homeColor, awayMain)) {
+    awayColor = awaySecond;
+  }
+  return { homeColor: homeColor || null, awayColor: awayColor || null };
+};
+
+// צבעים לפי הסדר שלנו (team1/team2). משחק שנשמר הפוך מהבית/חוץ של 365
+// מזוהה לפי מזהה הקבוצה ששמור עליו
+const kitColorsForMatch = (game, team1ExternalId) => {
+  const { homeColor, awayColor } = pickKitColors(game?.homeCompetitor, game?.awayCompetitor);
+  const flipped = team1ExternalId != null && game?.awayCompetitor?.id != null
+    && String(team1ExternalId) === String(game.awayCompetitor.id);
+  return flipped
+    ? { team1Color: awayColor, team2Color: homeColor }
+    : { team1Color: homeColor, team2Color: awayColor };
+};
+
+// ערוצי שידור וצבעי חולצות של משחק אחד - שניהם מאותה בקשה
+const fetchGameExtras = async (externalId, team1ExternalId = null) => {
+  if (!externalId) return { channels: [], colors: { team1Color: null, team2Color: null } };
+  const id = String(externalId).startsWith('365_') ? String(externalId).slice(4) : String(externalId);
+  const json = await apiGet(`/game/?appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&gameId=${id}`);
+  return { channels: pickIsraeliChannels(json?.game), colors: kitColorsForMatch(json?.game, team1ExternalId) };
+};
+
 const fetchTvChannels = async (externalId) => {
   if (!externalId) return [];
   const id = String(externalId).startsWith('365_') ? String(externalId).slice(4) : String(externalId);
@@ -741,6 +793,9 @@ const fetchTvChannels = async (externalId) => {
 
 module.exports = {
   pickIsraeliChannels,
+  pickKitColors,
+  kitColorsForMatch,
+  fetchGameExtras,
   fetchTvChannels,
   // מיוצא לבדיקה: פורמט תאריך שגוי בטווח מחזיר רשימה ריקה ולא שגיאה,
   // וזה נשבר בשקט

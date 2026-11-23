@@ -1,6 +1,6 @@
 import { isDark } from './services/colorScheme';
 import { getTeamLogoUrl } from './utils/teamLogos';
-import { readableOn } from './services/readableColor';
+import { readableOn, contrast, textOn } from './services/readableColor';
 
 // src/themes.js - קובץ ערכות נושא עם תאימות מלאה ל-iOS Safari
 
@@ -594,6 +594,15 @@ export const applyTheme = (user) => {
     ? readableOn(theme.colors.primary, token('--surface-3', '#2b313b'))
     : readableOn(readableOn(theme.colors.primary, theme.colors.background), '#f0f2f5');
   root.style.setProperty('--theme-primary-text', primaryText);
+
+  // צבע ה"קוביות" (תיבות הניקוד, השורה שלי בטבלה): צבע המותג הראשון שבולט
+  // על המשטח. ריאל מדריד ואנגליה לבנות, ברזיל צהובה - קובייה בצבע הראשי
+  // שלהן הייתה נעלמת על רקע בהיר, ושחור נעלם במצב כהה
+  const tileSurface = dark ? token('--surface', '#1b1f26') : '#ffffff';
+  const tile = [theme.colors.primary, theme.colors.secondary, theme.colors.accent]
+    .find((c) => /^#[0-9a-f]{6}$/i.test(c || '') && contrast(c, tileSurface) >= 1.8) || '#3b5bdb';
+  root.style.setProperty('--theme-tile', tile);
+  root.style.setProperty('--theme-tile-fg', textOn(tile));
   
   // 🍎 הוסף קלאס iOS לbody אם צריך
   if (isIOSDevice) {

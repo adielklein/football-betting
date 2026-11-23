@@ -36,6 +36,10 @@ const matchSchema = new mongoose.Schema({
   team2LogoUrl: { type: String, default: null },
   team1ExternalId: { type: String, default: null },
   team2ExternalId: { type: String, default: null },
+  // צבע החולצה של כל קבוצה במשחק הזה, מ-365 (#RRGGBB). מגיע בייבוא, ולמשחקים
+  // שכבר יובאו - בסבב ערוצי השידור (services/tvChannels.js)
+  team1Color: { type: String, default: null },
+  team2Color: { type: String, default: null },
 
   // תמונת המצב האחרונה שנראתה בסריקה החיה. ממנה נגזרים אירועי שער/אדום/
   // פתיחה/סיום, והיא נשמרת כאן ולא בזיכרון כדי שהפעלה מחדש של השרת לא

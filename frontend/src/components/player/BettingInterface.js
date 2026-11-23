@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { nextScoreValue } from '../../services/scoreInput';
 import TeamLogo from '../TeamLogo';
+import TeamShirt from '../TeamShirt';
 import LeagueLogo from '../LeagueLogo';
 import TvChannels from '../TvChannels';
 import MatchInsightsModal from './MatchInsightsModal';
@@ -19,7 +20,7 @@ import { API_URL as API_BASE } from '../../config';
 
 // שם קבוצה לחיץ - פותח את חלון הנתונים. התג על הלוגו מסמן שאפשר ללחוץ
 // בלי להוסיף גובה לשורה הצפופה.
-function TeamPicker({ name, logo, onClick }) {
+function TeamPicker({ name, logo, color, onClick }) {
   return (
     <button
       type="button"
@@ -57,7 +58,11 @@ function TeamPicker({ name, logo, onClick }) {
           מהירה של שלושה-עשר משחקים. */}
       {/* הסמל שנשמר בייבוא מ-365 הוא של הקבוצה הנכונה. בלעדיו הרכיב
           מנחש לפי השם מול מקור אחר, וזה מה שהיה כאן עד עכשיו */}
-      <TeamLogo name={name} src={logo} />
+      {color ? (
+        <TeamShirt color={color}><TeamLogo name={name} src={logo} /></TeamShirt>
+      ) : (
+        <TeamLogo name={name} src={logo} />
+      )}
       {/* עד שתי שורות, ורק אז שלוש נקודות. בשורה אחת "מנצ'סטר סיטי" נחתך
           ל"מנצ'סטר ..." - ובדיוק המילה השנייה מבדילה בין שתי הקבוצות */}
       <span style={{
@@ -66,7 +71,6 @@ function TeamPicker({ name, logo, onClick }) {
         overflow: 'hidden', overflowWrap: 'anywhere'
       }}>
         {name}
-        <span style={{ fontSize: 'var(--fs-xs)', opacity: 0.5, marginInlineStart: '3px' }} aria-hidden="true">📊</span>
       </span>
     </button>
   );
@@ -599,6 +603,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                 <TeamPicker
                   name={match.team1}
                   logo={match.team1LogoUrl}
+                  color={match.team1Color}
                   onClick={() => setInsightsFor({ match, focusTeam: 1 })}
                 />
 
@@ -617,24 +622,8 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                     value={currentBet.team1Goals || ''}
                     onFocus={markFresh}
                     onChange={(e) => handleScoreInput(e, match._id, 'team1Goals')}
-                    style={{
-                      width: '46px',
-                      height: '42px',
-                      textAlign: 'center',
-                      padding: '4px',
-                      border: '2px solid',
-                      borderColor: currentBet.team1Goals !== '' && currentBet.team1Goals !== undefined ? '#28a745' : 'var(--border-2, #ddd)',
-                      borderRadius: '10px',
-                      fontSize: 'var(--fs-lg)',
-                      fontWeight: '800',
-                      backgroundColor: 'var(--surface, #fff)',
-                      color: 'var(--text, #333)',
-                      boxShadow: currentBet.team1Goals !== '' && currentBet.team1Goals !== undefined
-                        ? '0 0 0 3px rgba(40,167,69,0.1)' : 'inset 0 1px 3px rgba(0,0,0,0.06)',
-                      transition: 'all 0.2s ease',
-                      outline: 'none'
-                    }}
-                    className="input"
+                    className="score-tile"
+                    data-filled={currentBet.team1Goals !== '' && currentBet.team1Goals !== undefined ? '1' : '0'}
                     placeholder="?"
                   />
                   <span style={{
@@ -652,24 +641,8 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                     value={currentBet.team2Goals || ''}
                     onFocus={markFresh}
                     onChange={(e) => handleScoreInput(e, match._id, 'team2Goals')}
-                    style={{
-                      width: '46px',
-                      height: '42px',
-                      textAlign: 'center',
-                      padding: '4px',
-                      border: '2px solid',
-                      borderColor: currentBet.team2Goals !== '' && currentBet.team2Goals !== undefined ? '#28a745' : 'var(--border-2, #ddd)',
-                      borderRadius: '10px',
-                      fontSize: 'var(--fs-lg)',
-                      fontWeight: '800',
-                      backgroundColor: 'var(--surface, #fff)',
-                      color: 'var(--text, #333)',
-                      boxShadow: currentBet.team2Goals !== '' && currentBet.team2Goals !== undefined
-                        ? '0 0 0 3px rgba(40,167,69,0.1)' : 'inset 0 1px 3px rgba(0,0,0,0.06)',
-                      transition: 'all 0.2s ease',
-                      outline: 'none'
-                    }}
-                    className="input"
+                    className="score-tile"
+                    data-filled={currentBet.team2Goals !== '' && currentBet.team2Goals !== undefined ? '1' : '0'}
                     placeholder="?"
                   />
                 </div>
@@ -677,10 +650,23 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                 <TeamPicker
                   name={match.team2}
                   logo={match.team2LogoUrl}
+                  color={match.team2Color}
                   onClick={() => setInsightsFor({ match, focusTeam: 2 })}
                 />
               </div>
 
+              {/* שורה תחתונה: כפתור הנתונים, ולידו מצב השמירה */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+              {/* הכפתור הבולט לחלון הנתונים. עד עכשיו החלון נפתח רק מלחיצה על
+                  שם הקבוצה, עם אייקון קטן לידו - ורוב השחקנים לא גילו אותו */}
+              <button
+                type="button"
+                className="stats-pill"
+                onClick={() => setInsightsFor({ match, focusTeam: 1 })}
+                aria-label={`נתונים על ${match.team1} נגד ${match.team2}`}
+              >
+                <span aria-hidden="true">📊</span> נתונים
+              </button>
               {/* מצב שמירה: שורה קטנה במקום כפתור. גובה קבוע כדי שהכרטיס לא יקפוץ */}
               <div aria-live="polite" style={{
                 minHeight: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -714,6 +700,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                     נשמר
                   </span>
                 ) : null}
+              </div>
               </div>
 
               {/* תוצאה סופית */}

@@ -335,6 +335,8 @@ router.get('/fixtures', async (req, res) => {
         team2LogoUrl: f.team2LogoUrl,
         team1ExternalId: f.team1ExternalId || null,
         team2ExternalId: f.team2ExternalId || null,
+        team1Color: f.team1Color || null,
+        team2Color: f.team2Color || null,
         kickoffIso: f.kickoffIso,
         // הסיבוב אצל הספק ("מחזור 5", "שלב הבתים"), כשיש
         round: f.round || null,

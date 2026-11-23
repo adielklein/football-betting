@@ -4,7 +4,7 @@
 // להציף את הספק. רץ כל שלוש שעות על משחקים מהימים הקרובים, וגם פעם אחת
 // אחרי עליית השרת, כך שגם שבוע שכבר באוויר מתעדכן מיד אחרי פריסה.
 const Match = require('../models/Match');
-const { fetchTvChannels } = require('./scores365Api');
+const { fetchGameExtras } = require('./scores365Api');
 
 const PAUSE_MS = 350;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -19,7 +19,7 @@ const syncTvForMatches = async (matches) => {
   for (const m of matches) {
     summary.checked++;
     try {
-      const channels = await fetchTvChannels(m.externalId);
+      const { channels, colors } = await fetchGameExtras(m.externalId, m.team1ExternalId);
       const keep = channels.length === 0 && (m.tvChannels || []).length > 0;
       const next = keep ? m.tvChannels : channels;
       if (next.length > 0) summary.withTv++;
@@ -28,6 +28,9 @@ const syncTvForMatches = async (matches) => {
         set.tvChannels = next;
         summary.updated++;
       }
+      // צבעי החולצות מגיעים באותה בקשה - משלימים למשחקים שיובאו לפניהם
+      if (colors.team1Color && colors.team1Color !== m.team1Color) set.team1Color = colors.team1Color;
+      if (colors.team2Color && colors.team2Color !== m.team2Color) set.team2Color = colors.team2Color;
       await Match.updateOne({ _id: m._id }, { $set: set });
     } catch (err) {
       summary.failed++;
@@ -44,8 +47,13 @@ const syncUpcomingTv = async ({ days = 10, maxAgeHours = 2.5 } = {}) => {
   const matches = await Match.find({
     ...is365,
     fullDate: { $gte: new Date(now - 3 * 3600e3), $lte: new Date(now + days * 864e5) },
-    $or: [{ tvCheckedAt: null }, { tvCheckedAt: { $lt: new Date(now - maxAgeHours * 3600e3) } }]
-  }, 'externalId team1 team2 tvChannels').lean();
+    $or: [
+      { tvCheckedAt: null },
+      { tvCheckedAt: { $lt: new Date(now - maxAgeHours * 3600e3) } },
+      // משחק שעוד אין לו צבעי חולצות נבדק בסבב הקרוב גם אם הערוץ נבדק לאחרונה
+      { team1Color: null }
+    ]
+  }, 'externalId team1 team2 tvChannels team1ExternalId team1Color team2Color').lean();
   if (matches.length === 0) return { checked: 0, withTv: 0, updated: 0, failed: 0 };
   const summary = await syncTvForMatches(matches);
   console.log(`📺 [TV] checked ${summary.checked}, with channel ${summary.withTv}, updated ${summary.updated}, failed ${summary.failed}`);
@@ -58,7 +66,7 @@ const syncWeekTv = async (weekId) => {
     ...is365,
     weekId,
     $or: [{ fullDate: null }, { fullDate: { $gte: new Date(Date.now() - 3 * 3600e3) } }]
-  }, 'externalId team1 team2 tvChannels').lean();
+  }, 'externalId team1 team2 tvChannels team1ExternalId team1Color team2Color').lean();
   return syncTvForMatches(matches);
 };
 

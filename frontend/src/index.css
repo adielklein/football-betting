@@ -1004,3 +1004,73 @@ tr:hover {
   text-align: start; cursor: pointer;
 }
 .week-menu-item:hover, .week-menu-item:focus-visible { background: var(--surface-2, #f3f4f6); }
+
+/* ===== קוביות ניקוד בכרטיס ההימור =====
+   ריקה: משטח אפור עם מסגרת מקווקוות ו-"?". מלאה: קובייה בצבע ערכת הנושא
+   (‎--theme-tile‎, נבחר ב-themes.js כך שיבלוט על המשטח) עם הדגשה למעלה
+   ו"עובי" למטה. אין סמן הקלדה: ההקשה מחליפה את הספרה, והמסגרת מסמנת מיקוד */
+:root { --theme-tile: #3b5bdb; --theme-tile-fg: #ffffff; --shirt-outline: rgba(0,0,0,0.3); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --shirt-outline: rgba(255,255,255,0.45); }
+}
+:root[data-theme="dark"] { --shirt-outline: rgba(255,255,255,0.45); }
+
+.score-tile {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  text-align: center;
+  border-radius: 12px;
+  border: 2px dashed var(--border-2, #cfd5dd);
+  background: var(--surface-2, #f7f8fa);
+  color: var(--text, #333);
+  font-size: var(--fs-lg);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  caret-color: transparent;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.score-tile::placeholder { color: var(--text-4, #b8bec8); font-weight: 800; opacity: 1; }
+
+.score-tile[data-filled="1"] {
+  border: 2px solid transparent;
+  background-color: var(--theme-tile);
+  background-image: linear-gradient(160deg, rgba(255,255,255,0.3), rgba(255,255,255,0) 55%, rgba(0,0,0,0.14));
+  color: var(--theme-tile-fg);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.35),
+    0 3px 0 rgba(0,0,0,0.22),
+    0 5px 12px rgba(0,0,0,0.14);
+}
+
+.score-tile:focus {
+  border-style: solid;
+  border-color: var(--theme-tile);
+  outline: 2px solid var(--theme-tile);
+  outline-offset: 2px;
+}
+.score-tile[data-filled="1"]:focus { border-color: transparent; }
+
+/* כפתור "נתונים" מתחת לכל משחק */
+.stats-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-2, #dde2e8);
+  background: var(--surface-2, #f7f8fa);
+  color: var(--theme-primary-text, #2b5bb8);
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+.stats-pill:active { transform: scale(0.96); background: var(--surface-3, #eef1f5); }
