@@ -368,53 +368,52 @@ function AllBetsViewer({ weeks, user, active = true }) {
                       </div>
                     </div>
 
-                    <div style={{ textAlign: 'center', fontWeight: '700', fontSize: 'var(--fs-sm)', marginBottom: '0.35rem', color: 'var(--text, #333)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', flexWrap: 'wrap' }}>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setInsightsFor({ match, focusTeam: 1 }); }}
-                        aria-label={`נתונים על ${match.team1}`}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: '4px',
-                          background: 'transparent', border: 'none', padding: '2px 4px',
-                          borderRadius: '8px', font: 'inherit', color: 'inherit',
-                          fontWeight: 700, cursor: 'pointer',
-                          WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation'
-                        }}
-                      >
-                        {shirtsForMatch(match).team1 ? (
-                          <TeamShirt {...shirtsForMatch(match).team1} size={38}><TeamLogo name={match.team1} src={match.team1LogoUrl} size={13} /></TeamShirt>
-                        ) : (
-                          <TeamLogo name={match.team1} src={match.team1LogoUrl} />
-                        )}
-                        {match.team1}
-                      </button>
-                      <span style={{ color: 'var(--text-4, #999)', fontWeight: 500 }}>נגד</span>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setInsightsFor({ match, focusTeam: 2 }); }}
-                        aria-label={`נתונים על ${match.team2}`}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: '4px',
-                          background: 'transparent', border: 'none', padding: '2px 4px',
-                          borderRadius: '8px', font: 'inherit', color: 'inherit',
-                          fontWeight: 700, cursor: 'pointer',
-                          WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation'
-                        }}
-                      >
-                        {shirtsForMatch(match).team2 ? (
-                          <TeamShirt {...shirtsForMatch(match).team2} size={38}><TeamLogo name={match.team2} src={match.team2LogoUrl} size={13} /></TeamShirt>
-                        ) : (
-                          <TeamLogo name={match.team2} src={match.team2LogoUrl} />
-                        )}
-                        {match.team2}
-                      </button>
-                      {/* ההימור שלך תמיד בשורה משלו מתחת לשמות. כשהוא ישב בסוף
-                          השורה הוא קפץ לשורה הבאה רק כשהשמות ארוכים, וכל כרטיס
-                          נראה אחרת */}
-                      {myBet && myBet.prediction && (
-                        <div style={{ flexBasis: '100%', display: 'flex', justifyContent: 'center' }}>
+                    {/* שלוש עמודות, כמו בכרטיס ההימור: כל קבוצה בקצה שלה - חולצה
+                        ומתחתיה השם - והאמצע ל"נגד" ולהימור שלך. ב-RTL העמודה
+                        הראשונה היא הימנית, כלומר הקבוצה הראשונה מימין */}
+                    <div style={{
+                      display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center',
+                      gap: '0.4rem', marginBottom: '0.35rem', color: 'var(--text, #333)'
+                    }}>
+                      {[1, 2].map((n) => {
+                        const name = match[`team${n}`];
+                        const logo = match[`team${n}LogoUrl`];
+                        const shirt = shirtsForMatch(match)[`team${n}`];
+                        const team = (
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setInsightsFor({ match, focusTeam: n }); }}
+                            aria-label={`נתונים על ${name}`}
+                            style={{
+                              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
+                              minWidth: 0, background: 'transparent', border: 'none', padding: '2px 4px',
+                              borderRadius: '10px', font: 'inherit', color: 'inherit',
+                              fontWeight: 700, fontSize: 'var(--fs-sm)', lineHeight: 1.2, cursor: 'pointer',
+                              WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
+                              gridColumn: n === 1 ? 1 : 3, gridRow: 1
+                            }}
+                          >
+                            {shirt ? (
+                              <TeamShirt {...shirt} size={42}><TeamLogo name={name} src={logo} size={14} /></TeamShirt>
+                            ) : (
+                              <TeamLogo name={name} src={logo} size={24} />
+                            )}
+                            {/* עד שתי שורות: המילה השנייה ("סיטי"/"יונייטד") מבדילה בין קבוצות */}
+                            <span style={{
+                              maxWidth: '100%', textAlign: 'center',
+                              display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2,
+                              overflow: 'hidden', overflowWrap: 'anywhere'
+                            }}>{name}</span>
+                          </button>
+                        );
+                        return team;
+                      })}
+                      <div style={{ gridColumn: 2, gridRow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ color: 'var(--text-4, #999)', fontWeight: 600, fontSize: 'var(--fs-xs)' }}>נגד</span>
+                        {myBet && myBet.prediction && (
                           <span style={{
-                            fontSize: 'var(--fs-xs)', padding: '1px 8px',
+                            fontSize: 'var(--fs-xs)', padding: '1px 8px', whiteSpace: 'nowrap',
                             borderRadius: '999px', fontWeight: '800',
                             // ההימור שלי בצבע ערכת הנושא, כמו השורה שלי בטבלה
                             backgroundColor: 'var(--theme-tile, #3b5bdb)', color: 'var(--theme-tile-fg, #fff)'
@@ -422,8 +421,8 @@ function AllBetsViewer({ weeks, user, active = true }) {
                             <span style={{ fontSize: 'var(--fs-xs)', opacity: 0.7, fontWeight: 700 }}>שלך </span>
                             <Score home={myBet.prediction.team1Goals} away={myBet.prediction.team2Goals} />
                           </span>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
 
                     {/* התוצאה עלתה מתוך האזור הנפתח: היא הדבר הראשון שמחפשים,
