@@ -58,3 +58,16 @@ test('חותמת קודמת נשמרת עד שנופל שער חדש', () => {
 test('משחק שנעלם מהסריקה לא מייצר שער', () => {
   assert.deepEqual(goalTimestamps({ a: g(1, 0) }, {}, {}, 1000), {});
 });
+
+import { goalScorers } from './liveNumbers.js';
+
+test('goalScorers: the side whose goals went up', () => {
+  const before = { m1: { team1Goals: 0, team2Goals: 0 }, m2: { team1Goals: 1, team2Goals: 1 } };
+  const after = { m1: { team1Goals: 1, team2Goals: 0 }, m2: { team1Goals: 1, team2Goals: 2 } };
+  assert.deepEqual(goalScorers(before, after, {}, 5), { m1: { at: 5, side: 1 }, m2: { at: 5, side: 2 } });
+});
+
+test('goalScorers: first load and disallowed goals are not goals', () => {
+  assert.deepEqual(goalScorers({}, { m1: { team1Goals: 2, team2Goals: 1 } }, {}, 5), {});
+  assert.deepEqual(goalScorers({ m1: { team1Goals: 1, team2Goals: 0 } }, { m1: { team1Goals: 0, team2Goals: 0 } }, {}, 5), {});
+});

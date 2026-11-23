@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { nextScoreValue } from '../../services/scoreInput';
 import TeamLogo from '../TeamLogo';
-import TeamShirt from '../TeamShirt';
+import TeamShirt, { resultState } from '../TeamShirt';
 import { shirtsForMatch } from '../../data/kits';
 import LeagueLogo from '../LeagueLogo';
 import TvChannels from '../TvChannels';
@@ -21,11 +21,17 @@ import { API_URL as API_BASE } from '../../config';
 
 // קבוצה לחיצה - פותחת את חלון הנתונים. חולצה ומתחתיה השם, באותם גדלים
 // ומרווחים כמו ב"כל ההימורים", כדי ששני המסכים ייראו אותו דבר.
-function TeamPicker({ name, logo, shirt, onClick }) {
+function TeamPicker({ name, logo, shirt, state, jumpAt, onClick }) {
+  // לחיצה: החולצה מתהפכת, וחלון הנתונים נפתח כשההיפוך כמעט נגמר
+  const [flipAt, setFlipAt] = useState(0);
+  const handleClick = () => {
+    setFlipAt(Date.now());
+    setTimeout(onClick, 260);
+  };
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={handleClick}
       style={{
         flex: '1 1 0',
         display: 'flex',
@@ -60,7 +66,7 @@ function TeamPicker({ name, logo, shirt, onClick }) {
       {/* הסמל שנשמר בייבוא מ-365 הוא של הקבוצה הנכונה. בלעדיו הרכיב
           מנחש לפי השם מול מקור אחר, וזה מה שהיה כאן עד עכשיו */}
       {shirt ? (
-        <TeamShirt kit={shirt.kit} color={shirt.color} size={42}><TeamLogo name={name} src={logo} size={9} /></TeamShirt>
+        <TeamShirt kit={shirt.kit} color={shirt.color} size={42} shine cloth state={state} jumpAt={jumpAt} flipAt={flipAt}><TeamLogo name={name} src={logo} size={9} /></TeamShirt>
       ) : (
         <TeamLogo name={name} src={logo} />
       )}
@@ -107,7 +113,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
   // עם המציאות מיד, בלי להמתין לטעינה מחדש של השבוע.
   const [lockedByServer, setLockedByServer] = useState(false);
 
-  const { liveByMatchId, goalAtByMatchId } = useLiveScores(selectedWeek?._id, active);
+  const { liveByMatchId, goalAtByMatchId, goalByMatchId } = useLiveScores(selectedWeek?._id, active);
 
   const API_URL = API_BASE;
 
@@ -604,6 +610,8 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                   name={match.team1}
                   logo={match.team1LogoUrl}
                   shirt={shirtsForMatch(match).team1}
+                  state={resultState(match, 1)}
+                  jumpAt={goalByMatchId[match._id]?.side === 1 ? goalByMatchId[match._id].at : 0}
                   onClick={() => setInsightsFor({ match, focusTeam: 1 })}
                 />
 
@@ -651,6 +659,8 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                   name={match.team2}
                   logo={match.team2LogoUrl}
                   shirt={shirtsForMatch(match).team2}
+                  state={resultState(match, 2)}
+                  jumpAt={goalByMatchId[match._id]?.side === 2 ? goalByMatchId[match._id].at : 0}
                   onClick={() => setInsightsFor({ match, focusTeam: 2 })}
                 />
               </div>

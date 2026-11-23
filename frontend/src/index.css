@@ -1231,12 +1231,42 @@ body:has(.pitch-stripes)::before { opacity: 0.35; }
 :root[data-theme="dark"] body.has-image-logo:has(.pitch-stripes)::after { opacity: 0.04; filter: grayscale(20%); }
 :root[data-theme="dark"] body:has(.pitch-stripes)::before { opacity: 0.03; }
 
-/* ברק סאטן על החולצה (TeamShirt shine). פס אור אלכסוני שחוצה את הבד ונח */
+/* ===== אנימציות חולצה (TeamShirt) =====
+   כולן כבויות אצל מי שביקש פחות תנועה, חוץ מהזוהר הסטטי של המנצחת. */
+.shirt-anim { display: block; width: 100%; height: 100%; position: relative; transform-origin: 50% 90%; }
+
+/* ברק סאטן: פס אור אלכסוני שחוצה את הבד פעם ב-9 שניות, בהשהיה שונה לכל חולצה */
 .shirt-shine { transform: skewX(-20deg) translateX(0); }
 @media (prefers-reduced-motion: no-preference) {
-  .shirt-shine { animation: shirtShine 4s ease-in-out infinite; animation-delay: var(--shine-delay, 0s); }
+  .shirt-shine { animation: shirtShine 9s ease-in-out infinite; animation-delay: var(--shine-delay, 0s); }
+  .shirt-cloth { filter: url(#shirt-wave); }
+  .shirt-jump { animation: shirtJump 1.3s cubic-bezier(.3,1.6,.5,1) 2; }
+  .shirt-flip { animation: shirtFlip 0.45s ease-in-out; }
+  .shirt--win { animation: shirtWinGlow 2.4s ease-in-out infinite alternate; }
 }
 @keyframes shirtShine {
-  0%, 60% { transform: skewX(-20deg) translateX(0); }
+  0%, 82% { transform: skewX(-20deg) translateX(0); }
   100% { transform: skewX(-20deg) translateX(95px); }
 }
+/* גול: קפיצה למעלה, נחיתה רכה וקפיצה קטנה */
+@keyframes shirtJump {
+  0% { transform: translateY(0) scale(1); }
+  30% { transform: translateY(-12px) scale(1.12); }
+  55% { transform: translateY(0) scale(0.96, 1.04); }
+  75% { transform: translateY(-4px) scale(1.02); }
+  100% { transform: none; }
+}
+/* לחיצה: היפוך כמו מטבע - דו-ממדי (scaleX), בלי הקשר תלת-ממדי */
+@keyframes shirtFlip {
+  0% { transform: scaleX(1); }
+  50% { transform: scaleX(0.06); }
+  100% { transform: scaleX(1); }
+}
+/* אחרי המשחק: המנצחת זוהרת בזהב, המפסידה דוהה. על העטיפה החיצונית, כדי
+   שהקפיצה וההיפוך (על .shirt-anim) ירוצו גם על חולצה כזו */
+.shirt--win { filter: drop-shadow(0 0 5px rgba(255, 196, 40, 0.9)); }
+@keyframes shirtWinGlow {
+  from { filter: drop-shadow(0 0 3px rgba(255, 196, 40, 0.7)); }
+  to { filter: drop-shadow(0 0 8px rgba(255, 196, 40, 1)) drop-shadow(0 0 16px rgba(255, 196, 40, 0.55)); }
+}
+.shirt--lose { filter: grayscale(0.7); opacity: 0.6; transform: scale(0.94); }

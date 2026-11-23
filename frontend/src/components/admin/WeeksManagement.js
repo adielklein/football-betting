@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { scoreFieldProps } from '../../services/scoreInput';
 import { useLocation, useNavigate } from 'react-router-dom';
 import TeamLogo from '../TeamLogo';
-import TeamShirt from '../TeamShirt';
+import TeamShirt, { resultState } from '../TeamShirt';
 import { shirtsForMatch } from '../../data/kits';
 import LeagueLogo from '../LeagueLogo';
 import ImportMatchesModal from './ImportMatchesModal';
@@ -1696,7 +1696,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                       }}>
                         <div style={{ textAlign: 'center', fontWeight: 600, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', minWidth: 0 }}>
                           {shirtsForMatch(match).team1 ? (
-                            <TeamShirt {...shirtsForMatch(match).team1} size={42}><TeamLogo name={match.team1} src={match.team1LogoUrl} size={9} /></TeamShirt>
+                            <TeamShirt {...shirtsForMatch(match).team1} size={42} shine state={resultState(match, 1)}><TeamLogo name={match.team1} src={match.team1LogoUrl} size={9} /></TeamShirt>
                           ) : (
                             <TeamLogo name={match.team1} src={match.team1LogoUrl} />
                           )}
@@ -1728,7 +1728,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
                         ))}
                         <div style={{ textAlign: 'center', fontWeight: 600, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', minWidth: 0 }}>
                           {shirtsForMatch(match).team2 ? (
-                            <TeamShirt {...shirtsForMatch(match).team2} size={42}><TeamLogo name={match.team2} src={match.team2LogoUrl} size={9} /></TeamShirt>
+                            <TeamShirt {...shirtsForMatch(match).team2} size={42} shine state={resultState(match, 2)}><TeamLogo name={match.team2} src={match.team2LogoUrl} size={9} /></TeamShirt>
                           ) : (
                             <TeamLogo name={match.team2} src={match.team2LogoUrl} />
                           )}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import TeamLogo from '../TeamLogo';
-import TeamShirt from '../TeamShirt';
+import TeamShirt, { resultState } from '../TeamShirt';
 import { shirtsForMatch } from '../../data/kits';
 import LeagueLogo from '../LeagueLogo';
 import TvChannels from '../TvChannels';
@@ -41,7 +41,9 @@ function AllBetsViewer({ weeks, user, active = true }) {
   // ברירת המחדל שחזרה מאוחר דורסת את השבוע שההתראה הפנתה אליו
   const loadSeq = useRef(0);
 
-  const { liveByMatchId, goalAtByMatchId } = useLiveScores(selectedWeek?._id, active);
+  const { liveByMatchId, goalAtByMatchId, goalByMatchId } = useLiveScores(selectedWeek?._id, active);
+  // היפוך החולצה בלחיצה, לפי משחק וצד
+  const [flipAt, setFlipAt] = useState({});
   const [insightsFor, setInsightsFor] = useState(null);
 
   const [selectedSeason, setSelectedSeason] = useState('');
@@ -383,7 +385,11 @@ function AllBetsViewer({ weeks, user, active = true }) {
                           <button
                             key={n}
                             type="button"
-                            onClick={(e) => { e.stopPropagation(); setInsightsFor({ match, focusTeam: n }); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFlipAt((prev) => ({ ...prev, [`${match._id}-${n}`]: Date.now() }));
+                              setTimeout(() => setInsightsFor({ match, focusTeam: n }), 260);
+                            }}
                             aria-label={`נתונים על ${name}`}
                             style={{
                               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
@@ -395,7 +401,12 @@ function AllBetsViewer({ weeks, user, active = true }) {
                             }}
                           >
                             {shirt ? (
-                              <TeamShirt {...shirt} size={42}><TeamLogo name={name} src={logo} size={9} /></TeamShirt>
+                              <TeamShirt
+                                {...shirt} size={42} shine cloth
+                                state={resultState(match, n)}
+                                jumpAt={goalByMatchId[match._id]?.side === n ? goalByMatchId[match._id].at : 0}
+                                flipAt={flipAt[`${match._id}-${n}`] || 0}
+                              ><TeamLogo name={name} src={logo} size={9} /></TeamShirt>
                             ) : (
                               <TeamLogo name={name} src={logo} size={24} />
                             )}

@@ -33,3 +33,17 @@ export const goalTimestamps = (before, after, previousStamps = {}, now = Date.no
   });
   return stamps;
 };
+
+// מי הבקיע: לכל משחק שנכנס בו שער, הצד שהשערים שלו עלו (1 או 2) וחותמת זמן.
+// החולצה של הקבוצה המבקיעה קופצת לפי זה. ביטול שער (המספר ירד) אינו "שער".
+export const goalScorers = (before, after, previous = {}, now = Date.now()) => {
+  const out = { ...previous };
+  Object.keys(after).forEach((id) => {
+    const a = before[id];
+    const b = after[id];
+    if (!isGoal(a, b)) return;
+    const side = b.team1Goals > a.team1Goals ? 1 : b.team2Goals > a.team2Goals ? 2 : null;
+    if (side) out[id] = { at: now, side };
+  });
+  return out;
+};
