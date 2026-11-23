@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const Match = require('../models/Match');
+const { sortMatches } = require('../utils/matchOrder');
 const Week = require('../models/Week');
 const League = require('../models/League');
 const { logAdminAction } = require('../services/auditService');
@@ -64,8 +65,9 @@ router.get('/week/:weekId', async (req, res) => {
   try {
     const matches = await Match.find({ weekId: req.params.weekId })
       .populate('leagueId');
-    
-    res.json(matches);
+
+    // קודם לפי ליגה, ואז לפי מועד - לא לפי סדר ההוספה (utils/matchOrder.js)
+    res.json(sortMatches(matches));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

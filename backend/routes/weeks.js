@@ -1,6 +1,8 @@
 const express = require('express');
 const Week = require('../models/Week');
 const Match = require('../models/Match');
+const { sortMatches } = require('../utils/matchOrder');
+const League = require('../models/League');
 const { sendWeekActivationNotification } = require('../services/pushNotifications');
 const { logAdminAction } = require('../services/auditService');
 const { requireAdmin } = require('../middleware/requireAdmin');
@@ -25,8 +27,12 @@ router.get('/:id', async (req, res) => {
     }
     
     const matches = await Match.find({ weekId: req.params.id });
-    
-    res.json({ week, matches });
+    // אותו סדר כמו בכל המסכים: ליגה ואז מועד. כאן leagueId לא מאוכלס (כדי לא
+    // לשנות את צורת התשובה), ולכן הליגות נשלפות בנפרד
+    const leagues = await League.find({ _id: { $in: [...new Set(matches.map((m) => String(m.leagueId)).filter((x) => x && x !== 'null' && x !== 'undefined'))] } }, 'name order').lean();
+    const leagueById = new Map(leagues.map((l) => [String(l._id), l]));
+
+    res.json({ week, matches: sortMatches(matches, (m) => leagueById.get(String(m.leagueId)) || null) });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
