@@ -481,9 +481,16 @@ async function sendWeekActivationNotification(week, options = {}) {
     if (customBody) {
       body = customBody;
     } else {
-      const lockDate = new Date(week.lockTime);
-      const formattedLockTime = lockDate.toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' });
-      body = `${week.name} נפתח להימורים!\n⏰ נעילה: ${formattedLockTime}`;
+      if (week.lockMode === 'match') {
+        // כל משחק נסגר בנפרד - מציינים מתי נסגר הראשון
+        const first = new Date(week.firstLockAt || week.lockTime)
+          .toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', weekday: 'long', hour: '2-digit', minute: '2-digit' });
+        body = `${week.name} נפתח להימורים!\n⏰ כל משחק נסגר כשהוא מתחיל. הראשון: ${first}`;
+      } else {
+        const lockDate = new Date(week.lockTime);
+        const formattedLockTime = lockDate.toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' });
+        body = `${week.name} נפתח להימורים!\n⏰ נעילה: ${formattedLockTime}`;
+      }
     }
 
     const payload = {

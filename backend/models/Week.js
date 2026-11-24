@@ -31,6 +31,12 @@ const weekSchema = new mongoose.Schema({
   lockTime: { 
     type: Date 
   },
+  // 'match' = כל משחק נסגר בשעת הפתיחה שלו; 'week' = כל השבוע יחד ב-lockTime.
+  // בלי ברירת מחדל בסכמה בכוונה: שבוע ישן בלי השדה הוא 'week' (services/betLock),
+  // ו-default היה הופך אותו ל-'match' בכל קריאה. שבוע חדש מקבל 'match' ביצירה
+  lockMode: { type: String, enum: ['match', 'week'] },
+  // במצב 'match': מתי המשחק הראשון ננעל (מכאן רואים הימורים של אחרים)
+  firstLockAt: { type: Date, default: null },
   // מתי חושב הניקוד לאחרונה. משמש לזיהוי שבוע שנכנסו לו תוצאות
   // אבל הניקוד מעולם לא חושב עליהן (למשל אם החישוב נכשל או קרס באמצע)
   scoresCalculatedAt: {
@@ -42,6 +48,9 @@ const weekSchema = new mongoose.Schema({
   // כדי שהפעלה מחדש של השרת לא תשלח את אותה תזכורת פעם שנייה.
   // מתי McCannkey עדכן את כל ההימורים לפני הנעילה (services/mccannkey.js)
   mccannkeyFinalAt: { type: Date, default: null },
+
+  // נעילה לפי משחק: "userId:מועד" לכל תזכורת שנשלחה (services/lockReminder)
+  matchRemindersSent: [{ type: String }],
 
   lockRemindersSent: [{
     type: mongoose.Schema.Types.ObjectId,

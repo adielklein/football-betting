@@ -5,7 +5,32 @@ const Week = require('../models/Week');
 const User = require('../models/User'); // 🆕 נוסף לבדיקת תפקיד משתמש
 const { logAdminAction } = require('../services/auditService');
 const { requireUser } = require('../middleware/requireAdmin');
+const { isMatchOpen, redactBets, lockModeOf } = require('../services/betLock');
 const router = express.Router();
+
+// הימורים של אחרים על משחק שעוד לא התחיל לא נחשפים (services/betLock.js).
+// מי מבקש - מהטוקן (authenticate רץ על כל בקשה); מנהל רואה הכל
+const redactForViewer = async (req, bets, weekId) => {
+  const week = await Week.findById(weekId).lean();
+  if (!week) return bets;
+  const matches = await Match.find({ weekId }, 'fullDate weekId').lean();
+  return redactBets(bets, {
+    week,
+    matchesById: new Map(matches.map((m) => [String(m._id), m])),
+    viewerId: req.authUser ? String(req.authUser._id) : null,
+    isAdmin: req.authUser?.role === 'admin'
+  });
+};
+
+// למה אי אפשר להמר על המשחק עכשיו (null = אפשר). הסיבה באנגלית - האפליקציה
+// מתרגמת לפי מילים (BettingInterface: FRIENDLY_ERRORS)
+const closedReason = async (week, match) => {
+  if (!week.active) return 'This week is not active';
+  const weekMatches = await Match.find({ weekId: week._id }, 'fullDate').lean();
+  if (isMatchOpen(week, match, weekMatches)) return null;
+  if (lockModeOf(week) === 'match') return 'This match has already started - betting is locked';
+  return 'Betting time has expired for this week';
+};
 
 // Get user bets for a week
 router.get('/user/:userId/week/:weekId', async (req, res) => {
@@ -15,7 +40,7 @@ router.get('/user/:userId/week/:weekId', async (req, res) => {
       weekId: req.params.weekId 
     }).populate('matchId');
     
-    res.json(bets);
+    res.json(await redactForViewer(req, bets, req.params.weekId));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -28,7 +53,7 @@ router.get('/week/:weekId', async (req, res) => {
       .populate('userId', 'name email role')
       .populate('matchId');
     
-    res.json(bets);
+    res.json(await redactForViewer(req, bets, req.params.weekId));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -52,49 +77,23 @@ router.post('/', requireUser, async (req, res) => {
     console.log(`🔍 בדיקת הרשאות: מבקש ${requesterUser?.name}, תפקיד: ${requesterUser?.role}, אדמין: ${isAdmin}`);
     console.log(`🎯 הימור עבור שחקן: ${userId}, מבקש: ${requestedByUserId}`);
     
-    // בדיקה מלאה - עם חריגה לאדמין
-    const week = await Week.findById(weekId);
-    
+    // השבוע נלקח מהמשחק עצמו ולא ממה שהלקוח שלח - כדי שאי אפשר יהיה להמר
+    // על משחק סגור בשם שבוע אחר שעוד פתוח
+    const match = await Match.findById(matchId).lean();
+    if (!match) return res.status(404).json({ message: 'Match not found' });
+    const week = await Week.findById(match.weekId || weekId);
     if (!week) {
       return res.status(404).json({ message: 'Week not found' });
     }
-    
-    // 🆕 אדמין מחורג מכל בדיקות הנעילה
+
+    // אדמין מחורג מכל בדיקות הנעילה
     if (!isAdmin) {
-      // בדיקה 1: האם השבוע סומן כנעול
-      if (week.locked) {
-        console.log(`🔒 Bet blocked - Week ${week.name} is locked (User is not admin)`);
-        return res.status(400).json({ message: 'Betting is locked for this week' });
-      }
-      
-      // בדיקה 2: האם עבר זמן הנעילה
-      if (week.lockTime) {
-        const lockTime = new Date(week.lockTime);
-        const now = new Date();
-        
-        if (now >= lockTime) {
-          console.log(`⏰ Bet blocked - Lock time passed for week ${week.name} (User is not admin)`);
-          console.log(`Lock time: ${lockTime.toLocaleString('he-IL')}`);
-          console.log(`Current time: ${now.toLocaleString('he-IL')}`);
-          
-          // אופציונלי: נעל את השבוע אוטומטית
-          await Week.findByIdAndUpdate(weekId, { locked: true });
-          
-          return res.status(400).json({ 
-            message: 'Betting time has expired for this week',
-            lockTime: lockTime.toISOString(),
-            currentTime: now.toISOString()
-          });
-        }
-      }
-      
-      // בדיקה 3: האם השבוע בכלל פעיל
-      if (!week.active) {
-        console.log(`❌ Bet blocked - Week ${week.name} is not active (User is not admin)`);
-        return res.status(400).json({ message: 'This week is not active' });
+      const reason = await closedReason(week, match);
+      if (reason) {
+        console.log(`🔒 Bet blocked - ${week.name} / ${match.team1}-${match.team2}: ${reason}`);
+        return res.status(400).json({ message: reason });
       }
     } else {
-      // 🆕 הודעה לאדמין
       console.log(`👑 Admin override: ${requesterUser.name} can edit bets even if week is locked`);
     }
     
@@ -109,7 +108,7 @@ router.post('/', requireUser, async (req, res) => {
     // Update existing bet or create new one
     const bet = await Bet.findOneAndUpdate(
       { userId, matchId },
-      { prediction, weekId, updatedAt: new Date() },
+      { prediction, weekId: week._id, updatedAt: new Date() },
       { upsert: true, new: true }
     );
 
@@ -155,22 +154,13 @@ router.patch('/:id', requireUser, async (req, res) => {
     
     console.log(`🔍 עדכון הימור: בעלים ${betOwner?.name}, מבקש ${requesterUser?.name}, תפקיד מבקש: ${requesterUser?.role}, אדמין: ${isAdmin}`);
     
-    // 🆕 אדמין מחורג מכל בדיקות הנעילה
+    // אדמין מחורג מכל בדיקות הנעילה
     if (!isAdmin) {
-      // בדיקות נעילה זהות
-      if (week.locked) {
-        console.log(`🔒 Bet update blocked - Week ${week.name} is locked (User is not admin)`);
-        return res.status(400).json({ message: 'Betting is locked for this week' });
-      }
-      
-      if (week.lockTime && new Date() >= new Date(week.lockTime)) {
-        console.log(`⏰ Bet update blocked - Lock time passed for week ${week.name} (User is not admin)`);
-        return res.status(400).json({ message: 'Betting time has expired for this week' });
-      }
-      
-      if (!week.active) {
-        console.log(`❌ Bet update blocked - Week ${week.name} is not active (User is not admin)`);
-        return res.status(400).json({ message: 'This week is not active' });
+      const match = await Match.findById(existingBet.matchId).lean();
+      const reason = match ? await closedReason(week, match) : 'Match not found';
+      if (reason) {
+        console.log(`🔒 Bet update blocked - ${week.name}: ${reason}`);
+        return res.status(400).json({ message: reason });
       }
     } else {
       console.log(`👑 Admin override: ${requesterUser.name} can update bets even if week is locked`);

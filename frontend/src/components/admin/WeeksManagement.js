@@ -39,6 +39,9 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
   const [editingMatchDetails, setEditingMatchDetails] = useState(null);
   const [showActivationDialog, setShowActivationDialog] = useState(false);
   const [sendPushNotifications, setSendPushNotifications] = useState(true);
+  // נעילה לפי משחק (ברירת מחדל): כל משחק נסגר בשעת הפתיחה שלו. כבוי = כל השבוע
+  // נסגר יחד עם המשחק הראשון, כמו פעם
+  const [lockPerMatch, setLockPerMatch] = useState(true);
   const [notificationImage, setNotificationImage] = useState(null);
   const [customNotificationTitle, setCustomNotificationTitle] = useState("");
   const [customNotificationBody, setCustomNotificationBody] = useState("");
@@ -500,7 +503,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
       const [h, min] = earliest.time.split(':');
       const ft = `${d.padStart(2, '0')}/${m.padStart(2, '0')} ${h.padStart(2, '0')}:${min.padStart(2, '0')}`;
       setCustomNotificationTitle(`⚽ ${selectedWeek.name} פתוח להימורים!`);
-      setCustomNotificationBody(`🔒 נעילה: ${ft}`);
+      setCustomNotificationBody(lockPerMatch ? `🔒 כל משחק נסגר כשהוא מתחיל. הראשון: ${ft}` : `🔒 נעילה: ${ft}`);
     }
     setShowActivationDialog(true);
   };
@@ -616,6 +619,7 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           lockTime: lockTimeISO,
+          lockMode: lockPerMatch ? 'match' : 'week',
           sendNotifications: sendPushNotifications,
           notificationTitle: customNotificationTitle,
           notificationBody: customNotificationBody,
@@ -1857,9 +1861,33 @@ function WeeksManagement({ selectedWeek: parentSelectedWeek, onWeekSelect, user 
             <div style={{ overflowY: 'auto', flex: 1, paddingLeft: '0.25rem', paddingRight: '0.25rem' }}>
             <p style={{ marginBottom: '1.5rem', lineHeight: '1.6' }}>
               האם להפעיל את השבוע <strong>{selectedWeek?.name}</strong>?
-              <br />
-              השבוע ינעל אוטומטית בזמן המשחק הראשון.
             </p>
+
+            {/* אופן הנעילה */}
+            <label style={{
+              display: 'flex', alignItems: 'flex-start', gap: '0.5rem', cursor: 'pointer',
+              backgroundColor: 'var(--surface-2, #f8f9fa)', padding: '0.8rem 1rem', borderRadius: '8px', marginBottom: '1rem'
+            }}>
+              <input
+                type="checkbox"
+                checked={lockPerMatch}
+                onChange={(e) => {
+                  const on = e.target.checked;
+                  setLockPerMatch(on);
+                  // הנוסח הדיפולטי של ההתראה מתעדכן יחד עם המתג
+                  setCustomNotificationBody((b) => (on ? b.replace(/^🔒 נעילה: /, '🔒 כל משחק נסגר כשהוא מתחיל. הראשון: ') : b.replace(/^🔒 כל משחק נסגר כשהוא מתחיל\. הראשון: /, '🔒 נעילה: ')));
+                }}
+                style={{ width: '20px', height: '20px', cursor: 'pointer', marginTop: '2px' }}
+              />
+              <span style={{ flex: 1 }}>
+                <strong>⏱️ כל משחק נסגר בנפרד, כשהוא מתחיל</strong>
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #666)', marginTop: '0.25rem' }}>
+                  {lockPerMatch
+                    ? 'אפשר להמר על כל משחק עד שעת הפתיחה שלו. ההימורים של כולם על משחק נחשפים רק כשהוא מתחיל. משחק בלי שעה נסגר עם המשחק הראשון.'
+                    : 'כבוי: כל השבוע ננעל יחד בזמן המשחק הראשון (השיטה הישנה).'}
+                </div>
+              </span>
+            </label>
 
             {/* ✅ אינדיקטור העלאה */}
             {uploadingImage && (

@@ -20,6 +20,7 @@ const Week = require('../models/Week');
 const Match = require('../models/Match');
 const Bet = require('../models/Bet');
 const { predictMatch, pickForScoring } = require('./matchPredictor');
+const { lockModeOf, isMatchOpen, matchLockAt } = require('./betLock');
 
 const BOT_USERNAME = 'mccannkey';
 const BOT_NAME = 'McCannkey';
@@ -84,15 +85,22 @@ const finished = (m) => m.result && m.result.team1Goals != null && m.result.team
  * מהמר על משחקי השבוע. all=false - רק משחקים שעוד אין לו עליהם הימור.
  * מחזיר כמה הימורים נכתבו.
  */
-const betWeek = async (weekId, { all = false, now = new Date() } = {}) => {
+const betWeek = async (weekId, { all = false, refreshDue = false, now = new Date() } = {}) => {
   const week = await Week.findById(weekId).lean();
   if (!isOpen(week, now)) return 0;
   const uid = await botId();
-  const matches = (await Match.find({ weekId: week._id }).lean()).filter((m) => !finished(m));
-  const existing = new Set(
-    (await Bet.find({ userId: uid, weekId: week._id }, 'matchId').lean()).map((b) => String(b.matchId))
-  );
-  const todo = all ? matches : matches.filter((m) => !existing.has(String(m._id)));
+  const allMatches = await Match.find({ weekId: week._id }).lean();
+  // רק משחקים שעוד אפשר להמר עליהם (בנעילה לפי משחק - שעוד לא התחילו)
+  const matches = allMatches.filter((m) => !finished(m) && isMatchOpen(week, m, allMatches, now.getTime()));
+  const myBets = await Bet.find({ userId: uid, weekId: week._id }, 'matchId updatedAt').lean();
+  const existing = new Map(myBets.map((b) => [String(b.matchId), b]));
+  // refreshDue: משחק שמתחיל בעוד פחות משעה ורבע, וההימור עליו ישן יותר מזה
+  const due = (m) => {
+    const at = matchLockAt(week, m, allMatches);
+    const b = existing.get(String(m._id));
+    return at != null && at - now.getTime() <= FINAL_LEAD_MS && (!b || new Date(b.updatedAt).getTime() < at - FINAL_LEAD_MS);
+  };
+  const todo = all ? matches : matches.filter((m) => !existing.has(String(m._id)) || (refreshDue && due(m)));
   let written = 0;
   const sources = {};
   for (const m of todo) {
@@ -108,7 +116,7 @@ const betWeek = async (weekId, { all = false, now = new Date() } = {}) => {
     );
     written++;
   }
-  if (written) console.log(`🐒 [mccannkey] ${week.name}: ${written} הימורים (${JSON.stringify(sources)})${all ? ' - עדכון לפני נעילה' : ''}`);
+  if (written) console.log(`🐒 [mccannkey] ${week.name}: ${written} הימורים (${JSON.stringify(sources)})${all || refreshDue ? ' - כולל עדכון לפני נעילה' : ''}`);
   return written;
 };
 
@@ -118,6 +126,11 @@ const runMcCannkey = async (now = new Date()) => {
   const weeks = await Week.find({ active: true, locked: false, lockTime: { $gt: now } }).lean();
   for (const w of weeks) {
     try {
+      if (lockModeOf(w) === 'match') {
+        // כל משחק מתעדכן בנפרד כשעה ורבע לפני הפתיחה שלו
+        await betWeek(w._id, { refreshDue: true, now });
+        continue;
+      }
       const msLeft = new Date(w.lockTime).getTime() - now.getTime();
       if (msLeft <= FINAL_LEAD_MS && !w.mccannkeyFinalAt) {
         await betWeek(w._id, { all: true, now });

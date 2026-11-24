@@ -17,6 +17,7 @@ import MatchInsightsModal from './MatchInsightsModal';
 import Score from '../Score';
 import { textOn } from '../../services/readableColor';
 import { API_URL as API_BASE } from '../../config';
+import { weekRevealed, isMatchLocked } from '../../services/betLock';
 
 function AllBetsViewer({ weeks, user, active = true }) {
   const [selectedWeek, setSelectedWeek] = useState(null);
@@ -87,10 +88,8 @@ function AllBetsViewer({ weeks, user, active = true }) {
   useEffect(() => {
     if (!weeks || weeks.length === 0) return;
     const lockedWeeks = weeks.filter(w => {
-      if (!w || !w.active) return false;
-      if (w.locked) return true;
-      if (w.lockTime) return new Date() >= new Date(w.lockTime);
-      return false;
+      // נחשף מרגע שמשחק אחד לפחות ננעל (services/betLock.js)
+      return weekRevealed(w);
     });
     const seasons = [...new Set(lockedWeeks.map(w => w.season || '2025-26'))].sort().reverse();
     setAvailableSeasons(seasons);
@@ -100,10 +99,8 @@ function AllBetsViewer({ weeks, user, active = true }) {
   useEffect(() => {
     if (!weeks || !selectedSeason) return;
     const lockedWeeks = weeks.filter(w => {
-      if (!w || !w.active) return false;
-      if (w.locked) return true;
-      if (w.lockTime) return new Date() >= new Date(w.lockTime);
-      return false;
+      // נחשף מרגע שמשחק אחד לפחות ננעל (services/betLock.js)
+      return weekRevealed(w);
     });
     const weeksInSeason = lockedWeeks.filter(w => (w.season || '2025-26') === selectedSeason);
     // Sort months by actual most recent week date, not month number
@@ -122,10 +119,8 @@ function AllBetsViewer({ weeks, user, active = true }) {
   useEffect(() => {
     if (!weeks) return;
     let filtered = weeks.filter(w => {
-      if (!w || !w.active) return false;
-      if (w.locked) return true;
-      if (w.lockTime) return new Date() >= new Date(w.lockTime);
-      return false;
+      // נחשף מרגע שמשחק אחד לפחות ננעל (services/betLock.js)
+      return weekRevealed(w);
     });
     if (selectedSeason) filtered = filtered.filter(w => (w.season || '2025-26') === selectedSeason);
     if (selectedMonth) filtered = filtered.filter(w => w.month === selectedMonth);
@@ -147,8 +142,7 @@ function AllBetsViewer({ weeks, user, active = true }) {
     // רק שבוע נעול - אותו כלל שקובע אילו שבועות מופיעים כאן בכלל. בלעדיו
     // קישור היה יכול לחשוף הימורים של שבוע שעוד פתוח להימורים
     const target = weeks.find((w) => w._id === focusWeekId);
-    const isLocked = target && target.active &&
-      (target.locked || (target.lockTime && new Date() >= new Date(target.lockTime)));
+    const isLocked = weekRevealed(target);
     if (!isLocked) return;
 
     focusApplied.current = search;
@@ -309,7 +303,7 @@ function AllBetsViewer({ weeks, user, active = true }) {
           <div className="pitch-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
             <span style={{ fontWeight: '700', fontSize: 'var(--fs-sm)', color: 'var(--text, #333)' }}>{selectedWeek.name}</span>
             <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--warn-fg, #f57f17)', backgroundColor: 'var(--warn-bg, #fff8e1)', padding: '3px 10px', borderRadius: '10px', fontWeight: '700', border: '1px solid #ffe082' }}>
-              🔒 נעול
+              {selectedWeek.locked || (selectedWeek.lockTime && Date.now() >= new Date(selectedWeek.lockTime).getTime()) ? '🔒 נעול' : '⏳ נחשף משחק אחרי משחק'}
             </span>
           </div>
 
@@ -490,6 +484,11 @@ function AllBetsViewer({ weeks, user, active = true }) {
 
                   {/* הימורים של כל השחקנים */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', borderTop: '1px solid var(--border, #f0f0f0)', paddingTop: '0.35rem' }}>
+                    {!isMatchLocked(selectedWeek, match, matches) && (
+                      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #5f6670)', textAlign: 'center', padding: '0.2rem 0 0.35rem' }}>
+                        🔒 ההימורים של כולם ייחשפו כשהמשחק יתחיל ({match.time})
+                      </div>
+                    )}
                     {users.map(player => {
                       const bet = getBetForUserAndMatch(player._id, match._id);
                       let points = 0;
@@ -519,7 +518,10 @@ function AllBetsViewer({ weeks, user, active = true }) {
                             {isMe && <span style={{ color: 'var(--theme-tile-fg, #fff)', opacity: 0.8, fontSize: 'var(--fs-xs)' }}> (אתה)</span>}
                           </span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
-                            {bet && bet.prediction ? (
+                            {bet && bet.hidden ? (
+                              // הימור של אחר על משחק שעוד לא התחיל - השרת לא שולח את התוצאה
+                              <span style={{ color: 'var(--text-3, #8b93a1)', fontSize: 'var(--fs-xs)', fontWeight: 700 }}>✓ הימר 🔒</span>
+                            ) : bet && bet.prediction ? (
                               <span style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: 'var(--fs-sm)', minWidth: '36px', textAlign: 'center', color: isMe ? 'var(--theme-tile-fg, #fff)' : 'var(--text, #333)' }}>
                                 <Score home={bet.prediction.team1Goals} away={bet.prediction.team2Goals} />
                               </span>

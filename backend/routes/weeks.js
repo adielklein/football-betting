@@ -54,7 +54,8 @@ router.post('/', requireAdmin, async (req, res) => {
     const week = new Week({ 
       name, 
       month: parseInt(month),
-      season: season || '2026-27'
+      season: season || '2026-27',
+      lockMode: 'match'
     });
     await week.save();
     
@@ -105,6 +106,8 @@ router.patch('/:id', requireAdmin, async (req, res) => {
 router.patch('/:id/activate', requireAdmin, async (req, res) => {
   try {
     const { lockTime, sendNotifications, notificationTitle, notificationBody, imageUrl, adminId } = req.body;
+    // ברירת המחדל: כל משחק נסגר בנפרד. 'week' = השיטה הישנה, כל השבוע יחד
+    const lockMode = req.body.lockMode === 'week' ? 'week' : 'match';
     
     console.log('📥 Received activation request with:', {
       lockTime,
@@ -114,7 +117,15 @@ router.patch('/:id/activate', requireAdmin, async (req, res) => {
       imageUrl: imageUrl ? `Base64 (${imageUrl.length} chars)` : 'undefined'
     });
     
-    if (!lockTime) {
+    // במצב משחק זמן הנעילה נגזר מהמשחקים; lockTime מהמנהל משמש רק כגיבוי
+    // כשלאף משחק אין שעה
+    let derived = null;
+    if (lockMode === 'match') {
+      const { deriveWeekLocks } = require('../services/betLock');
+      const wm = await Match.find({ weekId: req.params.id }, 'fullDate').lean();
+      derived = deriveWeekLocks({ lockMode, lockTime }, wm);
+    }
+    if (!lockTime && !derived) {
       return res.status(400).json({ message: 'Lock time is required' });
     }
     
@@ -123,7 +134,9 @@ router.patch('/:id/activate', requireAdmin, async (req, res) => {
       {
         active: true,
         locked: false,
-        lockTime: new Date(lockTime),
+        lockMode,
+        lockTime: derived ? derived.lockTime : new Date(lockTime),
+        firstLockAt: derived ? derived.firstLockAt : new Date(lockTime),
         mccannkeyFinalAt: null
       },
       { new: true }
@@ -133,7 +146,7 @@ router.patch('/:id/activate', requireAdmin, async (req, res) => {
       return res.status(404).json({ message: 'Week not found' });
     }
     
-    console.log(`✅ Week ${week.name} activated with lock time: ${lockTime}`);
+    console.log(`✅ Week ${week.name} activated (${lockMode === 'match' ? 'נעילה לפי משחק' : 'נעילת שבוע'}) - first lock ${week.firstLockAt?.toISOString()}, all locked ${week.lockTime?.toISOString()}`);
 
     // McCannkey מהמר ברקע - בלי לעכב את תשובת ההפעלה (365 יכול להיות איטי)
     setImmediate(() => {
@@ -178,7 +191,7 @@ router.patch('/:id/activate', requireAdmin, async (req, res) => {
     
     // Audit log
     if (adminId) {
-      logAdminAction(adminId, 'הפעלת שבוע', `${week.name} (נעילה: ${new Date(lockTime).toLocaleString('he-IL')})`, { weekId: week._id });
+      logAdminAction(adminId, 'הפעלת שבוע', `${week.name} (${lockMode === 'match' ? 'נעילה לפי משחק' : `נעילה: ${new Date(week.lockTime).toLocaleString('he-IL')}`})`, { weekId: week._id });
     }
 
     res.json({

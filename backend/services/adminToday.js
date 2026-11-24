@@ -82,8 +82,8 @@ function buildWeekStatus({ week, matches = [], bets = [], players = [], users = 
     if (!week.lockTime) {
       add('warn', 'no_lock_time', 'אין שעת נעילה - ההימורים לא ייסגרו מעצמם', { action: { type: 'goto', weekId: wid, step: 'activate' } });
     } else {
-      add('info', 'locks_at', 'פתוח להימורים', { at: new Date(week.lockTime) });
-      if (firstKickoff && new Date(week.lockTime).getTime() > firstKickoff) {
+      add('info', 'locks_at', week.lockMode === 'match' ? 'פתוח להימורים (כל משחק נסגר כשהוא מתחיל)' : 'פתוח להימורים', { at: new Date(week.lockTime) });
+      if (week.lockMode !== 'match' && firstKickoff && new Date(week.lockTime).getTime() > firstKickoff) {
         add('warn', 'lock_after_kickoff', 'הנעילה אחרי תחילת המשחק הראשון - אפשר יהיה להמר על משחק שכבר התחיל', { action: { type: 'goto', weekId: wid, step: 'activate' } });
       }
     }

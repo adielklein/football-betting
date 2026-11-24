@@ -7,6 +7,11 @@ const League = require('../models/League');
 const { logAdminAction } = require('../services/auditService');
 const { requireAdmin } = require('../middleware/requireAdmin');
 const router = express.Router();
+// במצב "נעילה לפי משחק" זמני הנעילה של השבוע נגזרים מהמשחקים (services/weekLocks)
+const syncLocks = (weekId) => {
+  require('../services/weekLocks').syncWeekLocks(weekId)
+    .catch((e) => console.warn('⚠️ syncWeekLocks:', e.message));
+};
 
 // 🆕 פונקציית עזר לחישוב השנה הנכונה
 const calculateYear = (month) => {
@@ -164,6 +169,7 @@ router.post('/', requireAdmin, async (req, res) => {
       logAdminAction(adminId, 'הוספת משחק', `${team1} נגד ${team2} (${date} ${time})`, { matchId: match._id, weekId });
     }
 
+    syncLocks(weekId);
     res.status(201).json(populatedMatch);
     
   } catch (error) {
@@ -333,6 +339,7 @@ router.post('/bulk', requireAdmin, async (req, res) => {
       });
     }
 
+    syncLocks(weekId);
     res.status(201).json({ created: populated.length, matches: populated, duplicates, errors });
 
     // ערוצי שידור למשחקים החדשים - ברקע, אחרי שהתשובה כבר יצאה
@@ -434,6 +441,7 @@ router.patch('/:id', requireAdmin, async (req, res) => {
       logAdminAction(adminId, 'עריכת משחק', `${match.team1} נגד ${match.team2}`, { matchId: match._id });
     }
 
+    if (match) syncLocks(match.weekId);
     res.json(match);
 
   } catch (error) {
@@ -517,6 +525,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
     }
 
     await Match.findByIdAndDelete(req.params.id);
+    syncLocks(match.weekId);
     res.json({ message: 'Match deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -656,7 +656,10 @@ cron.schedule('*/10 * * * *', runReminders, { timezone: 'Asia/Jerusalem' });
 console.log('⏰ Cron registered: lock reminders every 10 minutes');
 
 // McCannkey: משלים הימורים חסרים, ושעה ורבע לפני נעילה מעדכן את הכל
-cron.schedule('*/10 * * * *', () => {
+cron.schedule('*/10 * * * *', async () => {
+  // זמני הנעילה של שבועות "לפי משחק" - ליתר ביטחון, אם משחק השתנה בדרך שלא עברה במסלולים
+  await require('./services/weekLocks').syncAllActiveWeekLocks()
+    .catch((err) => console.error('🔒 [weekLocks] failed:', err.message));
   require('./services/mccannkey').runMcCannkey()
     .catch((err) => console.error('🐒 [mccannkey] failed:', err.message));
 }, { timezone: 'Asia/Jerusalem' });

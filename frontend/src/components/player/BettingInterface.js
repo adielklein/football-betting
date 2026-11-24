@@ -19,6 +19,7 @@ import Score from '../Score';
 import { textOn } from '../../services/readableColor';
 import { API_URL as API_BASE } from '../../config';
 import { CountdownRing, GoalNetShot, LockSnap } from '../Motifs';
+import { lockModeOf, isMatchLocked, nextLockAt } from '../../services/betLock';
 
 // קבוצה לחיצה - פותחת את חלון הנתונים. חולצה ומתחתיה השם, באותם גדלים
 // ומרווחים כמו ב"כל ההימורים", כדי ששני המסכים ייראו אותו דבר.
@@ -86,6 +87,8 @@ function TeamPicker({ name, logo, shirt, state, jumpAt }) {
 // "שגיאה בשמירת ההימור" גנרי. שחקן שניסה להמר אחרי שההימורים נסגרו
 // ראה שגיאה בלי לדעת למה, וחשב שהאפליקציה פשוט לא שמרה לו.
 const SAVE_ERRORS = [
+  // נעילה לפי משחק: רק המשחק הזה נסגר, שאר הטופס נשאר פתוח
+  { match: /already started/i, text: 'המשחק כבר התחיל - ההימור עליו נסגר', closed: false, matchClosed: true },
   { match: /locked/i, text: 'ההימורים לשבוע הזה כבר נסגרו', closed: true },
   { match: /expired/i, text: 'זמן ההימורים הסתיים', closed: true },
   { match: /not active/i, text: 'השבוע הזה אינו פתוח להימורים', closed: true }
@@ -111,6 +114,14 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
   // השרת דחה שמירה בגלל סגירה. הדגל מקומי בכוונה - הוא מסנכרן את המסך
   // עם המציאות מיד, בלי להמתין לטעינה מחדש של השבוע.
   const [lockedByServer, setLockedByServer] = useState(false);
+  // משחקים שהשרת אמר שכבר התחילו (נעילה לפי משחק) - גם אם השעון של הטלפון מפגר
+  const [closedByServer, setClosedByServer] = useState({});
+  const perMatch = lockModeOf(selectedWeek) === 'match';
+  // משחק סגור להימורים: התחיל (לפי שעת הפתיחה שלו), או שהשרת אמר שהוא סגור
+  const matchClosed = (match) =>
+    Boolean(closedByServer[match._id]) || (perMatch && isMatchLocked(selectedWeek, match, matches));
+  // לאן סופרים לאחור: המשחק הבא שנסגר, או נעילת השבוע בשיטה הישנה
+  const lockTarget = perMatch ? nextLockAt(selectedWeek, matches) : (selectedWeek?.lockTime ? new Date(selectedWeek.lockTime).getTime() : null);
 
   const { liveByMatchId, goalAtByMatchId, goalByMatchId } = useLiveScores(selectedWeek?._id, active);
 
@@ -118,9 +129,9 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
 
   // Live countdown timer
   useEffect(() => {
-    if (!selectedWeek?.lockTime) { setTimeLeft(null); return; }
+    if (!lockTarget) { setTimeLeft(null); return; }
     const calcTimeLeft = () => {
-      const diff = new Date(selectedWeek.lockTime) - new Date();
+      const diff = lockTarget - Date.now();
       if (diff <= 0) return null;
       const days = Math.floor(diff / 86400000);
       const hours = Math.floor((diff % 86400000) / 3600000);
@@ -135,9 +146,20 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
       if (!tl) clearInterval(timer);
     }, 1000);
     return () => clearInterval(timer);
-  }, [selectedWeek?.lockTime]);
+  }, [lockTarget]);
 
-  useEffect(() => { setLockedByServer(false); }, [selectedWeek?._id]);
+  // הנעילה של המשחק הבא: כשהספירה מגיעה לאפס המסך מצויר מחדש, והמשחק
+  // שהתחיל ננעל מיד (גם כשהספירה לאחור לא מוצגת)
+  const [, setLockTick] = useState(0);
+  useEffect(() => {
+    if (!lockTarget) return undefined;
+    const wait = lockTarget - Date.now();
+    if (wait <= 0 || wait > 2 ** 31 - 1) return undefined;
+    const t = setTimeout(() => setLockTick((x) => x + 1), wait + 50);
+    return () => clearTimeout(t);
+  }, [lockTarget]);
+
+  useEffect(() => { setLockedByServer(false); setClosedByServer({}); }, [selectedWeek?._id]);
 
   // ההימורים מהשרת נכנסים לטופס רק במשחקים שהמשתמש לא נוגע בהם כרגע.
   // עם שמירה אוטומטית ההימורים מתעדכנים תוך כדי הקלדה, והחלפה מלאה של
@@ -237,6 +259,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
         // נסגר בזמן שהמסך היה פתוח: אין טעם להשאיר טופס חי שכל שמירה בו
         // תיכשל. המסך עובר מיד למצב סגור, כמו במסך שנטען מחדש.
         if (reason.closed) setLockedByServer(true);
+        if (reason.matchClosed) setClosedByServer((prev) => ({ ...prev, [matchId]: true }));
       }
     } catch (error) {
       console.error('Error saving bet:', error);
@@ -303,7 +326,8 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
   // משחקים שההימור בהם שלם, שונה מהשמור, ולא נמצא כרגע בשליחה או בכישלון
   const pendingIds = () => matches
     .map((m) => m._id)
-    .filter((id) => isBetChanged(id) && isBetComplete(id) && !saveStatus[id]);
+    .filter((id) => isBetChanged(id) && isBetComplete(id) && !saveStatus[id])
+    .filter((id) => { const m = matches.find((x) => x._id === id); return !m || !matchClosed(m); });
 
   // שמירה אוטומטית: כל הקלדה מאפסת את הטיימר של המשחק שלה
   useEffect(() => {
@@ -418,8 +442,10 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
         <div style={{ marginBottom: '0.75rem' }}><LockSnap /></div>
         <h2 style={{ fontSize: 'var(--fs-md)', color: 'var(--text-2, #444)', marginBottom: '0.3rem' }}>ההימורים נסגרו</h2>
         <p style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-sm)' }}>
-          ההימורים ל{selectedWeek.name} נסגרו עם תחילת המשחק הראשון
-          {selectedWeek.lockTime ? ` (${new Date(selectedWeek.lockTime).toLocaleString('he-IL', { weekday: 'long', hour: '2-digit', minute: '2-digit' })})` : ''}.
+          {perMatch
+            ? <>כל המשחקים של {selectedWeek.name} כבר התחילו, וההימורים עליהם נסגרו.</>
+            : <>ההימורים ל{selectedWeek.name} נסגרו עם תחילת המשחק הראשון
+              {selectedWeek.lockTime ? ` (${new Date(selectedWeek.lockTime).toLocaleString('he-IL', { weekday: 'long', hour: '2-digit', minute: '2-digit' })})` : ''}.</>}
           {' '}אפשר לעקוב אחרי התוצאות בלשונית הטבלה.
         </p>
       </div>
@@ -505,7 +531,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                 {urgent
                   ? <CountdownRing fraction={timeLeft.total / 3600000} />
                   : <span aria-hidden="true" style={{ fontSize: 'var(--fs-sm)' }}>{today ? '⏳' : '⏰'}</span>}
-                <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }}>נסגר בעוד</span>
+                <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }}>{perMatch ? 'המשחק הבא נסגר בעוד' : 'נסגר בעוד'}</span>
                 <span dir={cd.clock ? 'ltr' : undefined} style={{
                   fontSize: 'var(--fs-md)', fontWeight: 800, fontVariantNumeric: 'tabular-nums',
                   // הדופק רק בשעה האחרונה, כשזה באמת דחוף
@@ -515,8 +541,13 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                 </span>
               </div>
               <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #5f6670)', marginTop: '2px' }}>
-                {formatLockMoment(selectedWeek.lockTime)}
+                {formatLockMoment(lockTarget)}
               </div>
+              {perMatch && (
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #5f6670)', marginTop: '2px' }}>
+                  כל משחק נסגר כשהוא מתחיל
+                </div>
+              )}
             </div>
           );
         })()}
@@ -534,6 +565,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
           const isSaved = existingBet.team1Goals !== undefined;
           const justSaved = savedAnimation === match._id;
           const live = liveByMatchId[match._id];
+          const closed = matchClosed(match);
 
           return (
             <div key={match._id} style={{
@@ -542,7 +574,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
               border: '2px solid',
               borderColor: justSaved ? '#20c997' : (isSaved ? 'var(--border-2, #c3e6cb)' : 'var(--border, #eee)'),
               borderRadius: '14px',
-              backgroundColor: isSaved ? 'var(--surface-2, #fbfefb)' : 'var(--surface, #fff)',
+              backgroundColor: closed ? 'var(--surface-3, #f4f5f7)' : (isSaved ? 'var(--surface-2, #fbfefb)' : 'var(--surface, #fff)'),
               transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
               boxShadow: justSaved
                 ? '0 0 0 3px rgba(40,167,69,0.15), 0 4px 12px rgba(40,167,69,0.1)'
@@ -650,6 +682,8 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                     pattern="[0-9]*"
                     autoComplete="off"
                     value={currentBet.team1Goals || ''}
+                    disabled={closed}
+                    aria-disabled={closed}
                     onFocus={markFresh}
                     onChange={(e) => handleScoreInput(e, match._id, 'team1Goals')}
                     className="score-tile"
@@ -669,6 +703,8 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                     pattern="[0-9]*"
                     autoComplete="off"
                     value={currentBet.team2Goals || ''}
+                    disabled={closed}
+                    aria-disabled={closed}
                     onFocus={markFresh}
                     onChange={(e) => handleScoreInput(e, match._id, 'team2Goals')}
                     className="score-tile"
@@ -703,7 +739,11 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                 minHeight: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 gap: '0.4rem', fontSize: 'var(--fs-xs)', fontWeight: '700'
               }}>
-                {saveFailed ? (
+                {closed ? (
+                  <span style={{ color: 'var(--text-3, #5f6670)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    🔒 {isSaved ? 'נסגר - ההימור שלך נשמר' : 'נסגר - לא הימרת על המשחק הזה'}
+                  </span>
+                ) : saveFailed ? (
                   <>
                     <span style={{ color: 'var(--bad-fg, #a81f17)' }}>⚠️ לא נשמר</span>
                     <button
