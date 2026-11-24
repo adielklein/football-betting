@@ -4,24 +4,22 @@ import { getStage } from '../three/stage';
 import { shirtCanvases, buildShirt, addShirtLights, shirtCamera } from '../three/shirt';
 
 // חולצה תלת-ממדית שמסובבים באצבע (חלון הנתונים). כשלא נוגעים בה היא
-// פונה קדימה ומתנדנדת קלות מצד לצד (מהצד היא נראית דקה ומוזרה, אז לא
-// מסתובבת לבד סיבוב מלא); גרירה לצדדים מסובבת אותה, שחרור ממשיך עם תנופה
-// שדועכת, ובסוף היא חוזרת בעדינות לפנים.
+// מסתובבת לאט לבד סיבוב מלא (לחולצה יש שרוולים, כתפיים וצווארון, אז היא
+// נראית טוב מכל זווית); גרירה לצדדים מסובבת אותה, ושחרור ממשיך עם תנופה
+// שדועכת ואז חוזר לסיבוב האיטי.
 // גרירה למעלה-למטה נשארת גלילה רגילה של החלון (touch-action: pan-y).
 //
 // המקור לטקסטורה הוא TeamShirt שטוח ומוסתר שמצויר לידה. אם אין WebGL, או
 // שהבמה עוד לא מוכנה, מוצגת החולצה השטוחה עצמה.
 
-const SWAY = 0.38;      // משרעת הנדנוד (רדיאנים)
-const SWAY_SPEED = 0.9; // תדירות הנדנוד (רדיאנים לשנייה בפאזה)
-const RETURN = 3;       // מהירות החזרה לפנים אחרי גרירה
+const AUTO = 0.6;       // רדיאנים לשנייה כשלא נוגעים (סיבוב מלא בכ-10 שניות)
 const DRAG = 0.014;     // רדיאנים לפיקסל גרירה
 const FRICTION = 0.92;  // דעיכת התנופה לכל מסגרת
 
 export default function ShirtViewer3D({ shirt, crestSrc, size = 96 }) {
   const flatRef = useRef(null);
   const canvasRef = useRef(null);
-  const state = useRef({ ready: false, angle: 0, vel: 0, phase: 0, dragging: false, lastX: 0, lastT: 0, idleAt: 0 });
+  const state = useRef({ ready: false, angle: -0.35, vel: 0, dragging: false, lastX: 0, lastT: 0, idleAt: 0 });
   const [ready, setReady] = React.useState(false);
 
   useEffect(() => {
@@ -46,13 +44,7 @@ export default function ShirtViewer3D({ shirt, crestSrc, size = 96 }) {
           last = now;
           if (!s.dragging) {
             if (Math.abs(s.vel) > 0.02) { s.angle += s.vel * dt; s.vel *= FRICTION; s.idleAt = now; }
-            else if (now - s.idleAt > 900) {
-              // חוזרים לחזית הקרובה (כפולה של סיבוב שלם) ומתנדנדים סביבה
-              s.phase += SWAY_SPEED * dt;
-              const home = Math.round(s.angle / (2 * Math.PI)) * 2 * Math.PI;
-              const target = home + Math.sin(s.phase) * SWAY;
-              s.angle += (target - s.angle) * Math.min(1, RETURN * dt);
-            }
+            else if (now - s.idleAt > 900) s.angle += AUTO * dt;
           }
           built.group.rotation.y = s.angle;
           built.group.rotation.x = 0.06;
