@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { scoreFieldProps } from '../../services/scoreInput';
 import TeamLogo from '../TeamLogo';
 import TeamShirt from '../TeamShirt';
@@ -12,6 +12,14 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
   const [savingBet, setSavingBet] = useState(null);
   const [expandedMatches, setExpandedMatches] = useState({});
   const [excludedUserIds, setExcludedUserIds] = useState([]);
+  // שמירה אוטומטית: טיימר לכל שחקן+משחק, ומה נשמר עכשיו (לסימון ✓)
+  const autoTimers = useRef({});
+  const [justSaved, setJustSaved] = useState(null);
+  const [failedKey, setFailedKey] = useState(null);
+  const allBetsRef = useRef(allBets);
+  allBetsRef.current = allBets;
+  // אישור עריכה בשבוע שנעול לשחקנים - פעם אחת לשבוע, לא בכל שמירה
+  const confirmedWeek = useRef(null);
 
   const toggleMatchCollapse = (matchId) => {
     setExpandedMatches(prev => ({ ...prev, [matchId]: !prev[matchId] }));
@@ -42,11 +50,13 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
         if (selectedWeek.lockTime && new Date() >= new Date(selectedWeek.lockTime)) return false;
         if (!selectedWeek.active) return false;
       } else {
-        const playerName = users.find(u => u._id === playerId)?.name || 'משתמש לא ידוע';
-        const confirmMessage = '👑 אתה מתחבר כאדמין!\n\n' +
-          `השבוע נעול לשחקנים רגילים, אבל אתה יכול לערוך הימור של ${playerName}.\n` +
-          'האם אתה בטוח שרצית להמשיך?';
-        if (!window.confirm(confirmMessage)) return false;
+        const lockedForPlayers = selectedWeek.locked || (selectedWeek.lockTime && new Date() >= new Date(selectedWeek.lockTime));
+        if (lockedForPlayers && confirmedWeek.current !== selectedWeek._id) {
+          const confirmMessage = '👑 השבוע נעול לשחקנים רגילים, אבל כאדמין אפשר לערוך הימורים.\n\n' +
+            'השינויים נשמרים אוטומטית. להמשיך?';
+          if (!window.confirm(confirmMessage)) return false;
+          confirmedWeek.current = selectedWeek._id;
+        }
       }
 
       setSavingBet(`${playerId}-${matchId}`);
@@ -65,6 +75,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
       if (response.ok) {
         await loadWeekData(selectedWeek._id);
         setSavingBet(null);
+        setFailedKey((k) => (k === `${playerId}-${matchId}` ? null : k));
         return true;
       } else {
         const errorData = await response.json();
@@ -73,6 +84,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
         else if (errorData.message.includes('not active')) toast.error('❌ השבוע לא פעיל');
         else toast.error('שגיאה: ' + errorData.message);
         setSavingBet(null);
+        setFailedKey(`${playerId}-${matchId}`);
         return false;
       }
     } catch (error) {
@@ -82,6 +94,45 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
       return false;
     }
   };
+
+  // שמירה אוטומטית אחרי הקלדה, כמו במסך ההימורים של השחקנים: כשני הצדדים
+  // מלאים והתוצאה שונה מהשמורה, 0.9 שניות אחרי ההקשה האחרונה (או מיד ביציאה מהשדה)
+  const fieldsOf = (playerId, matchId) => [
+    document.getElementById(`bet-${playerId}-${matchId}-team1`),
+    document.getElementById(`bet-${playerId}-${matchId}-team2`)
+  ];
+  const runAutoSave = async (playerId, matchId) => {
+    const key = `${playerId}-${matchId}`;
+    clearTimeout(autoTimers.current[key]);
+    delete autoTimers.current[key];
+    const [t1, t2] = fieldsOf(playerId, matchId);
+    if (!t1 || !t2 || t1.value === '' || t2.value === '') return;
+    const saved = allBetsRef.current.find((b) => b && b.userId?._id === playerId && b.matchId?._id === matchId)?.prediction;
+    if (saved && String(saved.team1Goals) === t1.value && String(saved.team2Goals) === t2.value) return;
+    const ok = await saveBet(playerId, matchId, t1.value, t2.value);
+    if (ok) {
+      setJustSaved(key);
+      setTimeout(() => setJustSaved((k) => (k === key ? null : k)), 1500);
+    } else if (saved) {
+      // לא נשמר (או שהאישור בוטל) - מחזירים את מה שבאמת שמור
+      t1.value = String(saved.team1Goals);
+      t2.value = String(saved.team2Goals);
+    }
+  };
+  const scheduleAutoSave = (playerId, matchId) => {
+    const key = `${playerId}-${matchId}`;
+    clearTimeout(autoTimers.current[key]);
+    autoTimers.current[key] = setTimeout(() => runAutoSave(playerId, matchId), 900);
+  };
+  const autoFieldProps = (playerId, matchId) => {
+    const base = scoreFieldProps();
+    return {
+      ...base,
+      onChange: (e) => { base.onChange(e); scheduleAutoSave(playerId, matchId); },
+      onBlur: () => { if (autoTimers.current[`${playerId}-${matchId}`]) runAutoSave(playerId, matchId); }
+    };
+  };
+  useEffect(() => () => Object.values(autoTimers.current).forEach(clearTimeout), []);
 
   const getLeagueName = (match) => {
     if (match.leagueId && typeof match.leagueId === 'object' && match.leagueId.name) return match.leagueId.name;
@@ -99,9 +150,9 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
     if (!selectedWeek) return null;
     const isLocked = selectedWeek.locked || (selectedWeek.lockTime && new Date() >= new Date(selectedWeek.lockTime));
     const isCurrentUserAdmin = user && user.role === 'admin';
-    if (isLocked && isCurrentUserAdmin) return { type: 'admin-override', message: '👑 מצב אדמין: השבוע נעול לשחקנים אבל אתה יכול לערוך' };
+    if (isLocked && isCurrentUserAdmin) return { type: 'admin-override', message: '👑 מצב אדמין: השבוע נעול לשחקנים אבל אתה יכול לערוך · נשמר אוטומטית' };
     if (isLocked) return { type: 'locked', message: '🔒 השבוע נעול - ניתן לצפות בהימורים אבל לא לערוך' };
-    return { type: 'active', message: '✅ ניתן לערוך הימורים' };
+    return { type: 'active', message: '✅ ניתן לערוך הימורים · נשמר אוטומטית אחרי ההקלדה' };
   };
 
   const getPointsBadge = (bet, match) => {
@@ -307,7 +358,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                           <input
                             id={`bet-${player._id}-${match._id}-team1`}
-                            {...scoreFieldProps()}
+                            {...autoFieldProps(player._id, match._id)}
                             defaultValue={bet?.prediction?.team1Goals ?? ''}
                             disabled={!canEdit}
                             className="score-tile score-tile--sm"
@@ -316,7 +367,7 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                           <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #ccc)', fontWeight: '700' }}>-</span>
                           <input
                             id={`bet-${player._id}-${match._id}-team2`}
-                            {...scoreFieldProps()}
+                            {...autoFieldProps(player._id, match._id)}
                             defaultValue={bet?.prediction?.team2Goals ?? ''}
                             disabled={!canEdit}
                             className="score-tile score-tile--sm"
@@ -348,6 +399,8 @@ function BetsManagement({ selectedWeek, matches, allBets, users, loadWeekData, u
                             }}
                           >
                             {isSaving ? '...' : !canEdit ? '🔒' :
+                              justSaved === `${player._id}-${match._id}` ? '✓' :
+                              failedKey === `${player._id}-${match._id}` ? '⚠️' :
                               (isCurrentUserAdmin && weekStatus?.type === 'admin-override') ? '👑' : '💾'}
                           </button>
 
