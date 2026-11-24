@@ -103,16 +103,23 @@ export function Medal({ place }) {
         return t0 + delay + Math.ceil(Math.max(0, since) / CYCLE) * CYCLE;
       };
       let spinStart = nextSpinAt(t0);
+      // מעירים את התצוגה לקראת הסיבוב הבא. תמיד מתזמנים מחדש כשהיא נרדמת:
+      // טיימר יכול לירות מעט מוקדם (וזמן המסגרת קודם לזמן הטיימר), ואז
+      // המדליה נרדמה "לפני הזמן" בלי טיימר חדש ולא הסתובבה יותר - זה מה
+      // שקרה לכסף ולארד, שמתחילים בהשהיה
+      const schedule = () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => stage && stage.wake(view), Math.max(16, spinStart - performance.now() + 4));
+      };
       view = {
         canvas: canvasRef.current, width: 26, height: 26, scene, camera,
         frame(now) {
           const p = (now - spinStart) / SPIN;
-          if (p < 0) { built.coin.rotation.y = 0; return false; }
+          if (p < 0) { built.coin.rotation.y = 0; schedule(); return false; }
           if (p >= 1) {
             built.coin.rotation.y = 0;
             spinStart += CYCLE;
-            clearTimeout(timer);
-            timer = setTimeout(() => stage && stage.wake(view), Math.max(0, spinStart - performance.now()));
+            schedule();
             return false;
           }
           built.coin.rotation.y = medalEase(p) * Math.PI * 2;
@@ -120,7 +127,7 @@ export function Medal({ place }) {
         }
       };
       stage.add(view);
-      timer = setTimeout(() => stage.wake(view), Math.max(0, spinStart - performance.now()));
+      schedule();
       requestAnimationFrame(() => requestAnimationFrame(() => !gone && setIs3d(true)));
     })();
     return () => {
