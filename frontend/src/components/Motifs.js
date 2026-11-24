@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { getStage, getEnvironment } from '../three/stage';
+import { buildMedal } from '../three/medal';
 
 // אנימציות "חתימה" בסגנון הסמל המסתובב. ההסברים והתזמונים ב-index.css,
 // בפרק "אנימציות חתימה". כל התנועה כבויה אצל מי שביקש פחות תנועה.
@@ -59,11 +61,78 @@ const COIN_LAYERS = [
   { z: 2.2, cls: 'is-face' },
 ];
 
+// הגרסה המלאה: מטבע מתכת תלת-ממדי (three/medal.js) על הבמה המשותפת, עם
+// השתקפויות אמיתיות. מסתובב בגל פעם ב-7 שניות, ובין הסיבובים לא מצויר בכלל
+// (התצוגה "ישנה"). עד שהוא מוכן, ובלי WebGL או אצל מי שביקש פחות תנועה -
+// המטבע בשכבות CSS.
+const CYCLE = 7000;
+const SPIN = 1400;
+const medalEase = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+
 export function Medal({ place }) {
   const m = MEDAL[place];
+  const canvasRef = useRef(null);
+  const [is3d, setIs3d] = useState(false);
+
+  useEffect(() => {
+    if (!m) return undefined;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+    let gone = false, stage = null, view = null, built = null, timer = 0;
+    (async () => {
+      const st = await getStage();
+      if (gone || !st || !canvasRef.current) return;
+      const env = await getEnvironment(st);
+      if (gone) return;
+      stage = st;
+      const { THREE } = st;
+      const scene = new THREE.Scene();
+      scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+      const key = new THREE.DirectionalLight(0xffffff, 1.6);
+      key.position.set(10, 20, 30);
+      scene.add(key);
+      built = buildMedal(THREE, place, env);
+      built.coin.rotation.x = 0.12;
+      scene.add(built.coin);
+      const camera = new THREE.PerspectiveCamera(30, 1, 1, 200);
+      camera.position.set(0, 0, 24 / 2 / Math.tan((15 * Math.PI) / 180));
+      const delay = parseFloat(m.delay) * 1000;
+      const t0 = performance.now();
+      const nextSpinAt = (now) => {
+        const since = now - t0 - delay;
+        return t0 + delay + Math.ceil(Math.max(0, since) / CYCLE) * CYCLE;
+      };
+      let spinStart = nextSpinAt(t0);
+      view = {
+        canvas: canvasRef.current, width: 26, height: 26, scene, camera,
+        frame(now) {
+          const p = (now - spinStart) / SPIN;
+          if (p < 0) { built.coin.rotation.y = 0; return false; }
+          if (p >= 1) {
+            built.coin.rotation.y = 0;
+            spinStart += CYCLE;
+            clearTimeout(timer);
+            timer = setTimeout(() => stage && stage.wake(view), Math.max(0, spinStart - performance.now()));
+            return false;
+          }
+          built.coin.rotation.y = medalEase(p) * Math.PI * 2;
+          return true;
+        }
+      };
+      stage.add(view);
+      timer = setTimeout(() => stage.wake(view), Math.max(0, spinStart - performance.now()));
+      requestAnimationFrame(() => requestAnimationFrame(() => !gone && setIs3d(true)));
+    })();
+    return () => {
+      gone = true;
+      clearTimeout(timer);
+      if (stage && view) stage.remove(view);
+      if (built) built.dispose();
+    };
+  }, [place]);
+
   if (!m) return null;
   return (
-    <span className={`medal medal--${m.name}`} style={{ '--medal-delay': m.delay }} role="img" aria-label={`מקום ${place}`}>
+    <span className={`medal medal--${m.name}${is3d ? ' is-3d' : ''}`} style={{ '--medal-delay': m.delay }} role="img" aria-label={`מקום ${place}`}>
       <span className="medal__ribbon" aria-hidden="true" />
       <span className="medal__coin" aria-hidden="true">
         {COIN_LAYERS.map(({ z, cls }, i) => (
@@ -71,6 +140,7 @@ export function Medal({ place }) {
             {cls.includes('is-face') ? place : null}
           </span>
         ))}
+        <canvas ref={canvasRef} className="medal__gl" />
       </span>
     </span>
   );

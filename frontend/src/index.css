@@ -1376,3 +1376,8 @@ body:has(.pitch-stripes)::before { opacity: 0.35; }
    שכבות ה-CSS מוסתרות; עד אז הקנבס שקוף */
 .header-crest__gl { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .header-crest.is-3d .header-crest__layer { display: none; }
+
+/* מדליה בתלת-ממד (Motifs.Medal, three/medal.js): הקנבס מעל המטבע, מעט גדול
+   ממנו (השתקפויות בשוליים); כשמוכן - שכבות ה-CSS מוסתרות */
+.medal__gl { position: absolute; left: -1px; top: -1px; width: 26px; height: 26px; pointer-events: none; }
+.medal.is-3d .medal__layer { display: none; }
