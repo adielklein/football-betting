@@ -57,6 +57,15 @@ function Pattern({ kit }) {
 
 let uid = 0;
 
+// שכבות העובי לסיבוב (z ביחידות של חולצה בגודל 44). סט של דפנות ופנים לכל
+// צד; הגב קודם ב-DOM, כך שהפנים מצוירות אחרונות
+const SHIRT_LAYERS = [
+  ...[-2.25, -1.5, -0.75, 0, 0.75, 1.5, 2.25].map((z) => ({ z, cls: 'is-edge is-backside' })),
+  { z: -3, cls: 'is-back is-backside' },
+  ...[-2.25, -1.5, -0.75, 0, 0.75, 1.5, 2.25].map((z) => ({ z, cls: 'is-edge' })),
+  { z: 3, cls: 'is-face' },
+];
+
 // מצב החולצה לפי תוצאת המשחק: 'win' זוהרת, 'lose' דוהה, אחרת רגילה
 export const resultState = (match, side) => {
   const r = match?.result;
@@ -82,59 +91,59 @@ function TeamShirt({ color, kit, size = 44, shine = false, state = null, jumpAt 
   const shineDelay = `${((uid * 1.3) % 6).toFixed(1)}s`;
   const recent = (t) => t && Date.now() - t < 4000;
   const motion = [recent(jumpAt) && 'shirt-jump', recent(flipAt) && 'shirt-flip'].filter(Boolean).join(' ');
-  return (
-    <span className={state ? `shirt--${state}` : undefined} style={{ position: 'relative', display: 'inline-block', width: size, height: h, flexShrink: 0 }}>
-    <span key={`${jumpAt}-${flipAt}`} className={`shirt-anim ${motion}`}>
-      <svg viewBox="0 0 48 44" width={size} height={h} aria-hidden="true" style={{ display: 'block', overflow: 'visible' }}>
-        <defs>
-          <clipPath id={`${id}-c`}><path d={SHIRT} /></clipPath>
-          {shine && (
-            <linearGradient id="shirt-shine-g" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stopColor="#fff" stopOpacity="0" />
-              <stop offset="0.5" stopColor="#fff" stopOpacity="0.9" />
-              <stop offset="1" stopColor="#fff" stopOpacity="0" />
-            </linearGradient>
-          )}
-          {/* אור מלמעלה-שמאל */}
-          <linearGradient id={`${id}-g`} x1="0" y1="0" x2="0.6" y2="1">
-            <stop offset="0" stopColor="#fff" stopOpacity="0.30" />
-            <stop offset="0.5" stopColor="#fff" stopOpacity="0" />
-            <stop offset="1" stopColor="#000" stopOpacity="0.16" />
+  const flipping = recent(flipAt);
+  const svg = (
+    <svg viewBox="0 0 48 44" width={size} height={h} aria-hidden="true" style={{ display: 'block', overflow: 'visible' }}>
+      <defs>
+        <clipPath id={`${id}-c`}><path d={SHIRT} /></clipPath>
+        {shine && (
+          <linearGradient id="shirt-shine-g" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="#fff" stopOpacity="0" />
+            <stop offset="0.5" stopColor="#fff" stopOpacity="0.9" />
+            <stop offset="1" stopColor="#fff" stopOpacity="0" />
           </linearGradient>
-          {/* גוף עגול: הצדדים כהים מהמרכז */}
-          <linearGradient id={`${id}-s`} x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0.2" stopColor="#000" stopOpacity="0.20" />
-            <stop offset="0.38" stopColor="#000" stopOpacity="0" />
-            <stop offset="0.62" stopColor="#000" stopOpacity="0" />
-            <stop offset="0.8" stopColor="#000" stopOpacity="0.20" />
-          </linearGradient>
-        </defs>
-        <g clipPath={`url(#${id}-c)`}>
-          <Pattern kit={shape} />
-          <rect x="11.5" y="0" width="25" height="44" fill={`url(#${id}-s)`} />
-          {/* שוליים כהים בקצה השרוולים ובתחתית */}
-          <polygon points="1,15 7.5,21.5 9,20.3 2.6,13.6" fill="#000" opacity="0.22" />
-          <polygon points="47,15 40.5,21.5 39,20.3 45.4,13.6" fill="#000" opacity="0.22" />
-          <rect x="11.5" y="40.3" width="25" height="1.7" fill="#000" opacity="0.14" />
-          <path d={SHIRT} fill={`url(#${id}-g)`} />
-          {/* ברק סאטן שעובר על הבד מדי פעם, חתוך לצורת החולצה. ראה .shirt-shine */}
-          {/* ברק: האנימציה של SVG עצמו (animate) ולא CSS - טרנספורם CSS על אלמנט
-              בתוך SVG לא רץ בכל הטלפונים. מוסתר אצל מי שביקש פחות תנועה */}
-          {shine && (
-            <g className="shirt-shine" transform="skewX(-20)">
-              <rect x="-40" y="-6" width="16" height="56" fill="url(#shirt-shine-g)">
-                <animate attributeName="x" values="-40;-40;75" keyTimes="0;0.6;1" dur="6s" begin={shineDelay} repeatCount="indefinite" />
-              </rect>
-            </g>
-          )}
-        </g>
-        {/* תפרי השרוולים */}
-        <path d="M11.5 10 L11.5 18.5 M36.5 10 L36.5 18.5" style={outline} strokeWidth="0.8" />
-        {shape.collar && <path d={COLLAR} fill="none" stroke={shape.collar} strokeWidth="2.6" strokeLinecap="round" />}
-        <path d={SHIRT} fill="none" style={outline} strokeWidth="1.1" strokeLinejoin="round" />
-        <path d={COLLAR} fill="none" style={outline} strokeWidth="0.9" />
-      </svg>
-      {children && (
+        )}
+        {/* אור מלמעלה-שמאל */}
+        <linearGradient id={`${id}-g`} x1="0" y1="0" x2="0.6" y2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.30" />
+          <stop offset="0.5" stopColor="#fff" stopOpacity="0" />
+          <stop offset="1" stopColor="#000" stopOpacity="0.16" />
+        </linearGradient>
+        {/* גוף עגול: הצדדים כהים מהמרכז */}
+        <linearGradient id={`${id}-s`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0.2" stopColor="#000" stopOpacity="0.20" />
+          <stop offset="0.38" stopColor="#000" stopOpacity="0" />
+          <stop offset="0.62" stopColor="#000" stopOpacity="0" />
+          <stop offset="0.8" stopColor="#000" stopOpacity="0.20" />
+        </linearGradient>
+      </defs>
+      <g clipPath={`url(#${id}-c)`}>
+        <Pattern kit={shape} />
+        <rect x="11.5" y="0" width="25" height="44" fill={`url(#${id}-s)`} />
+        {/* שוליים כהים בקצה השרוולים ובתחתית */}
+        <polygon points="1,15 7.5,21.5 9,20.3 2.6,13.6" fill="#000" opacity="0.22" />
+        <polygon points="47,15 40.5,21.5 39,20.3 45.4,13.6" fill="#000" opacity="0.22" />
+        <rect x="11.5" y="40.3" width="25" height="1.7" fill="#000" opacity="0.14" />
+        <path d={SHIRT} fill={`url(#${id}-g)`} />
+        {/* ברק סאטן שעובר על הבד מדי פעם, חתוך לצורת החולצה. ראה .shirt-shine */}
+        {/* ברק: האנימציה של SVG עצמו (animate) ולא CSS - טרנספורם CSS על אלמנט
+            בתוך SVG לא רץ בכל הטלפונים. מוסתר אצל מי שביקש פחות תנועה */}
+        {shine && (
+          <g className="shirt-shine" transform="skewX(-20)">
+            <rect x="-40" y="-6" width="16" height="56" fill="url(#shirt-shine-g)">
+              <animate attributeName="x" values="-40;-40;75" keyTimes="0;0.6;1" dur="6s" begin={shineDelay} repeatCount="indefinite" />
+            </rect>
+          </g>
+        )}
+      </g>
+      {/* תפרי השרוולים */}
+      <path d="M11.5 10 L11.5 18.5 M36.5 10 L36.5 18.5" style={outline} strokeWidth="0.8" />
+      {shape.collar && <path d={COLLAR} fill="none" stroke={shape.collar} strokeWidth="2.6" strokeLinecap="round" />}
+      <path d={SHIRT} fill="none" style={outline} strokeWidth="1.1" strokeLinejoin="round" />
+      <path d={COLLAR} fill="none" style={outline} strokeWidth="0.9" />
+    </svg>
+  );
+  const crest = children && (
         // הסמל על החזה השמאלי של הלובש (מימין לצופה), קטן - כמו בחולצה
         // אמיתית - כדי שהתבנית תישאר גלויה. צל דק מפריד אותו מהבד
         <span style={{
@@ -146,6 +155,28 @@ function TeamShirt({ color, kit, size = 44, shine = false, state = null, jumpAt 
         }}>
           {children}
         </span>
+      );
+  return (
+    <span className={state ? `shirt--${state}` : undefined} style={{ position: 'relative', display: 'inline-block', width: size, height: h, flexShrink: 0 }}>
+    <span key={`${jumpAt}-${flipAt}`} className={`shirt-anim ${motion}`}>
+      {flipping ? (
+        // בזמן הסיבוב: כמה עותקים של החולצה זה מאחורי זה, הדפנות כהות -
+        // כך שמהצד רואים לה עובי. כמו הסמל בכותרת: כל שכבה מסתובבת לבד,
+        // וסט נפרד לכל צד (backface-visibility). הסמל רק על הפנים, ולכן
+        // מהגב רואים חולצה בלי סמל
+        <span className="shirt-stack">
+          {SHIRT_LAYERS.map(({ z, cls }, i) => (
+            <span key={i} className={`shirt-layer ${cls}`} style={{ '--z': `${(z * size / 44).toFixed(2)}px` }}>
+              {svg}
+              {cls === 'is-face' && crest}
+            </span>
+          ))}
+        </span>
+      ) : (
+        <>
+          {svg}
+          {crest}
+        </>
       )}
     </span>
     </span>
