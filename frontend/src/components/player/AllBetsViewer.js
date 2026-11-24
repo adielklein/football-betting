@@ -387,10 +387,10 @@ function AllBetsViewer({ weeks, user, active = true }) {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
+                              // רק היפוך. הנתונים - מכפתור "נתונים" באמצע הכרטיס
                               setFlipAt((prev) => ({ ...prev, [`${match._id}-${n}`]: Date.now() }));
-                              setTimeout(() => setInsightsFor({ match, focusTeam: n }), 260);
                             }}
-                            aria-label={`נתונים על ${name}`}
+                            aria-label={name}
                             style={{
                               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
                               minWidth: 0, background: 'transparent', border: 'none', padding: '2px 4px',
@@ -446,6 +446,15 @@ function AllBetsViewer({ weeks, user, active = true }) {
                             <Score home={myBet.prediction.team1Goals} away={myBet.prediction.team2Goals} />
                           </span>
                         )}
+                        <button
+                          type="button"
+                          className="stats-pill"
+                          style={{ minHeight: '26px', padding: '0 10px' }}
+                          onClick={(e) => { e.stopPropagation(); setInsightsFor({ match, focusTeam: 1 }); }}
+                          aria-label={`נתונים על ${match.team1} נגד ${match.team2}`}
+                        >
+                          <span aria-hidden="true">📊</span> נתונים
+                        </button>
                       </div>
                     </div>
                     {/* משחק שנמשך מעבר ל-90: בלי ההערה התוצאה נראתה שגויה מול

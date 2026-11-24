@@ -22,13 +22,11 @@ import { CountdownRing, GoalNetShot, LockSnap } from '../Motifs';
 
 // קבוצה לחיצה - פותחת את חלון הנתונים. חולצה ומתחתיה השם, באותם גדלים
 // ומרווחים כמו ב"כל ההימורים", כדי ששני המסכים ייראו אותו דבר.
-function TeamPicker({ name, logo, shirt, state, jumpAt, onClick }) {
-  // לחיצה: החולצה מתהפכת, וחלון הנתונים נפתח כשההיפוך כמעט נגמר
+function TeamPicker({ name, logo, shirt, state, jumpAt }) {
+  // לחיצה רק מהפכת את החולצה. חלון הנתונים נפתח מכפתור "נתונים" בלבד -
+  // כשגם החולצה פתחה אותו, נגיעה מקרית בה הקפיצה חלון באמצע הימור
   const [flipAt, setFlipAt] = useState(0);
-  const handleClick = () => {
-    setFlipAt(Date.now());
-    setTimeout(onClick, 260);
-  };
+  const handleClick = () => setFlipAt(Date.now());
   return (
     <button
       type="button"
@@ -59,7 +57,7 @@ function TeamPicker({ name, logo, shirt, state, jumpAt, onClick }) {
       onTouchEnd={(e) => { e.currentTarget.style.background = 'transparent'; }}
       onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-3, #f2f6fc)'; }}
       onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-      aria-label={`נתונים על ${name}`}
+      aria-label={name}
     >
       {/* הסימון יושב ליד השם ולא על הלוגו. כשהוא היה מוצמד לפינת הלוגו הוא
           כיסה חלק ממנו, והסמל של הקבוצה הוא בדיוק מה שמזהים לפיו בסריקה
@@ -617,7 +615,6 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                   shirt={shirtsForMatch(match).team1}
                   state={resultState(match, 1)}
                   jumpAt={goalByMatchId[match._id]?.side === 1 ? goalByMatchId[match._id].at : 0}
-                  onClick={() => setInsightsFor({ match, focusTeam: 1 })}
                 />
 
                 <div style={{
@@ -666,7 +663,6 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                   shirt={shirtsForMatch(match).team2}
                   state={resultState(match, 2)}
                   jumpAt={goalByMatchId[match._id]?.side === 2 ? goalByMatchId[match._id].at : 0}
-                  onClick={() => setInsightsFor({ match, focusTeam: 2 })}
                 />
               </div>
 
