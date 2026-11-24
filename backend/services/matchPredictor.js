@@ -9,9 +9,14 @@
 //   2. כושר מתוקנן ליריבה - בכל אחד מהמשחקים האחרונים, השערים מחולקים במה
 //      שהיה צפוי מול אותה יריבה (לפי הכוח שלה בטבלה ובית/חוץ). 2-0 על
 //      המוליכה שווה הרבה יותר מ-2-0 על האחרונה. משחקים חדשים שוקלים יותר.
+//      כשיש xG למשחק (ליגות גדולות), כל משחק נמדד בשילוב של xG ושערים -
+//      xG יציב יותר ומנבא טוב יותר את העתיד (פחות מזל), והשילוב של שניהם
+//      הוא מה שעובד הכי טוב במחקר.
 //   3. שילוב: ככל שעבר יותר מהעונה, הטבלה שוקלת יותר.
-//   4. כשיש יחסי הימורים - הם הסימן החזק ביותר, ומשולבים בתחזית.
-//   5. התוצאה המוצעת היא זו עם הניקוד הצפוי הגבוה ביותר בשיטת הניקוד שלנו
+//   4. תיקון דיקסון-קולס: מודל פואסון פשוט מעריך בחסר תיקו נמוך (0-0, 1-1)
+//      ובעודף 1-0/0-1. תיקון קטן על ארבע התוצאות האלה (rho שלילי).
+//   5. כשיש יחסי הימורים - הם הסימן החזק ביותר, ומשולבים בתחזית.
+//   6. התוצאה המוצעת היא זו עם הניקוד הצפוי הגבוה ביותר בשיטת הניקוד שלנו
 //      (בול = 3, כיוון = 1), ולא סתם עיגול של צפי השערים.
 
 const DEFAULT_GOALS = 1.35; // שערים לקבוצה למשחק, כשאין טבלה
@@ -23,6 +28,8 @@ const FORM_GAMES = 8;
 const FORM_DECAY = 0.85;    // משקל כל משחק ביחס לחדש ממנו
 const UNKNOWN_OPP = 0.6;    // משקל משחק מול יריבה שאין לנו את כוחה (גביע, אירופה)
 const MAX_GOALS = 8;
+const XG_WEIGHT = 0.6;      // משקל ה-xG מול השערים במשחק שיש לו xG
+const RHO = -0.08;          // תיקון דיקסון-קולס לתוצאות נמוכות
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
@@ -52,12 +59,12 @@ const outcome = (game, teamId) => {
   const gf = isHome ? game.homeCompetitor?.score : game.awayCompetitor?.score;
   const ga = isHome ? game.awayCompetitor?.score : game.homeCompetitor?.score;
   if (gf == null || ga == null || gf < 0 || ga < 0) return null;
-  return { isHome, gf, ga, oppId: isHome ? game.awayCompetitor?.id : game.homeCompetitor?.id };
+  return { isHome, gf, ga, gameId: game.id, oppId: isHome ? game.awayCompetitor?.id : game.homeCompetitor?.id };
 };
 
 // כוח לפי המשחקים האחרונים, כשכל תוצאה נמדדת מול מה שהיה צפוי מול היריבה
-const formStrength = (teamId, games, rows, avg) => {
-  let wSum = 0, attSum = 0, defSum = 0, n = 0;
+const formStrength = (teamId, games, rows, avg, xgByGame) => {
+  let wSum = 0, attSum = 0, defSum = 0, n = 0, xgGames = 0;
   for (const g of games || []) {
     if (n >= FORM_GAMES) break;
     const o = outcome(g, teamId);
@@ -67,8 +74,16 @@ const formStrength = (teamId, games, rows, avg) => {
     const oa = opp ? opp.att : 1, od = opp ? opp.def : 1;
     const expFor = avg * od * (o.isHome ? HOME : AWAY);
     const expAgainst = avg * oa * (o.isHome ? AWAY : HOME);
-    attSum += w * clamp(o.gf / expFor, 0, 3);
-    defSum += w * clamp(o.ga / expAgainst, 0, 3);
+    let att = clamp(o.gf / expFor, 0, 3);
+    let def = clamp(o.ga / expAgainst, 0, 3);
+    const xg = xgByGame && xgByGame.get(o.gameId);
+    if (xg && xg[teamId] != null && xg[o.oppId] != null) {
+      att = XG_WEIGHT * clamp(xg[teamId] / expFor, 0, 3) + (1 - XG_WEIGHT) * att;
+      def = XG_WEIGHT * clamp(xg[o.oppId] / expAgainst, 0, 3) + (1 - XG_WEIGHT) * def;
+      xgGames++;
+    }
+    attSum += w * att;
+    defSum += w * def;
     wSum += w;
     n++;
   }
@@ -76,7 +91,8 @@ const formStrength = (teamId, games, rows, avg) => {
   return {
     att: (attSum + FORM_PRIOR) / (wSum + FORM_PRIOR),
     def: (defSum + FORM_PRIOR) / (wSum + FORM_PRIOR),
-    games: n
+    games: n,
+    xgGames
   };
 };
 
@@ -102,7 +118,12 @@ const scoreGrid = (lh, la) => {
   for (let i = 0; i <= MAX_GOALS; i++) {
     grid.push([]);
     for (let j = 0; j <= MAX_GOALS; j++) {
-      const p = ph[i] * pa[j];
+      let p = ph[i] * pa[j];
+      if (i === 0 && j === 0) p *= 1 - lh * la * RHO;
+      else if (i === 0 && j === 1) p *= 1 + lh * RHO;
+      else if (i === 1 && j === 0) p *= 1 + la * RHO;
+      else if (i === 1 && j === 1) p *= 1 - RHO;
+      p = Math.max(0, p);
       grid[i].push(p);
       if (i > j) home += p; else if (i === j) draw += p; else away += p;
     }
@@ -155,13 +176,14 @@ const round1 = (v) => Math.round(v * 10) / 10;
  * standingsRows - שורות הטבלה של התחרות (אפשר ריק)
  * homeGames, awayGames - משחקים שהסתיימו, החדשים ראשונים (מבנה 365)
  * odds - { homeWin, draw, awayWin } או null
+ * xgByGame - Map של gameId -> { competitorId: xG } (אפשר null)
  */
-const predictMatch = ({ homeId, awayId, standingsRows = [], homeGames = [], awayGames = [], odds = null }) => {
+const predictMatch = ({ homeId, awayId, standingsRows = [], homeGames = [], awayGames = [], odds = null, xgByGame = null }) => {
   const avg = leagueAverage(standingsRows);
   const hTable = tableStrength(standingsRows, homeId, avg);
   const aTable = tableStrength(standingsRows, awayId, avg);
-  const hForm = formStrength(homeId, homeGames, standingsRows, avg);
-  const aForm = formStrength(awayId, awayGames, standingsRows, avg);
+  const hForm = formStrength(homeId, homeGames, standingsRows, avg, xgByGame);
+  const aForm = formStrength(awayId, awayGames, standingsRows, avg, xgByGame);
   const h = combine(hTable, hForm);
   const a = combine(aTable, aForm);
   const market = marketProbs(odds);
@@ -174,7 +196,7 @@ const predictMatch = ({ homeId, awayId, standingsRows = [], homeGames = [], away
 
   if (market) {
     const fit = fitToMarket(market, lh + la);
-    const wm = h && a ? 0.65 : 1; // יחסים לבד כשאין נתונים, אחרת שילוב
+    const wm = h && a ? 0.75 : 1; // יחסים לבד כשאין נתונים, אחרת שילוב
     lh = wm * fit.lh + (1 - wm) * lh;
     la = wm * fit.la + (1 - wm) * la;
   }
@@ -194,6 +216,7 @@ const predictMatch = ({ homeId, awayId, standingsRows = [], homeGames = [], away
     basis: {
       table: Boolean(hTable && aTable),
       form: Boolean(hForm && aForm),
+      xg: Boolean(hForm && aForm && hForm.xgGames >= 3 && aForm.xgGames >= 3),
       odds: Boolean(market)
     }
   };

@@ -267,7 +267,7 @@ function MatchInsightsModal({ match, onClose }) {
   const predProbT2 = pick(pp?.away, pp?.home);
   // על מה התחזית מבוססת - כדי שיהיה ברור שזה לא רק "5 משחקים אחרונים"
   const basisText = pred?.basis
-    ? [pred.basis.table && 'טבלה', pred.basis.form && 'כושר מול יריבות', pred.basis.odds && 'יחסים']
+    ? [pred.basis.table && 'טבלה', pred.basis.form && 'כושר מול יריבות', pred.basis.xg && 'xG', pred.basis.odds && 'יחסים']
       .filter(Boolean).join(' · ')
     : '';
   const h2hT1Wins = pick(h2hSum?.homeWins, h2hSum?.awayWins);
@@ -448,6 +448,12 @@ function MatchInsightsModal({ match, onClose }) {
                 </div>
                 <CompareRow label="ממוצע כבישה" a={t1.avgScored} b={t2.avgScored} />
                 <CompareRow label="ממוצע ספיגה" a={t1.avgConceded} b={t2.avgConceded} lowerIsBetter />
+                {t1.xgFor != null && t2.xgFor != null && (
+                  <>
+                    <CompareRow label="xG ממוצע (מצבים שנוצרו)" a={t1.xgFor} b={t2.xgFor} />
+                    <CompareRow label="xG נגד (מצבים שספגו)" a={t1.xgAgainst} b={t2.xgAgainst} lowerIsBetter />
+                  </>
+                )}
                 <CompareRow label="שער נקי" a={t1.cleanSheets} b={t2.cleanSheets} />
                 {t1.table && t2.table && (
                   <>

@@ -60,3 +60,24 @@ test('probabilities sum to ~100 and the pick is a sane scoreline', () => {
   assert.ok(p.suggestedHome > p.suggestedAway);
   assert.ok(p.suggestedHome <= 5);
 });
+
+test('xG tempers lucky results: same goals, lower xG -> weaker attack', () => {
+  const g = (id, list) => list.map(([opp, gf, ga], k) => ({ id: id * 100 + k, homeCompetitor: { id, score: gf }, awayCompetitor: { id: opp, score: ga } }));
+  const recent = g(5, [[6, 3, 0], [7, 3, 0], [4, 3, 0], [6, 3, 0]]);
+  const opp = games(6, [[5, 1, 1, true]]);
+  const xgLucky = new Map(recent.map((x) => [x.id, { 5: 0.6, [x.awayCompetitor.id]: 1.2 }]));
+  const xgReal = new Map(recent.map((x) => [x.id, { 5: 2.8, [x.awayCompetitor.id]: 0.3 }]));
+  const lucky = predictMatch({ homeId: 5, awayId: 6, standingsRows: ROWS, homeGames: recent, awayGames: opp, xgByGame: xgLucky });
+  const real = predictMatch({ homeId: 5, awayId: 6, standingsRows: ROWS, homeGames: recent, awayGames: opp, xgByGame: xgReal });
+  const none = predictMatch({ homeId: 5, awayId: 6, standingsRows: ROWS, homeGames: recent, awayGames: opp });
+  assert.ok(lucky.expectedHome < none.expectedHome);
+  assert.ok(real.expectedHome > lucky.expectedHome);
+  assert.ok(lucky.expectedAway > real.expectedAway);
+});
+
+test('Dixon-Coles correction lifts low draws', () => {
+  const { scoreGrid } = require('./matchPredictor')._internal;
+  const g = scoreGrid(1.2, 1.0);
+  const indep = Math.exp(-1.2) * Math.exp(-1.0) * 1.2 * 1.0;
+  assert.ok(g.grid[1][1] > indep);
+});

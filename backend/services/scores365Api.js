@@ -449,11 +449,62 @@ const fetchHeadToHead = async (
   return meetings.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
 };
 
+// ── xG (שערים צפויים) ─────────────────────────────────────────────
+// 365 נותנים xG לכל משחק בליגות הגדולות (סטטיסטיקה 76 ב-/game/stats). אין
+// בקשה לכמה משחקים יחד, ולכן: מקביליות מוגבלת, תקציב זמן, ו-cache ארוך -
+// משחק שהסתיים לא משתנה, אז כל משחק נשלף פעם אחת בשבוע לכל היותר.
+// ליגה בלי xG נשמרת כ"אין" כדי לא לשאול שוב.
+const XG_STAT_ID = 76;
+const XG_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const XG_NONE_TTL_MS = 24 * 60 * 60 * 1000;
+const XG_GAMES_PER_TEAM = 8;
+const XG_CONCURRENCY = 4;
+const XG_BUDGET_MS = 7000;
+const xgCache = new Map();
+
+const fetchGameXg = async (gameId) => {
+  const hit = xgCache.get(gameId);
+  if (hit && Date.now() - hit.at < (hit.xg ? XG_TTL_MS : XG_NONE_TTL_MS)) return hit.xg;
+  const json = await apiGet(`/game/stats/?appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&games=${gameId}`);
+  const xg = {};
+  for (const st of json.statistics || []) {
+    if (st.id !== XG_STAT_ID || st.competitorId == null) continue;
+    const v = parseFloat(st.value);
+    if (Number.isFinite(v)) xg[st.competitorId] = v;
+  }
+  const value = Object.keys(xg).length === 2 ? xg : null;
+  xgCache.set(gameId, { xg: value, at: Date.now() });
+  return value;
+};
+
+// מפת gameId -> { competitorId: xG } למשחקים האחרונים של שתי הקבוצות.
+// מה שלא הספיק להגיע בתקציב הזמן פשוט חסר, והתחזית משתמשת שם בשערים
+const fetchRecentXg = async (gameLists) => {
+  const ids = [...new Set(gameLists.flatMap((gs) => gs.slice(0, XG_GAMES_PER_TEAM).map((g) => g.id)).filter(Boolean))];
+  const out = new Map();
+  const started = Date.now();
+  let next = 0;
+  const worker = async () => {
+    while (next < ids.length && Date.now() - started < XG_BUDGET_MS) {
+      const id = ids[next++];
+      try {
+        const xg = await fetchGameXg(id);
+        if (xg) out.set(id, xg);
+      } catch (err) {
+        console.warn(`⚠️ [365] xG for game ${id} failed:`, err.message);
+      }
+    }
+  };
+  const timeout = new Promise((resolve) => setTimeout(resolve, XG_BUDGET_MS + 500));
+  await Promise.race([Promise.all(Array.from({ length: XG_CONCURRENCY }, worker)), timeout]);
+  return new Map(out);
+};
+
 const avg = (nums) => (nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null);
 const round1 = (v) => (v == null ? null : Math.round(v * 10) / 10);
 
 // בונה בלוק נתונים לקבוצה אחת
-const buildTeamBlock = (competitor, games, standingsRows, formSize) => {
+const buildTeamBlock = (competitor, games, standingsRows, formSize, xgByGame = new Map()) => {
   const teamId = competitor?.id;
   const form = games
     .map((g) => outcomeFor(g, teamId))
@@ -488,6 +539,19 @@ const buildTeamBlock = (competitor, games, standingsRows, formSize) => {
     formMax: form.length * 3,
     avgScored: round1(avg(form.map((f) => f.goalsFor))),
     avgConceded: round1(avg(form.map((f) => f.goalsAgainst))),
+    // xG ממוצע במשחקי הכושר שיש להם xG (null בליגות בלי הנתון)
+    ...(() => {
+      const withXg = games.slice(0, formSize).map((g) => {
+        const x = xgByGame.get(g.id);
+        if (!x) return null;
+        const oppId = g.homeCompetitor?.id === teamId ? g.awayCompetitor?.id : g.homeCompetitor?.id;
+        return x[teamId] != null && x[oppId] != null ? { f: x[teamId], a: x[oppId] } : null;
+      }).filter(Boolean);
+      return {
+        xgFor: withXg.length >= 2 ? round1(avg(withXg.map((x) => x.f))) : null,
+        xgAgainst: withXg.length >= 2 ? round1(avg(withXg.map((x) => x.a))) : null
+      };
+    })(),
     cleanSheets: form.filter((f) => f.goalsAgainst === 0).length,
     failedToScore: form.filter((f) => f.goalsFor === 0).length
   };
@@ -545,8 +609,10 @@ const fetchTeamInsights = async (externalId, { refresh = false, formSize = 5 } =
   // 504 בודד היה משאיר את כל הצופים בלי הנתונים של אותה קבוצה לשש שעות
   let partial = Boolean(homePage.failed || awayPage.failed);
 
-  const home = buildTeamBlock(homeC, homeGames, standingsRows, formSize);
-  const away = buildTeamBlock(awayC, awayGames, standingsRows, formSize);
+  const xgByGame = await fetchRecentXg([homeGames, awayGames]);
+
+  const home = buildTeamBlock(homeC, homeGames, standingsRows, formSize, xgByGame);
+  const away = buildTeamBlock(awayC, awayGames, standingsRows, formSize, xgByGame);
 
   // ראש בראש. המשחק הנוכחי עצמו מסונן החוצה - כשהוא כבר הסתיים הוא חוזר
   // בתוצאות של הקבוצה, ואין טעם להציג אותו כ"מפגש קודם" של עצמו.
@@ -597,7 +663,8 @@ const fetchTeamInsights = async (externalId, { refresh = false, formSize = 5 } =
       standingsRows,
       homeGames,
       awayGames,
-      odds
+      odds,
+      xgByGame
     })
   };
 
