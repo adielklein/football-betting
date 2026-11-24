@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { BallLoader } from '../Motifs';
+import ShirtViewer3D from '../ShirtViewer3D';
+import { shirtsForMatch } from '../../data/kits';
 import { API_URL as API_BASE } from '../../config';
 
 const API_URL = API_BASE;
@@ -167,7 +169,7 @@ function FormRow({ team, accent, expanded, onToggle }) {
   );
 }
 
-function TeamHeader({ team, accent, focused, onSelect }) {
+function TeamHeader({ team, accent, focused, onSelect, shirt, crestSrc }) {
   return (
     <button
       type="button"
@@ -183,7 +185,12 @@ function TeamHeader({ team, accent, focused, onSelect }) {
       font: 'inherit', cursor: 'pointer',
       WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation'
     }}>
-      {team.logo && (
+      {/* חולצה תלת-ממדית שמסובבים באצבע; בלי נתוני חולצה - הסמל כמו קודם */}
+      {shirt ? (
+        <span style={{ display: 'flex', justifyContent: 'center' }}>
+          <ShirtViewer3D shirt={shirt} crestSrc={crestSrc} size={78} />
+        </span>
+      ) : team.logo && (
         <img
           src={team.logo}
           alt=""
@@ -341,9 +348,9 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
           {data && !loading && (
             <>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginBottom: '0.7rem' }}>
-                <TeamHeader team={t1} accent={ACCENT_1} focused={focus === 1} onSelect={() => selectTeam(1)} />
+                <TeamHeader team={t1} accent={ACCENT_1} focused={focus === 1} onSelect={() => selectTeam(1)} shirt={shirtsForMatch(match).team1} crestSrc={match.team1LogoUrl || t1.logo} />
                 <div style={{ flexShrink: 0, color: 'var(--text-4, #c3c8d0)', fontWeight: 800, fontSize: 'var(--fs-xs)' }}>VS</div>
-                <TeamHeader team={t2} accent={ACCENT_2} focused={focus === 2} onSelect={() => selectTeam(2)} />
+                <TeamHeader team={t2} accent={ACCENT_2} focused={focus === 2} onSelect={() => selectTeam(2)} shirt={shirtsForMatch(match).team2} crestSrc={match.team2LogoUrl || t2.logo} />
               </div>
 
               <div style={{ textAlign: 'center', fontSize: 'var(--fs-xs)', color: 'var(--text-4, #b6bcc6)', marginBottom: '0.7rem' }}>
