@@ -861,13 +861,25 @@ router.get('/insights/:matchId', async (req, res) => {
       );
     }
 
+    // התוצאה המוצעת לפי שיטת הניקוד של המשחק הזה: כשהוזנו יחסים, הניקוד
+    // על כל כיוון שונה, ומה שמשתלם להמר עליו משתנה. זה גם מה ש-McCannkey מהמר
+    let prediction = insights.prediction;
+    const mo = match.odds;
+    if (prediction && mo && (mo.homeWin || mo.draw || mo.awayWin)) {
+      const { pickForScoring } = require('../services/matchPredictor');
+      const odds365 = orientation.flipped ? { homeWin: mo.awayWin, draw: mo.draw, awayWin: mo.homeWin } : mo;
+      const best = pickForScoring(prediction.expectedHome, prediction.expectedAway, odds365);
+      if (best) prediction = { ...prediction, suggestedHome: best.home, suggestedAway: best.away, scoringOdds: true };
+    }
+
     res.json({
       matchId: match._id,
       team1: match.team1,
       team2: match.team2,
       flipped: orientation.flipped,
       orientationConfident: orientation.confident,
-      ...insights
+      ...insights,
+      prediction
     });
   } catch (err) {
     console.error('❌ [external/insights] error:', err);
@@ -894,7 +906,7 @@ router.get('/live-table/:weekId', async (req, res) => {
 
     const [matches, players, bets, exclusions] = await Promise.all([
       Match.find({ weekId }, 'team1 team2 result odds externalId fullDate').lean(),
-      User.find({ role: { $ne: 'admin' } }, 'name').lean(),
+      User.find({ role: { $nin: ['admin', 'bot'] } }, 'name').lean(),
       Bet.find({ weekId }, 'userId matchId prediction').lean(),
       MonthExclusion.find({ month: week.month, season: week.season }, 'userId').lean()
     ]);

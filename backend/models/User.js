@@ -48,7 +48,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'player'],
+    enum: ['admin', 'player', 'bot'], // bot = McCannkey (services/mccannkey.js)
     default: 'player'
   },
   theme: {

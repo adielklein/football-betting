@@ -669,13 +669,13 @@ function UsersManagement({ users, loadData, user }) {
                       </span>
                       <span style={{
                         padding: '2px 8px',
-                        backgroundColor: userItem.role === 'admin' ? '#dc3545' : '#28a745',
+                        backgroundColor: userItem.role === 'admin' ? '#dc3545' : userItem.role === 'bot' ? '#a07a3c' : '#28a745',
                         color: 'white',
                         borderRadius: '20px',
                         fontSize: 'var(--fs-xs)',
                         fontWeight: '700'
                       }}>
-                        {userItem.role === 'admin' ? '👑 מנהל' : '⚽ שחקן'}
+                        {userItem.role === 'admin' ? '👑 מנהל' : userItem.role === 'bot' ? '🐒 ממוחשב' : '⚽ שחקן'}
                       </span>
                       {isCurrentUser && (
                         <span style={{ color: 'var(--info-fg, #1976d2)', fontSize: 'var(--fs-xs)', fontWeight: '600' }}>(אתה)</span>

@@ -65,6 +65,12 @@ const connectMongoDB = async () => {
     const User = require('./models/User');
     const userCount = await User.countDocuments();
     console.log(`👥 Found ${userCount} users in database`);
+
+    // McCannkey 🐒 - השחקן הממוחשב (services/mccannkey.js). אחרי ה-seed,
+    // כדי שהעתקה מחדש בסביבת הניסוי לא תמחק אותו
+    const mccannkey = require('./services/mccannkey');
+    await mccannkey.ensureBot().catch((e) => console.error('❌ [mccannkey] ensureBot:', e.message));
+    setTimeout(() => mccannkey.runMcCannkey().catch((e) => console.error('❌ [mccannkey]', e.message)), 30000);
     
   } catch (error) {
     console.error('❌ MongoDB connection error:', error.message);
@@ -648,6 +654,13 @@ const runReminders = async () => {
 
 cron.schedule('*/10 * * * *', runReminders, { timezone: 'Asia/Jerusalem' });
 console.log('⏰ Cron registered: lock reminders every 10 minutes');
+
+// McCannkey: משלים הימורים חסרים, ושעה ורבע לפני נעילה מעדכן את הכל
+cron.schedule('*/10 * * * *', () => {
+  require('./services/mccannkey').runMcCannkey()
+    .catch((err) => console.error('🐒 [mccannkey] failed:', err.message));
+}, { timezone: 'Asia/Jerusalem' });
+console.log('🐒 Cron registered: McCannkey every 10 minutes');
 
 // בדיקה יבשה - מי היה מקבל תזכורת עכשיו, בלי לשלוח דבר. למנהלים בלבד.
 app.get('/api/admin/lock-reminders/preview', requireAdmin, async (req, res) => {

@@ -70,7 +70,8 @@ router.post('/login', async (req, res) => {
     const user = await User.findOne({
       username: { $in: [...new Set([String(username).trim(), normalizeUsername(username)])] }
     });
-    if (!user) {
+    // McCannkey הוא שחקן ממוחשב - אי אפשר להתחבר בשמו
+    if (!user || user.role === 'bot') {
       loginLimiter.fail(ip, normalizeUsername(username));
       return res.status(401).json({ message: 'שם משתמש או סיסמה שגויים' });
     }

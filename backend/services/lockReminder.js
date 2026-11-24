@@ -57,7 +57,7 @@ const selectRecipients = async (week, now = new Date()) => {
 
   const [candidates, exclusions, bets] = await Promise.all([
     User.find({
-      role: { $ne: 'admin' },
+      role: { $nin: ['admin', 'bot'] },
       'pushSettings.enabled': true,
       $or: [
         { 'pushSettings.subscriptions.0': { $exists: true } },

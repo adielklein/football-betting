@@ -222,4 +222,26 @@ const predictMatch = ({ homeId, awayId, standingsRows = [], homeGames = [], away
   };
 };
 
-module.exports = { predictMatch, _internal: { leagueAverage, tableStrength, formStrength, scoreGrid, bestPick, fitToMarket } };
+// התוצאה הכי משתלמת לפי שיטת הניקוד של משחק מסוים. בלי יחסים: בול 3,
+// כיוון 1. עם יחסים: כיוון = יחס/3 ובול = פי שניים, לפי היחס של הכיוון.
+// כך משחק שהיחס על האנדרדוג בו גבוה יכול להצדיק הימור עליו.
+// odds בכיוון של צפי השערים (homeWin = הצד של expectedHome)
+const pickForScoring = (expectedHome, expectedAway, odds = null) => {
+  if (expectedHome == null || expectedAway == null) return null;
+  const g = scoreGrid(Math.max(0.1, expectedHome), Math.max(0.1, expectedAway));
+  const has = Boolean(odds && (odds.homeWin || odds.draw || odds.awayWin));
+  const dirPts = (o) => (has ? (odds[o] || 1) / 3 : 1);
+  const exactPts = (o) => (has ? ((odds[o] || 1) * 2) / 3 : 3);
+  let best = null;
+  for (let i = 0; i <= 5; i++) {
+    for (let j = 0; j <= 5; j++) {
+      const o = i > j ? 'homeWin' : i === j ? 'draw' : 'awayWin';
+      const pDir = i > j ? g.home : i === j ? g.draw : g.away;
+      const ep = dirPts(o) * pDir + (exactPts(o) - dirPts(o)) * g.grid[i][j];
+      if (!best || ep > best.ep) best = { ep, home: i, away: j };
+    }
+  }
+  return best;
+};
+
+module.exports = { predictMatch, pickForScoring, _internal: { leagueAverage, tableStrength, formStrength, scoreGrid, bestPick, fitToMarket } };

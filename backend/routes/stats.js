@@ -141,7 +141,7 @@ router.get('/user/:userId', async (req, res) => {
     // מנהלים מוחרגים בדיוק כמו בטבלה עצמה. בלי זה המקום שמוצג כאן היה
     // נופל בדרגה אחת מהמקום שהשחקן רואה בטבלה, וזה בדיוק סוג הפער
     // שגורם לאנשים לא להאמין למספר.
-    const adminIds = (await User.find({ role: 'admin' }, '_id').lean()).map((u) => u._id);
+    const adminIds = (await User.find({ role: { $in: ['admin', 'bot'] } }, '_id').lean()).map((u) => u._id);
 
     const rivalScores = weekIds.length
       ? await Score.find(
@@ -299,7 +299,7 @@ router.get('/luck-table', async (req, res) => {
     }
 
     const [players, bets, matches] = await Promise.all([
-      User.find({ role: { $ne: 'admin' } }, 'name').lean(),
+      User.find({ role: { $nin: ['admin', 'bot'] } }, 'name').lean(),
       Bet.find({}, 'userId matchId prediction').lean(),
       Match.find({}, 'result odds').lean()
     ]);
@@ -335,7 +335,7 @@ router.get('/courage-table', async (req, res) => {
     }
 
     const [players, bets, matches] = await Promise.all([
-      User.find({ role: { $ne: 'admin' } }, 'name').lean(),
+      User.find({ role: { $nin: ['admin', 'bot'] } }, 'name').lean(),
       Bet.find({}, 'userId matchId prediction points').lean(),
       Match.find({}, 'result odds').lean()
     ]);
@@ -520,7 +520,7 @@ router.get('/admin', async (req, res) => {
       let bestPlayer = null;
       let bestScore = -1;
       for (const s of weekScores) {
-        if (s.userId && s.userId.role !== 'admin' && (s.weeklyScore || 0) > bestScore) {
+        if (s.userId && s.userId.role !== 'admin' && s.userId.role !== 'bot' && (s.weeklyScore || 0) > bestScore) {
           bestScore = s.weeklyScore;
           bestPlayer = s.userId.name;
         }

@@ -327,7 +327,7 @@ router.get('/standing/:userId', async (req, res) => {
     const peek = computeStanding({ weeks, scores: [], userId: req.params.userId });
     const [players, exclusions, scores] = await Promise.all([
       // רק שחקנים קיימים: הטבלה מדלגת על ניקוד של משתמש שנמחק ועל מנהלים
-      User.find({ role: { $ne: 'admin' } }, '_id').lean(),
+      User.find({ role: { $nin: ['admin', 'bot'] } }, '_id').lean(),
       MonthExclusion.find({ month: peek.month, season: peek.season }, 'userId').lean(),
       Score.find({}, 'userId weekId weeklyScore').lean()
     ]);

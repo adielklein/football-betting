@@ -10,6 +10,8 @@ import { Medal } from '../Motifs';
 
 // השורה שלי: צבע ערכת הנושא, עם הדגשה עדינה מעליו
 const ME_ROW_BG = 'linear-gradient(100deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 60%, rgba(0,0,0,0.12)), var(--theme-tile, #3b5bdb)';
+// שורת McCannkey: גוון חום-בננה שקוף, כדי שיעבוד גם במצב כהה
+const BOT_ROW_BG = 'rgba(201,164,106,0.16)';
 
 function Leaderboard({ leaderboard, user, active = true }) {
   const [monthlyScores, setMonthlyScores] = useState([]);
@@ -128,7 +130,7 @@ function Leaderboard({ leaderboard, user, active = true }) {
       const weekId = score.weekId && score.weekId._id ? score.weekId._id : score.weekId;
 
       if (!userScores[userId]) {
-        userScores[userId] = { userId, name: userName, monthlyScore: 0, totalScore: score.totalScore || 0 };
+        userScores[userId] = { userId, name: userName, monthlyScore: 0, totalScore: score.totalScore || 0, isBot: score.userId.role === 'bot' };
       }
 
       if (monthWeekIds.includes(weekId)) {
@@ -183,7 +185,7 @@ function Leaderboard({ leaderboard, user, active = true }) {
       if (excludedByMonth[weekMonth] && excludedByMonth[weekMonth].has(userId)) return;
 
       if (!userScores[userId]) {
-        userScores[userId] = { userId, name: score.userId.name, seasonalScore: 0 };
+        userScores[userId] = { userId, name: score.userId.name, seasonalScore: 0, isBot: score.userId.role === 'bot' };
       }
       userScores[userId].seasonalScore += score.weeklyScore || 0;
     });
@@ -216,7 +218,7 @@ function Leaderboard({ leaderboard, user, active = true }) {
         if (!bet.userId || bet.userId.role === 'admin') return;
         const userId = bet.userId._id;
         if (excludedIds.includes(userId)) return;
-        if (!weekScores[userId]) { weekScores[userId] = { name: bet.userId.name, score: 0 }; }
+        if (!weekScores[userId]) { weekScores[userId] = { name: bet.userId.name, score: 0, isBot: bet.userId.role === 'bot' }; }
         weekScores[userId].score += bet.points || 0;
       });
 
@@ -249,7 +251,7 @@ function Leaderboard({ leaderboard, user, active = true }) {
       return {
         label: `דירוג ${months.find((m) => m.value === selectedMonth)?.label || 'החודש'}`,
         chip: 'חודשי',
-        base: monthlyScores.map((p) => ({ userId: p.userId, name: p.name, score: p.monthlyScore }))
+        base: monthlyScores.filter((p) => !p.isBot).map((p) => ({ userId: p.userId, name: p.name, score: p.monthlyScore }))
       };
     }
 
@@ -257,14 +259,14 @@ function Leaderboard({ leaderboard, user, active = true }) {
       return {
         label: `הדירוג העונתי (${seasons.find((x) => x.value === selectedSeason)?.label || ''})`,
         chip: 'עונתי',
-        base: seasonalScores.map((p) => ({ userId: p.userId, name: p.name, score: p.seasonalScore }))
+        base: seasonalScores.filter((p) => !p.isBot).map((p) => ({ userId: p.userId, name: p.name, score: p.seasonalScore }))
       };
     }
 
     return {
       label: 'הדירוג הכללי',
       chip: 'כללי',
-      base: leaderboard.map((e) => ({ userId: e.user._id, name: e.user.name, score: e.totalScore }))
+      base: leaderboard.filter((e) => e.user.role !== 'bot').map((e) => ({ userId: e.user._id, name: e.user.name, score: e.totalScore }))
     };
   };
 
@@ -278,11 +280,18 @@ function Leaderboard({ leaderboard, user, active = true }) {
   };
 
   // מקום לפי ניקוד (תיקו חולק מקום), ומדליות רק כשמישהו כבר צבר נקודות
+  // McCannkey 🐒 (שחקן ממוחשב) מופיע בין השחקנים לפי הניקוד, אבל בלי מקום:
+  // המקומות והמדליות נספרים רק על שחקנים אמיתיים. place = null מסמן אותו
+  const isBotRow = (p) => Boolean(p.isBot || p.user?.role === 'bot');
   const rankedRows = (list, scoreOf) => {
-    const scores = list.map(scoreOf);
+    const humans = list.filter((p) => !isBotRow(p));
+    const scores = humans.map(scoreOf);
     const places = placesFor(scores);
     const scored = anyScored(scores);
-    return list.map((player, index) => ({ player, index, place: places[index], scored }));
+    let k = 0;
+    return list.map((player, index) => (isBotRow(player)
+      ? { player, index, place: null, scored }
+      : { player, index, place: places[k++], scored }));
   };
 
   // רשימות שהשורות בהן זזות בתנועה כשהסדר משתנה
@@ -298,8 +307,9 @@ function Leaderboard({ leaderboard, user, active = true }) {
   const shineToken = `${activeTab}-${selectedMonth}-${selectedSeason}-${selectedWeekId}`;
 
   const renderPlayerRow = (player, index, scoreKey, isMe, animDelay, place = index + 1, scored = true) => {
-    const rank = scored ? getRankStyle(place - 1) : getRankStyle(-1);
-    const isTop3 = scored && place <= 3;
+    const bot = place === null;
+    const rank = scored && !bot ? getRankStyle(place - 1) : getRankStyle(-1);
+    const isTop3 = !bot && scored && place <= 3;
     const score = formatScore(player[scoreKey] !== undefined ? player[scoreKey] : player.score);
 
     // לשורה עם רקע משלה יש גם טקסט משלה. שורה רגילה יורשת את הרגיל.
@@ -318,9 +328,9 @@ function Leaderboard({ leaderboard, user, active = true }) {
         // מאפיין רקע אחד בלבד. שילוב של background עם backgroundColor נשבר:
         // כש-React מעדכן את השורה הוא מנקה את background, וזה מוחק גם את
         // הצבע - השורה שלי יצאה לבנה עם טקסט לבן, ונראתה ריקה
-        background: isMe ? ME_ROW_BG : (isTop3 ? rank.bg : (index % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)')),
+        background: isMe ? ME_ROW_BG : bot ? BOT_ROW_BG : (isTop3 ? rank.bg : (index % 2 === 0 ? 'var(--surface-2, #fafafa)' : 'var(--surface, #fff)')),
         borderRadius: isTop3 ? '12px' : '8px',
-        border: isMe ? '1px solid rgba(0,0,0,0.1)' : (isTop3 ? `1px solid ${rank.border}` : '1px solid #f0f0f0'),
+        border: isMe ? '1px solid rgba(0,0,0,0.1)' : bot ? '1px dashed var(--bot-border, #c9a46a)' : (isTop3 ? `1px solid ${rank.border}` : '1px solid #f0f0f0'),
         boxShadow: isMe ? '0 3px 12px rgba(0,0,0,0.18)' : rank.shadow,
         animation: `slideUp 0.25s ease ${animDelay}s both`,
         transition: 'all 0.2s ease'
@@ -333,7 +343,7 @@ function Leaderboard({ leaderboard, user, active = true }) {
             textAlign: 'center',
             color: (!isTop3 && !isMe) ? 'var(--text-4, #bbb)' : rowFg
           }}>
-            {isTop3 ? <Medal place={place} /> : (scored ? place : '–')}
+            {bot ? <span role="img" aria-label="שחקן ממוחשב">🐒</span> : isTop3 ? <Medal place={place} /> : (scored ? place : '–')}
           </span>
           <span style={{
             fontWeight: isMe ? '700' : '500',
@@ -344,6 +354,9 @@ function Leaderboard({ leaderboard, user, active = true }) {
             color: rowFg
           }}>
             {player.name}
+            {bot && (
+              <span style={{ opacity: 0.7, fontSize: 'var(--fs-xs)', marginRight: '4px', fontWeight: 600 }}> · לפי התחזית, בלי מקום</span>
+            )}
             {isMe && (
               <span style={{ color: rowFg, opacity: 0.75, fontSize: 'var(--fs-xs)', marginRight: '3px', fontWeight: '600' }}> (אתה)</span>
             )}
@@ -354,7 +367,7 @@ function Leaderboard({ leaderboard, user, active = true }) {
           fontSize: isTop3 ? 'var(--fs-lg)' : 'var(--fs-md)',
           color: rowFg,
           flexShrink: 0,
-          background: isMe ? 'rgba(255,255,255,0.2)' : (isTop3 ? 'var(--overlay, rgba(255,255,255,0.72))' : 'var(--surface-3, #f5f5f5)'),
+          background: isMe ? 'rgba(255,255,255,0.2)' : bot ? 'var(--overlay, rgba(255,255,255,0.6))' : (isTop3 ? 'var(--overlay, rgba(255,255,255,0.72))' : 'var(--surface-3, #f5f5f5)'),
           padding: '2px 12px',
           borderRadius: '10px',
           minWidth: '40px',
@@ -362,7 +375,7 @@ function Leaderboard({ leaderboard, user, active = true }) {
         }}>
           {score}
         </span>
-        {scored && place === 1 && <span key={shineToken} className="row-shine" aria-hidden="true" />}
+        {!bot && scored && place === 1 && <span key={shineToken} className="row-shine" aria-hidden="true" />}
       </div>
     );
   };

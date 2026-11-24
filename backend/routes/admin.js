@@ -47,7 +47,7 @@ const loadWeekData = async (weeks) => {
 
 const loadPeople = async () => {
   const users = await User.find({}, 'name role pushSettings').lean();
-  return { users, players: users.filter((u) => u.role !== 'admin') };
+  return { users, players: users.filter((u) => u.role !== 'admin' && u.role !== 'bot') };
 };
 
 // 📋 היום: מה צריך לעשות עכשיו

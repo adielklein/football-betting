@@ -82,7 +82,7 @@ router.get('/stats', async (req, res) => {
 // התיאור שנגזר ממנה.
 router.get('/admin/overview', requireAdmin, async (req, res) => {
   try {
-    const users = await User.find({ role: { $ne: 'admin' } }, 'name username pushSettings')
+    const users = await User.find({ role: { $nin: ['admin', 'bot'] } }, 'name username pushSettings')
       .sort({ name: 1 })
       .lean();
 
@@ -525,7 +525,7 @@ const loadPending = async (weekId) => {
 
   const [matches, players, bets, exclusions] = await Promise.all([
     Match.find({ weekId }, '_id').lean(),
-    User.find({ role: { $ne: 'admin' } }, 'name pushSettings').lean(),
+    User.find({ role: { $nin: ['admin', 'bot'] } }, 'name pushSettings').lean(),
     Bet.find({ weekId }, 'userId matchId').lean(),
     MonthExclusion.find({ month: week.month, season: week.season }, 'userId').lean()
   ]);

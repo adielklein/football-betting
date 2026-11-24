@@ -25,7 +25,7 @@ router.get('/user/:userId/week/:weekId', async (req, res) => {
 router.get('/week/:weekId', async (req, res) => {
   try {
     const bets = await Bet.find({ weekId: req.params.weekId })
-      .populate('userId', 'name email')
+      .populate('userId', 'name email role')
       .populate('matchId');
     
     res.json(bets);

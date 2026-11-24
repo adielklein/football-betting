@@ -123,7 +123,8 @@ router.patch('/:id/activate', requireAdmin, async (req, res) => {
       {
         active: true,
         locked: false,
-        lockTime: new Date(lockTime)
+        lockTime: new Date(lockTime),
+        mccannkeyFinalAt: null
       },
       { new: true }
     );
@@ -133,6 +134,12 @@ router.patch('/:id/activate', requireAdmin, async (req, res) => {
     }
     
     console.log(`✅ Week ${week.name} activated with lock time: ${lockTime}`);
+
+    // McCannkey מהמר ברקע - בלי לעכב את תשובת ההפעלה (365 יכול להיות איטי)
+    setImmediate(() => {
+      require('../services/mccannkey').betWeek(week._id)
+        .catch((e) => console.error('❌ [mccannkey] אחרי הפעלה:', e.message));
+    });
     
     // שלח התראות אם התבקש
     let notificationResult = null;

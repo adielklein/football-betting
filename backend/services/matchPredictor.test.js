@@ -81,3 +81,12 @@ test('Dixon-Coles correction lifts low draws', () => {
   const indep = Math.exp(-1.2) * Math.exp(-1.0) * 1.2 * 1.0;
   assert.ok(g.grid[1][1] > indep);
 });
+
+test('pickForScoring follows our scoring, including match odds', () => {
+  const { pickForScoring } = require('./matchPredictor');
+  const plain = pickForScoring(1.6, 1.0);
+  assert.ok(plain.home > plain.away);
+  // יחס גבוה מאוד על החוץ הופך את ההימור עליו למשתלם יותר
+  const juicy = pickForScoring(1.6, 1.0, { homeWin: 1.5, draw: 3.5, awayWin: 9 });
+  assert.ok(juicy.away > juicy.home);
+});
