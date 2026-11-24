@@ -75,7 +75,12 @@ function AllBetsViewer({ weeks, user, active = true }) {
     if (fresh.length === 0) return undefined;
     setStampIds((prev) => ({ ...prev, ...Object.fromEntries(fresh.map((m) => [m._id, true])) }));
     // אחרי הציור, כדי שהקונפטי ייצא מהתג עצמו
-    const t = setTimeout(() => confettiFrom(document.getElementById(`exact-badge-${fresh[0]._id}`)), 150);
+    const t = setTimeout(() => {
+      const badge = document.getElementById(`exact-badge-${fresh[0]._id}`);
+      confettiFrom(badge);
+      // וגביע זהב תלת-ממדי שקופץ מהתג
+      import('../TrophyPop').then((m) => m.trophyFrom(badge));
+    }, 150);
     return () => clearTimeout(t);
   }, [active, matches, allBets, user.id, selectedWeek?.lockTime]);
 
