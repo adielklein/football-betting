@@ -612,7 +612,8 @@ export function createGoalScene(canvas, { onGoal, onDone, reduced = false } = {}
     const ball3d = () => draw3d(() => gl3d.ball(ball, ballSpin, light, P3()));
     if (ball.z < 0 && !ballHidden) { if (!ball3d()) drawBall(ball, light, false); }
     drawPosts(light);
-    if (!draw3d(() => gl3d.keeper(keeperState(), light, P3()))) drawKeeper(light);
+    // השוער נשאר בציור הדו-ממדי: גרסת התלת-ממד (קפסולות) נראתה רע
+    drawKeeper(light);
     if (ball.z >= 0 && !ballHidden) {
       // שובל התנועה נשאר מהציור הדו-ממדי (drawBall מצייר אותו), ואז הכדור התלת-ממדי מעליו
       if (gl3d && flying) {
