@@ -169,21 +169,13 @@ function FormRow({ team, accent, expanded, onToggle }) {
   );
 }
 
-function TeamHeader({ team, accent, focused, onSelect, shirt, crestSrc }) {
+// כותרת קבוצה. לא לחיצה ולא "נבחרת" - לנתונים נכנסים מכפתור, ושתי הקבוצות
+// מוצגות שוות
+function TeamHeader({ team, shirt, crestSrc }) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={focused}
-      aria-label={`הצג את ${team.name}`}
-      style={{
+    <div style={{
       flex: '1 1 0', minWidth: 0, textAlign: 'center',
-      padding: '0.5rem 0.3rem', borderRadius: '12px',
-      background: focused ? `${accent}14` : 'transparent',
-      border: `2px solid ${focused ? accent : 'transparent'}`,
-      transition: 'all .25s ease',
-      font: 'inherit', cursor: 'pointer',
-      WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation'
+      padding: '0.5rem 0.3rem'
     }}>
       {/* חולצה תלת-ממדית שמסובבים באצבע; בלי נתוני חולצה - הסמל כמו קודם */}
       {shirt ? (
@@ -208,29 +200,20 @@ function TeamHeader({ team, accent, focused, onSelect, shirt, crestSrc }) {
       ) : (
         <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #c3c8d0)', marginTop: '2px' }}>אין טבלה</div>
       )}
-    </button>
+    </div>
   );
 }
 
-function MatchInsightsModal({ match, focusTeam, onClose }) {
+function MatchInsightsModal({ match, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // הקבוצה שבמוקד. נפתחת על זו שנלחצה בשורת ההימור, ואפשר להחליף ביניהן
-  // בלחיצה על הכותרת - בלי לסגור את החלון ולפתוח אותו מחדש על הקבוצה השנייה.
-  const [focus, setFocus] = useState(focusTeam || 1);
-  const [expandedForm, setExpandedForm] = useState(focusTeam || 1);
-
-  useEffect(() => {
-    setFocus(focusTeam || 1);
-    setExpandedForm(focusTeam || 1);
-  }, [focusTeam, match._id]);
-
-  const selectTeam = (n) => {
-    setFocus(n);
-    setExpandedForm(n);
-  };
+  // הכושר האחרון של שתי הקבוצות פתוח כברירת מחדל - נכנסו לחלון כדי לראות
+  // נתונים, ואין סיבה להסתיר חצי מהם. כל אחת אפשר לכווץ בלחיצה
+  const [openForm, setOpenForm] = useState({ 1: true, 2: true });
+  useEffect(() => { setOpenForm({ 1: true, 2: true }); }, [match._id]);
+  const toggleForm = (n) => setOpenForm((prev) => ({ ...prev, [n]: !prev[n] }));
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -348,14 +331,11 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
           {data && !loading && (
             <>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginBottom: '0.7rem' }}>
-                <TeamHeader team={t1} accent={ACCENT_1} focused={focus === 1} onSelect={() => selectTeam(1)} shirt={shirtsForMatch(match).team1} crestSrc={match.team1LogoUrl || t1.logo} />
+                <TeamHeader team={t1} shirt={shirtsForMatch(match).team1} crestSrc={match.team1LogoUrl || t1.logo} />
                 <div style={{ flexShrink: 0, color: 'var(--text-4, #c3c8d0)', fontWeight: 800, fontSize: 'var(--fs-xs)' }}>VS</div>
-                <TeamHeader team={t2} accent={ACCENT_2} focused={focus === 2} onSelect={() => selectTeam(2)} shirt={shirtsForMatch(match).team2} crestSrc={match.team2LogoUrl || t2.logo} />
+                <TeamHeader team={t2} shirt={shirtsForMatch(match).team2} crestSrc={match.team2LogoUrl || t2.logo} />
               </div>
 
-              <div style={{ textAlign: 'center', fontSize: 'var(--fs-xs)', color: 'var(--text-4, #b6bcc6)', marginBottom: '0.7rem' }}>
-                לחצו על קבוצה כדי לפתוח את המשחקים שלה
-              </div>
 
               {pred && (
                 <div style={{
@@ -417,18 +397,18 @@ function MatchInsightsModal({ match, focusTeam, onClose }) {
                 )}
               </Section>
 
-              <Section title="כושר אחרון" hint="לחצו להרחבה">
+              <Section title="כושר אחרון">
                 <FormRow
                   team={t1}
                   accent={ACCENT_1}
-                  expanded={expandedForm === 1}
-                  onToggle={() => setExpandedForm(expandedForm === 1 ? null : 1)}
+                  expanded={openForm[1]}
+                  onToggle={() => toggleForm(1)}
                 />
                 <FormRow
                   team={t2}
                   accent={ACCENT_2}
-                  expanded={expandedForm === 2}
-                  onToggle={() => setExpandedForm(expandedForm === 2 ? null : 2)}
+                  expanded={openForm[2]}
+                  onToggle={() => toggleForm(2)}
                 />
               </Section>
 

@@ -79,7 +79,9 @@ export default function ShirtViewer3D({ shirt, crestSrc, size = 96 }) {
     <span style={{ position: 'relative', display: 'inline-block', width: size * 1.3, height: size * 1.3 * 0.92 }}>
       <span ref={flatRef} style={{
         position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)',
-        visibility: ready ? 'hidden' : 'visible', lineHeight: 0
+        // opacity ולא visibility: החולצה השטוחה קובעת visibility: visible לעצמה,
+        // וזה גבר על hidden של ההורה - והיא נשארה מאחורי התלת-ממדית
+        opacity: ready ? 0 : 1, pointerEvents: 'none', lineHeight: 0
       }}>
         <TeamShirt {...shirt} size={size} />
       </span>
