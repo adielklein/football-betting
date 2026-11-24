@@ -1,5 +1,6 @@
 // 365scores - חברה ישראלית, מחזירים שמות בעברית, כוללים את כל ליגות ישראל
 const providerHealth = require('./providerHealth');
+const { predictMatch } = require('./matchPredictor');
 
 const API_BASE = 'https://webws.365scores.com/web';
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
@@ -505,19 +506,7 @@ const impliedProbabilities = (odds) => {
   };
 };
 
-// תחזית תוצאה: כוח התקפה של האחת מול הגנה של השנייה, + יתרון ביתיות קל
-const predictScore = (home, away) => {
-  if (home.avgScored == null || away.avgScored == null) return null;
-  const HOME_EDGE = 1.1;
-  const expHome = ((home.avgScored + away.avgConceded) / 2) * HOME_EDGE;
-  const expAway = ((away.avgScored + home.avgConceded) / 2) / HOME_EDGE;
-  return {
-    expectedHome: round1(expHome),
-    expectedAway: round1(expAway),
-    suggestedHome: Math.max(0, Math.round(expHome)),
-    suggestedAway: Math.max(0, Math.round(expAway))
-  };
-};
+// התחזית עצמה - services/matchPredictor.js (טבלה, כושר מתוקנן ליריבה ויחסים)
 
 // אוסף את כל התובנות למשחק אחד. externalId בפורמט "365_12345"
 const fetchTeamInsights = async (externalId, { refresh = false, formSize = 5 } = {}) => {
@@ -602,7 +591,14 @@ const fetchTeamInsights = async (externalId, { refresh = false, formSize = 5 } =
     },
     odds,
     impliedProbabilities: impliedProbabilities(odds),
-    prediction: predictScore(home, away)
+    prediction: predictMatch({
+      homeId: homeC?.id,
+      awayId: awayC?.id,
+      standingsRows,
+      homeGames,
+      awayGames,
+      odds
+    })
   };
 
   if (partial) {

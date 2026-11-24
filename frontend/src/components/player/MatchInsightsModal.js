@@ -262,6 +262,14 @@ function MatchInsightsModal({ match, onClose }) {
   const predT2 = pick(pred?.suggestedAway, pred?.suggestedHome);
   const expT1 = pick(pred?.expectedHome, pred?.expectedAway);
   const expT2 = pick(pred?.expectedAway, pred?.expectedHome);
+  const pp = pred?.probabilities;
+  const predProbT1 = pick(pp?.home, pp?.away);
+  const predProbT2 = pick(pp?.away, pp?.home);
+  // על מה התחזית מבוססת - כדי שיהיה ברור שזה לא רק "5 משחקים אחרונים"
+  const basisText = pred?.basis
+    ? [pred.basis.table && 'טבלה', pred.basis.form && 'כושר מול יריבות', pred.basis.odds && 'יחסים']
+      .filter(Boolean).join(' · ')
+    : '';
   const h2hT1Wins = pick(h2hSum?.homeWins, h2hSum?.awayWins);
   const h2hT2Wins = pick(h2hSum?.awayWins, h2hSum?.homeWins);
 
@@ -346,7 +354,7 @@ function MatchInsightsModal({ match, onClose }) {
                 }}>
                   <span style={{ fontSize: 'var(--fs-md)' }}>⚡</span>
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--text-3, #8b93a1)' }}>תחזית לפי כושר</div>
+                    <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--text-3, #8b93a1)' }}>תחזית</div>
                     <PairScore
                       a={predT1}
                       b={predT2}
@@ -356,6 +364,16 @@ function MatchInsightsModal({ match, onClose }) {
                       <span>צפי שערים</span>
                       <PairScore a={expT1} b={expT2} colored={false} />
                     </div>
+                    {pp && (
+                      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #8b93a1)', marginTop: '2px', fontWeight: 600 }}>
+                        סיכויים: <span style={{ color: ACCENT_1, fontWeight: 800 }}>1 {predProbT1}%</span>
+                        {' · '}<span style={{ color: '#c67e00', fontWeight: 800 }}>X {pp.draw}%</span>
+                        {' · '}<span style={{ color: ACCENT_2, fontWeight: 800 }}>2 {predProbT2}%</span>
+                      </div>
+                    )}
+                    {basisText && (
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-4, #a3aab5)', marginTop: '2px' }}>לפי {basisText}</div>
+                    )}
                   </div>
                 </div>
               )}
