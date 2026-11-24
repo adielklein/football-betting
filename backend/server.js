@@ -95,6 +95,8 @@ app.use('/api/scores', scoresRoutes);
 app.use('/api/leagues', leaguesRoutes);
 app.use('/api/exclusions', exclusionsRoutes);
 app.use('/api/external', externalRoutes);
+// סמלים לתלת-ממד: מעבר עם CORS מאתרים מרשימה סגורה
+app.use('/api/image-proxy', require('./routes/imageProxy'));
 // 📋 מסך "היום" ומצב שבוע - למנהלים בלבד
 app.use('/api/admin', require('./routes/admin'));
 

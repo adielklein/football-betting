@@ -1,3 +1,5 @@
+import { API_URL } from '../config';
+
 // במה תלת-ממדית משותפת לכל האפליקציה.
 //
 // הקשר WebGL אחד בלבד, מחוץ למסך, שמצייר את כל "התצוגות" (חולצות, סמל,
@@ -59,6 +61,9 @@ export const getStage = () => {
       raf = 0;
       if (document.hidden) return; // ממשיכים כשהדף חוזר (visibilitychange)
       for (const view of [...awake]) {
+        // תצוגה שמבקשת קצב נמוך (minInterval במילישניות) מדלגת על מסגרות
+        if (view.minInterval && view._last && now - view._last < view.minInterval) continue;
+        view._last = now;
         let again = false;
         try { again = view.frame ? view.frame(now) : false; } catch { again = false; }
         draw(view);
@@ -94,10 +99,11 @@ export const getEnvironment = (stage) => {
   return envPromise;
 };
 
-// טעינת תמונה לטקסטורה. מאתר אחר רק אם השרת מרשה (CORS) - אחרת WebGL
-// מסרב לתמונה, ואז מחזירים null והרכיב נשאר דו-ממדי
-export const loadImage = (src) => new Promise((resolve) => {
-  if (!src) { resolve(null); return; }
+// טעינת תמונה לטקסטורה. WebGL מקבל תמונה מאתר אחר רק אם השרת שלה מרשה
+// (CORS). קודם ישירות; אם נחסם - דרך המעבר בשרת שלנו (/api/image-proxy),
+// שמוסיף את הכותרת לאתרי סמלים מרשימה סגורה. אם גם זה נכשל - null, והרכיב
+// נשאר דו-ממדי או בלי סמל
+const tryLoad = (src) => new Promise((resolve) => {
   const img = new Image();
   img.crossOrigin = 'anonymous';
   img.onload = () => {
@@ -113,3 +119,10 @@ export const loadImage = (src) => new Promise((resolve) => {
   img.onerror = () => resolve(null);
   img.src = src;
 });
+
+export const loadImage = async (src) => {
+  if (!src) return null;
+  const direct = await tryLoad(src);
+  if (direct || !/^https?:/i.test(src)) return direct;
+  return tryLoad(`${API_URL}/image-proxy?u=${encodeURIComponent(src)}`);
+};

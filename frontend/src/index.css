@@ -1371,3 +1371,8 @@ body:has(.pitch-stripes)::before { opacity: 0.35; }
   60% { opacity: 1; transform: translateY(3px) scale(1.08); }
   100% { transform: none; }
 }
+
+/* הסמל בכותרת בתלת-ממד אמיתי (StadiumDecor, three/crest.js). כשהוא מוכן
+   שכבות ה-CSS מוסתרות; עד אז הקנבס שקוף */
+.header-crest__gl { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.header-crest.is-3d .header-crest__layer { display: none; }
