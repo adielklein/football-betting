@@ -17,7 +17,7 @@ import MatchInsightsModal from './MatchInsightsModal';
 import Score from '../Score';
 import { textOn } from '../../services/readableColor';
 import { API_URL as API_BASE } from '../../config';
-import { weekRevealed, isMatchLocked } from '../../services/betLock';
+import { weekRevealed, isMatchLocked, nextLockAt } from '../../services/betLock';
 
 function AllBetsViewer({ weeks, user, active = true }) {
   const [selectedWeek, setSelectedWeek] = useState(null);
@@ -57,6 +57,17 @@ function AllBetsViewer({ weeks, user, active = true }) {
 
   // הלשונית נשארת טעונה; חזרה אליה אחרי יותר מדקה מרעננת ברקע
   useReturnRefresh(active, () => selectedWeek && loadWeekData(selectedWeek._id, { silent: true }));
+
+  // נעילה לפי משחק: ברגע שמשחק מתחיל ההימורים עליו נחשפים בשרת. מי שנשאר
+  // במסך מקבל אותם בלי לרענן - טעינה שקטה קצת אחרי שעת הפתיחה
+  const nextReveal = selectedWeek ? nextLockAt(selectedWeek, matches) : null;
+  useEffect(() => {
+    if (!active || !nextReveal || !selectedWeek) return undefined;
+    const wait = nextReveal - Date.now() + 3000;
+    if (wait > 2 ** 31 - 1) return undefined;
+    const t = setTimeout(() => loadWeekData(selectedWeek._id, { silent: true }), Math.max(0, wait));
+    return () => clearTimeout(t);
+  }, [active, nextReveal, selectedWeek?._id]);
 
   // חגיגת "מדויק": בפעם הראשונה שהמכשיר הזה רואה תוצאה שניחשת בדיוק, התג
   // נוחת כמו חותמת ומתפרץ קונפטי. פעם אחת לכל משחק, ורק כשהמסך מוצג
