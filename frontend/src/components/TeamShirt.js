@@ -1,4 +1,5 @@
 import React from 'react';
+import ShirtSpin from './ShirtSpin';
 
 // חולצה של קבוצה, והסמל שלה על החזה.
 //   kit   - מבנה החולצה מ-data/kits.js (פסים, חצאים, שרוולים...)
@@ -82,8 +83,15 @@ function TeamShirt({ color, kit, size = 44, shine = false, state = null, jumpAt 
   // השהיה שונה לכל חולצה, כדי שהברק לא יעבור על כולן באותו רגע
   const shineDelay = `${((uid * 1.3) % 6).toFixed(1)}s`;
   const recent = (t) => t && Date.now() - t < 4000;
-  const motion = [recent(jumpAt) && 'shirt-jump', recent(flipAt) && 'shirt-flip'].filter(Boolean).join(' ');
-  const flipping = recent(flipAt);
+  // הסיבוב נמשך 0.8 שניות; אחריו חוזרים לציור הרגיל (רינדור מחדש בטיימר)
+  const flipping = flipAt && Date.now() - flipAt < 850;
+  const [, setTick] = React.useState(0);
+  React.useEffect(() => {
+    if (!flipAt) return undefined;
+    const t = setTimeout(() => setTick((x) => x + 1), 870);
+    return () => clearTimeout(t);
+  }, [flipAt]);
+  const motion = [recent(jumpAt) && 'shirt-jump', flipping && 'shirt-flip'].filter(Boolean).join(' ');
   const svg = (
     <svg viewBox="0 0 48 44" width={size} height={h} aria-hidden="true" style={{ display: 'block', overflow: 'visible' }}>
       <defs>
@@ -110,18 +118,7 @@ function TeamShirt({ color, kit, size = 44, shine = false, state = null, jumpAt 
         </linearGradient>
       </defs>
       <g clipPath={`url(#${id}-c)`}>
-        {flipping ? (
-          // שלושה עותקים של הבד זה לצד זה, שגוללים שני רוחבים בסיבוב אחד
-          <g>
-            <Pattern kit={shape} />
-            <g transform="translate(48 0)"><Pattern kit={shape} /></g>
-            <g transform="translate(96 0)"><Pattern kit={shape} /></g>
-            <animateTransform attributeName="transform" type="translate" values="0 0;-96 0" dur="0.8s" fill="freeze"
-              calcMode="spline" keyTimes="0;1" keySplines="0.45 0.05 0.35 1" />
-          </g>
-        ) : (
-          <Pattern kit={shape} />
-        )}
+        <Pattern kit={shape} />
         <rect x="11.5" y="0" width="25" height="44" fill={`url(#${id}-s)`} />
         {/* שוליים כהים בקצה השרוולים ובתחתית */}
         <polygon points="1,15 7.5,21.5 9,20.3 2.6,13.6" fill="#000" opacity="0.22" />
@@ -162,10 +159,9 @@ function TeamShirt({ color, kit, size = 44, shine = false, state = null, jumpAt 
   return (
     <span className={state ? `shirt--${state}` : undefined} style={{ position: 'relative', display: 'inline-block', width: size, height: h, flexShrink: 0 }}>
     <span key={`${jumpAt}-${flipAt}`} className={`shirt-anim ${motion}`}>
-      {/* בסיבוב (shirt-flip): החולצה מצטמצמת לפרופיל של גוף ולא לקו, הבד
-          גולל הצידה כאילו הוא עוטף אותו, והסמל מחליק החוצה וחוזר מהצד השני */}
-      {svg}
-      {crest}
+      {/* בלחיצה: סיבוב תלת-ממדי אמיתי (ShirtSpin) - גוף עגול, שרוולים בולטים
+          ותאורה לפי הזווית. בשאר הזמן - ציור אחד שטוח */}
+      {flipping ? <ShirtSpin svg={svg} crest={children} size={size} /> : (<>{svg}{crest}</>)}
     </span>
     </span>
   );

@@ -1241,8 +1241,7 @@ body:has(.pitch-stripes)::before { opacity: 0.35; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .shirt-jump { animation: shirtJump 1.3s cubic-bezier(.3,1.6,.5,1) 2; }
-  .shirt-flip { animation: shirtFlip 0.8s cubic-bezier(.45,.05,.35,1); }
-  .shirt-flip > span { animation: shirtCrestSlide 0.8s cubic-bezier(.45,.05,.35,1); }
+  .shirt-flip { animation: shirtFlip 0.8s ease-in-out; }
   .shirt--win { animation: shirtWinGlow 2.4s ease-in-out infinite alternate; }
 }
 /* גול: קפיצה למעלה, נחיתה רכה וקפיצה קטנה */
@@ -1253,21 +1252,33 @@ body:has(.pitch-stripes)::before { opacity: 0.35; }
   75% { transform: translateY(-4px) scale(1.02); }
   100% { transform: none; }
 }
-/* לחיצה: חולצה עגולה שמסתובבת על גוף. במקום להסתובב כמו לוח שטוח (שמהצד
-   הוא קו דק), היא מצטמצמת לפרופיל של גוף - 38% מהרוחב - הבד גולל הצידה
-   בתוך ה-SVG (TeamShirt), והסמל מחליק החוצה לצד אחד וחוזר מהצד השני.
-   הצללה: כשהחולצה בצד היא כהה יותר, כמו גוף עגול באור מלפנים */
+/* לחיצה: סיבוב תלת-ממדי אמיתי (components/ShirtSpin.js). העטיפה רק מרימה
+   את החולצה אל הצופה; הגוף (גליל של רצועות) והשרוולים מסתובבים בהקשר
+   תלת-ממדי שקיים רק בזמן הסיבוב */
 @keyframes shirtFlip {
-  0%, 100% { transform: translateY(0) scale(1, 1); filter: brightness(1); }
-  25% { transform: translateY(-4px) scale(0.38, 1.06); filter: brightness(0.82); }
-  50% { transform: translateY(-6px) scale(1.04, 1.1); filter: brightness(1); }
-  75% { transform: translateY(-4px) scale(0.38, 1.06); filter: brightness(0.82); }
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-5px) scale(1.1); }
 }
-@keyframes shirtCrestSlide {
-  0% { transform: translate(-50%, -50%) scaleX(1); opacity: 1; }
-  22% { transform: translate(-190%, -50%) scaleX(0.3); opacity: 0; }
-  78% { transform: translate(90%, -50%) scaleX(0.3); opacity: 0; }
-  100% { transform: translate(-50%, -50%) scaleX(1); opacity: 1; }
+.shirt3d { position: relative; display: block; perspective: 220px; -webkit-perspective: 220px; }
+.shirt3d__body { position: absolute; inset: 0; transform-style: preserve-3d; -webkit-transform-style: preserve-3d; }
+.shirt3d__strip, .shirt3d__sleeve, .shirt3d__crest {
+  position: absolute; top: 0;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+}
+.shirt3d__strip { left: 50%; }
+.shirt3d__crest { left: 50%; display: flex; align-items: center; justify-content: center; line-height: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .shirt3d__body { animation: shirt3dSpin 0.8s linear both; }
+  /* כל רצועה מתכהה כשהיא פונה הצידה - כמו גוף עגול באור מלפנים. ההשהיה
+     (לפי הזווית שלה) נקבעת ב-ShirtSpin */
+  .shirt3d__strip { animation: shirt3dLight 0.8s linear 2; }
+}
+@keyframes shirt3dSpin { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
+@keyframes shirt3dLight {
+  0%, 100% { filter: brightness(1.04); }
+  12.5%, 87.5% { filter: brightness(0.86); }
+  25%, 75% { filter: brightness(0.58); }
+  50% { filter: brightness(0.58); }
 }
 /* אחרי המשחק: המנצחת זוהרת בזהב, המפסידה דוהה. על העטיפה החיצונית, כדי
    שהקפיצה וההיפוך (על .shirt-anim) ירוצו גם על חולצה כזו */
