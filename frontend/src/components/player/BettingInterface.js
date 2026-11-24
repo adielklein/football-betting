@@ -351,6 +351,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
   // "כל ההימורים הוזנו": חגיגה קטנה ברגע שההימור האחרון נשמר. פעם אחת לשבוע
   // לכל מכשיר, ורק כשזה קורה מול העיניים - לא בכל כניסה למסך מלא
   const counterRef = useRef(null);
+  const panelRef = useRef(null);
   const prevCount = useRef(null);
   const prevWeekId = useRef(null);
   const [celebrateDone, setCelebrateDone] = useState(false);
@@ -374,10 +375,23 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
     prevCount.current = count;
     if (before === null || !doneNow || before >= matches.length) return undefined;
     if (!once(`all-bets:${selectedWeek?._id}`)) return undefined;
-    setCelebrateDone(true);
-    confettiFrom(counterRef.current, { count: 70 });
-    const t = setTimeout(() => setCelebrateDone(false), 4000);
-    return () => clearTimeout(t);
+    // ההימור האחרון נשמר בדרך כלל כשהמסך גלול למטה - קופצים לראש המסך
+    // כדי שרואים את השער והקונפטי. סוגרים את המקלדת, ואם צריך לגלול -
+    // מחכים שהגלילה תסתיים לפני החגיגה
+    const panel = panelRef.current;
+    const top = panel ? panel.getBoundingClientRect().top : 0;
+    const needScroll = panel && (top < 0 || top > window.innerHeight * 0.4);
+    if (needScroll) {
+      if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+      window.scrollTo({ top: Math.max(0, window.scrollY + top - 12), behavior: 'smooth' });
+    }
+    let hide;
+    const start = setTimeout(() => {
+      setCelebrateDone(true);
+      confettiFrom(counterRef.current, { count: 70 });
+      hide = setTimeout(() => setCelebrateDone(false), 4000);
+    }, needScroll ? 550 : 0);
+    return () => { clearTimeout(start); clearTimeout(hide); };
   }, [bets, matches.length, doneNow, selectedWeek?._id]);
 
   if (!selectedWeek?.active) {
@@ -418,7 +432,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
   return (
     <div>
       {/* כותרת + פרוגרס. על משטח משלה: במצב יום הרקע הוא דשא, וטקסט ישר עליו לא נקרא */}
-      <div className="pitch-panel" style={{
+      <div ref={panelRef} className="pitch-panel" style={{
         marginBottom: '0.6rem'
       }}>
         <div style={{
