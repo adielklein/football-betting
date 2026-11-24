@@ -1254,9 +1254,10 @@ body:has(.pitch-stripes)::before { opacity: 0.35; }
 }
 /* לחיצה: סיבוב תלת-ממדי אמיתי ב-WebGL (components/ShirtSpinGL.js). העטיפה
    רק מרימה את החולצה אל הצופה ומחזירה */
+/* הקנבס ממוקם במרכז (translate -50%), ולכן גם ההרמה שומרת עליו */
 @keyframes shirtFlip {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-5px) scale(1.1); }
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, calc(-50% - 5px)) scale(1.1); }
 }
 /* אחרי המשחק: המנצחת זוהרת בזהב, המפסידה דוהה. על העטיפה החיצונית, כדי
    שהקפיצה וההיפוך (על .shirt-anim) ירוצו גם על חולצה כזו */

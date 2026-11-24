@@ -84,19 +84,23 @@ function TeamShirt({ color, kit, size = 44, shine = false, state = null, jumpAt 
   const shineDelay = `${((uid * 1.3) % 6).toFixed(1)}s`;
   const recent = (t) => t && Date.now() - t < 4000;
   // הסיבוב נמשך 0.8 שניות; אחריו חוזרים לציור הרגיל (רינדור מחדש בטיימר)
-  const flipping = flipAt && Date.now() - flipAt < 850;
+  // בוליאני במפורש: flipAt הוא 0 עד הלחיצה הראשונה, ו-0 && ... מצייר "0" על המסך
+  const flipping = Boolean(flipAt) && Date.now() - flipAt < 850;
   const [, setTick] = React.useState(0);
   const flatRef = React.useRef(null);
-  const [glReady, setGlReady] = React.useState(false);
-  const markReady = React.useCallback(() => setGlReady(true), []);
-  React.useEffect(() => { setGlReady(false); }, [flipAt]);
+  // לאיזו לחיצה המסגרת התלת-ממדית כבר מוכנה. לפי חותמת הלחיצה ולא דגל
+  // כללי - דגל שנשאר מהלחיצה הקודמת הסתיר את החולצה לפני שהתלת-ממד צויר
+  const [readyFor, setReadyFor] = React.useState(0);
+  const markReady = React.useCallback(() => setReadyFor(flipAt), [flipAt]);
+  const glReady = readyFor === flipAt;
   const still = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   React.useEffect(() => {
     if (!flipAt) return undefined;
     const t = setTimeout(() => setTick((x) => x + 1), 870);
     return () => clearTimeout(t);
   }, [flipAt]);
-  const motion = [recent(jumpAt) && 'shirt-jump', flipping && 'shirt-flip'].filter(Boolean).join(' ');
+  // לא מפתח חדש בלחיצה: החלפת מפתח בונה את החולצה מחדש, וזה מה שהבהב
+  const motion = recent(jumpAt) ? 'shirt-jump' : '';
   const svg = (
     <svg viewBox="0 0 48 44" width={size} height={h} aria-hidden="true" style={{ display: 'block', overflow: 'visible' }}>
       <defs>
@@ -163,7 +167,7 @@ function TeamShirt({ color, kit, size = 44, shine = false, state = null, jumpAt 
       );
   return (
     <span className={state ? `shirt--${state}` : undefined} style={{ position: 'relative', display: 'inline-block', width: size, height: h, flexShrink: 0 }}>
-    <span key={`${jumpAt}-${flipAt}`} className={`shirt-anim ${motion}`}>
+    <span key={jumpAt} className={`shirt-anim ${motion}`}>
       {/* בלחיצה: סיבוב תלת-ממדי אמיתי ב-WebGL (ShirtSpinGL). החולצה השטוחה
           נשארת במקומה (גם כמקור לטקסטורה) ומוסתרת רק כשהמסגרת התלת-ממדית
           הראשונה צוירה - כך אין הבהוב אם הספרייה עוד נטענת */}

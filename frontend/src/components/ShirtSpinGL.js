@@ -150,7 +150,7 @@ export default function ShirtSpinGL({ svgEl, crestSrc, size, onReady }) {
         return t;
       };
       const mat = (canvas) => {
-        const m = new THREE.MeshStandardMaterial({ map: texture(canvas), alphaTest: 0.45, roughness: 0.75, metalness: 0, side: THREE.FrontSide });
+        const m = new THREE.MeshStandardMaterial({ map: texture(canvas), alphaTest: 0.45, roughness: 1, metalness: 0, side: THREE.FrontSide });
         cleanup.push(() => m.dispose());
         return m;
       };
@@ -166,7 +166,7 @@ export default function ShirtSpinGL({ svgEl, crestSrc, size, onReady }) {
       add(sleeveGeometry(THREE, false, true), back);
       scene.add(group);
 
-      scene.add(new THREE.AmbientLight(0xffffff, 1.15));
+      scene.add(new THREE.AmbientLight(0xffffff, 1.5));
       const key = new THREE.DirectionalLight(0xffffff, 1.9);
       key.position.set(18, 30, 60);
       scene.add(key);
@@ -193,7 +193,7 @@ export default function ShirtSpinGL({ svgEl, crestSrc, size, onReady }) {
   }, [svgEl, crestSrc, size, onReady]);
 
   return (
-    <span ref={hostRef} aria-hidden="true" style={{
+    <span ref={hostRef} aria-hidden="true" className="shirt-flip" style={{
       position: 'absolute', left: '50%', top: '50%', width: size * 1.6, height: size * 1.6 * 0.92,
       transform: 'translate(-50%, -50%)', pointerEvents: 'none', lineHeight: 0
     }} />
