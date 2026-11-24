@@ -1,5 +1,5 @@
 import React from 'react';
-import ShirtSpin from './ShirtSpin';
+import ShirtSpinGL from './ShirtSpinGL';
 
 // חולצה של קבוצה, והסמל שלה על החזה.
 //   kit   - מבנה החולצה מ-data/kits.js (פסים, חצאים, שרוולים...)
@@ -86,6 +86,11 @@ function TeamShirt({ color, kit, size = 44, shine = false, state = null, jumpAt 
   // הסיבוב נמשך 0.8 שניות; אחריו חוזרים לציור הרגיל (רינדור מחדש בטיימר)
   const flipping = flipAt && Date.now() - flipAt < 850;
   const [, setTick] = React.useState(0);
+  const flatRef = React.useRef(null);
+  const [glReady, setGlReady] = React.useState(false);
+  const markReady = React.useCallback(() => setGlReady(true), []);
+  React.useEffect(() => { setGlReady(false); }, [flipAt]);
+  const still = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   React.useEffect(() => {
     if (!flipAt) return undefined;
     const t = setTimeout(() => setTick((x) => x + 1), 870);
@@ -159,9 +164,18 @@ function TeamShirt({ color, kit, size = 44, shine = false, state = null, jumpAt 
   return (
     <span className={state ? `shirt--${state}` : undefined} style={{ position: 'relative', display: 'inline-block', width: size, height: h, flexShrink: 0 }}>
     <span key={`${jumpAt}-${flipAt}`} className={`shirt-anim ${motion}`}>
-      {/* בלחיצה: סיבוב תלת-ממדי אמיתי (ShirtSpin) - גוף עגול, שרוולים בולטים
-          ותאורה לפי הזווית. בשאר הזמן - ציור אחד שטוח */}
-      {flipping ? <ShirtSpin svg={svg} crest={children} size={size} /> : (<>{svg}{crest}</>)}
+      {/* בלחיצה: סיבוב תלת-ממדי אמיתי ב-WebGL (ShirtSpinGL). החולצה השטוחה
+          נשארת במקומה (גם כמקור לטקסטורה) ומוסתרת רק כשהמסגרת התלת-ממדית
+          הראשונה צוירה - כך אין הבהוב אם הספרייה עוד נטענת */}
+      <span ref={flatRef} style={{ display: 'block', visibility: flipping && glReady ? 'hidden' : 'visible' }}>
+        {svg}
+        {crest}
+      </span>
+      {flipping && !still && (
+        <ShirtSpinGL svgEl={flatRef.current && flatRef.current.querySelector('svg')}
+          crestSrc={flatRef.current && flatRef.current.querySelector('img') ? flatRef.current.querySelector('img').src : null}
+          size={size} onReady={markReady} />
+      )}
     </span>
     </span>
   );
