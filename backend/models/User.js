@@ -46,6 +46,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: 'betting'
   },
+  // "נתונים מורחבים" בחלון הנתונים: פצועים, הרכבים, שחקני מפתח, הצבעת הקהל,
+  // טרנדים, שופט ואצטדיון. כבוי כברירת מחדל
+  extendedStats: {
+    type: Boolean,
+    default: false
+  },
   role: {
     type: String,
     enum: ['admin', 'player', 'bot'], // bot = McCannkey (services/mccannkey.js)

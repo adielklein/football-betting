@@ -124,6 +124,7 @@ function App() {
         serverUser.theme !== localUser.theme ||
         serverUser.name !== localUser.name ||
         serverUser.defaultTab !== localUser.defaultTab ||
+        !!serverUser.extendedStats !== !!localUser.extendedStats ||
         !!serverUser.nameLocked !== !!localUser.nameLocked
       );
 
@@ -139,6 +140,7 @@ function App() {
           username: serverUser.username || localUser.username,
           role: serverUser.role || localUser.role,
           defaultTab: serverUser.defaultTab || localUser.defaultTab || 'betting',
+          extendedStats: !!serverUser.extendedStats,
           nameLocked: !!serverUser.nameLocked
         };
         

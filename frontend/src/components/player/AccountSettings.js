@@ -30,6 +30,7 @@ function AccountSettings({ user, onProfileChange }) {
   const [savingName, setSavingName] = useState(false);
 
   const [tab, setTab] = useState(user?.defaultTab || 'betting');
+  const [extended, setExtended] = useState(!!user?.extendedStats);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -74,6 +75,18 @@ function AccountSettings({ user, onProfileChange }) {
       toast.success('מסך הפתיחה עודכן');
     } catch (error) {
       setTab(previous);
+      toast.error(error.message);
+    }
+  };
+
+  const saveExtended = async (on) => {
+    setExtended(on);
+    try {
+      await patch('profile', { extendedStats: on });
+      if (onProfileChange) onProfileChange({ extendedStats: on });
+      toast.success(on ? 'נתונים מורחבים הופעלו' : 'נתונים מורחבים כובו');
+    } catch (error) {
+      setExtended(!on);
       toast.error(error.message);
     }
   };
@@ -135,6 +148,23 @@ function AccountSettings({ user, onProfileChange }) {
         <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', marginTop: '0.3rem' }}>
           המסך שייפתח בכל כניסה לאפליקציה.
         </div>
+      </div>
+
+      <div style={section}>
+        <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.55rem', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={extended}
+            onChange={(e) => saveExtended(e.target.checked)}
+            style={{ width: '20px', height: '20px', marginTop: '2px', cursor: 'pointer', flexShrink: 0 }}
+          />
+          <span>
+            <span style={{ ...label, display: 'block', marginBottom: '0.15rem' }}>🧩 נתונים מורחבים</span>
+            <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)' }}>
+              בחלון הנתונים של כל משחק: פצועים ומושעים, הרכבים, שחקני מפתח, איך הצביע קהל 365, טרנדים, שופט ואצטדיון.
+            </span>
+          </span>
+        </label>
       </div>
 
       <div style={section}>

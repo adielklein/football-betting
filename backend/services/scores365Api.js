@@ -676,6 +676,105 @@ const fetchTeamInsights = async (externalId, { refresh = false, formSize = 5 } =
   return insights;
 };
 
+// ── נתונים מורחבים (הגדרה "נתונים מורחבים" אצל המשתמש) ─────────────────
+// פצועים ומושעים, הרכב (משוער או רשמי), שחקני מפתח, הצבעת קהל 365, טרנדים,
+// שופט ואצטדיון. בקשה אחת למשחק ואחת לטרנדים. ה-cache קצר יותר כשהמשחק קרוב,
+// כי ההרכב הרשמי מתפרסם כשעה לפני
+const LINEUP_STATUS = { 1: 'starting', 2: 'sub', 3: 'missing', 5: 'doubtful' };
+
+const extendedTeam = (competitor, membersById) => {
+  const l = competitor?.lineups;
+  const people = (l?.members || []).map((m) => {
+    const info = membersById.get(m.id) || {};
+    return {
+      name: info.name || info.shortName || null,
+      number: info.jerseyNumber ?? null,
+      position: m.formation?.name || m.position?.name || null,
+      status: LINEUP_STATUS[m.status] || null,
+      reason: m.injury?.reason || m.suspension?.reason || null,
+      expectedReturn: m.injury?.expectedReturn || null
+    };
+  }).filter((p) => p.name && p.status);
+  return {
+    // "משוער" (לפני שההרכב פורסם) או "רשמי"
+    lineupProbable: l ? Boolean(l.isProbable) : null,
+    formation: l?.formation || null,
+    starters: people.filter((p) => p.status === 'starting').map(({ name, number, position }) => ({ name, number, position })),
+    missing: people.filter((p) => p.status === 'missing' || p.status === 'doubtful')
+      .map(({ name, position, status, reason, expectedReturn }) => ({ name, position, doubtful: status === 'doubtful', reason, expectedReturn }))
+  };
+};
+
+const fetchExtendedInsights = async (externalId) => {
+  if (!externalId) return null;
+  const id = externalId.startsWith('365_') ? externalId.slice(4) : externalId;
+  const cacheKey = `365_extended_${id}`;
+  const hit = cacheGet(cacheKey);
+  if (hit && Date.now() - hit.at < hit.ttl) return hit.value;
+
+  const gameJson = await apiGet(`/game/?appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&gameId=${id}`);
+  const g = gameJson.game;
+  if (!g) return null;
+  const membersById = new Map((g.members || []).map((m) => [m.id, m]));
+  const homeId = g.homeCompetitor?.id;
+  const awayId = g.awayCompetitor?.id;
+
+  const performer = (p) => (p ? {
+    name: p.name || p.shortName || null,
+    position: p.positionName || null,
+    stats: (p.stats || []).map((x) => ({ name: x.name, value: x.value }))
+  } : null);
+
+  const preds = g.promotedPredictions?.predictions || [];
+  const voteOf = (pr) => (pr ? {
+    total: pr.totalVotes || 0,
+    options: (pr.options || []).map((o) => ({ name: o.name, percent: o.vote?.percentage ?? null }))
+  } : null);
+  const winner = preds.find((x) => x.type === 1);
+  const overUnder = preds.find((x) => x !== winner && /מעל|מתחת|over|under/i.test(x.title || ''));
+
+  let trends = [];
+  try {
+    const t = await apiGet(`/trends/?appTypeId=5&langId=2&timezoneName=Asia/Jerusalem&userCountryId=6&games=${id}`);
+    trends = (t.trends || [])
+      .filter((x) => x.text)
+      .map((x) => {
+        const ids = x.competitorIds || [];
+        const side = ids.length === 1 ? (ids[0] === homeId ? 'home' : ids[0] === awayId ? 'away' : null) : 'both';
+        return { text: x.text, side };
+      })
+      .slice(0, 8);
+  } catch (err) {
+    console.warn(`⚠️ [365] trends for ${id} failed:`, err.message);
+  }
+
+  const value = {
+    gameId: g.id,
+    home: { id: homeId, name: g.homeCompetitor?.name || null, ...extendedTeam(g.homeCompetitor, membersById) },
+    away: { id: awayId, name: g.awayCompetitor?.name || null, ...extendedTeam(g.awayCompetitor, membersById) },
+    hasLineups: Boolean(g.hasLineups),
+    topPerformers: (g.topPerformers?.categories || []).map((c) => ({
+      category: c.name, home: performer(c.homePlayer), away: performer(c.awayPlayer)
+    })).filter((c) => c.home || c.away),
+    votes: winner && winner.showVotes !== false ? {
+      total: winner.totalVotes || 0,
+      // לפי הסדר: בית, תיקו, חוץ
+      home: winner.options?.[0]?.vote?.percentage ?? null,
+      draw: winner.options?.[1]?.vote?.percentage ?? null,
+      away: winner.options?.[2]?.vote?.percentage ?? null
+    } : null,
+    overUnder: voteOf(overUnder),
+    overUnderTitle: overUnder?.title || null,
+    trends,
+    referee: (g.officials || [])[0]?.name || null,
+    venue: g.venue ? { name: g.venue.name || null, capacity: g.venue.capacity || null } : null
+  };
+  const msToKick = g.startTime ? new Date(g.startTime).getTime() - Date.now() : Infinity;
+  const ttl = msToKick < 3 * 3600e3 ? 10 * 60e3 : 60 * 60e3;
+  cacheSet(cacheKey, { value, at: Date.now(), ttl });
+  return value;
+};
+
 // ── חיפוש תחרויות ─────────────────────────────────────────────────
 // כדי לחבר ליגה חדשה צריך את מזהה התחרות ב-365, ומספר שגוי לא נכשל אלא
 // מצביע בשקט על תחרות אחרת. לכן שואלים את 365 עצמם במקום לנחש.
@@ -868,5 +967,6 @@ module.exports = {
   fetchOddsForFixture,
   fetchResult,
   fetchTeamInsights,
+  fetchExtendedInsights,
   searchCompetitions
 };

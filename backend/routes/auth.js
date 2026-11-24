@@ -95,6 +95,7 @@ router.post('/login', async (req, res) => {
         role: user.role,
         theme: user.theme || 'default',
         defaultTab: user.defaultTab || 'betting',
+        extendedStats: !!user.extendedStats,
         nameLocked: !!user.nameLocked,
         // הטוקן נשמר עם המשתמש במכשיר ונשלח בכל בקשה. בלעדיו השרת לא מזהה אותו
         token: authToken.sign({ uid: user._id, tv: user.tokenVersion || 0 })
@@ -111,7 +112,7 @@ router.post('/login', async (req, res) => {
 router.get('/users', async (req, res) => {
   try {
     const users = await User.find()
-      .select('name username role theme pushSettings nameLocked defaultTab')
+      .select('name username role theme pushSettings nameLocked defaultTab extendedStats')
       .lean();
 
     // הנתיב הזה פתוח - האפליקציה צריכה את שמות השחקנים כדי להציג טבלאות.
@@ -251,6 +252,10 @@ router.patch('/users/:id/profile', requireSelfOrAdmin((req) => req.params.id), a
       updates.defaultTab = String(req.body.defaultTab).trim().slice(0, 20) || 'betting';
     }
 
+    if (req.body.extendedStats !== undefined) {
+      updates.extendedStats = Boolean(req.body.extendedStats);
+    }
+
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ message: 'אין מה לעדכן' });
     }
@@ -258,7 +263,7 @@ router.patch('/users/:id/profile', requireSelfOrAdmin((req) => req.params.id), a
     Object.assign(user, updates);
     await user.save();
 
-    res.json({ name: user.name, defaultTab: user.defaultTab, nameLocked: user.nameLocked });
+    res.json({ name: user.name, defaultTab: user.defaultTab, extendedStats: !!user.extendedStats, nameLocked: user.nameLocked });
   } catch (error) {
     console.error('Error updating profile:', error);
     res.status(500).json({ message: error.message });

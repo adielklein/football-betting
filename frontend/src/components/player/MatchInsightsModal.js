@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { BallLoader } from '../Motifs';
+import { MissingSection, ExtendedRest } from './ExtendedInsights';
 import ShirtViewer3D from '../ShirtViewer3D';
 import { shirtsForMatch } from '../../data/kits';
 import { API_URL as API_BASE } from '../../config';
@@ -232,6 +233,23 @@ function MatchInsightsModal({ match, onClose }) {
 
   useEffect(() => { load(); }, [load]);
 
+  // נתונים מורחבים - רק למי שהפעיל אותם בהגדרות. בקשה נפרדת, כדי שהחלון
+  // הרגיל לא יחכה לה
+  const extendedOn = (() => {
+    try { return !!JSON.parse(localStorage.getItem('football_betting_user') || '{}').extendedStats; } catch (e) { return false; }
+  })();
+  const [ext, setExt] = useState(null);
+  useEffect(() => {
+    setExt(null);
+    if (!extendedOn) return undefined;
+    let alive = true;
+    fetch(`${API_URL}/external/insights/${match._id}/extended`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (alive) setExt(j); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [match._id, extendedOn]);
+
   // נעילת גלילת הרקע כל עוד המודל פתוח
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -378,6 +396,8 @@ function MatchInsightsModal({ match, onClose }) {
                 </div>
               )}
 
+              {ext && <MissingSection ext={ext} t1Name={t1?.name} t2Name={t2?.name} />}
+
               <Section title="יחסי ווינר" hint={odds ? 'הסתברות משתמעת' : undefined}>
                 {odds ? (
                   <>
@@ -515,6 +535,8 @@ function MatchInsightsModal({ match, onClose }) {
                   )}
                 </Section>
               )}
+
+              {ext && <ExtendedRest ext={ext} t1Name={t1?.name} t2Name={t2?.name} />}
 
               <div style={{ textAlign: 'center', fontSize: 'var(--fs-xs)', color: 'var(--text-4, #c3c8d0)', marginTop: '0.6rem' }}>
                 נתונים: 365scores{data.venue ? ` · ${data.venue}` : ''}

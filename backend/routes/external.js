@@ -887,6 +887,23 @@ router.get('/insights/:matchId', async (req, res) => {
   }
 });
 
+// 🧩 נתונים מורחבים למשחק (פצועים, הרכב, שחקני מפתח, הצבעת קהל, טרנדים, שופט).
+// מוצג רק למי שהפעיל "נתונים מורחבים" בהגדרות; הכיוון כמו בתובנות הרגילות
+router.get('/insights/:matchId/extended', async (req, res) => {
+  try {
+    const match = await Match.findById(req.params.matchId);
+    if (!match) return res.status(404).json({ message: 'המשחק לא נמצא' });
+    if (!match.externalId) return res.status(404).json({ message: 'למשחק אין מזהה 365' });
+    const data = await scores365Api.fetchExtendedInsights(match.externalId);
+    if (!data) return res.status(404).json({ message: 'לא הוחזרו נתונים מ-365scores' });
+    const orientation = detectOrientation(match.team1, match.team2, data.home?.name, data.away?.name);
+    res.json({ matchId: match._id, flipped: orientation.flipped, ...data });
+  } catch (err) {
+    console.error('❌ [external/insights/extended] error:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // 🔴 טבלה חיה - הדירוג השבועי כפי שהיה נראה אילו הכל היה נגמר עכשיו.
 //
 // מה שמעניין כאן אינו הניקוד אלא התנועה: ההפרש בין הדירוג לפי מה שכבר
