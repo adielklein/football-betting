@@ -1242,7 +1242,7 @@ body:has(.pitch-stripes)::before { opacity: 0.35; }
 @media (prefers-reduced-motion: no-preference) {
   .shirt-jump { animation: shirtJump 1.3s cubic-bezier(.3,1.6,.5,1) 2; }
   .shirt-flip { animation: shirtFlip 0.8s cubic-bezier(.45,.05,.35,1); }
-  .shirt-layer { animation: shirtLayerSpin 0.8s cubic-bezier(.45,.05,.35,1); }
+  .shirt-flip > span { animation: shirtCrestSlide 0.8s cubic-bezier(.45,.05,.35,1); }
   .shirt--win { animation: shirtWinGlow 2.4s ease-in-out infinite alternate; }
 }
 /* גול: קפיצה למעלה, נחיתה רכה וקפיצה קטנה */
@@ -1253,26 +1253,21 @@ body:has(.pitch-stripes)::before { opacity: 0.35; }
   75% { transform: translateY(-4px) scale(1.02); }
   100% { transform: none; }
 }
-/* לחיצה: סיבוב תלת-ממדי שלם עם עובי. השכבות (.shirt-layer, ראה TeamShirt)
-   מסתובבות כל אחת לבד עם perspective משלה - בלי הקשר תלת-ממדי משותף (באג
-   האייפון ב-.header-crest). העטיפה רק מרימה את החולצה אל הצופה ומחזירה */
+/* לחיצה: חולצה עגולה שמסתובבת על גוף. במקום להסתובב כמו לוח שטוח (שמהצד
+   הוא קו דק), היא מצטמצמת לפרופיל של גוף - 38% מהרוחב - הבד גולל הצידה
+   בתוך ה-SVG (TeamShirt), והסמל מחליק החוצה לצד אחד וחוזר מהצד השני.
+   הצללה: כשהחולצה בצד היא כהה יותר, כמו גוף עגול באור מלפנים */
 @keyframes shirtFlip {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-6px) scale(1.12); }
+  0%, 100% { transform: translateY(0) scale(1, 1); filter: brightness(1); }
+  25% { transform: translateY(-4px) scale(0.38, 1.06); filter: brightness(0.82); }
+  50% { transform: translateY(-6px) scale(1.04, 1.1); filter: brightness(1); }
+  75% { transform: translateY(-4px) scale(0.38, 1.06); filter: brightness(0.82); }
 }
-.shirt-stack { position: absolute; inset: 0; }
-.shirt-layer {
-  --flip: 0deg;
-  position: absolute; inset: 0;
-  backface-visibility: hidden; -webkit-backface-visibility: hidden;
-  transform: perspective(260px) rotateY(0deg) translateZ(var(--z)) rotateY(var(--flip));
-}
-.shirt-layer.is-backside { --flip: 180deg; }
-/* הדפנות כהות מהפנים, כמו צד של בד עבה */
-.shirt-layer.is-edge { filter: brightness(0.55) saturate(0.9); }
-@keyframes shirtLayerSpin {
-  from { transform: perspective(260px) rotateY(0deg) translateZ(var(--z)) rotateY(var(--flip)); }
-  to { transform: perspective(260px) rotateY(360deg) translateZ(var(--z)) rotateY(var(--flip)); }
+@keyframes shirtCrestSlide {
+  0% { transform: translate(-50%, -50%) scaleX(1); opacity: 1; }
+  22% { transform: translate(-190%, -50%) scaleX(0.3); opacity: 0; }
+  78% { transform: translate(90%, -50%) scaleX(0.3); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scaleX(1); opacity: 1; }
 }
 /* אחרי המשחק: המנצחת זוהרת בזהב, המפסידה דוהה. על העטיפה החיצונית, כדי
    שהקפיצה וההיפוך (על .shirt-anim) ירוצו גם על חולצה כזו */

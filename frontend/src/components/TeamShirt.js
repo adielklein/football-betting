@@ -57,14 +57,6 @@ function Pattern({ kit }) {
 
 let uid = 0;
 
-// שכבות העובי לסיבוב (z ביחידות של חולצה בגודל 44). סט של דפנות ופנים לכל
-// צד; הגב קודם ב-DOM, כך שהפנים מצוירות אחרונות
-const SHIRT_LAYERS = [
-  ...[-2.25, -1.5, -0.75, 0, 0.75, 1.5, 2.25].map((z) => ({ z, cls: 'is-edge is-backside' })),
-  { z: -3, cls: 'is-back is-backside' },
-  ...[-2.25, -1.5, -0.75, 0, 0.75, 1.5, 2.25].map((z) => ({ z, cls: 'is-edge' })),
-  { z: 3, cls: 'is-face' },
-];
 
 // מצב החולצה לפי תוצאת המשחק: 'win' זוהרת, 'lose' דוהה, אחרת רגילה
 export const resultState = (match, side) => {
@@ -118,7 +110,18 @@ function TeamShirt({ color, kit, size = 44, shine = false, state = null, jumpAt 
         </linearGradient>
       </defs>
       <g clipPath={`url(#${id}-c)`}>
-        <Pattern kit={shape} />
+        {flipping ? (
+          // שלושה עותקים של הבד זה לצד זה, שגוללים שני רוחבים בסיבוב אחד
+          <g>
+            <Pattern kit={shape} />
+            <g transform="translate(48 0)"><Pattern kit={shape} /></g>
+            <g transform="translate(96 0)"><Pattern kit={shape} /></g>
+            <animateTransform attributeName="transform" type="translate" values="0 0;-96 0" dur="0.8s" fill="freeze"
+              calcMode="spline" keyTimes="0;1" keySplines="0.45 0.05 0.35 1" />
+          </g>
+        ) : (
+          <Pattern kit={shape} />
+        )}
         <rect x="11.5" y="0" width="25" height="44" fill={`url(#${id}-s)`} />
         {/* שוליים כהים בקצה השרוולים ובתחתית */}
         <polygon points="1,15 7.5,21.5 9,20.3 2.6,13.6" fill="#000" opacity="0.22" />
@@ -159,25 +162,10 @@ function TeamShirt({ color, kit, size = 44, shine = false, state = null, jumpAt 
   return (
     <span className={state ? `shirt--${state}` : undefined} style={{ position: 'relative', display: 'inline-block', width: size, height: h, flexShrink: 0 }}>
     <span key={`${jumpAt}-${flipAt}`} className={`shirt-anim ${motion}`}>
-      {flipping ? (
-        // בזמן הסיבוב: כמה עותקים של החולצה זה מאחורי זה, הדפנות כהות -
-        // כך שמהצד רואים לה עובי. כמו הסמל בכותרת: כל שכבה מסתובבת לבד,
-        // וסט נפרד לכל צד (backface-visibility). הסמל רק על הפנים, ולכן
-        // מהגב רואים חולצה בלי סמל
-        <span className="shirt-stack">
-          {SHIRT_LAYERS.map(({ z, cls }, i) => (
-            <span key={i} className={`shirt-layer ${cls}`} style={{ '--z': `${(z * size / 44).toFixed(2)}px` }}>
-              {svg}
-              {cls === 'is-face' && crest}
-            </span>
-          ))}
-        </span>
-      ) : (
-        <>
-          {svg}
-          {crest}
-        </>
-      )}
+      {/* בסיבוב (shirt-flip): החולצה מצטמצמת לפרופיל של גוף ולא לקו, הבד
+          גולל הצידה כאילו הוא עוטף אותו, והסמל מחליק החוצה וחוזר מהצד השני */}
+      {svg}
+      {crest}
     </span>
     </span>
   );
