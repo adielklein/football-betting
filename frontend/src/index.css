@@ -1241,7 +1241,8 @@ body:has(.pitch-stripes)::before { opacity: 0.35; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .shirt-jump { animation: shirtJump 1.3s cubic-bezier(.3,1.6,.5,1) 2; }
-  .shirt-flip { animation: shirtFlip 0.45s ease-in-out; }
+  .shirt-flip { animation: shirtFlip 0.8s cubic-bezier(.45,.05,.35,1); }
+  .shirt-flip > span { animation: shirtCrestHide 0.8s cubic-bezier(.45,.05,.35,1); }
   .shirt--win { animation: shirtWinGlow 2.4s ease-in-out infinite alternate; }
 }
 /* גול: קפיצה למעלה, נחיתה רכה וקפיצה קטנה */
@@ -1252,11 +1253,23 @@ body:has(.pitch-stripes)::before { opacity: 0.35; }
   75% { transform: translateY(-4px) scale(1.02); }
   100% { transform: none; }
 }
-/* לחיצה: היפוך כמו מטבע - דו-ממדי (scaleX), בלי הקשר תלת-ממדי */
+/* לחיצה: סיבוב תלת-ממדי שלם. perspective על האלמנט עצמו ולא הקשר תלת-ממדי
+   משותף (ראה באג האייפון ב-.header-crest). החולצה מתרוממת קצת אל הצופה,
+   מתכהה כשהיא בצד (כמו אור מלפנים), ובגב הסמל נעלם - כמו גב של חולצה */
 @keyframes shirtFlip {
-  0% { transform: scaleX(1); }
-  50% { transform: scaleX(0.06); }
-  100% { transform: scaleX(1); }
+  0% { transform: perspective(260px) rotateY(0deg) translateY(0) scale(1); filter: brightness(1); }
+  25% { transform: perspective(260px) rotateY(90deg) translateY(-4px) scale(1.08); filter: brightness(0.7); }
+  50% { transform: perspective(260px) rotateY(180deg) translateY(-6px) scale(1.12); filter: brightness(1.05); }
+  75% { transform: perspective(260px) rotateY(270deg) translateY(-4px) scale(1.08); filter: brightness(0.7); }
+  100% { transform: perspective(260px) rotateY(360deg) translateY(0) scale(1); filter: brightness(1); }
+}
+/* הסמל על החזה לא נראה מהגב. לא backface-visibility: הוא פועל רק בהקשר
+   תלת-ממדי משותף, וזה בדיוק מה שנמנעים ממנו. במקום זה הסמל נעלם ברבע
+   שבו החולצה מסובבת הצידה, וחוזר כשהיא חוזרת לפנים */
+@keyframes shirtCrestHide {
+  0%, 24% { opacity: 1; }
+  25%, 75% { opacity: 0; }
+  76%, 100% { opacity: 1; }
 }
 /* אחרי המשחק: המנצחת זוהרת בזהב, המפסידה דוהה. על העטיפה החיצונית, כדי
    שהקפיצה וההיפוך (על .shirt-anim) ירוצו גם על חולצה כזו */
