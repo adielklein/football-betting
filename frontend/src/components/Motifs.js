@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { getStage, getEnvironment } from '../three/stage';
 import { buildMedal } from '../three/medal';
+import { buildGoal, GOAL_DUR } from '../three/goal';
 
 // אנימציות "חתימה" בסגנון הסמל המסתובב. ההסברים והתזמונים ב-index.css,
 // בפרק "אנימציות חתימה". כל התנועה כבויה אצל מי שביקש פחות תנועה.
@@ -175,7 +176,7 @@ const meshPath = (pull) => {
 const MESH_FLAT = meshPath(0);
 const MESH_PULLED = meshPath(1);
 
-export function GoalNetShot() {
+function GoalNetShotSvg() {
   const T = '1.7s';
   return (
     <svg className="goal-net" viewBox="0 0 80 46" width="84" height="48" aria-hidden="true">
@@ -227,6 +228,56 @@ export function GoalNetShot() {
       <path d="M14 37 V8 H66 V37" fill="none" stroke="#fff" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );
+}
+
+// הגרסה התלת-ממדית (three/goal.js). מתחילה רק אם הבמה מוכנה תוך רגע -
+// החגיגה היא רגע אחד, ואם הספרייה עוד נטענת עדיף לנגן מיד את ה-SVG מאשר
+// לאחר. BettingInterface מחמם את הבמה מראש כשעוד יש הימורים למלא
+export function GoalNetShot() {
+  const canvasRef = useRef(null);
+  const [mode, setMode] = useState('wait'); // wait | 3d | svg
+  useEffect(() => {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setMode('svg'); return undefined; }
+    let gone = false, stage = null, view = null, built = null;
+    const modeNow = { v: 'wait' };
+    const fallback = setTimeout(() => { if (!gone && modeNow.v === 'wait') { modeNow.v = 'svg'; setMode('svg'); } }, 250);
+    getStage().then((st) => {
+      if (gone || modeNow.v !== 'wait') return;
+      if (!st || !canvasRef.current) { modeNow.v = 'svg'; setMode('svg'); return; }
+      modeNow.v = '3d';
+      stage = st;
+      const { THREE } = st;
+      const scene = new THREE.Scene();
+      scene.add(new THREE.AmbientLight(0xffffff, 1.3));
+      const sun = new THREE.DirectionalLight(0xffffff, 1.8);
+      sun.position.set(4, 8, 6);
+      scene.add(sun);
+      built = buildGoal(THREE);
+      scene.add(built.group);
+      const camera = new THREE.PerspectiveCamera(32, 96 / 56, 0.1, 100);
+      camera.position.set(0.5, 2.1, 7.2);
+      camera.lookAt(0, 1.05, -0.7);
+      const start = performance.now();
+      view = {
+        canvas: canvasRef.current, width: 96, height: 56, scene, camera,
+        frame(now) {
+          const t = Math.min(1, (now - start) / GOAL_DUR);
+          built.update(t);
+          return t < 1;
+        }
+      };
+      stage.add(view);
+      setMode('3d');
+    });
+    return () => {
+      gone = true;
+      clearTimeout(fallback);
+      if (stage && view) stage.remove(view);
+      if (built) built.dispose();
+    };
+  }, []);
+  if (mode === 'svg') return <GoalNetShotSvg />;
+  return <canvas ref={canvasRef} className="goal-net goal-net--3d" aria-hidden="true" style={{ width: 96, height: 56 }} />;
 }
 
 // ---------- טבעת ספירה לאחור (השעה האחרונה) ----------

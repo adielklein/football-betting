@@ -354,6 +354,12 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
   const prevCount = useRef(null);
   const prevWeekId = useRef(null);
   const [celebrateDone, setCelebrateDone] = useState(false);
+  // מחממים את הבמה התלת-ממדית כשעוד יש הימורים למלא, כדי שהשער בחגיגה
+  // יופיע בתלת-ממד מיד ולא יחכה לטעינת הספרייה
+  useEffect(() => {
+    const t = setTimeout(() => { import('../../three/stage').then((m) => m.getStage()); }, 2500);
+    return () => clearTimeout(t);
+  }, []);
   const doneNow = matches.length > 0 &&
     Object.keys(bets).filter((id) => bets[id].team1Goals !== undefined).length >= matches.length;
   useEffect(() => {
