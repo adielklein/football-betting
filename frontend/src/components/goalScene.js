@@ -73,6 +73,30 @@ export function createGoalScene(canvas, { onGoal, onDone, reduced = false } = {}
   let ball = { ...START }, ballSpin = 0;
   let ballHidden = false;
 
+  // ===== תלת-ממד =====
+  // השוער והכדור בתלת-ממד (three/penalty3d.js), כשהספרייה מוכנה. עד אז, בלי
+  // WebGL, או אם משהו נכשל - הציור הדו-ממדי. ההחלטות והתנועה לא משתנות
+  let gl3d = null;
+  let destroyed3d = false;
+  if (!reduced) {
+    import('../three/penalty3d').then((m) => m.createPenalty3D()).then((r) => {
+      if (destroyed3d) { if (r) r.dispose(); return; }
+      gl3d = r;
+    }).catch(() => { gl3d = null; });
+  }
+  const P3 = () => ({ F, CX, Y0, CAM });
+  const draw3d = (fn) => {
+    if (!gl3d) return false;
+    try {
+      const img = fn();
+      if (img) ctx.drawImage(img.canvas, img.x, img.y, img.w, img.h);
+      return true;
+    } catch (e) {
+      gl3d = null; // מכאן והלאה - דו-ממדי
+      return false;
+    }
+  };
+
   // ===== מצב משחק =====
   let mode = 'intro';
   const G = { phase: 'idle', clock: 0, t0: 0, from: null, kickAt: 0, res: null, path: null, phys: null, netHit: false, onResult: null, resultFired: false, keeper: null };
@@ -585,12 +609,27 @@ export function createGoalScene(canvas, { onGoal, onDone, reduced = false } = {}
     drawNet(light);
     const flying = mode === 'game' ? G.phase === 'flight' : t > T.kick && t < T.impact;
     if (!ballHidden) drawBallShadows(ball, light);
-    if (ball.z < 0 && !ballHidden) drawBall(ball, light, false);
+    const ball3d = () => draw3d(() => gl3d.ball(ball, ballSpin, light, P3()));
+    if (ball.z < 0 && !ballHidden) { if (!ball3d()) drawBall(ball, light, false); }
     drawPosts(light);
-    drawKeeper(light);
+    if (!draw3d(() => gl3d.keeper(keeperState(), light, P3()))) drawKeeper(light);
     if (ball.z >= 0 && !ballHidden) {
-      const b = drawBall(ball, light, flying);
-      if (b && flying) { trail.push(b); if (trail.length > 4) trail.shift(); }
+      // שובל התנועה נשאר מהציור הדו-ממדי (drawBall מצייר אותו), ואז הכדור התלת-ממדי מעליו
+      if (gl3d && flying) {
+        const p = proj(ball.x, ball.y, ball.z);
+        if (p) { trail.push({ x: p.x, y: p.y, r: BALL_R * p.s }); if (trail.length > 4) trail.shift(); }
+        if (p && trail.length > 1) {
+          const b0 = trail[0];
+          const g = ctx.createLinearGradient(b0.x, b0.y, p.x, p.y);
+          g.addColorStop(0, 'rgba(240,244,250,0)'); g.addColorStop(1, 'rgba(240,244,250,.35)');
+          ctx.strokeStyle = g; ctx.lineCap = 'round'; ctx.lineWidth = BALL_R * p.s * 1.7;
+          ctx.beginPath(); ctx.moveTo(b0.x, b0.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+        }
+      }
+      if (!ball3d()) {
+        const b = drawBall(ball, light, flying);
+        if (b && flying) { trail.push(b); if (trail.length > 4) trail.shift(); }
+      }
     }
 
     // ערפל אור באוויר: שכבה רכה בגובה השער, בולטת רק כשהזרקורים דולקים
@@ -831,7 +870,11 @@ export function createGoalScene(canvas, { onGoal, onDone, reduced = false } = {}
       if (onDone) onDone();
       running = false; cancelAnimationFrame(raf);
     },
-    destroy() { cancelAnimationFrame(raf); running = false; window.removeEventListener('resize', resize); },
+    destroy() {
+      cancelAnimationFrame(raf); running = false; window.removeEventListener('resize', resize);
+      destroyed3d = true;
+      if (gl3d) { try { gl3d.dispose(); } catch (e) { /* כבר שוחרר */ } gl3d = null; }
+    },
 
     // ===== משחק =====
     // instant: בלי מעבר (משחק שנפתח ישר, לא ממסך הכניסה)

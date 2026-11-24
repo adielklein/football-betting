@@ -77,6 +77,8 @@ export const getStage = () => {
     return {
       THREE,
       renderer,
+      // ציור מיידי ומסונכרן של תצוגה (למי שמנהל לולאה משלו, כמו משחק הבעיטות)
+      renderNow(view) { draw(view); },
       add(view) { views.add(view); awake.add(view); kick(); },
       remove(view) { views.delete(view); awake.delete(view); },
       wake(view) { if (views.has(view)) { awake.add(view); kick(); } },
