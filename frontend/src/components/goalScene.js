@@ -14,6 +14,7 @@
 // חוזר לנקודה, וממשיכים באותו אצטדיון בלי מעבר. הפיזיקה וההחלטות של
 // השוער ב-services/penalty.js.
 
+import { goalBoxStep } from '../services/goalBox';
 import {
   START as SHOT_START, KEEPER_Z, blendPose, keeperAt, keeperHands, ballPath, playShot, isGoal
 } from '../services/penalty';
@@ -431,58 +432,154 @@ export function createGoalScene(canvas, { onGoal, onDone, reduced = false } = {}
     }
     const c = Math.cos(k.rot), sn = Math.sin(k.rot);
     const P = ([px, py]) => ({ x: root.x + (px * c - py * sn) * s, y: root.y - (px * sn + py * c) * s });
-    const lit = 0.55 + 0.45 * light;
-    const col = (hex, f = 1) => shadeHex(hex, f * lit);
-
-    // איבר מתחדד: עבה בהתחלה, דק בסוף, עם קצוות מעוגלים
-    const limb = (a, b, wa, wb, fill) => {
-      const A = P(a), B = P(b);
-      const dx = B.x - A.x, dy = B.y - A.y, L = Math.hypot(dx, dy) || 1;
-      const nx = -dy / L, ny = dx / L;
-      const ra = (wa * s) / 2, rb = (wb * s) / 2;
-      ctx.fillStyle = fill;
-      ctx.beginPath();
-      ctx.moveTo(A.x + nx * ra, A.y + ny * ra); ctx.lineTo(B.x + nx * rb, B.y + ny * rb);
-      ctx.lineTo(B.x - nx * rb, B.y - ny * rb); ctx.lineTo(A.x - nx * ra, A.y - ny * ra); ctx.closePath(); ctx.fill();
-      ctx.beginPath(); ctx.arc(A.x, A.y, ra, 0, Math.PI * 2); ctx.arc(B.x, B.y, rb, 0, Math.PI * 2); ctx.fill();
-    };
-    const JERSEY = '#c6ec2e', JERSEY_D = '#97b81c', SHORTS = '#15171c', SKIN = '#c98d68', BOOT = '#0d0f14';
+    const lit = 0.6 + 0.4 * light;
+    const sh = (hex, f = 1) => shadeHex(hex, f * lit);
     const mid = (a, b, f = 0.5) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
 
-    // הצד הרחוק קודם (כהה יותר), אחר כך הקרוב
-    for (const [side, knee, foot, f] of [[-1, k.pose.kl, k.pose.fl, 0.82], [1, k.pose.kr, k.pose.fr, 1]]) {
-      const hip = [side * 0.1, -0.03];
-      limb(hip, mid(hip, knee, 0.55), 0.2, 0.17, col(SHORTS, f));
-      limb(mid(hip, knee, 0.5), knee, 0.15, 0.12, col(SKIN, f * 0.95));
-      limb(knee, foot, 0.12, 0.075, col(JERSEY, f * 0.95));
-      limb(foot, [foot[0] + side * 0.13, foot[1] - 0.03], 0.09, 0.07, col(BOOT));
+    // ===== צבעים =====
+    const KIT = '#c6ec2e', KIT_D = '#86a313', KIT_L = '#ecff7a';
+    const SHORTS = '#17191f', SKIN = '#c98d68', SKIN_D = '#93603f', HAIR = '#1d140c';
+    const GLOVE = '#f3f5f8', GLOVE_D = '#b9c0ca', BAND = '#ff7a1a', BOOT = '#0e1015';
+
+    // איבר עגול: מלבן מתחדד עם קצוות מעוגלים, ומילוי מדורג לרוחבו - בהיר בצד
+    // שפונה אל הזרקור (למעלה-שמאל) וכהה בצד השני. זה מה שנותן לו נפח
+    const tube = (a, b, wa, wb, base, f = 1) => {
+      const A = P(a), B = P(b);
+      const dx = B.x - A.x, dy = B.y - A.y, L = Math.hypot(dx, dy) || 1;
+      let nx = -dy / L, ny = dx / L;
+      if (nx + ny > 0) { nx = -nx; ny = -ny; } // n תמיד אל האור
+      const ra = (wa * s) / 2, rb = (wb * s) / 2, rm = Math.max(ra, rb);
+      const cx = (A.x + B.x) / 2, cy = (A.y + B.y) / 2;
+      const gr = ctx.createLinearGradient(cx + nx * rm, cy + ny * rm, cx - nx * rm, cy - ny * rm);
+      gr.addColorStop(0, sh(base, f * 1.18));
+      gr.addColorStop(0.45, sh(base, f));
+      gr.addColorStop(1, sh(base, f * 0.62));
+      ctx.fillStyle = gr;
+      ctx.beginPath();
+      ctx.moveTo(A.x + nx * ra, A.y + ny * ra); ctx.lineTo(B.x + nx * rb, B.y + ny * rb);
+      ctx.lineTo(B.x - nx * rb, B.y - ny * rb); ctx.lineTo(A.x - nx * ra, A.y - ny * ra); ctx.closePath();
+      ctx.moveTo(A.x + ra, A.y); ctx.arc(A.x, A.y, ra, 0, Math.PI * 2);
+      ctx.moveTo(B.x + rb, B.y); ctx.arc(B.x, B.y, rb, 0, Math.PI * 2);
+      ctx.fill();
+    };
+
+    // ===== רגליים: מכנסיים, ברך, גרב עם פס, נעל =====
+    const leg = (side, knee, foot, f) => {
+      const hip = [side * 0.11, -0.02];
+      tube(hip, mid(hip, knee, 0.62), 0.23, 0.19, SHORTS, f);
+      tube(mid(hip, knee, 0.55), knee, 0.16, 0.13, SKIN, f);
+      tube(knee, foot, 0.135, 0.085, KIT, f * 0.96);
+      // פס על הגרב
+      tube(mid(knee, foot, 0.12), mid(knee, foot, 0.2), 0.14, 0.13, KIT_D, f);
+      const toe = [foot[0] + side * 0.17, foot[1] - 0.03];
+      tube(foot, toe, 0.1, 0.075, BOOT, 1);
+      tube(mid(foot, toe, 0.15), mid(foot, toe, 0.75), 0.025, 0.02, '#e9edf2', f * 0.9); // פס לבן בנעל
+    };
+
+    // ===== כפפה: כף גדולה, פס כתום בשורש, ואצבעות מרומזות =====
+    const glove = (elbow, hand, f) => {
+      const dir = [hand[0] - elbow[0], hand[1] - elbow[1]];
+      const len = Math.hypot(dir[0], dir[1]) || 1;
+      const u = [dir[0] / len, dir[1] / len];
+      const tip = [hand[0] + u[0] * 0.17, hand[1] + u[1] * 0.17];
+      tube(mid(elbow, hand, 0.82), hand, 0.1, 0.11, BAND, f); // שרוול כתום
+      tube(hand, tip, 0.17, 0.16, GLOVE, f);
+      const n = [-u[1], u[0]];
+      ctx.strokeStyle = sh(GLOVE_D, f);
+      ctx.lineWidth = Math.max(0.6, 0.012 * s);
+      ctx.lineCap = 'round';
+      for (const o of [-0.04, 0, 0.04]) {
+        const a = P([tip[0] - u[0] * 0.08 + n[0] * o, tip[1] - u[1] * 0.08 + n[1] * o]);
+        const b2 = P([tip[0] - u[0] * 0.01 + n[0] * o, tip[1] - u[1] * 0.01 + n[1] * o]);
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b2.x, b2.y); ctx.stroke();
+      }
+    };
+
+    // הצד הרחוק כהה יותר ומצויר קודם
+    leg(-1, k.pose.kl, k.pose.fl, 0.82);
+    leg(1, k.pose.kr, k.pose.fr, 1);
+
+    // ===== גוף: מותניים צרים, חזה רחב, כתפיים מעוגלות =====
+    const shy = k.pose.sh;
+    const pts = [
+      [-0.15, 0.0], [0.15, 0.0],
+      [0.19, shy * 0.45], [0.25, shy - 0.06], [0.2, shy + 0.02],
+      [0.07, shy + 0.05], [-0.07, shy + 0.05],
+      [-0.2, shy + 0.02], [-0.25, shy - 0.06], [-0.19, shy * 0.45]
+    ].map(P);
+    const L0 = P([-0.25, shy * 0.6]), R0 = P([0.25, shy * 0.6]);
+    const tg = ctx.createLinearGradient(L0.x, L0.y, R0.x, R0.y);
+    tg.addColorStop(0, sh(KIT_L, 1.02)); tg.addColorStop(0.35, sh(KIT, 1)); tg.addColorStop(1, sh(KIT_D, 0.9));
+    ctx.fillStyle = tg;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    ctx.lineTo(pts[1].x, pts[1].y);
+    ctx.quadraticCurveTo(pts[2].x, pts[2].y, pts[3].x, pts[3].y);
+    ctx.quadraticCurveTo(pts[4].x, pts[4].y, pts[5].x, pts[5].y);
+    ctx.lineTo(pts[6].x, pts[6].y);
+    ctx.quadraticCurveTo(pts[7].x, pts[7].y, pts[8].x, pts[8].y);
+    ctx.quadraticCurveTo(pts[9].x, pts[9].y, pts[0].x, pts[0].y);
+    ctx.closePath(); ctx.fill();
+    // פאנלים כהים בצדי החולצה ומכנס עליון שמציץ
+    ctx.save(); ctx.clip();
+    ctx.fillStyle = sh(KIT_D, 0.85);
+    for (const side of [-1, 1]) {
+      const a = P([side * 0.17, 0]), b2 = P([side * 0.26, shy - 0.05]), c2 = P([side * 0.21, shy - 0.05]), d2 = P([side * 0.12, 0]);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b2.x, b2.y); ctx.lineTo(c2.x, c2.y); ctx.lineTo(d2.x, d2.y); ctx.closePath(); ctx.fill();
     }
-    // גוף: טרפז מהמותניים לכתפיים, עם הצללה
-    const hl = P([-0.15, 0]), hr = P([0.15, 0]), sl = P([-0.23, k.pose.sh]), sr = P([0.23, k.pose.sh]);
-    const torso = ctx.createLinearGradient(sl.x, sl.y, sr.x, sr.y);
-    torso.addColorStop(0, col(JERSEY_D)); torso.addColorStop(0.55, col(JERSEY)); torso.addColorStop(1, col(JERSEY, 1.06));
-    ctx.fillStyle = torso;
-    ctx.beginPath(); ctx.moveTo(hl.x, hl.y); ctx.lineTo(hr.x, hr.y); ctx.lineTo(sr.x, sr.y); ctx.lineTo(sl.x, sl.y); ctx.closePath(); ctx.fill();
-    limb([0, 0.02], [0, k.pose.sh - 0.05], 0.3, 0.38, torso);
-    // ידיים: שרוולים ארוכים וכפפות גדולות
-    for (const [side, elbow, hand, f] of [[-1, k.pose.el, k.pose.hl, 0.85], [1, k.pose.er, k.pose.hr, 1]]) {
-      const sh = [side * 0.21, k.pose.sh - 0.03];
-      limb(sh, elbow, 0.12, 0.1, col(JERSEY, f));
-      limb(elbow, hand, 0.1, 0.085, col(JERSEY, f));
-      const tip = [hand[0] + (hand[0] - elbow[0]) * 0.55, hand[1] + (hand[1] - elbow[1]) * 0.55];
-      limb(hand, tip, 0.15, 0.13, col('#f2f4f7', f));
-      limb(mid(elbow, hand, 0.85), hand, 0.11, 0.11, col('#ff7a1a', f));
+    ctx.restore();
+    // מספר 1 על החזה, כשהשוער מספיק גדול על המסך
+    if (s > 26) {
+      const nc = P([0.02, shy * 0.55]);
+      ctx.save();
+      ctx.translate(nc.x, nc.y); ctx.rotate(-k.rot);
+      ctx.fillStyle = sh(SHORTS, 1);
+      ctx.font = `900 ${Math.round(0.2 * s)}px system-ui, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('1', 0, 0);
+      ctx.restore();
     }
-    // צוואר וראש
-    limb([0, k.pose.sh - 0.02], [k.pose.head[0] * 0.6, k.pose.head[1] - 0.1], 0.09, 0.08, col(SKIN, 0.9));
+
+    // ===== ידיים: שרוולים ארוכים, מרפק, כפפות =====
+    for (const [side, elbow, hand, f] of [[-1, k.pose.el, k.pose.hl, 0.84], [1, k.pose.er, k.pose.hr, 1]]) {
+      const shoulder = [side * 0.21, shy - 0.03];
+      tube(shoulder, elbow, 0.13, 0.11, KIT, f);
+      tube(elbow, hand, 0.11, 0.095, KIT, f * 0.97);
+      glove(elbow, hand, f);
+    }
+
+    // ===== צוואר, צווארון וראש =====
+    const neckTop = [k.pose.head[0] * 0.6, k.pose.head[1] - 0.1];
+    tube([0, shy - 0.01], neckTop, 0.1, 0.09, SKIN, 0.88);
+    tube([-0.06, shy + 0.02], [0.06, shy + 0.02], 0.05, 0.05, SHORTS, 1); // צווארון
     const hd = P(k.pose.head);
-    ctx.fillStyle = col(SKIN);
-    ctx.beginPath(); ctx.ellipse(hd.x, hd.y, 0.1 * s, 0.12 * s, -k.rot, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = col('#1a120a');
-    ctx.beginPath(); ctx.ellipse(hd.x, hd.y, 0.105 * s, 0.125 * s, -k.rot, Math.PI * 0.95, Math.PI * 2.05); ctx.fill();
+    const hr = 0.115 * s;
+    const hg = ctx.createRadialGradient(hd.x - hr * 0.4, hd.y - hr * 0.45, hr * 0.1, hd.x, hd.y, hr * 1.25);
+    hg.addColorStop(0, sh(SKIN, 1.15)); hg.addColorStop(0.6, sh(SKIN, 1)); hg.addColorStop(1, sh(SKIN_D, 0.95));
+    ctx.fillStyle = hg;
+    ctx.beginPath(); ctx.ellipse(hd.x, hd.y, hr * 0.88, hr, -k.rot, 0, Math.PI * 2); ctx.fill();
+    // אוזן
+    const ear = P([k.pose.head[0] + 0.1, k.pose.head[1] - 0.01]);
+    ctx.fillStyle = sh(SKIN_D, 1);
+    ctx.beginPath(); ctx.ellipse(ear.x, ear.y, hr * 0.18, hr * 0.28, -k.rot, 0, Math.PI * 2); ctx.fill();
+    // שיער: כיפה עם קצה קצר מעל המצח
+    ctx.fillStyle = sh(HAIR, 1);
+    ctx.beginPath(); ctx.ellipse(hd.x, hd.y - hr * 0.08, hr * 0.94, hr * 0.98, -k.rot, Math.PI * 0.92, Math.PI * 2.08); ctx.fill();
+    // פנים: גבות ועיניים, רק כשהראש מספיק גדול
+    if (hr > 5) {
+      ctx.fillStyle = sh(HAIR, 1);
+      for (const ex of [-0.04, 0.04]) {
+        const e = P([k.pose.head[0] + ex, k.pose.head[1] + 0.005]);
+        ctx.beginPath(); ctx.ellipse(e.x, e.y, Math.max(0.7, hr * 0.12), Math.max(0.7, hr * 0.1), 0, 0, Math.PI * 2); ctx.fill();
+      }
+      const m0 = P([k.pose.head[0] - 0.03, k.pose.head[1] - 0.06]), m1 = P([k.pose.head[0] + 0.03, k.pose.head[1] - 0.06]);
+      ctx.strokeStyle = sh(SKIN_D, 0.75); ctx.lineWidth = Math.max(0.6, hr * 0.08);
+      ctx.beginPath(); ctx.moveTo(m0.x, m0.y); ctx.lineTo(m1.x, m1.y); ctx.stroke();
+    }
     // אור צד מהזרקור: קו בהיר דק לאורך הגוף
-    ctx.strokeStyle = `rgba(255,255,240,${0.25 * light})`; ctx.lineWidth = 0.025 * s;
-    ctx.beginPath(); ctx.moveTo(hr.x, hr.y); ctx.lineTo(sr.x, sr.y); ctx.stroke();
+    const hrp = P([0.15, 0]), srp = P([0.24, shy - 0.06]);
+    ctx.strokeStyle = `rgba(255,255,240,${0.3 * light})`; ctx.lineWidth = Math.max(0.6, 0.02 * s);
+    ctx.beginPath(); ctx.moveTo(hrp.x, hrp.y); ctx.lineTo(srp.x, srp.y); ctx.stroke();
   }
 
   // ===== כדור =====
@@ -746,7 +843,7 @@ export function createGoalScene(canvas, { onGoal, onDone, reduced = false } = {}
   }
 
   function resetShot() {
-    G.phase = 'aim'; G.res = null; G.phys = null; G.netHit = false; G.resultFired = false;
+    G.phase = 'aim'; G.res = null; G.phys = null; G.netHit = false; G.sideHit = false; G.resultFired = false;
     ball = { ...SHOT_START }; ballSpin = 0; ballHidden = false; trail.length = 0;
   }
 
@@ -808,14 +905,16 @@ export function createGoalScene(canvas, { onGoal, onDone, reduced = false } = {}
       p.x += v.x * dt; p.y += v.y * dt; p.z += v.z * dt;
       v.y -= 9.8 * dt;
       const inGoal = isGoal(res.outcome);
-      if (inGoal && !G.netHit && p.z <= -1.7) {
-        G.netHit = true;
-        hitNet(p.x, Math.min(p.y, 2.2), 5 + res.shot.power * 5);
-        v.z = 0.5; v.x *= 0.3; v.y *= 0.3;
-        shake = 3 + res.shot.power * 3; flash = 0.1;
-        for (let i = 0; i < 40; i++) spawnSpark();
+      // אחרי גול הכדור כלוא בתוך השער (services/goalBox.js): רשתות הצד, הגג
+      // והרשת האחורית. בלי זה כדור שנכנס בזווית יצא דרך רשת הצד. התוצאה
+      // כבר נקבעה - זה רק ציור
+      if (inGoal) {
+        goalBoxStep(p, v, G, { half: HALF, ballR: BALL_R, power: res.shot.power, hitNet, backAt: netDzAt });
+        if (G.justHitBack) {
+          shake = 3 + res.shot.power * 3; flash = 0.1;
+          for (let i = 0; i < 40; i++) spawnSpark();
+        }
       }
-      if (G.netHit) p.z = Math.max(p.z, -1.75 + netDzAt(p.x, Math.min(p.y, 2.2)) * 0.5);
       if (p.y < BALL_R) { p.y = BALL_R; v.y = Math.abs(v.y) * 0.42; v.x *= 0.82; v.z *= 0.82; }
       ball = { ...p };
       ballSpin += dt * Math.hypot(v.x, v.z) * 1.5;
