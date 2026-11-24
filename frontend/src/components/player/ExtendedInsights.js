@@ -104,16 +104,30 @@ export function ExtendedRest({ ext, t1Name, t2Name }) {
     <>
       {o.votes && o.votes.total > 0 && (
         <Section title="🗳️ מי תנצח? קהל 365" hint={`${o.votes.total.toLocaleString('he-IL')} הצביעו`}>
-          <div style={{ display: 'flex', height: '26px', borderRadius: '8px', overflow: 'hidden', fontSize: 'var(--fs-xs)', fontWeight: 800, color: '#fff' }}>
-            {[{ v: o.votes.t1, c: ACCENT_1, l: '1' }, { v: o.votes.draw, c: '#c67e00', l: 'X' }, { v: o.votes.t2, c: ACCENT_2, l: '2' }].map((x) => (
-              <div key={x.l} style={{ width: `${Math.max(x.v || 0, 0)}%`, minWidth: x.v ? '30px' : 0, background: x.c, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {x.v ? `${x.l} ${x.v}%` : ''}
+          {/* שלושה כרטיסים כמו ביחסים: מי, ואחוז גדול. מתחת - פס דק של היחס */}
+          <div style={{ display: 'flex', gap: '0.3rem' }}>
+            {[{ v: o.votes.t1, c: ACCENT_1, k: '1', l: n1 }, { v: o.votes.draw, c: '#c67e00', k: 'X', l: 'תיקו' }, { v: o.votes.t2, c: ACCENT_2, k: '2', l: n2 }].map((x) => (
+              <div key={x.k} style={{ ...box, flex: 1, minWidth: 0, textAlign: 'center', padding: '0.4rem 0.25rem' }}>
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-3, #8b93a1)', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {x.k} · {x.l}
+                </div>
+                <div style={{ fontSize: 'var(--fs-md)', fontWeight: 900, color: x.c, marginTop: '1px' }}>{x.v ?? 0}%</div>
               </div>
             ))}
           </div>
+          <div style={{ display: 'flex', height: '6px', borderRadius: '3px', overflow: 'hidden', marginTop: '0.4rem', gap: '2px' }}>
+            {[{ v: o.votes.t1, c: ACCENT_1 }, { v: o.votes.draw, c: '#c67e00' }, { v: o.votes.t2, c: ACCENT_2 }].map((x, i) => (
+              <div key={i} style={{ width: `${Math.max(x.v || 0, 0)}%`, background: x.c }} />
+            ))}
+          </div>
           {ext.overUnder && ext.overUnder.total > 0 && (
-            <div style={{ ...small, marginTop: '0.35rem', textAlign: 'center' }}>
-              {ext.overUnderTitle || 'מעל/מתחת'}: {ext.overUnder.options.map((x) => `${x.name} ${x.percent ?? 0}%`).join(' · ')}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.5rem' }}>
+              <span style={{ ...small, fontWeight: 700, flexShrink: 0 }}>שערים (2.5):</span>
+              {ext.overUnder.options.map((x) => (
+                <span key={x.name} style={{ ...box, padding: '0.2rem 0.55rem', fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--text-2, #3d434c)' }}>
+                  {x.name} <strong>{x.percent ?? 0}%</strong>
+                </span>
+              ))}
             </div>
           )}
         </Section>
@@ -136,7 +150,8 @@ export function ExtendedRest({ ext, t1Name, t2Name }) {
       )}
 
       {ext.topPerformers && ext.topPerformers.length > 0 && (
-        <Section title="⭐ שחקני מפתח" hint="העונה">
+        // לפני המשחק 365 נותנים נתוני עונה (הופעות); אחרי שהוא שוחק - נתוני המשחק עצמו
+        <Section title="⭐ שחקני מפתח" hint={ext.topPerformers.some((c) => [c.home, c.away].some((pl) => pl && pl.stats.some((x) => /הופעות/.test(x.name)))) ? 'העונה' : 'במשחק הזה'}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
             {ext.topPerformers.map((c) => {
               const p = o.perf(c);
