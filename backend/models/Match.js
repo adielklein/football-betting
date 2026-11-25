@@ -60,7 +60,12 @@ const matchSchema = new mongoose.Schema({
     team1Goals: { type: Number, default: null },
     team2Goals: { type: Number, default: null },
     team1Reds: { type: Number, default: null },
-    team2Reds: { type: Number, default: null }
+    team2Reds: { type: Number, default: null },
+    // ירידה בתוצאה שמחכה לאישור לפני "השער נפסל" (services/matchEvents.js)
+    dropAt: { type: Number, default: null },
+    dropFrom1: { type: Number, default: null },
+    dropFrom2: { type: Number, default: null },
+    cancels: { type: Number, default: null }
   },
 
   // חתימות האירועים שכבר יצאה עליהם התראה על המשחק הזה. תמונת המצב לבדה
