@@ -398,7 +398,7 @@ function MatchInsightsModal({ match, onClose }) {
 
               {ext && <MissingSection ext={ext} t1Name={t1?.name} t2Name={t2?.name} />}
 
-              <Section title="יחסי ווינר" hint={odds ? 'הסתברות משתמעת' : undefined}>
+              <Section title="יחסי ווינר" hint={odds ? (data.oddsSaved ? 'היחסים לפני המשחק' : 'הסתברות משתמעת') : undefined}>
                 {odds ? (
                   <>
                     <div style={{ display: 'flex', gap: '0.3rem', marginBottom: '0.4rem' }}>
@@ -430,7 +430,9 @@ function MatchInsightsModal({ match, onClose }) {
                     padding: '0.6rem', borderRadius: '10px', background: 'var(--warn-bg, #fffaf0)',
                     border: '1px solid #f5e3c0', fontSize: 'var(--fs-xs)', color: 'var(--warn-fg, #9a7b3f)', textAlign: 'center'
                   }}>
-                    ווינר עדיין לא פרסמו יחסים למשחק הזה — הם מתפרסמים בדרך כלל כשבוע לפני
+                    {data.statusGroup === 3 || data.statusGroup === 4
+                      ? 'המשחק כבר התחיל - ווינר מורידים את היחסים בשריקת הפתיחה'
+                      : 'ווינר עדיין לא פרסמו יחסים למשחק הזה — הם מתפרסמים בדרך כלל כשבוע לפני'}
                   </div>
                 )}
               </Section>

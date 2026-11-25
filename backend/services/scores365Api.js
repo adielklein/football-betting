@@ -646,6 +646,8 @@ const fetchTeamInsights = async (externalId, { refresh = false, formSize = 5 } =
     competition: game.competitionDisplayName || null,
     startTime: game.startTime || null,
     statusText: game.statusText || null,
+    // 1 = טרם החל, 3 = חי, 4 = הסתיים. ווינר מורידים יחסים כשהמשחק מתחיל
+    statusGroup: game.statusGroup ?? null,
     venue: game.venue?.name || null,
     home,
     away,
@@ -682,6 +684,22 @@ const fetchTeamInsights = async (externalId, { refresh = false, formSize = 5 } =
 // כי ההרכב הרשמי מתפרסם כשעה לפני
 const LINEUP_STATUS = { 1: 'starting', 2: 'sub', 3: 'missing', 5: 'doubtful' };
 
+// 365 מחזירים לפעמים את מועד החזרה באנגלית ("Late February 2026") גם בעברית
+const MONTHS_HE = { january: 'ינואר', february: 'פברואר', march: 'מרץ', april: 'אפריל', may: 'מאי', june: 'יוני', july: 'יולי', august: 'אוגוסט', september: 'ספטמבר', october: 'אוקטובר', november: 'נובמבר', december: 'דצמבר' };
+const PART_HE = { early: 'תחילת', mid: 'אמצע', middle: 'אמצע', late: 'סוף', end: 'סוף' };
+const hebrewReturn = (s) => {
+  if (!s || /[א-ת]/.test(s)) return s || null;
+  const m = String(s).trim().match(/^(early|mid|middle|late|end)?\s*(?:of\s+)?([a-z]+)\s*(\d{4})?$/i);
+  // גם קיצורים (Jan, Sept)
+  const month = m && Object.keys(MONTHS_HE).find((k) => k.startsWith(m[2].toLowerCase().slice(0, 3)));
+  if (month) {
+    return [m[1] ? PART_HE[m[1].toLowerCase()] : null, MONTHS_HE[month], m[3] || null].filter(Boolean).join(' ');
+  }
+  if (/doubt/i.test(s)) return 'בספק למשחק';
+  if (/unknown/i.test(s)) return 'לא ידוע';
+  return s;
+};
+
 const extendedTeam = (competitor, membersById) => {
   const l = competitor?.lineups;
   const people = (l?.members || []).map((m) => {
@@ -692,7 +710,7 @@ const extendedTeam = (competitor, membersById) => {
       position: m.formation?.name || m.position?.name || null,
       status: LINEUP_STATUS[m.status] || null,
       reason: m.injury?.reason || m.suspension?.reason || null,
-      expectedReturn: m.injury?.expectedReturn || null
+      expectedReturn: hebrewReturn(m.injury?.expectedReturn)
     };
   }).filter((p) => p.name && p.status);
   return {

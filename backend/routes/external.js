@@ -820,6 +820,13 @@ router.post('/sync-odds/:weekId', requireAdmin, async (req, res) => {
   }
 });
 
+// הסתברות משתמעת מיחסים (כמו ב-scores365Api), ליחסים שנשמרו אצלנו
+const impliedFromOdds = (o) => {
+  if (!o || !o.homeWin || !o.draw || !o.awayWin) return null;
+  const h = 1 / o.homeWin, d = 1 / o.draw, a = 1 / o.awayWin, t = h + d + a;
+  return { home: Math.round((h / t) * 100), draw: Math.round((d / t) * 100), away: Math.round((a / t) * 100) };
+};
+
 // 📊 תובנות טרום-משחק לקבלת החלטה (כושר, טבלה, ראש בראש, יחסי ווינר)
 // מקור: 365scores בלבד - שאר הספקים לא מספקים את הנתונים האלה
 router.get('/insights/:matchId', async (req, res) => {
@@ -861,6 +868,18 @@ router.get('/insights/:matchId', async (req, res) => {
       );
     }
 
+    // ווינר מורידים את היחסים כשהמשחק מתחיל. אם נשמרו יחסים על המשחק אצלנו
+    // (סנכרון יחסים) - מציגים אותם, כדי שבזמן המשחק ואחריו עדיין רואים
+    // על מה הימרו
+    let odds = insights.odds;
+    let oddsSaved = false;
+    if (!odds && match.odds && (match.odds.homeWin || match.odds.draw || match.odds.awayWin)) {
+      odds = orientation.flipped
+        ? { homeWin: match.odds.awayWin, draw: match.odds.draw, awayWin: match.odds.homeWin }
+        : { homeWin: match.odds.homeWin, draw: match.odds.draw, awayWin: match.odds.awayWin };
+      oddsSaved = true;
+    }
+
     // התוצאה המוצעת לפי שיטת הניקוד של המשחק הזה: כשהוזנו יחסים, הניקוד
     // על כל כיוון שונה, ומה שמשתלם להמר עליו משתנה. זה גם מה ש-McCannkey מהמר
     let prediction = insights.prediction;
@@ -879,6 +898,9 @@ router.get('/insights/:matchId', async (req, res) => {
       flipped: orientation.flipped,
       orientationConfident: orientation.confident,
       ...insights,
+      odds,
+      oddsSaved,
+      impliedProbabilities: oddsSaved ? impliedFromOdds(odds) : insights.impliedProbabilities,
       prediction
     });
   } catch (err) {
