@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { reducedMotion } from '../services/motion';
+import TourMascot from './TourMascot';
 
 // סיור מודרך באפליקציה: מאיר את האלמנט האמיתי שעל המסך, מסביר אותו, ועובר
 // בין הלשוניות לבד. כל שלב:
@@ -12,7 +13,8 @@ import { reducedMotion } from '../services/motion';
 
 const PAD = 6;          // מרווח סביב האלמנט המואר
 const GAP = 12;         // בין האלמנט לכרטיס
-const CARD_W = 340;
+const CARD_W = 350;
+const MASCOT = 66;
 const WAIT_MS = 900;    // כמה לחכות שאלמנט יופיע אחרי מעבר לשונית
 
 // האלמנט גלוי באמת (לשונית מוסתרת נשארת ב-DOM עם display:none)
@@ -132,6 +134,18 @@ export default function Walkthrough({ steps, onTab, onClose }) {
     cardStyle = { left: (vp.w - w) / 2, top: Math.max(16, (vp.h - cardH) / 2), width: w };
   }
 
+  // לאן גולי מסתכל: מהמיקום שלו בכרטיס (פינה ימנית עליונה) אל מרכז האלמנט
+  let look = { x: 0, y: 0.3 };
+  if (rect) {
+    const mx = cardStyle.left + w - 16 - MASCOT / 2;
+    const my = cardStyle.top + 16 + MASCOT / 2;
+    const dx = rect.left + rect.width / 2 - mx;
+    const dy = rect.top + rect.height / 2 - my;
+    const d = Math.hypot(dx, dy) || 1;
+    look = { x: dx / d, y: dy / d };
+  }
+  const mood = index === 0 ? 'wave' : last ? 'celebrate' : 'idle';
+
   const ease = still ? 'none' : 'all .32s cubic-bezier(.2,.8,.2,1)';
   const spot = rect && {
     left: rect.left - PAD, top: rect.top - PAD,
@@ -191,12 +205,20 @@ export default function Walkthrough({ steps, onTab, onClose }) {
             {last ? 'סגור' : 'דלג על הסיור'}
           </button>
         </div>
-        <h3 id="tour-title" style={{ margin: '0 0 0.35rem', fontSize: 'var(--fs-md)', fontWeight: 800, lineHeight: 1.3, position: 'relative' }}>
-          {step.title}
-        </h3>
-        <div id="tour-body" aria-live="polite" style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.55, color: 'var(--text-2, #3d434c)', position: 'relative' }}>
-          {step.body}
+        <div key={index} style={{ display: 'flex', gap: '0.7rem', alignItems: 'flex-start', position: 'relative', animation: still ? 'none' : 'tour-pop .38s cubic-bezier(.2,1.3,.4,1) both' }}>
+          <div style={{ flexShrink: 0, marginTop: '-2px' }}>
+            <TourMascot mood={mood} stepKey={index} lookX={look.x} lookY={look.y} size={MASCOT} still={still} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h3 id="tour-title" style={{ margin: '0.1rem 0 0.3rem', fontSize: 'var(--fs-md)', fontWeight: 800, lineHeight: 1.3 }}>
+              {step.title}
+            </h3>
+            <div id="tour-body" aria-live="polite" style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.55, color: 'var(--text-2, #3d434c)' }}>
+              {step.body}
+            </div>
+          </div>
         </div>
+        <style>{'@keyframes tour-pop { 0% { opacity: 0; transform: translateY(6px) scale(.97) } 100% { opacity: 1; transform: none } }'}</style>
 
         {/* התקדמות */}
         <div aria-hidden="true" style={{ display: 'flex', justifyContent: 'center', gap: '5px', margin: '0.75rem 0 0.6rem', flexWrap: 'wrap' }}>
