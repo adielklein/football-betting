@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { reducedMotion } from '../services/motion';
-import TourMascot from './TourMascot';
+import Goli3D from './Goli3D';
 
 // סיור מודרך באפליקציה: מאיר את האלמנט האמיתי שעל המסך, מסביר אותו, ועובר
 // בין הלשוניות לבד. כל שלב:
@@ -205,11 +205,13 @@ export default function Walkthrough({ steps, onTab, onClose }) {
             {last ? 'סגור' : 'דלג על הסיור'}
           </button>
         </div>
-        <div key={index} style={{ display: 'flex', gap: '0.7rem', alignItems: 'flex-start', position: 'relative', animation: still ? 'none' : 'tour-pop .38s cubic-bezier(.2,1.3,.4,1) both' }}>
+        {/* גולי נשאר על המסך לאורך כל הסיור (בלי לבנות את התלת-ממד מחדש בכל
+            שלב) - רק הטקסט מתחלף, עם קפיצה קטנה */}
+        <div style={{ display: 'flex', gap: '0.7rem', alignItems: 'flex-start', position: 'relative' }}>
           <div style={{ flexShrink: 0, marginTop: '-2px' }}>
-            <TourMascot mood={mood} stepKey={index} lookX={look.x} lookY={look.y} size={MASCOT} still={still} />
+            <Goli3D mood={mood} stepKey={index} lookX={look.x} lookY={look.y} size={MASCOT} still={still} />
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div key={index} style={{ flex: 1, minWidth: 0, animation: still ? 'none' : 'tour-pop .38s cubic-bezier(.2,1.3,.4,1) both' }}>
             <h3 id="tour-title" style={{ margin: '0.1rem 0 0.3rem', fontSize: 'var(--fs-md)', fontWeight: 800, lineHeight: 1.3 }}>
               {step.title}
             </h3>
