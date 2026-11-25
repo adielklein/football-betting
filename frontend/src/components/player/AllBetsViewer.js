@@ -18,6 +18,8 @@ import Score from '../Score';
 import { textOn } from '../../services/readableColor';
 import { API_URL as API_BASE } from '../../config';
 import { weekRevealed, isMatchLocked, nextLockAt } from '../../services/betLock';
+import Goli3D from '../Goli3D';
+import { goliPop } from '../../services/goliPop';
 
 function AllBetsViewer({ weeks, user, active = true }) {
   const [selectedWeek, setSelectedWeek] = useState(null);
@@ -90,6 +92,7 @@ function AllBetsViewer({ weeks, user, active = true }) {
     const t = setTimeout(() => {
       const badge = document.getElementById(`exact-badge-${fresh[0]._id}`);
       confettiFrom(badge);
+      goliPop({ mood: 'celebrate', text: fresh.length > 1 ? `${fresh.length} בולים! 🎯 איזה שבוע` : 'בול! 🎯 תוצאה מדויקת' });
       // וגביע זהב תלת-ממדי שקופץ מהתג
       import('../TrophyPop').then((m) => m.trophyFrom(badge));
     }, 150);
@@ -300,8 +303,8 @@ function AllBetsViewer({ weeks, user, active = true }) {
 
       {!selectedWeek && filteredWeeks.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '2rem', background: 'var(--info-bg, #f8f9ff)' }}>
-          <div style={{ fontSize: '40px', marginBottom: '0.5rem' }}>🔒</div>
-          <p style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-sm)', margin: 0 }}>ההימורים יהיו זמינים לצפייה כשיהיו שבועות נעולים</p>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.4rem' }}><Goli3D mood="sleep" talk={false} size={84} /></div>
+          <p style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-sm)', margin: 0 }}>ההימורים של כולם ייחשפו כשהמשחקים יתחילו</p>
         </div>
       ) : !selectedWeek ? (
         <div className="card" style={{ textAlign: 'center', padding: '1.5rem' }}>

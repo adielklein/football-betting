@@ -20,6 +20,8 @@ import { textOn } from '../../services/readableColor';
 import { API_URL as API_BASE } from '../../config';
 import { CountdownRing, GoalNetShot, LockSnap } from '../Motifs';
 import { lockModeOf, isMatchLocked, nextLockAt } from '../../services/betLock';
+import Goli3D from '../Goli3D';
+import { goliPop } from '../../services/goliPop';
 
 // קבוצה לחיצה - פותחת את חלון הנתונים. חולצה ומתחתיה השם, באותם גדלים
 // ומרווחים כמו ב"כל ההימורים", כדי ששני המסכים ייראו אותו דבר.
@@ -413,6 +415,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
     const start = setTimeout(() => {
       setCelebrateDone(true);
       confettiFrom(counterRef.current, { count: 70 });
+      goliPop({ mood: 'celebrate', text: 'כל ההימורים בפנים! עכשיו רק לחכות לשריקה ⚽' });
       hide = setTimeout(() => setCelebrateDone(false), 4000);
     }, needScroll ? 550 : 0);
     return () => { clearTimeout(start); clearTimeout(hide); };
@@ -425,7 +428,8 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
         padding: '2.5rem 1rem',
         background: 'var(--info-bg, #f8f9ff)'
       }}>
-        <div style={{ fontSize: '40px', marginBottom: '0.75rem' }}>⏳</div>
+        {/* גולי ישן עד שהשבוע הבא נפתח */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem' }}><Goli3D mood="sleep" talk={false} size={92} /></div>
         <h2 style={{ fontSize: 'var(--fs-md)', color: 'var(--text-2, #444)', marginBottom: '0.3rem' }}>ממתינים לשבוע החדש</h2>
         <p style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-sm)' }}>השבוע עדיין לא הופעל על ידי המנהל</p>
       </div>

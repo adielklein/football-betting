@@ -1,4 +1,5 @@
 import React from 'react';
+import Goli3D from './Goli3D';
 import { API_URL as API_BASE } from '../config';
 
 const API_URL = API_BASE;
@@ -63,7 +64,7 @@ class ErrorBoundary extends React.Component {
         border: full ? 'none' : '1px solid var(--border, #e6e9ee)', textAlign: 'center',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: full ? 'center' : 'flex-start'
       }}>
-        <div style={{ fontSize: '36px', marginBottom: '0.4rem' }}>😕</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.3rem' }}><Goli3D mood="sad" talk={false} size={76} /></div>
         <div style={{ fontSize: 'var(--fs-md)', fontWeight: 800, color: 'var(--text, #222)' }}>
           {full ? 'משהו השתבש' : 'משהו השתבש במסך הזה'}
         </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Goli3D from '../Goli3D';
 import { useCountUp, reducedMotion } from '../../services/motion';
 import { SkeletonStats } from '../Skeleton';
 import NearMissView from './NearMissView';
@@ -509,7 +510,7 @@ function PlayerStats({ user, active = true }) {
         background: 'var(--info-bg, #f8f9ff)',
         borderRadius: '16px', margin: '0.5rem 0'
       }}>
-        <div style={{ fontSize: '48px', marginBottom: '0.5rem' }}>📊</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.4rem' }}><Goli3D mood="wave" talk={false} size={88} /></div>
         <p style={{ color: 'var(--text-3, #666)', fontSize: 'var(--fs-md)', fontWeight: '600' }}>אין עדיין סטטיסטיקות</p>
         <p style={{ color: 'var(--text-4, #999)', fontSize: 'var(--fs-sm)' }}>התחל להמר כדי לראות את הנתונים שלך!</p>
       </div>

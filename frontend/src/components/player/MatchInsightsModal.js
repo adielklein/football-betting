@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { BallLoader } from '../Motifs';
+import Goli3D from '../Goli3D';
 import { MissingSection, ExtendedRest } from './ExtendedInsights';
 import ShirtViewer3D from '../ShirtViewer3D';
 import { shirtsForMatch } from '../../data/kits';
@@ -335,7 +335,7 @@ function MatchInsightsModal({ match, onClose }) {
         <div style={{ overflowY: 'auto', padding: '0.3rem 0.9rem 1.2rem', WebkitOverflowScrolling: 'touch' }}>
           {loading && (
             <div style={{ padding: '2.5rem 1rem', textAlign: 'center' }}>
-              <div style={{ marginBottom: '0.6rem' }}><BallLoader size={40} /></div>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.4rem' }}><Goli3D mood="loading" talk={false} size={70} /></div>
               <div style={{ color: 'var(--text-3, #9aa2ae)', fontSize: 'var(--fs-sm)' }}>טוען נתונים מ-365scores...</div>
             </div>
           )}

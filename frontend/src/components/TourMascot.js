@@ -20,10 +20,12 @@ const CSS = `
 .goli-still * { animation: none !important }
 `;
 
-export default function TourMascot({ mood = 'idle', stepKey, lookX = 0, lookY = 0, size = 64, still = false }) {
+export default function TourMascot({ mood = 'idle', stepKey, lookX = 0, lookY = 0, size = 64, still = false, talk = true }) {
   // "מדבר" לרגע בכל שלב חדש
-  const [talking, setTalking] = useState(true);
+  const canTalk = talk && mood !== 'sleep';
+  const [talking, setTalking] = useState(canTalk);
   useEffect(() => {
+    if (!canTalk) { setTalking(false); return undefined; }
     setTalking(true);
     const t = setTimeout(() => setTalking(false), 1300);
     return () => clearTimeout(t);
@@ -31,7 +33,12 @@ export default function TourMascot({ mood = 'idle', stepKey, lookX = 0, lookY = 
 
   const px = Math.max(-1, Math.min(1, lookX)) * 2.6;
   const py = Math.max(-1, Math.min(1, lookY)) * 2.2;
-  const body = mood === 'celebrate' ? 'goli-party 1.1s cubic-bezier(.3,.7,.3,1) 2' : mood === 'wave' ? 'goli-wave 1.1s ease-in-out 2' : 'goli-bob 2.2s ease-in-out infinite';
+  const body = mood === 'celebrate' ? 'goli-party 1.1s cubic-bezier(.3,.7,.3,1) 2'
+    : mood === 'wave' ? 'goli-wave 1.1s ease-in-out 2'
+    : mood === 'loading' ? 'goli-bob .5s ease-in-out infinite'
+    : mood === 'sleep' ? 'none'
+    : mood === 'sad' ? 'goli-bob 3.4s ease-in-out infinite'
+    : 'goli-bob 2.2s ease-in-out infinite';
 
   return (
     <div className={still ? 'goli-still' : undefined} aria-hidden="true" style={{ width: size, height: size * 1.15, position: 'relative' }}>
@@ -69,6 +76,12 @@ export default function TourMascot({ mood = 'idle', stepKey, lookX = 0, lookY = 
             <ellipse cx="17" cy="38" rx="4.5" ry="2.6" fill="#ff8fa3" opacity="0.55" />
             <ellipse cx="47" cy="38" rx="4.5" ry="2.6" fill="#ff8fa3" opacity="0.55" />
             {/* עיניים: ממצמצות, והאישונים מסתכלים אל המטרה */}
+            {mood === 'sleep' ? (
+              <g stroke="#2b2f36" strokeWidth="2" fill="none" strokeLinecap="round">
+                <path d="M18.5 30 Q23.5 33.5 28.5 30" />
+                <path d="M35.5 30 Q40.5 33.5 45.5 30" />
+              </g>
+            ) : (
             <g style={{ transformOrigin: '32px 29px', animation: 'goli-blink 4.2s infinite' }}>
               <ellipse cx="23.5" cy="29" rx="6" ry="7" fill="#fff" stroke="#2b2f36" strokeWidth="1.6" />
               <ellipse cx="40.5" cy="29" rx="6" ry="7" fill="#fff" stroke="#2b2f36" strokeWidth="1.6" />
@@ -79,6 +92,7 @@ export default function TourMascot({ mood = 'idle', stepKey, lookX = 0, lookY = 
                 <circle cx="41.8" cy="28.4" r="1.2" fill="#fff" />
               </g>
             </g>
+            )}
             {/* פה: חיוך, ובזמן דיבור פה פתוח שזז */}
             {talking && !still ? (
               <g style={{ transformOrigin: '32px 42px', animation: 'goli-talk .22s ease-in-out infinite' }}>
@@ -86,7 +100,10 @@ export default function TourMascot({ mood = 'idle', stepKey, lookX = 0, lookY = 
                 <ellipse cx="32" cy="44.3" rx="2.6" ry="1.4" fill="#ff8fa3" />
               </g>
             ) : (
-              <path d={mood === 'celebrate' ? 'M25 40 Q32 49 39 40 Z' : 'M26.5 40.5 Q32 46 37.5 40.5'} fill={mood === 'celebrate' ? '#7a2230' : 'none'} stroke="#2b2f36" strokeWidth="1.8" strokeLinecap="round" />
+              <path
+                d={mood === 'celebrate' ? 'M25 40 Q32 49 39 40 Z' : mood === 'sad' ? 'M26.5 45 Q32 40 37.5 45' : mood === 'sleep' ? 'M29.5 42 Q32 44 34.5 42' : 'M26.5 40.5 Q32 46 37.5 40.5'}
+                fill={mood === 'celebrate' ? '#7a2230' : 'none'} stroke="#2b2f36" strokeWidth="1.8" strokeLinecap="round"
+              />
             )}
           </svg>
         </div>

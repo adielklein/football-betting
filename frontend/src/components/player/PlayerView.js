@@ -18,6 +18,9 @@ import { stepTab } from '../../services/swipeNav';
 import { syncPushSubscription } from '../../services/pushSync';
 import { API_URL as API_BASE } from '../../config';
 import Walkthrough from '../Walkthrough';
+import GoliPop from '../GoliPop';
+import Goli3D from '../Goli3D';
+import GoliWeeklySummary from './GoliWeeklySummary';
 import { buildTourSteps } from './tourSteps';
 
 // הסיור המודרך נפתח לבד פעם אחת לכל משתמש במכשיר. גרסה בשם המפתח, כדי
@@ -261,15 +264,8 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
         justifyContent: 'center',
         alignItems: 'center'
       }}>
-        <div style={{
-          width: '44px',
-          height: '44px',
-          border: '3px solid var(--border, #f0f0f0)',
-          borderTop: '3px solid var(--theme-primary, #007bff)',
-          borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite',
-          marginBottom: '1rem'
-        }}></div>
+        {/* גולי מכדרר בזמן הטעינה */}
+        <div style={{ marginBottom: '0.6rem' }}><Goli3D mood="loading" talk={false} size={72} /></div>
         <h2 style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-md)', fontWeight: '500' }}>טוען נתונים...</h2>
       </div>
     );
@@ -336,6 +332,14 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
       </div>
 
       <BottomNav tabs={tabs} activeTab={activeTab} onSelect={goTab} />
+
+      <GoliPop />
+      <GoliWeeklySummary
+        weeks={weeks}
+        user={user}
+        blocked={tourOpen || !userId || !tourSeen(userId)}
+        onOpenTable={() => goTab('leaderboard')}
+      />
 
       {tourOpen && (
         <Walkthrough

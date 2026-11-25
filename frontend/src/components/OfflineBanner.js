@@ -1,4 +1,5 @@
 import React, { Suspense, useEffect, useState } from 'react';
+import Goli3D from './Goli3D';
 import PenaltyGame, { loadGame } from './LazyPenaltyGame';
 import { isOffline, onConnectivityChange } from '../services/connectivity';
 
@@ -29,7 +30,7 @@ function OfflineBanner() {
           background: '#1f2937', color: '#fff', boxShadow: '0 6px 24px rgba(0,0,0,.3)', direction: 'rtl',
           animation: 'updateBannerIn 0.25s ease-out'
         }}>
-          <span aria-hidden="true" style={{ fontSize: 'var(--fs-lg)' }}>📴</span>
+          <span style={{ flexShrink: 0, margin: '-6px 0' }}><Goli3D mood="sad" talk={false} size={44} /></span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 700, fontSize: 'var(--fs-sm)' }}>אין חיבור</div>
             <div style={{ fontSize: 'var(--fs-xs)', opacity: 0.85 }}>מוצגים הנתונים האחרונים שנטענו</div>

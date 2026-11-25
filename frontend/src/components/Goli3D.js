@@ -13,18 +13,38 @@ import { buildGoli, addGoliLights } from '../three/goli';
 //               מהנהן ומטה איתו - כמו דמות שמדברת באמת
 //   wave      - קפיצות שלום עם הטיה לצדדים (שלב הפתיחה)
 //   celebrate - קפיצה וסיבוב מלא, שוב ושוב (שלב הסיום)
+//   sleep     - עיניים עצומות, נשימה איטית, ראש מוטה ו-Zzz (מסכים ריקים)
+//   sad       - פה עצוב, ראש מורכן, קפיצה כבדה (אין חיבור, תקלה)
+//   loading   - מכדרר: קפיצות מהירות וסיבוב (טעינה)
+// talk=false - בלי "דיבור" בכניסה (למשל כשהוא ישן).
+// מצויר רק כשהוא באמת על המסך (לשונית מוסתרת, גלילה) - לא מבזבז סוללה.
 
 const TALK_MS = 1900;
 
-export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, size = 66, still = false }) {
+export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, size = 66, still = false, talk = true }) {
   const canvasRef = useRef(null);
+  const wrapRef = useRef(null);
+  const visibleRef = useRef(true);
+  const wakeRef = useRef(() => {});
   const [ready, setReady] = useState(false);
   const props = useRef({});
   props.current = { mood, lookX, lookY, still };
   const talkUntil = useRef(0);
   const moodSince = useRef(0);
 
-  useEffect(() => { talkUntil.current = performance.now() + TALK_MS; }, [stepKey]);
+  useEffect(() => { if (talk && mood !== 'sleep') talkUntil.current = performance.now() + TALK_MS; }, [stepKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // מצויר רק כשנראה: לשונית מוסתרת (display:none) או מחוץ למסך - עוצר
+  useEffect(() => {
+    if (!wrapRef.current || typeof IntersectionObserver === 'undefined') return undefined;
+    const io = new IntersectionObserver(([e]) => {
+      const was = visibleRef.current;
+      visibleRef.current = e.isIntersecting;
+      if (!was && e.isIntersecting) wakeRef.current();
+    });
+    io.observe(wrapRef.current);
+    return () => io.disconnect();
+  }, []);
   useEffect(() => { moodSince.current = performance.now(); }, [mood, stepKey]);
 
   useEffect(() => {
@@ -69,10 +89,28 @@ export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, s
 
           // קפיצה בסיסית, כיווץ בנחיתה
           let y = 0, sx = 1, sy = 1, rz = 0, rx = 0, ry = 0;
-          const bob = Math.sin(t * 2.6);
-          y = (bob * 0.5 + 0.5) * 0.12;
-          const land = Math.max(0, -bob) ** 3;
-          sx = 1 + land * 0.06; sy = 1 - land * 0.07;
+          const sleeping = p.mood === 'sleep';
+          const sad = p.mood === 'sad';
+          if (sleeping) {
+            // נשימה איטית במקום קפיצה, ראש מוטה הצידה
+            const br = Math.sin(t * 1.4);
+            sx = 1 + br * 0.025; sy = 1 - br * 0.02;
+            rz = 0.2; rx = 0.12;
+          } else if (p.mood === 'loading') {
+            // מכדרר: קפיצות מהירות וגבוהות, מסתובב
+            const k = (t * 2.2) % 1;
+            y = Math.sin(k * Math.PI) * 0.55;
+            const sq = k < 0.12 ? 1 - k / 0.12 : k > 0.88 ? (k - 0.88) / 0.12 : 0;
+            sx = 1 + sq * 0.12; sy = 1 - sq * 0.15;
+            ry = t * 1.8;
+          } else {
+            const bob = Math.sin(t * (sad ? 1.6 : 2.6));
+            y = (bob * 0.5 + 0.5) * (sad ? 0.05 : 0.12);
+            const land = Math.max(0, -bob) ** 3;
+            sx = 1 + land * 0.06; sy = 1 - land * 0.07;
+            if (sad) { rx = 0.22; rz = Math.sin(t * 0.9) * 0.05; }
+          }
+          view.minInterval = sleeping ? 66 : 0; // ישן = 15 פריימים בשנייה מספיקים
 
           if (talking) {
             // הנהון עם כל הברה והטיה צדדית איטית
@@ -108,9 +146,10 @@ export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, s
 
           // אישונים
           for (const e of goli.eyes) e.pupil.position.set(look.x * 0.06, -look.y * 0.05, 0);
-          // מצמוץ
+          // מצמוץ (ישן = עיניים עצומות)
           let blink = 1;
-          if (now > nextBlink) {
+          if (sleeping) blink = 0.08;
+          else if (now > nextBlink) {
             const b = (now - nextBlink) / 140;
             blink = b < 1 ? Math.abs(1 - 2 * b) * 0.9 + 0.1 : 1;
             if (b >= 1) nextBlink = now + 2600 + Math.random() * 2400;
@@ -121,11 +160,15 @@ export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, s
           goli.open.visible = talking && o > 0.04;
           goli.open.scale.set(0.85 + o * 0.25, 0.15 + o * 0.95, 1);
           goli.smile.visible = !goli.open.visible;
-          goli.smile.scale.setScalar(p.mood === 'celebrate' ? 1.25 : 1);
-          return true; // הסיור פתוח לזמן קצר - מצויר כל הזמן, ומשוחרר בסגירה
+          goli.smile.scale.setScalar(p.mood === 'celebrate' ? 1.25 : sleeping ? 0.6 : 1);
+          // עצוב: הקשת הפוכה (פה למטה)
+          goli.smile.rotation.z = sad ? 0 : Math.PI;
+          goli.smile.position.y = sad ? -0.08 : 0.06;
+          return visibleRef.current; // מחוץ למסך - נעצר עד שיחזור (wakeRef)
         }
       };
       stage.add(view);
+      wakeRef.current = () => stage.wake(view);
       setReady(true);
     })();
     return () => {
@@ -136,8 +179,19 @@ export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, s
   }, [size, still]);
 
   return (
-    <span style={{ position: 'relative', display: 'inline-block', width: size, height: size * 1.15 }}>
-      {!ready && <TourMascot mood={mood} stepKey={stepKey} lookX={lookX} lookY={lookY} size={size} still={still} />}
+    <span ref={wrapRef} style={{ position: 'relative', display: 'inline-block', width: size, height: size * 1.15 }}>
+      {!ready && <TourMascot mood={mood} stepKey={stepKey} lookX={lookX} lookY={lookY} size={size} still={still} talk={talk} />}
+      {mood === 'sleep' && !still && (
+        <span aria-hidden="true" style={{ position: 'absolute', top: -size * 0.08, left: size * 0.72, pointerEvents: 'none', zIndex: 1 }}>
+          <style>{'@keyframes goli-z { 0% { transform: translate(0,0) scale(.6); opacity: 0 } 25% { opacity: 1 } 100% { transform: translate(10px,-22px) scale(1.1); opacity: 0 } }'}</style>
+          {[0, 1, 2].map((i) => (
+            <span key={i} style={{
+              position: 'absolute', left: i * 6, top: 0, fontWeight: 900, color: 'var(--text-3, #7a828e)',
+              fontSize: Math.round(size * 0.18) + i * 2, animation: `goli-z 2.4s ease-out ${i * 0.8}s infinite`
+            }}>z</span>
+          ))}
+        </span>
+      )}
       {!still && (
         <canvas
           ref={canvasRef}
