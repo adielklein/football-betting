@@ -46,6 +46,8 @@ export default function Walkthrough({ steps, onTab, onClose }) {
   const cardRef = useRef(null);
   const nextRef = useRef(null);
   const [cardH, setCardH] = useState(180);
+  const mascotRef = useRef(null);
+  const [mascotAt, setMascotAt] = useState(null); // מרכז גולי על המסך, נמדד
   const still = reducedMotion();
   const step = steps[index];
   const last = index === steps.length - 1;
@@ -97,6 +99,19 @@ export default function Walkthrough({ steps, onTab, onClose }) {
     if (cardRef.current) setCardH(cardRef.current.offsetHeight);
   }, [index, ready, rect, vp.w]);
 
+  // איפה גולי באמת יושב - כדי שיסתכל בדיוק אל האלמנט המואר. נמדד אחרי
+  // שהכרטיס הגיע למקומו (יש לו מעבר של 0.32 שניות)
+  useEffect(() => {
+    if (!ready) return undefined;
+    const read = () => {
+      const r = mascotRef.current && mascotRef.current.getBoundingClientRect();
+      if (r && r.width) setMascotAt({ x: r.left + r.width / 2, y: r.top + r.height * 0.43 });
+    };
+    read();
+    const t = setTimeout(read, 380);
+    return () => clearTimeout(t);
+  }, [ready, index, rect, cardH, vp.w, vp.h]);
+
   useEffect(() => { if (ready && nextRef.current) nextRef.current.focus({ preventScroll: true }); }, [ready, index]);
 
   const finish = useCallback((completed) => onClose && onClose(completed), [onClose]);
@@ -137,8 +152,8 @@ export default function Walkthrough({ steps, onTab, onClose }) {
   // לאן גולי מסתכל: מהמיקום שלו בכרטיס (פינה ימנית עליונה) אל מרכז האלמנט
   let look = { x: 0, y: 0.3 };
   if (rect) {
-    const mx = cardStyle.left + w - 16 - MASCOT / 2;
-    const my = cardStyle.top + 16 + MASCOT / 2;
+    const mx = mascotAt ? mascotAt.x : cardStyle.left + w - 16 - MASCOT / 2;
+    const my = mascotAt ? mascotAt.y : cardStyle.top + 50 + MASCOT / 2;
     const dx = rect.left + rect.width / 2 - mx;
     const dy = rect.top + rect.height / 2 - my;
     const d = Math.hypot(dx, dy) || 1;
@@ -208,7 +223,7 @@ export default function Walkthrough({ steps, onTab, onClose }) {
         {/* גולי נשאר על המסך לאורך כל הסיור (בלי לבנות את התלת-ממד מחדש בכל
             שלב) - רק הטקסט מתחלף, עם קפיצה קטנה */}
         <div style={{ display: 'flex', gap: '0.7rem', alignItems: 'flex-start', position: 'relative' }}>
-          <div style={{ flexShrink: 0, marginTop: '-2px' }}>
+          <div ref={mascotRef} style={{ flexShrink: 0, marginTop: '-2px' }}>
             <Goli3D mood={mood} stepKey={index} lookX={look.x} lookY={look.y} size={MASCOT} still={still} />
           </div>
           <div key={index} style={{ flex: 1, minWidth: 0, animation: still ? 'none' : 'tour-pop .38s cubic-bezier(.2,1.3,.4,1) both' }}>

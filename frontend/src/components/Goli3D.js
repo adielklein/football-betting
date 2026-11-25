@@ -93,8 +93,8 @@ export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, s
           const since = (now - moodSince.current) / 1000;
 
           // מבט: הראש מסתובב בעדינות אל המטרה, האישונים עוד קצת
-          look.x += (p.lookX - look.x) * 0.08;
-          look.y += (p.lookY - look.y) * 0.08;
+          look.x += (p.lookX - look.x) * 0.12;
+          look.y += (p.lookY - look.y) * 0.12;
 
           // דיבור: פתיחת פה בקצב הברות לא אחיד, שדועך בסוף המשפט
           const talking = now < talkUntil.current;
@@ -138,7 +138,7 @@ export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, s
 
           if (talking) {
             // הנהון עם כל הברה והטיה צדדית איטית
-            rx += -o * 0.16;
+            rx += o * 0.1; // הנהון קטן קדימה עם כל הברה, בלי לבטל את המבט
             rz += Math.sin(t * 5.2) * 0.1;
             y += o * 0.07;
             sx += o * 0.025; sy -= o * 0.03;
@@ -162,14 +162,16 @@ export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, s
 
           goli.root.position.y = y;
           goli.root.scale.set(sx, sy, sx);
-          goli.head.rotation.set(rx + -look.y * 0.28, ry + look.x * 0.45, rz);
+          // סיבוב סביב x חיובי מוריד את הפנים: מטרה למטה (lookY חיובי) = ראש
+          // מורכן אליה. קודם הסימן היה הפוך והוא הרים את הראש ממנה
+          goli.head.rotation.set(rx + look.y * 0.42, ry + look.x * 0.62, rz);
           // הצל קטן ובהיר כשהוא באוויר
           const air = Math.min(1, y / 0.9);
           goli.shadow.scale.setScalar(1 - air * 0.45);
           goli.shadow.material.opacity = 0.22 * (1 - air * 0.6);
 
           // אישונים
-          for (const e of goli.eyes) e.pupil.position.set(look.x * 0.06, -look.y * 0.05 + loadLookUp * 0.06, 0);
+          for (const e of goli.eyes) e.pupil.position.set(look.x * 0.075, -look.y * 0.065 + loadLookUp * 0.06, 0);
           // מצמוץ (ישן = עיניים עצומות)
           let blink = 1;
           if (sleeping) blink = 0.08;
