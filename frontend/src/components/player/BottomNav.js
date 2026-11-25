@@ -123,6 +123,7 @@ function BottomNav({ tabs, activeTab, onSelect }) {
             <button
               key={tab.key}
               type="button"
+              data-tour={`tab-${tab.key}`}
               onClick={() => onSelect(tab.key)}
               aria-current={isActive ? 'page' : undefined}
               style={{

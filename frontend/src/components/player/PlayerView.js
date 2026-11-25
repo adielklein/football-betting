@@ -17,6 +17,14 @@ import BottomNav from './BottomNav';
 import { stepTab } from '../../services/swipeNav';
 import { syncPushSubscription } from '../../services/pushSync';
 import { API_URL as API_BASE } from '../../config';
+import Walkthrough from '../Walkthrough';
+import { buildTourSteps } from './tourSteps';
+
+// הסיור המודרך נפתח לבד פעם אחת לכל משתמש במכשיר. גרסה בשם המפתח, כדי
+// שסיור שהתעדכן משמעותית יוכל להיפתח שוב
+const TOUR_KEY = (uid) => `walkthrough_v1:${uid}`;
+const tourSeen = (uid) => { try { return localStorage.getItem(TOUR_KEY(uid)) === '1'; } catch (e) { return true; } };
+const markTourSeen = (uid) => { try { localStorage.setItem(TOUR_KEY(uid), '1'); } catch (e) { /* אחסון חסום */ } };
 
 function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
   const [weeks, setWeeks] = useState([]);
@@ -200,6 +208,23 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
     if (Math.abs(window.scrollY - target) > 1) window.scrollTo(0, target);
   }, [activeTab]);
 
+  // === סיור מודרך ===
+  const userId = user?._id || user?.id;
+  const [tourOpen, setTourOpen] = useState(false);
+  useEffect(() => {
+    // פעם ראשונה: אחרי שהנתונים נטענו, כדי שיהיה מה להאיר
+    if (!loading && userId && !tourSeen(userId)) setTourOpen(true);
+  }, [loading, userId]);
+  useEffect(() => {
+    const start = () => setTourOpen(true);
+    window.addEventListener('start-walkthrough', start);
+    return () => window.removeEventListener('start-walkthrough', start);
+  }, []);
+  const closeTour = () => {
+    setTourOpen(false);
+    if (userId) markTourSeen(userId);
+  };
+
   const tabAnimation = tabDelta === 0
     ? 'scaleIn 0.2s ease'
     : `${tabDelta > 0 ? 'tabInNext' : 'tabInPrev'} 0.24s ease`;
@@ -311,6 +336,14 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
       </div>
 
       <BottomNav tabs={tabs} activeTab={activeTab} onSelect={goTab} />
+
+      {tourOpen && (
+        <Walkthrough
+          steps={buildTourSteps({ week: selectedWeek, hasMatches: matches.length > 0 })}
+          onTab={(key) => { if (key !== activeTab) goTab(key); }}
+          onClose={closeTour}
+        />
+      )}
     </div>
   );
 }

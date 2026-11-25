@@ -168,6 +168,20 @@ function AccountSettings({ user, onProfileChange }) {
       </div>
 
       <div style={section}>
+        <label style={label}>סיור באפליקציה</label>
+        <button
+          className="btn"
+          onClick={() => window.dispatchEvent(new Event('start-walkthrough'))}
+          style={{ width: '100%', minHeight: '44px', background: 'var(--surface-2, #f7f9fc)', border: '1px solid var(--border-2, #dde1e7)', color: 'var(--text, #333)', fontWeight: 700 }}
+        >
+          🧭 התחל סיור מודרך
+        </button>
+        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-4, #aaa)', marginTop: '0.3rem' }}>
+          הסבר קצר על כל המסכים והאפשרויות.
+        </div>
+      </div>
+
+      <div style={section}>
         <label style={label}>החלפת סיסמה</label>
         <input
           className="input"

@@ -394,7 +394,7 @@ function Leaderboard({ leaderboard, user, active = true }) {
       <LiveTable weekId={selectedWeekId} meUserId={user?.id || user?._id} scope={liveScope()} />
 
       {/* Tab bar */}
-      <div style={{
+      <div data-tour="lb-tabs" style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(4, 1fr)',
         gap: '3px',

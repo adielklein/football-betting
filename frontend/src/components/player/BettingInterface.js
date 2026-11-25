@@ -458,7 +458,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
   return (
     <div>
       {/* כותרת + פרוגרס. על משטח משלה: במצב יום הרקע הוא דשא, וטקסט ישר עליו לא נקרא */}
-      <div ref={panelRef} className="pitch-panel" style={{
+      <div ref={panelRef} data-tour="week-panel" className="pitch-panel" style={{
         marginBottom: '0.6rem'
       }}>
         <div style={{
@@ -521,7 +521,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
           const fg = urgent ? 'var(--bad-fg, #a81f17)' : today ? 'var(--warn-fg, #7c5306)' : 'var(--info-fg, #1560ad)';
           const cd = formatCountdown(timeLeft);
           return (
-            <div role="timer" aria-live="off" style={{
+            <div role="timer" aria-live="off" data-tour="countdown" style={{
               marginTop: '0.5rem', padding: '0.5rem 0.7rem', borderRadius: '12px', textAlign: 'center',
               background: urgent ? 'var(--bad-bg, #fef2f2)' : today ? 'var(--warn-bg, #fffbeb)' : 'var(--info-bg, #eff6ff)',
               border: `1px solid ${urgent ? '#fca5a5' : today ? '#fde68a' : '#bfdbfe'}`
@@ -568,7 +568,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
           const closed = matchClosed(match);
 
           return (
-            <div key={match._id} style={{
+            <div key={match._id} data-tour={index === 0 ? 'match-card' : undefined} style={{
               position: 'relative',
               padding: '0.7rem',
               border: '2px solid',
@@ -669,7 +669,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
                   jumpAt={goalByMatchId[match._id]?.side === 1 ? goalByMatchId[match._id].at : 0}
                 />
 
-                <div style={{
+                <div data-tour={index === 0 ? 'score-inputs' : undefined} style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.25rem',
@@ -729,6 +729,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
               <button
                 type="button"
                 className="stats-pill"
+                data-tour={index === 0 ? 'stats-pill' : undefined}
                 onClick={() => setInsightsFor({ match, focusTeam: 1 })}
                 aria-label={`נתונים על ${match.team1} נגד ${match.team2}`}
               >

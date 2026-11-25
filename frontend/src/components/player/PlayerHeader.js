@@ -65,7 +65,7 @@ function PlayerHeader({ user, selectedWeek, onLogout, onOpenSettings, settingsOp
               {selectedWeek?.locked && ' (נעול)'}
             </p>
             {standing && (
-              <div className="header-standing" title={`מקום ${standing.rank} מתוך ${standing.of} בטבלה החודשית · ${standing.points} נקודות`}>
+              <div className="header-standing" data-tour="standing" title={`מקום ${standing.rank} מתוך ${standing.of} בטבלה החודשית · ${standing.points} נקודות`}>
                 {/* קצר בכוונה: התג חייב להיגמר לפני הסמל שבמרכז הכותרת.
                     השבר בכיוון שמאל-לימין מבודד, אחרת בשורה עברית הוא מתהפך
                     ונקרא "10/6" */}
@@ -85,10 +85,11 @@ function PlayerHeader({ user, selectedWeek, onLogout, onOpenSettings, settingsOp
           }}>
             {/* בלי תיבת ניקוד: הניקוד נמצא בטבלה, והתיבה ישבה בדיוק על
                 סמל הקבוצה שבמרכז הכותרת והסתירה אותו */}
-            <ColorSchemeToggle />
+            <span data-tour="scheme" style={{ display: 'inline-flex' }}><ColorSchemeToggle /></span>
             {onOpenSettings && (
               <button
                 onClick={onOpenSettings}
+                data-tour="settings"
                 className="btn"
                 aria-label={settingsOpen ? 'סגור הגדרות' : 'הגדרות'}
                 title={settingsOpen ? 'סגור הגדרות' : 'הגדרות'}
