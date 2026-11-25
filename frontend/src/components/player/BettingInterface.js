@@ -626,7 +626,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
 
               {/* יחסים */}
               {match.odds && (match.odds.homeWin || match.odds.draw || match.odds.awayWin) && (
-                <div style={{
+                <div data-tour={index === 0 ? 'odds' : undefined} style={{
                   display: 'flex',
                   justifyContent: 'center',
                   gap: '0.25rem',

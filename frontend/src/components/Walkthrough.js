@@ -4,7 +4,7 @@ import { reducedMotion } from '../services/motion';
 // סיור מודרך באפליקציה: מאיר את האלמנט האמיתי שעל המסך, מסביר אותו, ועובר
 // בין הלשוניות לבד. כל שלב:
 //   { id, title, body, target?, tab?, placement? }
-//   target - ערך data-tour של האלמנט. אם הוא לא על המסך (אין שבוע פעיל,
+//   target - ערך data-tour של האלמנט (או רשימה - הראשון שגלוי). אם הוא לא על המסך (אין שבוע פעיל,
 //            למשל) - השלב מוצג ככרטיס במרכז, עם אותו הסבר
 //   tab    - לאיזו לשונית לעבור לפני השלב (onTab)
 // השכבה חוסמת לחיצות על האפליקציה מתחת, כדי שלחיצה מקרית לא תשנה הימור
@@ -15,13 +15,25 @@ const GAP = 12;         // בין האלמנט לכרטיס
 const CARD_W = 340;
 const WAIT_MS = 900;    // כמה לחכות שאלמנט יופיע אחרי מעבר לשונית
 
-const findTarget = (id) => (id ? document.querySelector(`[data-tour="${id}"]`) : null);
-
 // האלמנט גלוי באמת (לשונית מוסתרת נשארת ב-DOM עם display:none)
 const visible = (el) => {
   if (!el) return false;
   const r = el.getBoundingClientRect();
   return r.width > 0 && r.height > 0;
+};
+
+// target יכול להיות רשימה: הראשון שגלוי על המסך (למשל יחסים, ואם למשחק אין
+// יחסים - כרטיס המשחק)
+const findTarget = (target) => {
+  if (!target) return null;
+  const ids = Array.isArray(target) ? target : [target];
+  let first = null;
+  for (const id of ids) {
+    const el = document.querySelector(`[data-tour="${id}"]`);
+    if (visible(el)) return el;
+    if (!first) first = el;
+  }
+  return first;
 };
 
 export default function Walkthrough({ steps, onTab, onClose }) {

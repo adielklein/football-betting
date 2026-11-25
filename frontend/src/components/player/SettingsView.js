@@ -35,7 +35,7 @@ function SettingsView({ user, onThemeChange, onProfileChange }) {
       </div>
 
       {/* אותו סרגל לשוניות של שאר המסכים, כדי שההגדרות לא ירגישו מסך זר */}
-      <div style={{
+      <div data-tour="settings-tabs" style={{
         display: 'grid',
         gridTemplateColumns: `repeat(${TABS.length}, 1fr)`,
         gap: '4px',
@@ -78,7 +78,7 @@ function SettingsView({ user, onThemeChange, onProfileChange }) {
         })}
       </div>
 
-      <div className="card" style={{ animation: 'scaleIn 0.2s ease' }}>
+      <div className="card" data-tour={tab === 'notifications' ? 'notif-settings' : undefined} style={{ animation: 'scaleIn 0.2s ease' }}>
         {tab === 'notifications' && (
           isSupported ? (
             <NotificationSettings user={user} embedded />

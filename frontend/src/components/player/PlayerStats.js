@@ -545,7 +545,7 @@ function PlayerStats({ user, active = true }) {
   return (
     <div style={{ animation: 'scaleIn 0.2s ease' }}>
       {/* Section Tabs */}
-      <div style={{
+      <div data-tour="stats-sections" style={{
         display: 'grid', gridTemplateColumns: `repeat(${sections.length}, 1fr)`,
         gap: '4px', marginBottom: '0.6rem', padding: '3px',
         backgroundColor: 'var(--surface-3, #f0f2f5)', borderRadius: '12px',
