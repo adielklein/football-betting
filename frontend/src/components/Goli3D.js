@@ -15,7 +15,7 @@ import { buildGoli, addGoliLights } from '../three/goli';
 //   celebrate - קפיצה וסיבוב מלא, שוב ושוב (שלב הסיום)
 //   sleep     - עיניים עצומות, נשימה איטית, ראש מוטה ו-Zzz (מסכים ריקים)
 //   sad       - פה עצוב, ראש מורכן, קפיצה כבדה (אין חיבור, תקלה)
-//   loading   - מכדרר: קפיצות מהירות וסיבוב (טעינה)
+//   loading   - ג'אגלינג: שני כדרורים וסלטה קדימה, שוב ושוב (טעינה)
 // talk=false - בלי "דיבור" בכניסה (למשל כשהוא ישן).
 // מצויר רק כשהוא באמת על המסך (לשונית מוסתרת, גלילה) - לא מבזבז סוללה.
 
@@ -90,6 +90,7 @@ export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, s
           // קפיצה בסיסית, כיווץ בנחיתה
           let y = 0, sx = 1, sy = 1, rz = 0, rx = 0, ry = 0;
           const sleeping = p.mood === 'sleep';
+          let loadExcite = 0, loadLookUp = 0;
           const sad = p.mood === 'sad';
           if (sleeping) {
             // נשימה איטית במקום קפיצה, ראש מוטה הצידה
@@ -97,12 +98,17 @@ export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, s
             sx = 1 + br * 0.025; sy = 1 - br * 0.02;
             rz = 0.2; rx = 0.12;
           } else if (p.mood === 'loading') {
-            // מכדרר: קפיצות מהירות וגבוהות, מסתובב
-            const k = (t * 2.2) % 1;
-            y = Math.sin(k * Math.PI) * 0.55;
-            const sq = k < 0.12 ? 1 - k / 0.12 : k > 0.88 ? (k - 0.88) / 0.12 : 0;
-            sx = 1 + sq * 0.12; sy = 1 - sq * 0.15;
-            ry = t * 1.8;
+            // קטע ג'אגלינג במחזור של 2 שניות: שני כדרורים קטנים, ואז קפיצה
+            // גדולה עם סלטה קדימה ונחיתה מתכווצת. העיניים למעלה, פה פתוח בסלטה
+            const c = (t % 2) / 2;
+            let k, hgt;
+            if (c < 0.5) { k = (c % 0.25) / 0.25; hgt = 0.28; }
+            else { k = (c - 0.5) / 0.5; hgt = 0.62; rx = -k * Math.PI * 2; }
+            y = Math.sin(k * Math.PI) * hgt;
+            const sq = k < 0.1 ? 1 - k / 0.1 : k > 0.9 ? (k - 0.9) / 0.1 : 0;
+            sx = 1 + sq * 0.13; sy = 1 - sq * 0.16;
+            if (c >= 0.5) { loadExcite = Math.sin(k * Math.PI); loadLookUp = 0.7; }
+            else loadLookUp = 0.35;
           } else {
             const bob = Math.sin(t * (sad ? 1.6 : 2.6));
             y = (bob * 0.5 + 0.5) * (sad ? 0.05 : 0.12);
@@ -145,7 +151,7 @@ export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, s
           goli.shadow.material.opacity = 0.22 * (1 - air * 0.6);
 
           // אישונים
-          for (const e of goli.eyes) e.pupil.position.set(look.x * 0.06, -look.y * 0.05, 0);
+          for (const e of goli.eyes) e.pupil.position.set(look.x * 0.06, -look.y * 0.05 + loadLookUp * 0.06, 0);
           // מצמוץ (ישן = עיניים עצומות)
           let blink = 1;
           if (sleeping) blink = 0.08;
@@ -157,7 +163,8 @@ export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, s
           for (const e of goli.eyes) e.g.scale.y = blink;
 
           // פה
-          goli.open.visible = talking && o > 0.04;
+          if (loadExcite > o) o = loadExcite * 0.7; // "וואו" באמצע הסלטה
+          goli.open.visible = (talking || loadExcite > 0) && o > 0.04;
           goli.open.scale.set(0.85 + o * 0.25, 0.15 + o * 0.95, 1);
           goli.smile.visible = !goli.open.visible;
           goli.smile.scale.setScalar(p.mood === 'celebrate' ? 1.25 : sleeping ? 0.6 : 1);

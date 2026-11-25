@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import Goli3D from './Goli3D';
 import { getStage, getEnvironment } from '../three/stage';
 import { buildMedal } from '../three/medal';
 import { buildGoal, GOAL_DUR } from '../three/goal';
@@ -19,31 +20,13 @@ const pentagon = (cx, cy, r) => Array.from({ length: 5 }, (_, i) => {
 const PANELS = [[8, 8, 5.5], [28, 15, 6.5], [10, 28, 6.5], [30, 36, 5.5], [18, 44, 5]]
   .flatMap(([x, y, r]) => [[x, y, r], [x + 40, y, r]]);
 
+// הכדור של ההמתנה הוא גולי שעושה ג'אגלינג (components/Goli3D.js, מצב
+// loading). בלי WebGL - גולי הדו-ממדי. השם נשאר, כדי שכל המסכים שמשתמשים
+// בו יקבלו את גולי בלי שינוי
 export function BallLoader({ size = 44, label }) {
   return (
-    <span className="ball-loader" role={label ? 'img' : undefined} aria-label={label} style={{ '--ball': `${size}px` }}>
-      <span className="ball-loader__ball">
-        <svg viewBox="0 0 40 40" width={size} height={size} aria-hidden="true">
-          <defs>
-            <clipPath id="ball-clip"><circle cx="20" cy="20" r="18" /></clipPath>
-            <radialGradient id="ball-shade" cx="0.35" cy="0.3" r="0.75">
-              <stop offset="0" stopColor="#fff" stopOpacity="0.55" />
-              <stop offset="0.5" stopColor="#fff" stopOpacity="0" />
-              <stop offset="1" stopColor="#000" stopOpacity="0.38" />
-            </radialGradient>
-          </defs>
-          <circle cx="20" cy="20" r="18" fill="#fafafa" />
-          <g clipPath="url(#ball-clip)">
-            <g>
-              {PANELS.map(([x, y, r], i) => <polygon key={i} points={pentagon(x, y - 4, r)} fill="#1d1f24" />)}
-              <animateTransform attributeName="transform" type="translate" from="0 0" to="-40 0" dur="0.9s" repeatCount="indefinite" />
-            </g>
-          </g>
-          <circle cx="20" cy="20" r="18" fill="url(#ball-shade)" />
-          <circle cx="20" cy="20" r="18" fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth="1" />
-        </svg>
-      </span>
-      <span className="ball-loader__shadow" aria-hidden="true" />
+    <span role={label ? 'img' : 'status'} aria-label={label || 'טוען'} style={{ display: 'inline-flex', justifyContent: 'center' }}>
+      <Goli3D mood="loading" talk={false} size={Math.round(size * 1.35)} />
     </span>
   );
 }
