@@ -117,41 +117,89 @@ function NotificationSettings({ user, embedded = false }) {
     return outputArray;
   };
 
+  // כל שלב בהפעלה עם גבול זמן. בלי זה כפתור "מפעיל..." נתקע לנצח כשאחד
+  // השלבים לא חוזר (קרה באנדרואיד: השרת לא קיבל שום בקשה). בתקלה - הודעה
+  // שאומרת מה לבדוק, ודיווח ליומן השרת עם השלב שנכשל
+  const STEP_HELP = {
+    permission: 'לא התקבלה תשובה לבקשת ההרשאה. נסו שוב',
+    worker: 'רכיב ההתראות של האפליקציה לא נטען. סגרו את האפליקציה לגמרי (גם מהאפליקציות האחרונות) ופתחו מחדש',
+    key: 'אין חיבור לשרת. בדקו את האינטרנט ונסו שוב',
+    subscribe: 'הטלפון לא הצליח להירשם לשירות ההתראות. בדקו שכרום מעודכן, שאין לכרום הגבלת סוללה או חיסכון בנתונים, ושיש בטלפון שירותי Google Play',
+    save: 'ההרשמה לא נשמרה בשרת. נסו שוב'
+  };
+  const withTimeout = (promise, ms, step) => Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(Object.assign(new Error(`timeout:${step}`), { step })), ms))
+  ]);
+  const reportPushFailure = (step, err) => {
+    try {
+      fetch(`${API_URL}/logs/client`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          screen: 'push-subscribe',
+          message: `הפעלת התראות נכשלה בשלב ${step}: ${err?.message || err}`,
+          url: `${navigator.userAgent} | standalone=${window.matchMedia?.('(display-mode: standalone)').matches} | perm=${typeof Notification !== 'undefined' ? Notification.permission : 'none'}`
+        })
+      }).catch(() => {});
+    } catch (e) { /* בלי דיווח */ }
+  };
+
   const subscribeToPush = async () => {
     setLoading(true);
+    let step = 'permission';
     try {
       const userId = getUserId();
-      if (!userId) { toast.error('שגיאה: לא ניתן לזהות את המשתמש'); setLoading(false); return; }
+      if (!userId) { toast.error('שגיאה: לא ניתן לזהות את המשתמש'); return; }
+      if (!('serviceWorker' in navigator) || !('PushManager' in window) || typeof Notification === 'undefined') {
+        toast.error('הדפדפן הזה לא תומך בהתראות. פתחו את האפליקציה בכרום (אנדרואיד) או מהמסך הראשי (אייפון)');
+        reportPushFailure('support', 'no push support');
+        return;
+      }
 
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') { toast.warning('יש לאשר התראות בדפדפן'); setLoading(false); return; }
+      const permission = await withTimeout(Notification.requestPermission(), 60000, step);
+      if (permission !== 'granted') {
+        toast.warning(permission === 'denied'
+          ? 'ההתראות חסומות. פתחו בהגדרות הטלפון: אפליקציות ← כרום (או האפליקציה) ← התראות, ואפשרו'
+          : 'יש לאשר התראות בדפדפן');
+        reportPushFailure('permission', permission);
+        return;
+      }
 
-      const registration = await navigator.serviceWorker.register('/service-worker.js');
-      await navigator.serviceWorker.ready;
+      step = 'worker';
+      const registration = await withTimeout(navigator.serviceWorker.register('/service-worker.js'), 15000, step);
+      await withTimeout(navigator.serviceWorker.ready, 15000, step);
 
-      const response = await fetch(`${API_URL}/notifications/vapid-public-key`);
+      step = 'key';
+      const response = await withTimeout(fetch(`${API_URL}/notifications/vapid-public-key`), 30000, step);
       const data = await response.json();
-      if (!data.publicKey) { toast.error('שגיאה: חסר VAPID key'); setLoading(false); return; }
+      if (!data.publicKey) { toast.error('שגיאה: חסר VAPID key'); return; }
 
-      const subscription = await registration.pushManager.subscribe({
+      step = 'subscribe';
+      // הרשמה שכבר קיימת במכשיר - משתמשים בה, ולא מבקשים חדשה
+      const old = await registration.pushManager.getSubscription().catch(() => null);
+      const subscription = old || await withTimeout(registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(data.publicKey)
-      });
+      }), 20000, step);
 
-      const saveResponse = await fetch(`${API_URL}/notifications/subscribe`, {
+      step = 'save';
+      const saveResponse = await withTimeout(fetch(`${API_URL}/notifications/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, subscription, hoursBeforeLock })
-      });
+      }), 30000, step);
 
       if (saveResponse.ok) {
         setIsSubscribed(true);
         toast.success('התראות הופעלו בהצלחה!');
       } else {
-        throw new Error('Failed to save subscription');
+        throw new Error(`save ${saveResponse.status}`);
       }
     } catch (error) {
-      toast.error('שגיאה בהפעלת התראות: ' + error.message);
+      const s = error?.step || step;
+      toast.error(STEP_HELP[s] || ('שגיאה בהפעלת התראות: ' + error.message));
+      reportPushFailure(s, error);
     } finally {
       setLoading(false);
     }
