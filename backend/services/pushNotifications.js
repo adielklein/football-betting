@@ -168,7 +168,7 @@ async function sendNotification(subscription, payload, errorSink = null) {
 
     await webpush.sendNotification(subscription, JSON.stringify(payloadFor(subscription, payload)));
 
-    console.log('✅ [PUSH] Sent successfully');
+    console.log(`✅ [PUSH] Sent successfully → ${(subscription?.endpoint || '').replace(/^https?:\/\//, '').split('/')[0]}`);
     return true;
   } catch (error) {
     const statusCode = error.statusCode || null;

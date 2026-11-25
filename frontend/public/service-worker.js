@@ -180,8 +180,18 @@ self.addEventListener('push', (event) => {
         console.log('✅ [SW] Notification shown successfully');
       })
       .catch(error => {
-        console.error('❌ [SW] Error showing notification:', error);
+        // דפדפן שדוחה חלק מהאפשרויות (תמונה, כפתורים, רטט - קרה בדפדפן של
+        // סמסונג) - ההתראה לא הוצגה בכלל, והשרת חשב שהיא נשלחה. ניסיון שני
+        // עם הבסיס בלבד
+        console.error('❌ [SW] Error showing notification, retrying plain:', error);
+        return self.registration.showNotification(data.title, {
+          body: data.body,
+          icon: '/logo192.png',
+          tag: data.tag || 'default',
+          data: data.data || {}
+        });
       })
+      .catch(error => console.error('❌ [SW] Plain notification failed too:', error))
   );
   
   console.log('🔔 [SW] ========================================');

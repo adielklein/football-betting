@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { askNotificationPermission } from '../../services/notifyPermission';
 import { toast } from '../../services/toast';
 import { API_URL as API_BASE } from '../../config';
 
@@ -69,7 +70,7 @@ function AuditLog() {
   const enablePush = async () => {
     try {
       setPushStatus('checking');
-      const permission = await Notification.requestPermission();
+      const permission = await askNotificationPermission();
       if (permission !== 'granted') {
         toast.warning('צריך לאשר התראות בהגדרות הדפדפן');
         setPushStatus('off');

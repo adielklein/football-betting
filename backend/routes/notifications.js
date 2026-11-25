@@ -169,7 +169,7 @@ router.post('/subscribe', requireSelfOrAdmin((req) => req.body?.userId), async (
     // הייתה שולחת התראת "התראות הופעלו".
     const { userId, subscription, hoursBeforeLock, silent, model } = req.body;
 
-    console.log(`📥 Saving subscription for user ${userId}${silent ? ' (silent sync)' : ''}`);
+    console.log(`📥 Saving subscription for user ${userId}${silent ? ' (silent sync)' : ''} → ${String(req.body?.subscription?.endpoint || '').replace(/^https?:\/\//, '').split('/')[0]}`);
     
     const user = await User.findById(userId);
     if (!user) {

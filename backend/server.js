@@ -134,7 +134,7 @@ app.post('/api/logs/client', requireUser, (req, res) => {
   if (budget.n > 10) return res.status(429).json({ message: 'יותר מדי דיווחים' });
   const { screen, message, stack, url } = req.body || {};
   const clip = (v, n) => String(v || '').slice(0, n);
-  console.error(`💥 [UI] ${req.authUser?.name || '?'} · ${clip(screen, 60)} · ${clip(url, 80)}: ${clip(message, 300)}${stack ? `\n${clip(stack, 600)}` : ''}`);
+  console.error(`💥 [UI] ${req.authUser?.name || '?'} · ${clip(screen, 60)} · ${clip(url, screen === 'push-subscribe' ? 400 : 80)}: ${clip(message, 300)}${stack ? `\n${clip(stack, 600)}` : ''}`);
   res.json({ ok: true });
 });
 

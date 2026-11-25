@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { askNotificationPermission } from '../../services/notifyPermission';
 import { applyTheme } from '../../themes';
 import { toast } from '../../services/toast';
 import ColorSchemeToggle from '../ColorSchemeToggle';
@@ -35,7 +36,7 @@ function AdminHeader({ user, onLogout }) {
   const enablePush = async () => {
     try {
       // 1. בקש הרשאת notifications
-      const permission = await Notification.requestPermission();
+      const permission = await askNotificationPermission();
       if (permission !== 'granted') {
         toast.warning('צריך לאשר התראות כדי לקבל עדכונים');
         return;

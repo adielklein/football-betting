@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from '../services/toast';
 import { syncPushSubscription } from '../services/pushSync';
+import { askNotificationPermission } from '../services/notifyPermission';
 import { API_URL as API_BASE } from '../config';
 
 // שורת מתג אחת. הופקה מהמתג שהיה כאן inline, כדי שכל ההתראות ייראו אותו
@@ -157,7 +158,7 @@ function NotificationSettings({ user, embedded = false }) {
         return;
       }
 
-      const permission = await withTimeout(Notification.requestPermission(), 60000, step);
+      const permission = await withTimeout(askNotificationPermission(), 60000, step);
       if (permission !== 'granted') {
         toast.warning(permission === 'denied'
           ? 'ההתראות חסומות. פתחו בהגדרות הטלפון: אפליקציות ← כרום (או האפליקציה) ← התראות, ואפשרו'
