@@ -21,12 +21,27 @@ import { buildGoli, addGoliLights } from '../three/goli';
 
 const TALK_MS = 1900;
 
+// המצלמה (fov 30, מרחק 6.6, מבט לגובה ‎-0.05) והכדור (רדיוס 1) קובעים כמה
+// מקום תופס הכדור בקנבס. גולי הדו-ממדי, שמוצג עד שהתלת-ממד נטען, מצויר
+// באותו גודל ובאותו מקום בדיוק - בלי זה הוא נראה גדול יותר ו"קפץ" במעבר
+const VIEW_UNITS = 2 * 6.6 * Math.tan((15 * Math.PI) / 180); // גובה הנראה ביחידות
+const BALL_FRAC = 2 / VIEW_UNITS;                             // קוטר הכדור / גובה הקנבס
+const CENTER_FRAC = 0.5 - 0.05 / VIEW_UNITS;                  // מרכז הכדור מלמעלה
+const SVG_BALL = 58 / 64;                                     // קוטר הכדור בציור הדו-ממדי
+
 export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, size = 66, still = false, talk = true }) {
   const canvasRef = useRef(null);
   const wrapRef = useRef(null);
   const visibleRef = useRef(true);
   const wakeRef = useRef(() => {});
   const [ready, setReady] = useState(false);
+  // אחרי שהמעבר הסתיים, הדו-ממדי יורד מהעץ (לא ממשיך להנפיש מאחור)
+  const [fadeDone, setFadeDone] = useState(false);
+  useEffect(() => {
+    if (!ready) return undefined;
+    const t = setTimeout(() => setFadeDone(true), 300);
+    return () => clearTimeout(t);
+  }, [ready]);
   const props = useRef({});
   props.current = { mood, lookX, lookY, still };
   const talkUntil = useRef(0);
@@ -66,11 +81,14 @@ export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, s
       camera.lookAt(0, -0.05, 0);
 
       const look = { x: 0, y: 0 };
+      let drawn = false;
       let nextBlink = performance.now() + 1500;
       view = {
         canvas: canvasRef.current, width: w, height: h, scene, camera,
         frame(now) {
           const p = props.current;
+          // "מוכן" רק אחרי שהפריים הראשון באמת צויר (הציור קורה מיד אחרי frame)
+          if (!drawn) { drawn = true; requestAnimationFrame(() => { if (!gone) setReady(true); }); }
           const t = now / 1000;
           const since = (now - moodSince.current) / 1000;
 
@@ -176,7 +194,6 @@ export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, s
       };
       stage.add(view);
       wakeRef.current = () => stage.wake(view);
-      setReady(true);
     })();
     return () => {
       gone = true;
@@ -187,7 +204,20 @@ export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, s
 
   return (
     <span ref={wrapRef} style={{ position: 'relative', display: 'inline-block', width: size, height: size * 1.15 }}>
-      {!ready && <TourMascot mood={mood} stepKey={stepKey} lookX={lookX} lookY={lookY} size={size} still={still} talk={talk} />}
+      {/* הדו-ממדי בגודל ובמיקום של התלת-ממדי, ומתחלף בהדרגה כשהוא מוכן */}
+      {(() => {
+        const h = size * 1.15;
+        const s2 = still ? size : (BALL_FRAC * h) / SVG_BALL;
+        const top = still ? 0 : CENTER_FRAC * h - s2 / 2;
+        return (
+          <span style={{
+            position: 'absolute', left: (size - s2) / 2, top, width: s2,
+            opacity: ready ? 0 : 1, transition: 'opacity .25s ease', pointerEvents: 'none'
+          }}>
+            {(!ready || !fadeDone) && <TourMascot mood={mood} stepKey={stepKey} lookX={lookX} lookY={lookY} size={s2} still={still} talk={talk} />}
+          </span>
+        );
+      })()}
       {mood === 'sleep' && !still && (
         <span aria-hidden="true" style={{ position: 'absolute', top: -size * 0.08, left: size * 0.72, pointerEvents: 'none', zIndex: 1 }}>
           <style>{'@keyframes goli-z { 0% { transform: translate(0,0) scale(.6); opacity: 0 } 25% { opacity: 1 } 100% { transform: translate(10px,-22px) scale(1.1); opacity: 0 } }'}</style>
@@ -203,7 +233,7 @@ export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, s
         <canvas
           ref={canvasRef}
           aria-hidden="true"
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: ready ? 1 : 0 }}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: ready ? 1 : 0, transition: 'opacity .25s ease' }}
         />
       )}
     </span>
