@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const {
   detectEvents, describeEvent, selectMatchEndRecipients, eventKey, SNAPSHOT_FIELDS,
-  SETTING_BY_EVENT, eventDetails, CANCEL_CONFIRM_MS
+  SETTING_BY_EVENT, eventDetails, CANCEL_CONFIRM_MS, voidCounts
 } = require('./matchEvents');
 
 // ירידה בתוצאה מאושרת כביטול רק אחרי המתנה: סריקה ראשונה פותחת המתנה,
@@ -70,7 +70,7 @@ test('תיקון תוצאה כלפי מטה אינו שער אלא ביטול', 
   // בדיוק מה שהיא מזהה - אבל שער היא עדיין לא
   const { first, second } = dropThenConfirm(live({ team1Goals: 2 }), live({ team1Goals: 1 }));
   assert.deepEqual(types(first), []);           // עוד לא - מחכים לאישור
-  assert.deepEqual(types(second), ['goalCancelled']);
+  assert.deepEqual(types(second), ['scoreCorrected']); // בלי אירוע ביטול אצל 365 - "התוצאה תוקנה"
 });
 
 test('כרטיס אדום מזוהה מעלייה במונה', () => {
@@ -213,7 +213,8 @@ test('שדות תמונת המצב הם בדיוק אלה שהזיהוי משו�
 
 test('שער שבוטל מזוהה כביטול, ולא כשער', () => {
   const prev = live({ team1Goals: 1, team2Goals: 0 });
-  const { second: r } = dropThenConfirm(prev, live({ team1Goals: 0, team2Goals: 0 }));
+  // עם אירוע "השער נפסל" אצל 365 - מאושר מיד, בסריקה הראשונה
+  const r = detectEvents(prev, live({ team1Goals: 0, team2Goals: 0 }), T0, { voids: { team1: 1, team2: 0, team1Recent: true } });
 
   assert.deepEqual(types(r), ['goalCancelled']);
   assert.equal(r.events[0].side, 'team1');
@@ -245,8 +246,8 @@ test('ירידה בתוצאה כשהמשחק אינו מתנהל אינה ביט
 test('ביטול ושער באותה סריקה - שניהם מדווחים', () => {
   const prev = live({ team1Goals: 1, team2Goals: 0 });
   const { first, second } = dropThenConfirm(prev, live({ team1Goals: 0, team2Goals: 1 }));
-  assert.deepEqual(types(first), ['goal']);              // השער מיד
-  assert.deepEqual(types(second), ['goalCancelled']);    // הביטול אחרי אישור
+  assert.deepEqual(types(first), ['goal']);               // השער מיד
+  assert.deepEqual(types(second), ['scoreCorrected']);    // הירידה - אחרי המתנה
 });
 
 test('תנודה בנתונים (תוצאה שיורדת וחוזרת) - לא ביטול ולא שער חדש', () => {
@@ -264,7 +265,7 @@ test('תנודה בנתונים (תוצאה שיורדת וחוזרת) - לא ב
 test('ירידה שנשארת עד סוף המשחק - ביטול גם לפני הדקה', () => {
   const a = detectEvents(live({ team1Goals: 1 }), live({ team1Goals: 0 }), T0);
   const b = detectEvents(a.next, live({ status: 'finished', team1Goals: 0 }), T0 + 15000);
-  assert.ok(types(b).includes('goalCancelled'), types(b).join(','));
+  assert.ok(types(b).includes('scoreCorrected'), types(b).join(','));
 });
 
 test('שער אמיתי אחרי ביטול שאושר, באותה תוצאה - נשלח (חתימה חדשה)', () => {
@@ -358,4 +359,30 @@ test('בלי פרטים מהספק ההתראה נשלחת כרגיל, בלי ש
   );
   assert.match(text.title, /נפסל/);
   assert.ok(!text.title.includes('VAR'), text.title);
+});
+
+
+test('ביטול עם אירוע 365 טרי - "השער נפסל" מיד; ביטול ישן לא מאשר תנודה חדשה', () => {
+  const details = (events) => ({ homeCompetitorId: 1, awayCompetitorId: 2, events });
+  const goal = (cid, order) => ({ competitorId: cid, typeName: 'גול', subTypeName: 'שער שדה', order });
+  const voided = (cid, order) => ({ competitorId: cid, typeName: 'השער נפסל', subTypeName: 'Var', playerName: 'השער נפסל', order });
+  // VAR בדקה 30, אחר כך שער תקף - הביטול כבר לא "טרי"
+  const old = voidCounts(details([voided(1, 3), goal(1, 5)]));
+  assert.equal(old.team1Recent, false);
+  const a = detectEvents(live({ team1Goals: 2 }), live({ team1Goals: 1 }), T0, { voids: old });
+  assert.deepEqual(types(a), []); // מחכה, לא "נפסל"
+  // שער שנפסל עכשיו - טרי
+  const now = voidCounts(details([goal(1, 5), voided(1, 9)]));
+  assert.equal(now.team1Recent, true);
+  const b = detectEvents(live({ team1Goals: 2 }), live({ team1Goals: 1 }), T0, { voids: now });
+  assert.deepEqual(types(b), ['goalCancelled']);
+  // ואותו אירוע לא מאשר ירידה נוספת אחר כך
+  const c = detectEvents(live({ ...b.next, team1Goals: 2 }), live({ team1Goals: 1 }), T0 + 60000, { voids: now });
+  assert.deepEqual(types(c), []);
+});
+
+test('התוצאה תוקנה - נוסח בלי VAR', () => {
+  const t = describeEvent({ type: 'scoreCorrected', side: 'team1', team1Goals: 1, team2Goals: 1 }, 'ארסנל', 'דורטמונד');
+  assert.match(t.title, /תוקנה/);
+  assert.doesNotMatch(t.title + t.body, /VAR|נפסל/);
 });

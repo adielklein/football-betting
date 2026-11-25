@@ -13,13 +13,18 @@
 // המותנית בשרת משווה כל שדה לערך הקודם, ו-null תואם גם שדה שלא קיים
 const EMPTY = {
   status: null, team1Goals: null, team2Goals: null, team1Reds: null, team2Reds: null,
-  dropAt: null, dropFrom1: null, dropFrom2: null, cancels: null
+  dropAt: null, dropFrom1: null, dropFrom2: null, cancels: null,
+  // כמה אירועי "השער נפסל" של כל קבוצה כבר נוצלו לאישור ביטול
+  voidSeen1: null, voidSeen2: null
 };
 
-// כמה זמן התוצאה צריכה להישאר נמוכה לפני שמודיעים שהשער נפסל. 365
-// מחזירים לפעמים לרגע תוצאה ישנה ואז חוזרים לנכונה - בלי ההמתנה זו הייתה
-// התראת "השער נפסל" על שער שלא נפסל (קרה בארסנל-דורטמונד ובליל-באיירן)
-const CANCEL_CONFIRM_MS = 60000;
+// ירידה בתוצאה (שער שירד) - שלוש אפשרויות:
+//   1. ל-365 יש אירוע "השער נפסל" חדש לאותה קבוצה  -> "השער נפסל" מיד
+//   2. התוצאה חוזרת תוך זמן קצר                     -> תנודה בנתונים, כלום
+//   3. נשארת נמוכה CANCEL_CONFIRM_MS בלי אירוע       -> "התוצאה תוקנה"
+// בלי זה יצאה "השער נפסל" על שער שלא נפסל (ארסנל-דורטמונד, ליל-באיירן):
+// שם 365 הראו לרגע שער שלא היה, ואז תיקנו
+const CANCEL_CONFIRM_MS = 30000;
 
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null);
 
@@ -51,7 +56,11 @@ const cancelled = (before, after) => {
  * @param live מה שהסריקה החיה מחזירה עכשיו
  * @returns {{ events: Array, next: object, changed: boolean }}
  */
-function detectEvents(prev, live, now = Date.now()) {
+/**
+ * opts.voids - { team1, team2 }: כמה אירועי "השער נפסל" יש עכשיו ל-365 לכל
+ * קבוצה (voidCounts). השרת מביא אותם רק כשיש ירידה פתוחה או חדשה.
+ */
+function detectEvents(prev, live, now = Date.now(), opts = {}) {
   const next = snapshotOf(live);
   // מונגו מחזיר את תת-המסמך עם ברירות המחדל שלו גם למשחק שמעולם לא נסרק,
   // ולכן "יש אובייקט" אינו מספיק כדי לקבוע שראינו אותו. תמונה שנשמרה
@@ -63,6 +72,8 @@ function detectEvents(prev, live, now = Date.now()) {
   next.dropAt = before ? before.dropAt : null;
   next.dropFrom1 = before ? before.dropFrom1 : null;
   next.dropFrom2 = before ? before.dropFrom2 : null;
+  next.voidSeen1 = before ? before.voidSeen1 : null;
+  next.voidSeen2 = before ? before.voidSeen2 : null;
 
   const changedScore = () =>
     !before ||
@@ -105,38 +116,52 @@ function detectEvents(prev, live, now = Date.now()) {
     });
   }
 
-  // ביטול שער: ירידה של אחד בזמן שהמשחק מתנהל. לא מודיעים מיד - פותחים
-  // המתנה, ומאשרים רק אם התוצאה נשארה נמוכה דקה שלמה (או שהמשחק נגמר כך).
+  // ביטול שער: ירידה של אחד בזמן שהמשחק מתנהל. לא מודיעים מיד: מאשרים
+  // מול אירועי 365, ואם אין אירוע - רק אם התוצאה נשארה נמוכה.
   // ירידה בזמן שהמצב עצמו משתנה (נתונים שנטענים מחדש בסוף) אינה ביטול
+  const voids = opts.voids || null;
+  // אירוע "השער נפסל" חדש (שעוד לא נוצל) לצד שירד
+  const freshVoid = (side) => Boolean(voids && voids[`${side}Recent`] &&
+    (voids[side] || 0) > ((side === 'team1' ? next.voidSeen1 : next.voidSeen2) || 0));
+  const settle = (side1, side2, type) => {
+    next.cancels = (next.cancels || 0) + 1;
+    if (voids) { next.voidSeen1 = voids.team1 || 0; next.voidSeen2 = voids.team2 || 0; }
+    events.push({
+      type,
+      side: side1 && side2 ? 'both' : side1 ? 'team1' : 'team2',
+      team1Goals: next.team1Goals,
+      team2Goals: next.team2Goals,
+      cancels: next.cancels
+    });
+    next.dropAt = null; next.dropFrom1 = null; next.dropFrom2 = null;
+  };
+
   if (!pending && next.status === 'live' && before.status === 'live') {
     const team1Cancelled = cancelled(before.team1Goals, next.team1Goals);
     const team2Cancelled = cancelled(before.team2Goals, next.team2Goals);
     if (team1Cancelled > 0 || team2Cancelled > 0) {
-      next.dropAt = now;
       next.dropFrom1 = before.team1Goals;
       next.dropFrom2 = before.team2Goals;
+      if ((team1Cancelled && freshVoid('team1')) || (team2Cancelled && freshVoid('team2'))) {
+        settle(team1Cancelled > 0, team2Cancelled > 0, 'goalCancelled');
+      } else {
+        next.dropAt = now;
+      }
     }
   } else if (pending && !bounced) {
-    const lower = next.team1Goals < before.dropFrom1 || next.team2Goals < before.dropFrom2;
-    const waited = now - before.dropAt >= CANCEL_CONFIRM_MS;
-    if (!lower) {
+    const side1 = next.team1Goals < before.dropFrom1;
+    const side2 = next.team2Goals < before.dropFrom2;
+    if (!side1 && !side2) {
       // התוצאה עלתה מעבר למה שהיה (שער אחר): ההמתנה כבר לא רלוונטית
       next.dropAt = null; next.dropFrom1 = null; next.dropFrom2 = null;
-    } else if (waited || next.status === 'finished') {
-      const side1 = next.team1Goals < before.dropFrom1;
-      const side2 = next.team2Goals < before.dropFrom2;
-      next.cancels = (next.cancels || 0) + 1;
-      events.push({
-        type: 'goalCancelled',
-        side: side1 && side2 ? 'both' : side1 ? 'team1' : 'team2',
-        team1Goals: next.team1Goals,
-        team2Goals: next.team2Goals,
-        cancels: next.cancels
-      });
-      next.dropAt = null; next.dropFrom1 = null; next.dropFrom2 = null;
+    } else if ((side1 && freshVoid('team1')) || (side2 && freshVoid('team2'))) {
+      settle(side1, side2, 'goalCancelled');
+    } else if (now - before.dropAt >= CANCEL_CONFIRM_MS || next.status === 'finished') {
+      settle(side1, side2, 'scoreCorrected');
     }
   }
-  changed = changedScore() || next.dropAt !== before.dropAt || next.cancels !== before.cancels;
+  changed = changedScore() || next.dropAt !== before.dropAt || next.cancels !== before.cancels ||
+    next.voidSeen1 !== before.voidSeen1 || next.voidSeen2 !== before.voidSeen2;
 
   const team1Reds = rise(before.team1Reds, next.team1Reds);
   const team2Reds = rise(before.team2Reds, next.team2Reds);
@@ -187,6 +212,24 @@ const latestEvent = (events, { pattern, exclude = null, competitorId = null }) =
 
   if (matches.length === 0) return null;
   return matches.reduce((best, e) => ((e.order ?? 0) >= (best.order ?? 0) ? e : best));
+};
+
+// כמה אירועי "השער נפסל" יש לכל קבוצה (team1/team2 שלנו) - לאישור ביטול
+// ...ו"טרי": האחרון שבהם רשום אחרי השער התקף האחרון של הקבוצה. כך ביטול
+// אמיתי מתחילת המשחק לא "מאשר" תנודה בנתונים שקרתה אחריו
+const voidCounts = (details) => {
+  if (!details || !Array.isArray(details.events)) return null;
+  const textOf = (e) => `${e.typeName || ''} ${e.subTypeName || ''} ${e.playerName || ''}`;
+  const side = (cid) => {
+    const mine = details.events.filter((e) => e.competitorId === cid);
+    const voids = mine.filter((e) => CANCELLED_EVENT.test(textOf(e)));
+    const goals = mine.filter((e) => GOAL_EVENT.test(textOf(e)) && !CANCELLED_EVENT.test(textOf(e)));
+    const lastVoid = Math.max(-1, ...voids.map((e) => e.order ?? 0));
+    const lastGoal = Math.max(-1, ...goals.map((e) => e.order ?? 0));
+    return { count: voids.length, recent: voids.length > 0 && lastVoid > lastGoal };
+  };
+  const a = side(details.homeCompetitorId), b = side(details.awayCompetitorId);
+  return { team1: a.count, team2: b.count, team1Recent: a.recent, team2Recent: b.recent };
 };
 
 /**
@@ -241,6 +284,8 @@ const eventKey = (event) => {
       return `goal:${event.team1Goals}-${event.team2Goals}${event.cancels ? `#${event.cancels}` : ''}`;
     case 'goalCancelled':
       return `cancel:${event.team1Goals}-${event.team2Goals}${event.cancels ? `#${event.cancels}` : ''}`;
+    case 'scoreCorrected':
+      return `fix:${event.team1Goals}-${event.team2Goals}${event.cancels ? `#${event.cancels}` : ''}`;
     case 'red':
       return `red:${event.team1Reds}-${event.team2Reds}`;
     case 'end':
@@ -256,6 +301,7 @@ const SETTING_BY_EVENT = {
   goal: 'goalAlerts',
   // אותו מתג כמו שער: מי שרוצה לדעת על שער רוצה לדעת גם כשהוא נמחק
   goalCancelled: 'goalAlerts',
+  scoreCorrected: 'goalAlerts',
   red: 'redCardAlerts',
   start: 'matchStartAlerts',
   end: 'matchEndAlerts'
@@ -301,6 +347,15 @@ function describeEvent(event, team1, team2) {
           : `${reason}${when} · ${pair} ${score}`
       };
     }
+    case 'scoreCorrected': {
+      // ירידה בלי אירוע ביטול אצל 365 - כנראה שער שהוצג בטעות ותוקן. לא
+      // טוענים ש-VAR פסל: אין לזה ראיה
+      const who = event.side === 'team1' ? team1 : event.side === 'team2' ? team2 : null;
+      return {
+        title: '✏️ התוצאה תוקנה',
+        body: who ? `שער של ${who} ירד מהתוצאה · ${pair} ${score}` : `${pair} ${score}`
+      };
+    }
     case 'red': {
       const who = event.side === 'team1' ? team1 : event.side === 'team2' ? team2 : null;
       return { title: '🟥 כרטיס אדום', body: who ? `${who} · ${pair}` : pair };
@@ -340,6 +395,7 @@ function selectMatchEndRecipients({
 }
 
 module.exports = {
+  voidCounts,
   CANCEL_CONFIRM_MS,
   eventDetails,
   latestEvent,

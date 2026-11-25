@@ -393,7 +393,7 @@ const liveScores = require('./services/liveScores');
 // כל ארבעת הסוגים כבויים כברירת מחדל, ולכן ברוב המקרים אין למי לשלוח
 // ואפילו לא נשלפת רשימת משתמשים.
 const {
-  detectEvents, describeEvent, eventDetails, eventKey, SETTING_BY_EVENT, SNAPSHOT_FIELDS
+  detectEvents, describeEvent, eventDetails, eventKey, SETTING_BY_EVENT, SNAPSHOT_FIELDS, voidCounts
 } = require('./services/matchEvents');
 
 // sentInThisPoll מגיע מהסבב ולא נוצר כאן: אותו משחק יכול להיות שמור בשני
@@ -425,7 +425,16 @@ const notifyLiveEvents = async (matches, games, sentInThisPoll = new Set()) => {
       console.log(`📅 [LIVE] ${match.team1} - ${match.team2}: ${live.postponed ? `סומן כדחוי (${live.statusText})` : 'כבר אינו דחוי'}`);
     }
 
-    const { events, next, changed } = detectEvents(prev, live);
+    // ירידה בתוצאה (חדשה, או שמחכה לאישור): בודקים מול אירועי 365 אם
+    // באמת נרשם "השער נפסל" - כך שער שנפסל מדווח מיד, ותנודה בנתונים לא
+    let detailsForVoids;
+    const dropped = prev && prev.status === 'live' && (
+      (prev.team1Goals != null && live.team1Goals != null && live.team1Goals < prev.team1Goals) ||
+      (prev.team2Goals != null && live.team2Goals != null && live.team2Goals < prev.team2Goals));
+    if (prev && (prev.dropAt != null || dropped)) {
+      detailsForVoids = await liveScores.fetchGameDetails(match.externalId, { flipped: !!live.flipped });
+    }
+    const { events, next, changed } = detectEvents(prev, live, Date.now(), { voids: voidCounts(detailsForVoids) });
     if (!changed) continue;
 
     // התמונה נשמרת בכל מקרה, גם כשאין למי לשלוח, כי היא קו הבסיס להפרש הבא.
@@ -466,7 +475,7 @@ const notifyLiveEvents = async (matches, games, sentInThisPoll = new Set()) => {
 
     // undefined = עוד לא ניסינו, null = ניסינו ואין. כך לא מנסים פעמיים
     // באותה סריקה
-    let details;
+    let details = detailsForVoids;
 
     for (const event of events) {
       // סוף משחק נשלח מחישוב הניקוד (routes/scores.js) ולא מכאן, כי שם
@@ -496,7 +505,7 @@ const notifyLiveEvents = async (matches, games, sentInThisPoll = new Set()) => {
         // פרטי האירוע - מי כבש, באיזו דקה, והאם VAR פסל - מגיעים מנתיב
         // נפרד, ולכן נטענים רק כשיש אירוע ויש למי לשלוח. פעם אחת למשחק
         // בסריקה, גם כששני אירועים קרו יחד
-        if ((event.type === 'goal' || event.type === 'goalCancelled') && details === undefined) {
+        if ((event.type === 'goal' || event.type === 'goalCancelled' || event.type === 'scoreCorrected') && details === undefined) {
           details = await liveScores.fetchGameDetails(match.externalId, { flipped: !!live.flipped });
         }
 

@@ -65,7 +65,9 @@ const matchSchema = new mongoose.Schema({
     dropAt: { type: Number, default: null },
     dropFrom1: { type: Number, default: null },
     dropFrom2: { type: Number, default: null },
-    cancels: { type: Number, default: null }
+    cancels: { type: Number, default: null },
+    voidSeen1: { type: Number, default: null },
+    voidSeen2: { type: Number, default: null }
   },
 
   // חתימות האירועים שכבר יצאה עליהם התראה על המשחק הזה. תמונת המצב לבדה
