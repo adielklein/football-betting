@@ -5,7 +5,8 @@ import sleepImg from '../assets/goli/sleep.webp';
 import sadImg from '../assets/goli/sad.webp';
 import celebrateImg from '../assets/goli/celebrate.webp';
 import crownImg from '../assets/goli/crown.webp';
-import scarfImg from '../assets/goli/scarf.webp';
+import idleScarfImg from '../assets/goli/idle_scarf.webp';
+import talkScarfImg from '../assets/goli/talk_scarf.webp';
 
 // גולי - הדמות שנבחרה (גיליון הדמות מ-Gemini), כתמונה לכל הבעה, עם תנועה ב-CSS:
 //   idle      - קפיצה רכה עם כיווץ בנחיתה
@@ -21,16 +22,18 @@ import scarfImg from '../assets/goli/scarf.webp';
 
 // מיקום הכדור בכל תמונה (מרכז ורדיוס, בפיקסלים) - כדי שהכדור יישב בדיוק
 // באותו מקום בכל הבעה ולא "יקפוץ" במעבר.
-// (בתמונת הצעיף, החלק התחתון של הכדור מתחת לצעיף נלקח מהתמונה הרגילה -
-// אצל Gemini הוא "מתיישב" ונבלע בצל, ובלי זה הוא לא נראה עגול)
+// talk = הפרצוף הרגיל עם הפה של "מדבר" מהגיליון (שם העיניים אפורות, וכך
+// הן לא מהבהבות בדיבור). idle_scarf/talk_scarf = אותם פרצופים עם הצעיף
+// מהגיליון מולבש עליהם - כדי שגם עם צעיף הוא ידבר
 const SPRITES = {
   idle: { src: idleImg, w: 290, h: 290, cx: 144, cy: 144, r: 146 },
-  talk: { src: talkImg, w: 292, h: 290, cx: 145, cy: 144, r: 147 },
+  talk: { src: talkImg, w: 290, h: 290, cx: 144, cy: 144, r: 146 },
   sleep: { src: sleepImg, w: 306, h: 292, cx: 142, cy: 148, r: 144 },
   sad: { src: sadImg, w: 288, h: 286, cx: 143, cy: 142, r: 145 },
   celebrate: { src: celebrateImg, w: 286, h: 286, cx: 142, cy: 142, r: 144 },
   crown: { src: crownImg, w: 302, h: 354, cx: 148, cy: 204, r: 150 },
-  scarf: { src: scarfImg, w: 318, h: 308, cx: 155, cy: 152, r: 155 }
+  idle_scarf: { src: idleScarfImg, w: 300, h: 311, cx: 146, cy: 144, r: 146 },
+  talk_scarf: { src: talkScarfImg, w: 300, h: 311, cx: 146, cy: 144, r: 146 }
 };
 
 const TALK_MS = 1600;
@@ -58,13 +61,13 @@ const hex = (c) => {
   const n = parseInt(m[1], 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 };
-const tintScarf = (primary, secondary) => {
+const tintScarf = (src, primary, secondary) => {
   let col = hex(primary);
   const sec = hex(secondary);
   // צבע ראשי כמעט לבן (הפסים הלבנים כבר לבנים) - משתמשים במשני
   if (col && col[0] + col[1] + col[2] > 690 && sec) col = sec;
   if (!col) return Promise.resolve(null);
-  const key = col.join(',');
+  const key = `${src}|${col.join(',')}`;
   if (scarfCache.has(key)) return scarfCache.get(key);
   const p = new Promise((resolve) => {
     const img = new Image();
@@ -77,7 +80,7 @@ const tintScarf = (primary, secondary) => {
         const d = x.getImageData(0, 0, c.width, c.height);
         const a = d.data;
         // רק באזור הצעיף (מתחת לפה) - לא נוגעים בעיניים החומות
-        const y0 = Math.round(c.height * 0.56);
+        const y0 = Math.round(c.height * 0.62);
         for (let i = y0 * c.width * 4; i < a.length; i += 4) {
           const r = a[i], g = a[i + 1], b = a[i + 2];
           if (r > g + 45 && r > b + 45) {
@@ -90,7 +93,7 @@ const tintScarf = (primary, secondary) => {
       } catch (e) { resolve(null); }
     };
     img.onerror = () => resolve(null);
-    img.src = scarfImg;
+    img.src = src;
   });
   scarfCache.set(key, p);
   return p;
@@ -99,7 +102,7 @@ const tintScarf = (primary, secondary) => {
 export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 0, size = 66, still = false, talk = true, crown = false, scarf = null }) {
   const calm = mood === 'idle' || mood === 'wave';
   const useScarf = !!scarf && calm && !crown;
-  const canTalk = talk && calm && !useScarf && !crown && !still;
+  const canTalk = talk && calm && !crown && !still;
 
   // דיבור: פה נפתח ונסגר לרגע בכל שלב חדש
   const [mouthOpen, setMouthOpen] = useState(false);
@@ -112,23 +115,26 @@ export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 
     return () => { clearInterval(iv); clearTimeout(t); };
   }, [stepKey, canTalk]);
 
+  // שתי תמונות הצעיף (פה סגור/פתוח) נצבעות מראש, כדי שהדיבור לא יהבהב
   const scarfKey = scarf ? scarf.join(',') : '';
-  const [scarfSrc, setScarfSrc] = useState(null);
+  const [tinted, setTinted] = useState({});
   useEffect(() => {
     let alive = true;
     if (!useScarf) return undefined;
-    tintScarf(scarf[0], scarf[1]).then((u) => { if (alive) setScarfSrc(u); });
+    ['idle_scarf', 'talk_scarf'].forEach((n) => {
+      tintScarf(SPRITES[n].src, scarf[0], scarf[1]).then((u) => { if (alive && u) setTinted((t) => ({ ...t, [n]: u })); });
+    });
     return () => { alive = false; };
   }, [scarfKey, useScarf]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const key = crown ? 'crown'
-    : useScarf ? 'scarf'
+    : useScarf ? (mouthOpen ? 'talk_scarf' : 'idle_scarf')
     : mood === 'sleep' ? 'sleep'
     : mood === 'sad' ? 'sad'
     : mood === 'celebrate' ? 'celebrate'
     : mouthOpen ? 'talk' : 'idle';
   const sp = SPRITES[key];
-  const src = key === 'scarf' ? (scarfSrc || sp.src) : sp.src;
+  const src = tinted[key] || sp.src;
 
   // הכדור: קוטר ומרכז קבועים בתוך המסגרת (רוחב size, גובה size×1.15)
   const H = size * 1.15;
