@@ -102,23 +102,11 @@ export const buildGoli = (THREE) => {
   };
 
   const white = memo(() => new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.22 }));
-  const pupilMat = memo(() => new THREE.MeshBasicMaterial({ color: 0x1a0f08 }));
-  const shine = memo(() => new THREE.MeshBasicMaterial({ color: 0xffffff }));
   const browMat = memo(() => new THREE.MeshStandardMaterial({ color: 0x4a2f1c, roughness: 0.55 }));
-  const lidMat = memo(() => new THREE.MeshStandardMaterial({ color: 0x3a2618, roughness: 0.55 }));
+  const lidMat = memo(() => new THREE.MeshStandardMaterial({ color: 0x2a1a10, roughness: 0.55 }));
   const mouthMat = memo(() => new THREE.MeshStandardMaterial({ color: 0x8a1f2e, roughness: 0.55, side: THREE.DoubleSide }));
   const tongueMat = memo(() => new THREE.MeshStandardMaterial({ color: 0xff7b8f, roughness: 0.55, side: THREE.DoubleSide }));
 
-  // קשתית חומה: עיגול עם מעבר מבהיר במרכז לכהה בשוליים, כמו בעיצוב
-  const irisTex = memo(() => {
-    const c = document.createElement('canvas'); c.width = c.height = 128;
-    const x = c.getContext('2d');
-    const g = x.createRadialGradient(64, 70, 6, 64, 64, 62);
-    g.addColorStop(0, '#d9a05b'); g.addColorStop(0.55, '#a8662a'); g.addColorStop(0.9, '#6b3b14'); g.addColorStop(1, '#4a2509');
-    x.fillStyle = g; x.beginPath(); x.arc(64, 64, 62, 0, Math.PI * 2); x.fill();
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
-  });
-  const irisMat = memo(() => new THREE.MeshBasicMaterial({ map: irisTex, transparent: true }));
   // סומק רך: עיגול שדוהה לשוליים
   const blushTex = memo(() => {
     const c = document.createElement('canvas'); c.width = c.height = 64;
@@ -140,26 +128,96 @@ export const buildGoli = (THREE) => {
     return g;
   };
 
-  // עיניים גדולות: גלגל עין לבן בולט, קשתית חומה, אישון, שתי השתקפויות.
-  // look = הקבוצה שזזה כשהוא מסתכל. lid = קשת עין עצומה (שינה: ‿, שמחה: ^)
-  const eyeGeo = memo(() => new THREE.SphereGeometry(0.33, 28, 20));
-  const irisGeo = memo(() => new THREE.CircleGeometry(0.205, 32));
-  const pupilGeo = memo(() => new THREE.CircleGeometry(0.1, 24));
-  const hiGeo = memo(() => new THREE.CircleGeometry(0.065, 16));
-  const hi2Geo = memo(() => new THREE.CircleGeometry(0.03, 12));
+  // עיניים בסגנון סרט אנימציה: גלגל עין שהקשתית מצוירת עליו (המרקם קוטבי -
+  // מרכז הקשתית בקוטב הקדמי, כך שסיבי הקשתית הם קווים רדיאליים והעין
+  // "מסתכלת" בסיבוב אמיתי), טבעת כהה בשולי הקשתית, אור חם בחלקה התחתון,
+  // ציפוי מבריק, צל עמוק סביב העין ("שקע") וקו ריסים כהה מעליה.
+  // ההשתקפויות לא מסתובבות עם העין - הן נשארות מול האור, כמו בעין אמיתית
+  const EYE = { r: 0.33, sy: 1.16, sz: 0.62, iris: 0.68, pupil: 0.27 };
+  const eyeTex = memo(() => {
+    const W = 512, H = 512;
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const x = c.getContext('2d');
+    const img = x.createImageData(W, H);
+    const ss = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
+    const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+    // סיבים: סכום גלים בזווית, עם שינוי קל לאורך הרדיוס
+    const fib = (phi, t) => Math.sin(phi * 37 + t * 3) * 0.5 + Math.sin(phi * 71 + 1.3 - t * 5) * 0.3 + Math.sin(phi * 113 + 2.1) * 0.2;
+    for (let yy = 0; yy < H; yy++) {
+      const th = ((yy + 0.5) / H) * Math.PI;
+      for (let xx = 0; xx < W; xx++) {
+        const phi = ((xx + 0.5) / W) * Math.PI * 2;
+        const down = Math.sin(phi); // 1 = למטה, -1 = למעלה (אחרי סיבוב הגיאומטריה)
+        // לובן העין: לבן, מאפיר מעט לשוליים ולמעלה (צל העפעף)
+        let col = mix([252, 252, 254], [222, 226, 234], ss(0.85, 1.5, th) * 0.8 + Math.max(0, -down) * ss(0.6, 1.3, th) * 0.35);
+        if (th < EYE.iris + 0.02) {
+          const t = Math.max(0, (th - EYE.pupil) / (EYE.iris - EYE.pupil));
+          let ir = t < 0.25 ? mix([226, 160, 82], [176, 104, 44], t / 0.25)
+            : t < 0.75 ? mix([176, 104, 44], [120, 64, 22], (t - 0.25) / 0.5)
+            : mix([120, 64, 22], [52, 26, 10], (t - 0.75) / 0.25);
+          const f = 1 + fib(phi, t) * 0.16 * ss(0.05, 0.3, t);
+          // אור חם בתחתית הקשתית וצל בחלקה העליון - זה מה שנותן לה עומק
+          const light = 1 + 0.45 * Math.max(0, down) * ss(0.2, 0.8, t) - 0.32 * Math.max(0, -down);
+          ir = ir.map((v) => Math.min(255, v * f * light));
+          // טבעת כהה בשוליים
+          ir = mix(ir, [30, 16, 8], ss(0.78, 0.97, t) * 0.85);
+          col = mix(ir, col, ss(EYE.iris - 0.012, EYE.iris + 0.012, th));
+          // אישון עם קצה רך
+          col = mix([14, 8, 4], col, ss(EYE.pupil - 0.02, EYE.pupil + 0.015, th));
+        }
+        const i = (yy * W + xx) * 4;
+        img.data[i] = col[0]; img.data[i + 1] = col[1]; img.data[i + 2] = col[2]; img.data[i + 3] = 255;
+      }
+    }
+    x.putImageData(img, 0, 0);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+  });
+  // הקוטב של הכדור (+y) מסובב קדימה (+z)
+  const eyeGeo = memo(() => new THREE.SphereGeometry(EYE.r, 64, 48).rotateX(Math.PI / 2));
+  const eyeMat = memo(() => new THREE.MeshPhysicalMaterial({ map: eyeTex, roughness: 0.35, clearcoat: 1, clearcoatRoughness: 0.06 }));
+  // צל רך סביב העין שמושיב אותה בתוך הפנים
+  const socketTex = memo(() => {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const x = c.getContext('2d');
+    const g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+    g.addColorStop(0, 'rgba(70,60,75,0.3)'); g.addColorStop(0.6, 'rgba(70,60,75,0.24)'); g.addColorStop(1, 'rgba(70,60,75,0)');
+    x.fillStyle = g; x.fillRect(0, 0, 128, 128);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  });
+  const socketMat = memo(() => new THREE.MeshBasicMaterial({ map: socketTex, transparent: true, depthWrite: false }));
+  const socketGeo = memo(() => new THREE.PlaneGeometry(0.66, 0.78));
+  // השתקפות גדולה ורכה + נקודה קטנה
+  const glintTex = memo(() => {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const x = c.getContext('2d');
+    const g = x.createRadialGradient(32, 32, 0, 32, 32, 31);
+    g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.72, 'rgba(255,255,255,0.97)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  });
+  const glintMat = memo(() => new THREE.MeshBasicMaterial({ map: glintTex, transparent: true, depthWrite: false }));
+  const glintGeo = memo(() => new THREE.PlaneGeometry(1, 1));
+  const lashGeo = memo(() => new THREE.TorusGeometry(0.272, 0.03, 8, 32, Math.PI * 0.74));
   const lidGeo = memo(() => new THREE.TorusGeometry(0.19, 0.03, 8, 24, Math.PI));
   const eyes = [-0.33, 0.33].map((ax) => {
-    const g = anchor(ax, 0.1, 0.84);
-    const ball = new THREE.Mesh(eyeGeo, white);
-    ball.scale.set(1, 1.16, 0.55);
+    const sock = anchor(ax, 0.1, 1.007); sock.add(new THREE.Mesh(socketGeo, socketMat));
+    const g = anchor(ax, 0.1, 0.86);
+    const shell = new THREE.Group(); shell.scale.set(1, EYE.sy, EYE.sz);
+    // look = הסיבוב של גלגל העין (מבט). x/y של position נשמרים כממשק: Goli3D
+    // מזיז אותו, ו-onBeforeRender ממיר את ההזזה לסיבוב
     const look = new THREE.Group();
-    look.position.z = 0.192; // מעט לפני פני גלגל העין (0.33 × 0.55), אחרת הקשתית נבלעת בו
-    const iris = new THREE.Mesh(irisGeo, irisMat); iris.scale.y = 1.12;
-    const pupil = new THREE.Mesh(pupilGeo, pupilMat); pupil.position.set(0, 0.005, 0.002); pupil.scale.y = 1.1;
-    const hi = new THREE.Mesh(hiGeo, shine); hi.position.set(0.078, 0.09, 0.004);
-    const hi2 = new THREE.Mesh(hi2Geo, shine); hi2.position.set(-0.07, -0.085, 0.004);
-    look.add(iris, pupil, hi, hi2);
-    const open = new THREE.Group(); open.add(ball, look);
+    const ball = new THREE.Mesh(eyeGeo, eyeMat);
+    ball.onBeforeRender = () => { ball.rotation.set(-look.position.y * 3.2, look.position.x * 3.6, 0); };
+    shell.add(ball);
+    const open = new THREE.Group(); open.add(shell, look);
+    // ההשתקפויות: למעלה-שמאלה, מול אור המפתח
+    const glints = new THREE.Group(); glints.position.z = 0.215;
+    const big = new THREE.Mesh(glintGeo, glintMat); big.scale.set(0.13, 0.1, 1); big.position.set(-0.075, 0.115, 0); big.rotation.z = 0.5;
+    const small = new THREE.Mesh(glintGeo, glintMat); small.scale.setScalar(0.06); small.position.set(0.07, -0.08, 0);
+    glints.add(big, small); open.add(glints);
+    const lash = new THREE.Mesh(lashGeo, lidMat);
+    lash.rotation.z = Math.PI * 0.13; lash.scale.set(1, EYE.sy, 0.6); lash.position.set(0, -0.01, 0.135);
+    open.add(lash);
     const lid = new THREE.Mesh(lidGeo, lidMat);
     lid.position.z = 0.19; lid.visible = false;
     g.add(open, lid);
@@ -169,7 +227,7 @@ export const buildGoli = (THREE) => {
   // גבות: קפסולות חומות קטנות מעל העיניים, זזות עם הרגש
   const browGeo = memo(() => new THREE.CapsuleGeometry(0.032, 0.17, 4, 10));
   const brows = [-0.31, 0.31].map((ax) => {
-    const g = anchor(ax, 0.47, 1.005);
+    const g = anchor(ax, 0.53, 1.005);
     const m = new THREE.Mesh(browGeo, browMat);
     m.rotation.z = Math.PI / 2; // אופקית
     m.scale.set(1, 1, 0.6);
