@@ -155,10 +155,11 @@ test('להכין את השבוע הבא: רק כשהמשחק האחרון קרו
     weekData: [...extra, { week: week({ name: 'מחזור 14' }), matches: [match('m1', 2), match('m2', lastH)], bets: [], scores: [], exclusions: [] }],
     players, users, now: NOW
   });
-  // המשחק האחרון בעוד 4 ימים - כלום
+  // המשחק האחרון בעוד 4 ימים, וגם בעוד 30 שעות - עוד מוקדם
   assert.deepStrictEqual(open(96).global.map((g) => g.key), []);
-  // בעוד 30 שעות - רמז עדין
-  const soon = open(30).global.find((g) => g.key === 'prep_next');
+  assert.deepStrictEqual(open(30).global.map((g) => g.key), []);
+  // בעוד 22 שעות - רמז עדין
+  const soon = open(22).global.find((g) => g.key === 'prep_next');
   assert.equal(soon.level, 'info');
   assert.equal(soon.text, 'מחזור 14 נגמר מחר - אפשר כבר להכין את השבוע הבא');
   assert.deepStrictEqual(soon.action, { type: 'create' });
