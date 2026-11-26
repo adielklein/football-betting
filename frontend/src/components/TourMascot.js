@@ -72,6 +72,11 @@ export default function TourMascot({ mood = 'idle', stepKey, lookX = 0, lookY = 
             <g stroke="#2b2f36" strokeWidth="1.2" fill="none" opacity="0.55" clipPath="url(#goli-clip)">
               <path d="M28 16 L13 28 M36 16 L51 28 M9 34 L20 49 M55 34 L44 49 M25 54 L39 54" />
             </g>
+            {/* גבות */}
+            <g stroke="#4a2f1c" strokeWidth="1.8" strokeLinecap="round" fill="none">
+              <path d={mood === 'sad' ? 'M19 19.5 L27 17.5' : 'M19 18.5 Q23.5 17 28 18.5'} />
+              <path d={mood === 'sad' ? 'M45 19.5 L37 17.5' : 'M36 18.5 Q40.5 17 45 18.5'} />
+            </g>
             {/* לחיים */}
             <ellipse cx="17" cy="38" rx="4.5" ry="2.6" fill="#ff8fa3" opacity="0.55" />
             <ellipse cx="47" cy="38" rx="4.5" ry="2.6" fill="#ff8fa3" opacity="0.55" />
@@ -86,8 +91,10 @@ export default function TourMascot({ mood = 'idle', stepKey, lookX = 0, lookY = 
               <ellipse cx="23.5" cy="29" rx="6" ry="7" fill="#fff" stroke="#2b2f36" strokeWidth="1.6" />
               <ellipse cx="40.5" cy="29" rx="6" ry="7" fill="#fff" stroke="#2b2f36" strokeWidth="1.6" />
               <g style={{ transform: `translate(${px}px, ${py}px)`, transition: 'transform .35s ease' }}>
-                <circle cx="23.5" cy="30" r="3.6" fill="#1d2230" />
-                <circle cx="40.5" cy="30" r="3.6" fill="#1d2230" />
+                <circle cx="23.5" cy="30" r="4.4" fill="#a8662a" />
+                <circle cx="40.5" cy="30" r="4.4" fill="#a8662a" />
+                <circle cx="23.5" cy="30.2" r="2.2" fill="#1a0f08" />
+                <circle cx="40.5" cy="30.2" r="2.2" fill="#1a0f08" />
                 <circle cx="24.8" cy="28.4" r="1.2" fill="#fff" />
                 <circle cx="41.8" cy="28.4" r="1.2" fill="#fff" />
               </g>

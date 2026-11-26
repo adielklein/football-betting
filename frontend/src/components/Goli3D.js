@@ -29,7 +29,7 @@ const BALL_FRAC = 2 / VIEW_UNITS;                             // קוטר הכד
 const CENTER_FRAC = 0.5 - 0.05 / VIEW_UNITS;                  // מרכז הכדור מלמעלה
 const SVG_BALL = 58 / 64;                                     // קוטר הכדור בציור הדו-ממדי
 
-export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, size = 66, still = false, talk = true }) {
+export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, size = 66, still = false, talk = true, crown = false, scarf = null }) {
   const canvasRef = useRef(null);
   const wrapRef = useRef(null);
   const visibleRef = useRef(true);
@@ -43,8 +43,16 @@ export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, s
     return () => clearTimeout(t);
   }, [ready]);
   const props = useRef({});
-  props.current = { mood, lookX, lookY, still };
+  props.current = { mood, lookX, lookY, still, crown };
   const talkUntil = useRef(0);
+  // צעיף בצבעי הקבוצה ([ראשי, משני] או null) - מתעדכן גם אחרי שהתלת-ממד עלה
+  const goliRef = useRef(null);
+  const scarfRef = useRef(null);
+  scarfRef.current = scarf;
+  const scarfKey = scarf ? scarf.join(',') : '';
+  useEffect(() => {
+    if (goliRef.current) goliRef.current.setScarf(scarf ? scarf[0] : null, scarf ? scarf[1] : null);
+  }, [scarfKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const moodSince = useRef(0);
 
   useEffect(() => { if (talk && mood !== 'sleep') talkUntil.current = performance.now() + TALK_MS; }, [stepKey]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -170,32 +178,60 @@ export default function Goli3D({ mood = 'idle', stepKey, lookX = 0, lookY = 0, s
           goli.shadow.scale.setScalar(1 - air * 0.45);
           goli.shadow.material.opacity = 0.22 * (1 - air * 0.6);
 
-          // אישונים
-          for (const e of goli.eyes) e.pupil.position.set(look.x * 0.075, -look.y * 0.065 + loadLookUp * 0.06, 0);
-          // מצמוץ (ישן = עיניים עצומות)
+          const celebrating = p.mood === 'celebrate';
+          const surprised = loadExcite > 0.15;
+
+          // עיניים: הקשתית והאישון זזים לכיוון המבט
+          for (const e of goli.eyes) e.look.position.set(look.x * 0.07, -look.y * 0.06 + loadLookUp * 0.05, 0.192);
+          // עצומות: שינה = עפעפיים רכים (‿), חגיגה = עיניים מכווצות משמחה (^ ^)
+          const closed = sleeping || celebrating;
+          // מצמוץ
           let blink = 1;
-          if (sleeping) blink = 0.08;
-          else if (now > nextBlink) {
+          if (!closed && now > nextBlink) {
             const b = (now - nextBlink) / 140;
             blink = b < 1 ? Math.abs(1 - 2 * b) * 0.9 + 0.1 : 1;
             if (b >= 1) nextBlink = now + 2600 + Math.random() * 2400;
           }
-          for (const e of goli.eyes) e.g.scale.y = blink;
+          for (const e of goli.eyes) {
+            e.open.visible = !closed;
+            e.open.scale.y = blink * (surprised ? 1.12 : 1);
+            e.lid.visible = closed;
+            e.lid.rotation.z = sleeping ? Math.PI : 0;
+            e.lid.position.y = sleeping ? 0.04 : -0.03;
+          }
+
+          // גבות: גובה והטיה לפי הרגש (side: ‎-1 שמאל, 1 ימין על המסך)
+          let browY = 0, browTilt = 0.08; // רגיל: קצה חיצוני קצת למטה
+          if (sad) { browY = 0.02; browTilt = -0.38; }            // פנים למעלה
+          else if (surprised || p.mood === 'wave') { browY = 0.09; browTilt = 0.02; }
+          else if (celebrating) { browY = 0.06; browTilt = 0.12; }
+          else if (sleeping) { browY = -0.025; browTilt = 0.15; }
+          if (talking) { browY += o * 0.05; browTilt += Math.sin(t * 3.1) * 0.05; }
+          for (const b of goli.brows) {
+            b.pivot.position.y = browY;
+            b.pivot.rotation.z = -b.side * browTilt;
+          }
 
           // פה
-          if (loadExcite > o) o = loadExcite * 0.7; // "וואו" באמצע הסלטה
-          goli.open.visible = (talking || loadExcite > 0) && o > 0.04;
-          goli.open.scale.set(0.85 + o * 0.25, 0.15 + o * 0.95, 1);
-          goli.smile.visible = !goli.open.visible;
-          goli.smile.scale.setScalar(p.mood === 'celebrate' ? 1.25 : sleeping ? 0.6 : 1);
-          // עצוב: הקשת הפוכה (פה למטה)
-          goli.smile.rotation.z = sad ? 0 : Math.PI;
-          goli.smile.position.y = sad ? -0.08 : 0.06;
+          if (loadExcite > o) o = loadExcite * 0.7;
+          goli.oh.visible = surprised;
+          goli.frown.visible = sad && !talking;
+          goli.smile.visible = sleeping && !talking;
+          goli.open.visible = !goli.oh.visible && !goli.frown.visible && !goli.smile.visible;
+          // פה פתוח: חיוך קטן במנוחה, נפתח בדיבור, גדול בחגיגה
+          const rest = celebrating ? 1.15 : 0.75;
+          const openY = talking ? 0.3 + o * 0.85 : rest;
+          goli.open.scale.set(celebrating ? 1.15 : 0.85 + o * 0.2, openY, 1);
+
+          // כתר וצעיף
+          goli.crown.visible = !!p.crown;
           return visibleRef.current; // מחוץ למסך - נעצר עד שיחזור (wakeRef)
         }
       };
       stage.add(view);
       wakeRef.current = () => stage.wake(view);
+      goliRef.current = goli;
+      if (scarfRef.current) goli.setScarf(scarfRef.current[0], scarfRef.current[1]);
     })();
     return () => {
       gone = true;
