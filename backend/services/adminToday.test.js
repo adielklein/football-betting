@@ -110,8 +110,9 @@ test('המסך: 365 שנכשל שוב ושוב מופיע עם קישור ללו
     players, users, now: NOW,
     providers: [{ source: '365 חי', consecutiveFailures: 4, lastError: { status: 403 } }, { source: '365 ייבוא ונתונים', consecutiveFailures: 1 }]
   });
-  assert.deepStrictEqual(today.global.map((g) => g.key), ['provider_365 חי']);
-  assert.equal(today.global[0].action.type, 'logs');
+  // המשחק האחרון בעוד 6 שעות - גם "להכין את הבא" (ראה הבדיקות למטה)
+  assert.deepStrictEqual(today.global.map((g) => g.key), ['prep_next', 'provider_365 חי']);
+  assert.equal(today.global.find((g) => g.key.startsWith('provider_')).action.type, 'logs');
   assert.ok(today.todo >= 1);
 });
 
@@ -128,11 +129,12 @@ test('שבוע נעול שעוד משחקים בו - לא מציעים ליצו�
     match('m1', -20, { team1Goals: 1, team2Goals: 0 }), match('m2', -19, { team1Goals: 2, team2Goals: 2 }),
     match('m3', -1), match('m4', 20)
   ]);
-  assert.deepStrictEqual(playing.global.map((g) => g.key), [], 'לא מציע ליצור שבוע');
+  // לא "אין שבוע" - אבל המשחק האחרון מחר, אז כן "להכין את הבא"
+  assert.deepStrictEqual(playing.global.map((g) => g.key), ['prep_next'], 'לא no_upcoming');
   assert.equal(playing.weeks[0].counts.upcoming, 1);
 
   // רק משחק עתידי, בלי חי
-  assert.deepStrictEqual(partial([match('m1', -20, { team1Goals: 1, team2Goals: 0 }), match('m4', 20)]).global, []);
+  assert.deepStrictEqual(partial([match('m1', -20, { team1Goals: 1, team2Goals: 0 }), match('m4', 20)]).global.map((g) => g.key), ['prep_next']);
 
   // כל המשחקים כבר התחילו ונגמרו - עכשיו כן
   const finished = partial([match('m1', -20, { team1Goals: 1, team2Goals: 0 }), match('m2', -19, { team1Goals: 0, team2Goals: 0 })]);
@@ -145,4 +147,26 @@ test('שבוע נעול עם משחקים קדימה מראה מתי הבא', ()
   assert.equal(it.text, '2 משחקים עוד לפנינו');
   assert.equal(it.atLabel, 'הבא');
   assert.equal(new Date(it.at).getTime(), NOW + 20 * H);
+});
+
+
+test('להכין את השבוע הבא: רק כשהמשחק האחרון קרוב, ולא כשכבר יש טיוטה', () => {
+  const open = (lastH, extra = []) => buildToday({
+    weekData: [...extra, { week: week({ name: 'מחזור 14' }), matches: [match('m1', 2), match('m2', lastH)], bets: [], scores: [], exclusions: [] }],
+    players, users, now: NOW
+  });
+  // המשחק האחרון בעוד 4 ימים - כלום
+  assert.deepStrictEqual(open(96).global.map((g) => g.key), []);
+  // בעוד 30 שעות - רמז עדין
+  const soon = open(30).global.find((g) => g.key === 'prep_next');
+  assert.equal(soon.level, 'info');
+  assert.equal(soon.text, 'מחזור 14 נגמר מחר - אפשר כבר להכין את השבוע הבא');
+  assert.deepStrictEqual(soon.action, { type: 'create' });
+  // בעוד 6 שעות - משימה
+  const urgent = open(6).global.find((g) => g.key === 'prep_next');
+  assert.equal(urgent.level, 'todo');
+  assert.match(urgent.text, /בעוד 6 שעות/);
+  // כבר יש טיוטה לשבוע הבא - לא מציעים שוב
+  const draft = { week: week({ _id: 'w2', name: 'מחזור 15', active: false, lockTime: null }), matches: [], bets: [], scores: [], exclusions: [] };
+  assert.deepStrictEqual(open(6, [draft]).global.map((g) => g.key), []);
 });

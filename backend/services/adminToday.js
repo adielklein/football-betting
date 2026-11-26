@@ -16,6 +16,11 @@ const kickoffOf = (m) => (m.fullDate ? new Date(m.fullDate).getTime() : NaN);
 // משחק שבעט לפני פחות מזה ועוד אין לו תוצאה - כנראה מתנהל עכשיו
 const LIVE_WINDOW_MS = 2.5 * 60 * 60 * 1000;
 
+// "להכין את השבוע הבא" מופיע רק כשהמשחק האחרון של השבוע הנוכחי קרוב.
+// מוקדם מזה זה רעש; ב-12 השעות האחרונות זה כבר משימה
+const PREP_WINDOW_MS = 48 * 60 * 60 * 1000;
+const PREP_URGENT_MS = 12 * 60 * 60 * 1000;
+
 // עברית לא אומרת "1 משחקים": ליחיד יש ניסוח משלו
 const count = (n, one, many) => (n === 1 ? one : `${n} ${many}`);
 
@@ -47,6 +52,7 @@ function buildWeekStatus({ week, matches = [], bets = [], players = [], users = 
 
   const kickoffs = matches.map(kickoffOf).filter(Number.isFinite);
   const firstKickoff = kickoffs.length ? Math.min(...kickoffs) : null;
+  const lastKickoff = kickoffs.length ? Math.max(...kickoffs) : null;
 
   // הניקוד ומשחקים שנגמרו בלי תוצאה - אותה בדיקה שבמסך "בדיקת ניקוד"
   const audit = buildScoreAudit({ weeks: [week], matches, bets, scores, users, exclusions, now });
@@ -134,6 +140,7 @@ function buildWeekStatus({ week, matches = [], bets = [], players = [], users = 
     locked,
     lockTime: week.lockTime || null,
     firstKickoff: firstKickoff ? new Date(firstKickoff) : null,
+    lastKickoff: lastKickoff ? new Date(lastKickoff) : null,
     counts: {
       matches: total,
       withResult,
@@ -147,6 +154,31 @@ function buildWeekStatus({ week, matches = [], bets = [], players = [], users = 
     items
   };
 }
+
+// השבוע הנוכחי מתקרב לסופו ועוד לא התחילו להכין את הבא: הצעה ליצור אותו.
+// לא מופיע כשיש כבר טיוטה (מכינים), כשהשבוע רחוק מסופו, או בלי מועדים
+const relDay = (ms) => {
+  const h = ms / 3600000;
+  if (h < 1) return 'בעוד פחות משעה';
+  if (h < 20) return `בעוד ${Math.round(h)} שעות`;
+  if (h < 36) return 'מחר';
+  return 'בעוד יומיים';
+};
+const prepNextWeek = (statuses, now) => {
+  if (statuses.some((s) => s.stage === 'draft')) return null;
+  const current = statuses.find((s) => s.stage === 'open' || s.stage === 'running');
+  if (!current || !current.lastKickoff) return null;
+  const left = new Date(current.lastKickoff).getTime() - now;
+  if (left > PREP_WINDOW_MS || left < 0) return null;
+  return {
+    level: left <= PREP_URGENT_MS ? 'todo' : 'info',
+    key: 'prep_next',
+    text: `${current.name} נגמר ${relDay(left)} - אפשר כבר להכין את השבוע הבא`,
+    at: new Date(current.lastKickoff),
+    atLabel: 'המשחק האחרון',
+    action: { type: 'create' }
+  };
+};
 
 /**
  * המסך כולו: השבועות האחרונים שעוד יש בהם מה לעשות, ופריטים כלליים.
@@ -167,6 +199,9 @@ function buildToday({ weekData = [], players = [], users = [], providers = [], l
   const stillPlaying = statuses.some((s) => s.stage === 'running' && (s.counts.upcoming > 0 || s.counts.liveNow > 0));
   if (!hasUpcomingWeek && !stillPlaying) {
     global.push({ level: 'todo', key: 'no_upcoming', text: 'אין שבוע פתוח להימורים - הגיע הזמן ליצור את הבא', action: { type: 'create' } });
+  } else {
+    const prep = prepNextWeek(statuses, now);
+    if (prep) global.push(prep);
   }
 
   for (const p of providers) {
