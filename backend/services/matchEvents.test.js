@@ -70,7 +70,7 @@ test('תיקון תוצאה כלפי מטה אינו שער אלא ביטול', 
   // בדיוק מה שהיא מזהה - אבל שער היא עדיין לא
   const { first, second } = dropThenConfirm(live({ team1Goals: 2 }), live({ team1Goals: 1 }));
   assert.deepEqual(types(first), []);           // עוד לא - מחכים לאישור
-  assert.deepEqual(types(second), ['scoreCorrected']); // בלי אירוע ביטול אצל 365 - "התוצאה תוקנה"
+  assert.deepEqual(types(second), ['goalCancelled']); // בלי אירוע אצל 365 - אחרי ההמתנה
 });
 
 test('כרטיס אדום מזוהה מעלייה במונה', () => {
@@ -247,7 +247,7 @@ test('ביטול ושער באותה סריקה - שניהם מדווחים', ()
   const prev = live({ team1Goals: 1, team2Goals: 0 });
   const { first, second } = dropThenConfirm(prev, live({ team1Goals: 0, team2Goals: 1 }));
   assert.deepEqual(types(first), ['goal']);               // השער מיד
-  assert.deepEqual(types(second), ['scoreCorrected']);    // הירידה - אחרי המתנה
+  assert.deepEqual(types(second), ['goalCancelled']);     // הירידה - אחרי המתנה
 });
 
 test('תנודה בנתונים (תוצאה שיורדת וחוזרת) - לא ביטול ולא שער חדש', () => {
@@ -265,7 +265,7 @@ test('תנודה בנתונים (תוצאה שיורדת וחוזרת) - לא ב
 test('ירידה שנשארת עד סוף המשחק - ביטול גם לפני הדקה', () => {
   const a = detectEvents(live({ team1Goals: 1 }), live({ team1Goals: 0 }), T0);
   const b = detectEvents(a.next, live({ status: 'finished', team1Goals: 0 }), T0 + 15000);
-  assert.ok(types(b).includes('scoreCorrected'), types(b).join(','));
+  assert.ok(types(b).includes('goalCancelled'), types(b).join(','));
 });
 
 test('שער אמיתי אחרי ביטול שאושר, באותה תוצאה - נשלח (חתימה חדשה)', () => {
@@ -385,4 +385,14 @@ test('התוצאה תוקנה - נוסח בלי VAR', () => {
   const t = describeEvent({ type: 'scoreCorrected', side: 'team1', team1Goals: 1, team2Goals: 1 }, 'ארסנל', 'דורטמונד');
   assert.match(t.title, /תוקנה/);
   assert.doesNotMatch(t.title + t.body, /VAR|נפסל/);
+});
+
+
+test('אירוע VAR שמגיע באיחור (40 שניות אחרי הירידה) עדיין מאשר "נפסל"', () => {
+  const a = detectEvents(live({ team1Goals: 1 }), live({ team1Goals: 0 }), T0, { voids: { team1: 0, team2: 0 } });
+  assert.deepEqual(types(a), []);
+  const b = detectEvents(a.next, live({ team1Goals: 0 }), T0 + 30000, { voids: { team1: 0, team2: 0 } });
+  assert.deepEqual(types(b), [], 'עוד מחכים לאירוע');
+  const c = detectEvents(b.next, live({ team1Goals: 0 }), T0 + 40000, { voids: { team1: 1, team2: 0, team1Recent: true } });
+  assert.deepEqual(types(c), ['goalCancelled']);
 });

@@ -19,12 +19,14 @@ const EMPTY = {
 };
 
 // ירידה בתוצאה (שער שירד) - שלוש אפשרויות:
-//   1. ל-365 יש אירוע "השער נפסל" חדש לאותה קבוצה  -> "השער נפסל" מיד
-//   2. התוצאה חוזרת תוך זמן קצר                     -> תנודה בנתונים, כלום
-//   3. נשארת נמוכה CANCEL_CONFIRM_MS בלי אירוע       -> "התוצאה תוקנה"
-// בלי זה יצאה "השער נפסל" על שער שלא נפסל (ארסנל-דורטמונד, ליל-באיירן):
+//   1. ל-365 יש אירוע "השער נפסל" חדש לאותה קבוצה  -> "השער נפסל (VAR)" ברגע
+//      שהאירוע מופיע. 365 רושמים אותו לפעמים יותר מחצי דקה אחרי שהתוצאה
+//      יורדת (סלטה-בורנמות'), ולכן ממתינים לו
+//   2. התוצאה חוזרת                                  -> תנודה בנתונים, כלום
+//   3. נשארת נמוכה CANCEL_CONFIRM_MS בלי אירוע       -> "השער נפסל" (בלי VAR)
+// בלי ההמתנה יצאה "השער נפסל" על שער שלא נפסל (ארסנל-דורטמונד, ליל-באיירן):
 // שם 365 הראו לרגע שער שלא היה, ואז תיקנו
-const CANCEL_CONFIRM_MS = 30000;
+const CANCEL_CONFIRM_MS = 120000;
 
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null);
 
@@ -157,7 +159,7 @@ function detectEvents(prev, live, now = Date.now(), opts = {}) {
     } else if ((side1 && freshVoid('team1')) || (side2 && freshVoid('team2'))) {
       settle(side1, side2, 'goalCancelled');
     } else if (now - before.dropAt >= CANCEL_CONFIRM_MS || next.status === 'finished') {
-      settle(side1, side2, 'scoreCorrected');
+      settle(side1, side2, 'goalCancelled');
     }
   }
   changed = changedScore() || next.dropAt !== before.dropAt || next.cancels !== before.cancels ||
