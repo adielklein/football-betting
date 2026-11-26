@@ -21,8 +21,9 @@ import scarfImg from '../assets/goli/scarf.webp';
 // מי שביקש פחות תנועה (still) מקבל אותו בלי קפיצות.
 
 // מיקום הכדור בכל תמונה (מרכז ורדיוס, בפיקסלים) - כדי שהכדור יישב בדיוק
-// באותו מקום בכל הבעה ולא "יקפוץ" במעבר. ground = איפה הכדור נגמר למטה
-// (ביחס לרדיוס): עם הצעיף הוא "מתיישב" ונגמר מעט מעל, אז הצל עולה איתו
+// באותו מקום בכל הבעה ולא "יקפוץ" במעבר.
+// (בתמונת הצעיף, החלק התחתון של הכדור מתחת לצעיף נלקח מהתמונה הרגילה -
+// אצל Gemini הוא "מתיישב" ונבלע בצל, ובלי זה הוא לא נראה עגול)
 const SPRITES = {
   idle: { src: idleImg, w: 290, h: 290, cx: 144, cy: 144, r: 146 },
   talk: { src: talkImg, w: 292, h: 290, cx: 145, cy: 144, r: 147 },
@@ -31,7 +32,7 @@ const SPRITES = {
   celebrate: { src: celebrateImg, w: 286, h: 286, cx: 142, cy: 142, r: 144 },
   wow: { src: wowImg, w: 288, h: 286, cx: 143, cy: 142, r: 145 },
   crown: { src: crownImg, w: 302, h: 354, cx: 148, cy: 204, r: 150 },
-  scarf: { src: scarfImg, w: 318, h: 306, cx: 155, cy: 152, r: 155, ground: 0.74 }
+  scarf: { src: scarfImg, w: 318, h: 308, cx: 155, cy: 152, r: 155 }
 };
 
 const TALK_MS = 1600;
@@ -149,7 +150,7 @@ export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 
       <style>{CSS}</style>
       {/* צל על הקרקע */}
       <span style={{
-        position: 'absolute', left: size * 0.22, width: size * 0.56, top: by + (D / 2) * (sp.ground || 1) + H * 0.03, height: size * 0.09, borderRadius: '50%',
+        position: 'absolute', left: size * 0.22, width: size * 0.56, top: by + D / 2 + H * 0.03, height: size * 0.09, borderRadius: '50%',
         background: '#000', opacity: 0.2, animation: mood === 'idle' || mood === 'loading' ? `gs-shadow ${mood === 'loading' ? '.55s' : '2.2s'} ease-in-out infinite` : 'none'
       }} />
       {/* קפיצה קטנה בכל שלב חדש */}
