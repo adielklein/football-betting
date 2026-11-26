@@ -5,7 +5,9 @@ import sleepImg from '../assets/goli/sleep.webp';
 import sadImg from '../assets/goli/sad.webp';
 import celebrateImg from '../assets/goli/celebrate.webp';
 import crownImg from '../assets/goli/crown.webp';
-import idleScarfImg from '../assets/goli/idle_scarf.webp';
+import scarfLayerImg from '../assets/goli/scarf_layer.webp';
+import irisLImg from '../assets/goli/iris_l.webp';
+import irisRImg from '../assets/goli/iris_r.webp';
 import mouthClosedImg from '../assets/goli/mouth_closed.webp';
 import mouthMidImg from '../assets/goli/mouth_mid.webp';
 import mouthOImg from '../assets/goli/mouth_o.webp';
@@ -19,21 +21,32 @@ import mouthOImg from '../assets/goli/mouth_o.webp';
 //   sad       - פרצוף עצוב, קפיצה כבדה
 //   loading   - מתגלגל מצד לצד במקום (טעינה)
 // lookX/lookY (‎-1..1) - מטה את הראש לכיוון האלמנט המואר. say - הטקסט שהוא "אומר".
-// crown - כתר (הזוכה השבועי). scarf=[ראשי, משני] - צעיף בצבעי הקבוצה (במצב רגיל).
+// crown - כתר (הזוכה השבועי). scarf=[ראשי, משני, סמל?] - צעיף בצבעי הקבוצה
+// עם הסמל על הקצה (במצב רגיל).
 // מי שביקש פחות תנועה (still) מקבל אותו בלי קפיצות.
 
 // מיקום הכדור בכל תמונה (מרכז ורדיוס, בפיקסלים) - כדי שהכדור יישב בדיוק
 // באותו מקום בכל הבעה ולא "יקפוץ" במעבר.
-// idle_scarf = הפרצוף הרגיל עם הצעיף מהגיליון מולבש עליו (כך שגם עם צעיף
-// הוא מדבר).
 const SPRITES = {
   idle: { src: idleImg, w: 290, h: 290, cx: 144, cy: 144, r: 146 },
   sleep: { src: sleepImg, w: 306, h: 292, cx: 142, cy: 148, r: 144 },
   sad: { src: sadImg, w: 288, h: 286, cx: 143, cy: 142, r: 145 },
   celebrate: { src: celebrateImg, w: 286, h: 286, cx: 142, cy: 142, r: 144 },
-  crown: { src: crownImg, w: 302, h: 354, cx: 148, cy: 204, r: 150 },
-  idle_scarf: { src: idleScarfImg, w: 300, h: 311, cx: 146, cy: 144, r: 146 }
+  crown: { src: crownImg, w: 302, h: 354, cx: 148, cy: 204, r: 150 }
 };
+
+// שכבות שמונחות על הפרצוף הרגיל (idle), ביחידות של התמונה יחסית למרכז הכדור:
+// עיניים - הקשתית זזה בתוך העין לכיוון שגולי מסתכל (הלבן נשאר במקום, והעין
+// חותכת את הקשתית - כך המבט אמיתי). rest = מיקום הקשתית במנוחה
+const EYES = [
+  { src: irisLImg, cx: -53.5, cy: -26, rx: 30, ry: 31, ix: -49.5, iy: -24 },
+  { src: irisRImg, cx: 52.5, cy: -26, rx: 30, ry: 31, ix: 46.5, iy: -24 }
+];
+const IRIS_R = 29;
+const GAZE = { x: 6, y: 5 };
+// הצעיף מהגיליון כשכבה נפרדת - נצבע בשני צבעי הקבוצה. tail = הקצה התלוי,
+// שם תפור הסמל
+const SCARF = { x: -141, y: 44, w: 263, h: 119, tailX: 80, tailY: 132, badge: 58 };
 
 // דיבור: מדבקות פה שמונחות על הפה של הפרצוף הרגיל (עם או בלי צעיף) - סגור
 // בחיוך, חצי פתוח, "או" עגול, ופתוח לגמרי (הפה של הפרצוף עצמו, בלי מדבקה).
@@ -74,8 +87,8 @@ const CSS = `
 .gs-still, .gs-still * { animation: none !important }
 `;
 
-// צעיף בצבעי הקבוצה: הפסים האדומים בתמונה נצבעים בצבע הראשי (שומרים על
-// הצללה של הסריגה). נשמר לפי צבע - נבנה פעם אחת
+// צעיף בצבעי הקבוצה: הפסים האדומים נצבעים בצבע הראשי והלבנים במשני
+// (שומרים על ההצללה של הסריגה). נשמר לפי צבעים - נבנה פעם אחת
 const scarfCache = new Map();
 const hex = (c) => {
   const m = /^#?([0-9a-f]{6})$/i.exec(String(c || '').trim());
@@ -83,13 +96,13 @@ const hex = (c) => {
   const n = parseInt(m[1], 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 };
-const tintScarf = (src, primary, secondary) => {
+const tintScarf = (primary, secondary) => {
   let col = hex(primary);
-  const sec = hex(secondary);
-  // צבע ראשי כמעט לבן (הפסים הלבנים כבר לבנים) - משתמשים במשני
-  if (col && col[0] + col[1] + col[2] > 690 && sec) col = sec;
+  let sec = hex(secondary) || [255, 255, 255];
+  // צבע ראשי כמעט לבן - מחליפים, כך שהפסים הבולטים תמיד בצבע
+  if (col && col[0] + col[1] + col[2] > 690) [col, sec] = [sec, col];
   if (!col) return Promise.resolve(null);
-  const key = `${src}|${col.join(',')}`;
+  const key = `${col.join(',')}|${sec.join(',')}`;
   if (scarfCache.has(key)) return scarfCache.get(key);
   const p = new Promise((resolve) => {
     const img = new Image();
@@ -101,13 +114,15 @@ const tintScarf = (src, primary, secondary) => {
         x.drawImage(img, 0, 0);
         const d = x.getImageData(0, 0, c.width, c.height);
         const a = d.data;
-        // רק באזור הצעיף (מתחת לפה) - לא נוגעים בעיניים החומות
-        const y0 = Math.round(c.height * 0.62);
-        for (let i = y0 * c.width * 4; i < a.length; i += 4) {
+        for (let i = 0; i < a.length; i += 4) {
+          if (!a[i + 3]) continue;
           const r = a[i], g = a[i + 1], b = a[i + 2];
-          if (r > g + 45 && r > b + 45) {
-            const f = Math.min(1.25, r / 205);
-            a[i] = Math.min(255, col[0] * f); a[i + 1] = Math.min(255, col[1] * f); a[i + 2] = Math.min(255, col[2] * f);
+          let to = null, f = 1;
+          if (r > g + 35 && r > b + 35) { to = col; f = r / 200; }                         // פס אדום
+          else if (Math.min(r, g, b) > 120) { to = sec; f = (r + g + b) / 3 / 232; }        // פס לבן
+          if (to) {
+            f = Math.max(0.35, Math.min(1.2, f));
+            a[i] = Math.min(255, to[0] * f); a[i + 1] = Math.min(255, to[1] * f); a[i + 2] = Math.min(255, to[2] * f);
           }
         }
         x.putImageData(d, 0, 0);
@@ -115,7 +130,7 @@ const tintScarf = (src, primary, secondary) => {
       } catch (e) { resolve(null); }
     };
     img.onerror = () => resolve(null);
-    img.src = src;
+    img.src = scarfLayerImg;
   });
   scarfCache.set(key, p);
   return p;
@@ -145,26 +160,26 @@ export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 
   }, [stepKey, canTalk, say]); // eslint-disable-line react-hooks/exhaustive-deps
   const talking = viseme !== null;
 
-  // שתי תמונות הצעיף (פה סגור/פתוח) נצבעות מראש, כדי שהדיבור לא יהבהב
-  const scarfKey = scarf ? scarf.join(',') : '';
-  const [tinted, setTinted] = useState({});
+  // הצעיף נצבע פעם אחת לכל זוג צבעים
+  const scarfKey = scarf ? scarf.slice(0, 2).join(',') : '';
+  const [scarfSrc, setScarfSrc] = useState(null);
+  const [badgeOk, setBadgeOk] = useState(true);
   useEffect(() => {
     let alive = true;
     if (!useScarf) return undefined;
-    ['idle_scarf'].forEach((n) => {
-      tintScarf(SPRITES[n].src, scarf[0], scarf[1]).then((u) => { if (alive && u) setTinted((t) => ({ ...t, [n]: u })); });
-    });
+    tintScarf(scarf[0], scarf[1]).then((u) => { if (alive) setScarfSrc(u); });
     return () => { alive = false; };
   }, [scarfKey, useScarf]); // eslint-disable-line react-hooks/exhaustive-deps
+  const badge = useScarf && scarf[2] && badgeOk ? scarf[2] : null;
 
   const key = crown ? 'crown'
-    : useScarf ? 'idle_scarf'
     : mood === 'sleep' ? 'sleep'
     : mood === 'sad' ? 'sad'
     : mood === 'celebrate' ? 'celebrate'
     : 'idle';
   const sp = SPRITES[key];
-  const src = tinted[key] || sp.src;
+  const src = sp.src;
+  const face = key === 'idle';
 
   // הכדור: קוטר ומרכז קבועים בתוך המסגרת (רוחב size, גובה size×1.15)
   const H = size * 1.15;
@@ -206,12 +221,50 @@ export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 
                 src={src} alt="" draggable={false}
                 style={{ position: 'absolute', left: bx - sp.cx * k, top: by - sp.cy * k, width: sp.w * k, height: sp.h * k, maxWidth: 'none', pointerEvents: 'none', userSelect: 'none' }}
               />
-              {talking && MOUTHS[viseme] && (key === 'idle' || key === 'idle_scarf') && (
+              {/* עיניים: הקשתית זזה לכיוון המבט */}
+              {face && EYES.map((e, n) => (
+                <span key={n} style={{
+                  position: 'absolute', left: bx + (e.cx - e.rx) * k, top: by + (e.cy - e.ry) * k,
+                  width: 2 * e.rx * k, height: 2 * e.ry * k, borderRadius: '50%', overflow: 'hidden',
+                  background: 'linear-gradient(#fdfdfe 0%, #f4f5f7 55%, #dfe1e7 100%)',
+                  boxShadow: `inset 0 ${2 * k}px ${3 * k}px rgba(40,30,30,.18)`
+                }}>
+                  <img
+                    src={e.src} alt="" draggable={false}
+                    style={{
+                      position: 'absolute', left: (e.ix - IRIS_R - (e.cx - e.rx)) * k, top: (e.iy - IRIS_R - (e.cy - e.ry)) * k,
+                      width: 2 * IRIS_R * k, height: 2 * IRIS_R * k, maxWidth: 'none', pointerEvents: 'none', userSelect: 'none',
+                      transform: `translate(${lx * GAZE.x * k}px, ${ly * GAZE.y * k}px)`, transition: 'transform .35s ease'
+                    }}
+                  />
+                </span>
+              ))}
+              {talking && MOUTHS[viseme] && face && (
                 <img
                   src={MOUTHS[viseme]} alt="" draggable={false}
                   style={{
                     position: 'absolute', left: bx + MOUTH_BOX.x * k, top: by + MOUTH_BOX.y * k,
                     width: MOUTH_BOX.w * k, height: MOUTH_BOX.h * k, maxWidth: 'none', pointerEvents: 'none', userSelect: 'none'
+                  }}
+                />
+              )}
+              {useScarf && face && (
+                <img
+                  src={scarfSrc || scarfLayerImg} alt="" draggable={false}
+                  style={{
+                    position: 'absolute', left: bx + SCARF.x * k, top: by + SCARF.y * k, width: SCARF.w * k, height: SCARF.h * k,
+                    maxWidth: 'none', pointerEvents: 'none', userSelect: 'none', opacity: scarfSrc ? 1 : 0
+                  }}
+                />
+              )}
+              {/* סמל הקבוצה, תפור על הקצה התלוי של הצעיף */}
+              {badge && face && scarfSrc && (
+                <img
+                  src={badge} alt="" draggable={false} onError={() => setBadgeOk(false)}
+                  style={{
+                    position: 'absolute', left: bx + (SCARF.tailX - SCARF.badge / 2) * k, top: by + (SCARF.tailY - SCARF.badge / 2) * k,
+                    width: SCARF.badge * k, height: SCARF.badge * k, objectFit: 'contain', maxWidth: 'none',
+                    filter: `drop-shadow(0 ${k * 2}px ${k * 2}px rgba(0,0,0,.35))`, pointerEvents: 'none', userSelect: 'none'
                   }}
                 />
               )}
@@ -235,5 +288,5 @@ export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 
 
 // כל התמונות נטענות מראש, כדי שהחלפת הבעה (דיבור, חגיגה) לא תהבהב
 if (typeof window !== 'undefined' && typeof Image !== 'undefined') {
-  [...Object.values(SPRITES).map((s) => s.src), ...Object.values(MOUTHS)].forEach((src) => { const i = new Image(); i.src = src; });
+  [...Object.values(SPRITES).map((s) => s.src), ...Object.values(MOUTHS), irisLImg, irisRImg].forEach((src) => { const i = new Image(); i.src = src; });
 }
