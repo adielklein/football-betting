@@ -21,8 +21,7 @@ import mouthOImg from '../assets/goli/mouth_o.webp';
 //   sad       - פרצוף עצוב, קפיצה כבדה
 //   loading   - מתגלגל מצד לצד במקום (טעינה)
 // lookX/lookY (‎-1..1) - מטה את הראש לכיוון האלמנט המואר. say - הטקסט שהוא "אומר".
-// crown - כתר (הזוכה השבועי). scarf=[ראשי, משני, סמל?] - צעיף בצבעי הקבוצה
-// עם הסמל על הקצה (במצב רגיל).
+// crown - כתר (הזוכה השבועי). scarf=[ראשי, משני] - צעיף בצבעי הקבוצה (במצב רגיל).
 // מי שביקש פחות תנועה (still) מקבל אותו בלי קפיצות.
 
 // מיקום הכדור בכל תמונה (מרכז ורדיוס, בפיקסלים) - כדי שהכדור יישב בדיוק
@@ -44,9 +43,9 @@ const EYES = [
 ];
 const IRIS_R = 29;
 const GAZE = { x: 6, y: 5 };
-// הצעיף מהגיליון כשכבה נפרדת - נצבע בשני צבעי הקבוצה. tail = הקצה התלוי,
-// שם תפור הסמל
-const SCARF = { x: -141, y: 44, w: 263, h: 119, tailX: 80, tailY: 132, badge: 58 };
+// הצעיף מהגיליון כשכבה נפרדת - נצבע בשני צבעי הקבוצה. בלי סמל: בגודל של
+// גולי (66-104 פיקסלים) סמל על הצעיף יוצא 5-8 פיקסלים - כתם, לא סמל
+const SCARF = { x: -141, y: 44, w: 263, h: 119 };
 
 // דיבור: מדבקות פה שמונחות על הפה של הפרצוף הרגיל (עם או בלי צעיף) - סגור
 // בחיוך, חצי פתוח, "או" עגול, ופתוח לגמרי (הפה של הפרצוף עצמו, בלי מדבקה).
@@ -163,14 +162,12 @@ export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 
   // הצעיף נצבע פעם אחת לכל זוג צבעים
   const scarfKey = scarf ? scarf.slice(0, 2).join(',') : '';
   const [scarfSrc, setScarfSrc] = useState(null);
-  const [badgeOk, setBadgeOk] = useState(true);
   useEffect(() => {
     let alive = true;
     if (!useScarf) return undefined;
     tintScarf(scarf[0], scarf[1]).then((u) => { if (alive) setScarfSrc(u); });
     return () => { alive = false; };
   }, [scarfKey, useScarf]); // eslint-disable-line react-hooks/exhaustive-deps
-  const badge = useScarf && scarf[2] && badgeOk ? scarf[2] : null;
 
   const key = crown ? 'crown'
     : mood === 'sleep' ? 'sleep'
@@ -254,17 +251,6 @@ export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 
                   style={{
                     position: 'absolute', left: bx + SCARF.x * k, top: by + SCARF.y * k, width: SCARF.w * k, height: SCARF.h * k,
                     maxWidth: 'none', pointerEvents: 'none', userSelect: 'none', opacity: scarfSrc ? 1 : 0
-                  }}
-                />
-              )}
-              {/* סמל הקבוצה, תפור על הקצה התלוי של הצעיף */}
-              {badge && face && scarfSrc && (
-                <img
-                  src={badge} alt="" draggable={false} onError={() => setBadgeOk(false)}
-                  style={{
-                    position: 'absolute', left: bx + (SCARF.tailX - SCARF.badge / 2) * k, top: by + (SCARF.tailY - SCARF.badge / 2) * k,
-                    width: SCARF.badge * k, height: SCARF.badge * k, objectFit: 'contain', maxWidth: 'none',
-                    filter: `drop-shadow(0 ${k * 2}px ${k * 2}px rgba(0,0,0,.35))`, pointerEvents: 'none', userSelect: 'none'
                   }}
                 />
               )}
