@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { reducedMotion } from '../services/motion';
 import GoliSprite from './GoliSprite';
+import { armVoiceUnlock, unlockVoice, isVoiceMuted, setVoiceMuted } from '../services/goliVoice';
 import { teamScarf } from './goliScarf';
 
 // סיור מודרך באפליקציה: מאיר את האלמנט האמיתי שעל המסך, מסביר אותו, ועובר
@@ -55,6 +56,11 @@ export default function Walkthrough({ steps, onTab, onClose }) {
   const last = index === steps.length - 1;
   // מה גולי "אומר": הכותרת והטקסט של השלב כפי שהם על המסך - הפה זז לפי
   // המילים ונמשך בערך כמו זמן הקריאה
+  // הקול של גולי: דולק מההתחלה, נשמע מהנגיעה הראשונה (דפדפנים לא משמיעים
+  // קול לפני כן). כפתור השתקה בכרטיס, והבחירה נשמרת במכשיר
+  const [muted, setMuted] = useState(isVoiceMuted);
+  useEffect(() => { armVoiceUnlock(); }, []);
+  const toggleMute = () => { const m = !muted; setMuted(m); setVoiceMuted(m); if (!m) unlockVoice(); };
   const textRef = useRef(null);
   const [say, setSay] = useState('');
   useLayoutEffect(() => {
@@ -219,8 +225,19 @@ export default function Walkthrough({ steps, onTab, onClose }) {
           }} />
         )}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem', position: 'relative' }}>
-          <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--text-4, #9aa2ae)' }}>
-            <bdi dir="ltr">{index + 1}/{steps.length}</bdi>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+            <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--text-4, #9aa2ae)' }}>
+              <bdi dir="ltr">{index + 1}/{steps.length}</bdi>
+            </span>
+            <button
+              type="button"
+              onClick={toggleMute}
+              aria-label={muted ? 'הפעל את הקול של גולי' : 'השתק את גולי'}
+              aria-pressed={muted}
+              style={{ border: 'none', background: 'var(--surface-2, #f1f3f6)', borderRadius: '999px', width: 28, height: 28, fontSize: '0.9rem', lineHeight: 1, cursor: 'pointer', padding: 0 }}
+            >
+              {muted ? '🔇' : '🔊'}
+            </button>
           </span>
           <button
             type="button"
@@ -234,7 +251,7 @@ export default function Walkthrough({ steps, onTab, onClose }) {
             שלב) - רק הטקסט מתחלף, עם קפיצה קטנה */}
         <div style={{ display: 'flex', gap: '0.7rem', alignItems: 'flex-start', position: 'relative' }}>
           <div ref={mascotRef} style={{ flexShrink: 0, marginTop: '-2px' }}>
-            <GoliSprite mood={mood} stepKey={index} lookX={look.x} lookY={look.y} size={MASCOT} still={still} scarf={scarf} say={say} />
+            <GoliSprite mood={mood} stepKey={index} lookX={look.x} lookY={look.y} size={MASCOT} still={still} scarf={scarf} say={say} voice={!muted} />
           </div>
           <div key={index} ref={textRef} style={{ flex: 1, minWidth: 0, animation: still ? 'none' : 'tour-pop .38s cubic-bezier(.2,1.3,.4,1) both' }}>
             <h3 id="tour-title" style={{ margin: '0.1rem 0 0.3rem', fontSize: 'var(--fs-md)', fontWeight: 800, lineHeight: 1.3 }}>

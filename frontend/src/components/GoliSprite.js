@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { speechSeq } from '../services/goliSpeech';
+import { blip } from '../services/goliVoice';
 import idleImg from '../assets/goli/idle.webp';
 import sleepImg from '../assets/goli/sleep.webp';
 import sadImg from '../assets/goli/sad.webp';
@@ -19,6 +20,7 @@ import mouthOImg from '../assets/goli/mouth_o.webp';
 //   sad       - פרצוף עצוב, קפיצה כבדה
 //   loading   - מתגלגל מצד לצד במקום (טעינה)
 // lookX/lookY (‎-1..1) - מטה את הראש לכיוון האלמנט המואר. say - הטקסט שהוא "אומר".
+// voice - ג'יבריש חמוד בכל הברה (services/goliVoice.js).
 // crown - כתר (הזוכה השבועי). scarf=[ראשי, משני] - צעיף בצבעי הקבוצה (במצב רגיל).
 // מי שביקש פחות תנועה (still) מקבל אותו בלי קפיצות.
 
@@ -121,7 +123,7 @@ const tintScarf = (src, primary, secondary) => {
   return p;
 };
 
-export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 0, size = 66, still = false, talk = true, crown = false, scarf = null, say = '' }) {
+export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 0, size = 66, still = false, talk = true, crown = false, scarf = null, say = '', voice = false }) {
   const calm = mood === 'idle' || mood === 'wave';
   const useScarf = !!scarf && calm && !crown;
   const canTalk = talk && calm && !crown && !still;
@@ -138,11 +140,12 @@ export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 
       if (i >= seq.length) { setViseme(null); return; }
       const [v, ms] = seq[i++];
       setViseme(v);
+      if (voice) blip(v, ms);
       timer = setTimeout(next, ms);
     };
     next();
     return () => clearTimeout(timer);
-  }, [stepKey, canTalk, say]);
+  }, [stepKey, canTalk, say]); // eslint-disable-line react-hooks/exhaustive-deps
   const talking = viseme !== null;
 
   // שתי תמונות הצעיף (פה סגור/פתוח) נצבעות מראש, כדי שהדיבור לא יהבהב
