@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { speechSeq } from '../services/goliSpeech';
 import idleImg from '../assets/goli/idle.webp';
 import sleepImg from '../assets/goli/sleep.webp';
 import sadImg from '../assets/goli/sad.webp';
@@ -17,7 +18,7 @@ import mouthOImg from '../assets/goli/mouth_o.webp';
 //   sleep     - עיניים עצומות ו-Zzz, נשימה איטית
 //   sad       - פרצוף עצוב, קפיצה כבדה
 //   loading   - מתגלגל מצד לצד במקום (טעינה)
-// lookX/lookY (‎-1..1) - מטה את הראש לכיוון האלמנט המואר.
+// lookX/lookY (‎-1..1) - מטה את הראש לכיוון האלמנט המואר. say - הטקסט שהוא "אומר".
 // crown - כתר (הזוכה השבועי). scarf=[ראשי, משני] - צעיף בצבעי הקבוצה (במצב רגיל).
 // מי שביקש פחות תנועה (still) מקבל אותו בלי קפיצות.
 
@@ -120,16 +121,18 @@ const tintScarf = (src, primary, secondary) => {
   return p;
 };
 
-export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 0, size = 66, still = false, talk = true, crown = false, scarf = null }) {
+export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 0, size = 66, still = false, talk = true, crown = false, scarf = null, say = '' }) {
   const calm = mood === 'idle' || mood === 'wave';
   const useScarf = !!scarf && calm && !crown;
   const canTalk = talk && calm && !crown && !still;
 
-  // דיבור: בכל שלב חדש הוא "אומר משפט" - רצף צורות פה
+  // דיבור: בכל שלב חדש הוא "אומר משפט" - רצף צורות פה. עם say (הטקסט
+  // שעל המסך) הפה זז לפי המילים ולאורך זמן הקריאה; בלי - משפט קצר כללי
   const [viseme, setViseme] = useState(null); // null = לא מדבר
   useEffect(() => {
     if (!canTalk) { setViseme(null); return undefined; }
-    const seq = talkSeq(stepKey);
+    const fromText = say ? speechSeq(say) : [];
+    const seq = fromText.length ? fromText : talkSeq(stepKey);
     let i = 0, timer = null;
     const next = () => {
       if (i >= seq.length) { setViseme(null); return; }
@@ -139,7 +142,7 @@ export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 
     };
     next();
     return () => clearTimeout(timer);
-  }, [stepKey, canTalk]);
+  }, [stepKey, canTalk, say]);
   const talking = viseme !== null;
 
   // שתי תמונות הצעיף (פה סגור/פתוח) נצבעות מראש, כדי שהדיבור לא יהבהב

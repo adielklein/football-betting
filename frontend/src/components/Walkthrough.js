@@ -53,6 +53,14 @@ export default function Walkthrough({ steps, onTab, onClose }) {
   const step = steps[index];
   const [scarf] = useState(teamScarf); // צעיף בצבעי הקבוצה של השחקן
   const last = index === steps.length - 1;
+  // מה גולי "אומר": הכותרת והטקסט של השלב כפי שהם על המסך - הפה זז לפי
+  // המילים ונמשך בערך כמו זמן הקריאה
+  const textRef = useRef(null);
+  const [say, setSay] = useState('');
+  useLayoutEffect(() => {
+    const el = textRef.current;
+    setSay(el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
+  }, [index]);
 
   const measure = useCallback(() => {
     const el = findTarget(step?.target);
@@ -226,9 +234,9 @@ export default function Walkthrough({ steps, onTab, onClose }) {
             שלב) - רק הטקסט מתחלף, עם קפיצה קטנה */}
         <div style={{ display: 'flex', gap: '0.7rem', alignItems: 'flex-start', position: 'relative' }}>
           <div ref={mascotRef} style={{ flexShrink: 0, marginTop: '-2px' }}>
-            <GoliSprite mood={mood} stepKey={index} lookX={look.x} lookY={look.y} size={MASCOT} still={still} scarf={scarf} />
+            <GoliSprite mood={mood} stepKey={index} lookX={look.x} lookY={look.y} size={MASCOT} still={still} scarf={scarf} say={say} />
           </div>
-          <div key={index} style={{ flex: 1, minWidth: 0, animation: still ? 'none' : 'tour-pop .38s cubic-bezier(.2,1.3,.4,1) both' }}>
+          <div key={index} ref={textRef} style={{ flex: 1, minWidth: 0, animation: still ? 'none' : 'tour-pop .38s cubic-bezier(.2,1.3,.4,1) both' }}>
             <h3 id="tour-title" style={{ margin: '0.1rem 0 0.3rem', fontSize: 'var(--fs-md)', fontWeight: 800, lineHeight: 1.3 }}>
               {step.title}
             </h3>
