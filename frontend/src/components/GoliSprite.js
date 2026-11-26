@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import idleImg from '../assets/goli/idle.webp';
-import talkImg from '../assets/goli/talk.webp';
 import sleepImg from '../assets/goli/sleep.webp';
 import sadImg from '../assets/goli/sad.webp';
 import celebrateImg from '../assets/goli/celebrate.webp';
 import crownImg from '../assets/goli/crown.webp';
 import idleScarfImg from '../assets/goli/idle_scarf.webp';
-import talkScarfImg from '../assets/goli/talk_scarf.webp';
+import mouthClosedImg from '../assets/goli/mouth_closed.webp';
+import mouthMidImg from '../assets/goli/mouth_mid.webp';
+import mouthOImg from '../assets/goli/mouth_o.webp';
 
 // גולי - הדמות שנבחרה (גיליון הדמות מ-Gemini), כתמונה לכל הבעה, עם תנועה ב-CSS:
 //   idle      - קפיצה רכה עם כיווץ בנחיתה
-//   דיבור     - בכל שלב חדש (stepKey) מתחלף בין פה סגור לפתוח, בקצב של הברות
+//   דיבור     - בכל שלב חדש (stepKey) "אומר משפט": צורות פה בקצב של הברות
 //   wave      - קפיצות שלום עם הטיה לצדדים
 //   celebrate - צחוק, קפיצה גבוהה וסיבוב
 //   sleep     - עיניים עצומות ו-Zzz, נשימה איטית
@@ -22,21 +23,42 @@ import talkScarfImg from '../assets/goli/talk_scarf.webp';
 
 // מיקום הכדור בכל תמונה (מרכז ורדיוס, בפיקסלים) - כדי שהכדור יישב בדיוק
 // באותו מקום בכל הבעה ולא "יקפוץ" במעבר.
-// talk = הפרצוף הרגיל עם הפה של "מדבר" מהגיליון (שם העיניים אפורות, וכך
-// הן לא מהבהבות בדיבור). idle_scarf/talk_scarf = אותם פרצופים עם הצעיף
-// מהגיליון מולבש עליהם - כדי שגם עם צעיף הוא ידבר
+// idle_scarf = הפרצוף הרגיל עם הצעיף מהגיליון מולבש עליו (כך שגם עם צעיף
+// הוא מדבר).
 const SPRITES = {
   idle: { src: idleImg, w: 290, h: 290, cx: 144, cy: 144, r: 146 },
-  talk: { src: talkImg, w: 290, h: 290, cx: 144, cy: 144, r: 146 },
   sleep: { src: sleepImg, w: 306, h: 292, cx: 142, cy: 148, r: 144 },
   sad: { src: sadImg, w: 288, h: 286, cx: 143, cy: 142, r: 145 },
   celebrate: { src: celebrateImg, w: 286, h: 286, cx: 142, cy: 142, r: 144 },
   crown: { src: crownImg, w: 302, h: 354, cx: 148, cy: 204, r: 150 },
-  idle_scarf: { src: idleScarfImg, w: 300, h: 311, cx: 146, cy: 144, r: 146 },
-  talk_scarf: { src: talkScarfImg, w: 300, h: 311, cx: 146, cy: 144, r: 146 }
+  idle_scarf: { src: idleScarfImg, w: 300, h: 311, cx: 146, cy: 144, r: 146 }
 };
 
-const TALK_MS = 1600;
+// דיבור: מדבקות פה שמונחות על הפה של הפרצוף הרגיל (עם או בלי צעיף) - סגור
+// בחיוך, חצי פתוח, "או" עגול, ופתוח לגמרי (הפה של הפרצוף עצמו, בלי מדבקה).
+// המיקום ביחידות של התמונה, יחסית למרכז הכדור (רדיוס 146)
+const MOUTHS = { closed: mouthClosedImg, mid: mouthMidImg, o: mouthOImg };
+const MOUTH_BOX = { x: -46, y: 0, w: 88, h: 58, r: 146 };
+// הברות בקצב משתנה: פתיחה (פתוח/חצי/או) וסגירה לסירוגין, כמו דיבור אמיתי,
+// ובסוף סגור לרגע ואז חוזר לחיוך. אותו שלב = אותו "משפט"
+const talkSeq = (seed) => {
+  let x = (Math.abs(Number(seed) || 0) * 9301 + 49297) % 233280;
+  const rnd = () => { x = (x * 9301 + 49297) % 233280; return x / 233280; };
+  const seq = [];
+  let t = 0;
+  while (t < 1500) {
+    const r = rnd();
+    const open = r < 0.4 ? 'wide' : r < 0.78 ? 'mid' : 'o';
+    const d1 = 90 + Math.round(rnd() * 70);
+    seq.push([open, d1]); t += d1;
+    // לפעמים שתי פתיחות ברצף (הברה ארוכה), לרוב סגירה קצרה ביניהן
+    if (rnd() < 0.75) { const d2 = 55 + Math.round(rnd() * 45); seq.push(['closed', d2]); t += d2; }
+    // הפסקה קטנה בין מילים
+    if (rnd() < 0.18) { seq.push(['closed', 160]); t += 160; }
+  }
+  seq.push(['closed', 140]);
+  return seq;
+};
 
 const CSS = `
 @keyframes gs-bob { 0%,100% { transform: translateY(0) scale(1,1) } 45% { transform: translateY(-7%) scale(.98,1.03) } 88% { transform: translateY(0) scale(1.05,.94) } }
@@ -47,7 +69,6 @@ const CSS = `
 @keyframes gs-party { 0% { transform: translateY(0) rotate(0) scale(1) } 35% { transform: translateY(-22%) rotate(-10deg) scale(1.04) } 60% { transform: translateY(0) rotate(8deg) scale(1.08,.9) } 78% { transform: translateY(-7%) rotate(0) scale(1) } 100% { transform: translateY(0) rotate(0) } }
 @keyframes gs-breathe { 0%,100% { transform: scale(1,1) } 50% { transform: scale(1.03,.97) } }
 @keyframes gs-hop { 0% { transform: translateY(0) } 40% { transform: translateY(-10%) } 100% { transform: translateY(0) } }
-@keyframes gs-nod { 0%,100% { transform: rotate(0) } 30% { transform: rotate(-3deg) translateY(1%) } 65% { transform: rotate(2deg) } }
 @keyframes gs-star { 0% { transform: translate(0,0) scale(.2); opacity: 0 } 20% { opacity: 1 } 100% { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 0 } }
 .gs-still, .gs-still * { animation: none !important }
 `;
@@ -104,16 +125,22 @@ export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 
   const useScarf = !!scarf && calm && !crown;
   const canTalk = talk && calm && !crown && !still;
 
-  // דיבור: פה נפתח ונסגר לרגע בכל שלב חדש
-  const [mouthOpen, setMouthOpen] = useState(false);
+  // דיבור: בכל שלב חדש הוא "אומר משפט" - רצף צורות פה
+  const [viseme, setViseme] = useState(null); // null = לא מדבר
   useEffect(() => {
-    if (!canTalk) { setMouthOpen(false); return undefined; }
-    let open = true;
-    setMouthOpen(true);
-    const iv = setInterval(() => { open = !open; setMouthOpen(open); }, 170);
-    const t = setTimeout(() => { clearInterval(iv); setMouthOpen(false); }, TALK_MS);
-    return () => { clearInterval(iv); clearTimeout(t); };
+    if (!canTalk) { setViseme(null); return undefined; }
+    const seq = talkSeq(stepKey);
+    let i = 0, timer = null;
+    const next = () => {
+      if (i >= seq.length) { setViseme(null); return; }
+      const [v, ms] = seq[i++];
+      setViseme(v);
+      timer = setTimeout(next, ms);
+    };
+    next();
+    return () => clearTimeout(timer);
   }, [stepKey, canTalk]);
+  const talking = viseme !== null;
 
   // שתי תמונות הצעיף (פה סגור/פתוח) נצבעות מראש, כדי שהדיבור לא יהבהב
   const scarfKey = scarf ? scarf.join(',') : '';
@@ -121,18 +148,18 @@ export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 
   useEffect(() => {
     let alive = true;
     if (!useScarf) return undefined;
-    ['idle_scarf', 'talk_scarf'].forEach((n) => {
+    ['idle_scarf'].forEach((n) => {
       tintScarf(SPRITES[n].src, scarf[0], scarf[1]).then((u) => { if (alive && u) setTinted((t) => ({ ...t, [n]: u })); });
     });
     return () => { alive = false; };
   }, [scarfKey, useScarf]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const key = crown ? 'crown'
-    : useScarf ? (mouthOpen ? 'talk_scarf' : 'idle_scarf')
+    : useScarf ? 'idle_scarf'
     : mood === 'sleep' ? 'sleep'
     : mood === 'sad' ? 'sad'
     : mood === 'celebrate' ? 'celebrate'
-    : mouthOpen ? 'talk' : 'idle';
+    : 'idle';
   const sp = SPRITES[key];
   const src = tinted[key] || sp.src;
 
@@ -164,12 +191,28 @@ export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 
           <span style={{
             position: 'absolute', inset: 0, transformOrigin: `${bx}px ${by}px`,
             transform: `translate(${lx * size * 0.04}px, ${ly * size * 0.025}px) rotate(${lx * 7}deg)`,
-            transition: 'transform .35s ease', animation: mouthOpen ? 'gs-nod .5s ease-in-out infinite' : 'none'
+            transition: 'transform .35s ease'
           }}>
-            <img
-              src={src} alt="" draggable={false}
-              style={{ position: 'absolute', left: bx - sp.cx * k, top: by - sp.cy * k, width: sp.w * k, height: sp.h * k, maxWidth: 'none', pointerEvents: 'none', userSelect: 'none' }}
-            />
+            {/* בכל הברה הראש עולה טיפה ומתמתח - הדיבור מורגש בכל הגוף */}
+            <span style={{
+              position: 'absolute', inset: 0, transformOrigin: `${bx}px ${by + D / 2}px`,
+              transform: talking && viseme !== 'closed' ? `translateY(${-size * 0.012}px) scale(.99,1.02)` : 'none',
+              transition: 'transform 70ms ease-out'
+            }}>
+              <img
+                src={src} alt="" draggable={false}
+                style={{ position: 'absolute', left: bx - sp.cx * k, top: by - sp.cy * k, width: sp.w * k, height: sp.h * k, maxWidth: 'none', pointerEvents: 'none', userSelect: 'none' }}
+              />
+              {talking && MOUTHS[viseme] && (key === 'idle' || key === 'idle_scarf') && (
+                <img
+                  src={MOUTHS[viseme]} alt="" draggable={false}
+                  style={{
+                    position: 'absolute', left: bx + MOUTH_BOX.x * k, top: by + MOUTH_BOX.y * k,
+                    width: MOUTH_BOX.w * k, height: MOUTH_BOX.h * k, maxWidth: 'none', pointerEvents: 'none', userSelect: 'none'
+                  }}
+                />
+              )}
+            </span>
           </span>
         </span>
       </span>
@@ -189,5 +232,5 @@ export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 
 
 // כל התמונות נטענות מראש, כדי שהחלפת הבעה (דיבור, חגיגה) לא תהבהב
 if (typeof window !== 'undefined' && typeof Image !== 'undefined') {
-  Object.values(SPRITES).forEach((s) => { const i = new Image(); i.src = s.src; });
+  [...Object.values(SPRITES).map((s) => s.src), ...Object.values(MOUTHS)].forEach((src) => { const i = new Image(); i.src = src; });
 }
