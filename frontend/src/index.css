@@ -1279,28 +1279,6 @@ body:has(.pitch-stripes)::before { opacity: 0.35; }
 
 /* ===== אנימציות חתימה (components/Motifs.js) ===== */
 
-/* כדור טעינה: מתגלגל (הטלאים זזים בתוך ה-SVG) וקופץ, עם צל שמתכווץ למעלה */
-.ball-loader { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding-top: calc(var(--ball) * 0.32); }
-.ball-loader__ball { display: block; line-height: 0; }
-.ball-loader__shadow {
-  width: calc(var(--ball) * 0.7); height: calc(var(--ball) * 0.14);
-  border-radius: 50%; background: rgba(0,0,0,0.22);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .ball-loader__ball { animation: ballBounce 0.9s cubic-bezier(.45,0,.55,1) infinite; transform-origin: 50% 100%; }
-  .ball-loader__shadow { animation: ballShadow 0.9s cubic-bezier(.45,0,.55,1) infinite; }
-}
-@keyframes ballBounce {
-  0%, 100% { transform: translateY(0) scale(1.06, 0.92); }
-  15% { transform: translateY(-2px) scale(1, 1); }
-  50% { transform: translateY(calc(var(--ball) * -0.3)); }
-  85% { transform: translateY(-2px) scale(1, 1); }
-}
-@keyframes ballShadow {
-  0%, 100% { transform: scale(1); opacity: 0.9; }
-  50% { transform: scale(0.55); opacity: 0.45; }
-}
-
 /* מדליה: סרט צבעוני ומטבע עבה שמסתובב. שלוש המדליות מסתובבות בגל - זהב,
    כסף, ארד - פעם ב-7 שניות. כל שכבה מסתובבת לבד (ראה .header-crest) */
 .medal { position: relative; display: inline-flex; flex-direction: column; align-items: center; width: 28px; height: 34px; vertical-align: middle; }
