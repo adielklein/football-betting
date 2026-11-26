@@ -264,7 +264,7 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
         justifyContent: 'center',
         alignItems: 'center'
       }}>
-        {/* גולי מכדרר בזמן הטעינה */}
+        {/* גולי מתגלגל בזמן הטעינה */}
         <div style={{ marginBottom: '0.6rem' }}><GoliSprite mood="loading" talk={false} size={72} /></div>
         <h2 style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-md)', fontWeight: '500' }}>טוען נתונים...</h2>
       </div>

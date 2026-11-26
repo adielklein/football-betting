@@ -4,7 +4,6 @@ import talkImg from '../assets/goli/talk.webp';
 import sleepImg from '../assets/goli/sleep.webp';
 import sadImg from '../assets/goli/sad.webp';
 import celebrateImg from '../assets/goli/celebrate.webp';
-import wowImg from '../assets/goli/wow.webp';
 import crownImg from '../assets/goli/crown.webp';
 import scarfImg from '../assets/goli/scarf.webp';
 
@@ -15,7 +14,7 @@ import scarfImg from '../assets/goli/scarf.webp';
 //   celebrate - צחוק, קפיצה גבוהה וסיבוב
 //   sleep     - עיניים עצומות ו-Zzz, נשימה איטית
 //   sad       - פרצוף עצוב, קפיצה כבדה
-//   loading   - פרצוף "וואו", כדרור מהיר
+//   loading   - מתגלגל מצד לצד במקום (טעינה)
 // lookX/lookY (‎-1..1) - מטה את הראש לכיוון האלמנט המואר.
 // crown - כתר (הזוכה השבועי). scarf=[ראשי, משני] - צעיף בצבעי הקבוצה (במצב רגיל).
 // מי שביקש פחות תנועה (still) מקבל אותו בלי קפיצות.
@@ -30,7 +29,6 @@ const SPRITES = {
   sleep: { src: sleepImg, w: 306, h: 292, cx: 142, cy: 148, r: 144 },
   sad: { src: sadImg, w: 288, h: 286, cx: 143, cy: 142, r: 145 },
   celebrate: { src: celebrateImg, w: 286, h: 286, cx: 142, cy: 142, r: 144 },
-  wow: { src: wowImg, w: 288, h: 286, cx: 143, cy: 142, r: 145 },
   crown: { src: crownImg, w: 302, h: 354, cx: 148, cy: 204, r: 150 },
   scarf: { src: scarfImg, w: 318, h: 308, cx: 155, cy: 152, r: 155 }
 };
@@ -39,6 +37,8 @@ const TALK_MS = 1600;
 
 const CSS = `
 @keyframes gs-bob { 0%,100% { transform: translateY(0) scale(1,1) } 45% { transform: translateY(-7%) scale(.98,1.03) } 88% { transform: translateY(0) scale(1.05,.94) } }
+@keyframes gs-roll { 0%,100% { transform: translateX(-14%) rotate(-20deg) } 50% { transform: translateX(14%) rotate(20deg) } }
+@keyframes gs-roll-shadow { 0%,100% { transform: translateX(-14%) } 50% { transform: translateX(14%) } }
 @keyframes gs-shadow { 0%,100% { transform: scaleX(1); opacity: .22 } 45% { transform: scaleX(.78); opacity: .13 } }
 @keyframes gs-wave { 0% { transform: translateY(0) rotate(0) } 25% { transform: translateY(-12%) rotate(-12deg) } 50% { transform: translateY(0) rotate(9deg) } 70% { transform: translateY(-5%) rotate(-5deg) } 100% { transform: translateY(0) rotate(0) } }
 @keyframes gs-party { 0% { transform: translateY(0) rotate(0) scale(1) } 35% { transform: translateY(-22%) rotate(-10deg) scale(1.04) } 60% { transform: translateY(0) rotate(8deg) scale(1.08,.9) } 78% { transform: translateY(-7%) rotate(0) scale(1) } 100% { transform: translateY(0) rotate(0) } }
@@ -126,7 +126,6 @@ export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 
     : mood === 'sleep' ? 'sleep'
     : mood === 'sad' ? 'sad'
     : mood === 'celebrate' ? 'celebrate'
-    : mood === 'loading' ? 'wow'
     : mouthOpen ? 'talk' : 'idle';
   const sp = SPRITES[key];
   const src = key === 'scarf' ? (scarfSrc || sp.src) : sp.src;
@@ -139,7 +138,7 @@ export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 
 
   const body = mood === 'celebrate' ? 'gs-party 1.1s cubic-bezier(.3,.7,.3,1) 3'
     : mood === 'wave' ? 'gs-wave 1.1s ease-in-out 2'
-    : mood === 'loading' ? 'gs-bob .55s ease-in-out infinite'
+    : mood === 'loading' ? 'gs-roll 1.3s ease-in-out infinite'
     : mood === 'sleep' ? 'gs-breathe 3.2s ease-in-out infinite'
     : mood === 'sad' ? 'gs-bob 3.4s ease-in-out infinite'
     : 'gs-bob 2.2s ease-in-out infinite';
@@ -151,11 +150,11 @@ export default function GoliSprite({ mood = 'idle', stepKey, lookX = 0, lookY = 
       {/* צל על הקרקע */}
       <span style={{
         position: 'absolute', left: size * 0.22, width: size * 0.56, top: by + D / 2 + H * 0.03, height: size * 0.09, borderRadius: '50%',
-        background: '#000', opacity: 0.2, animation: mood === 'idle' || mood === 'loading' ? `gs-shadow ${mood === 'loading' ? '.55s' : '2.2s'} ease-in-out infinite` : 'none'
+        background: '#000', opacity: 0.2, animation: mood === 'loading' ? 'gs-roll-shadow 1.3s ease-in-out infinite' : mood === 'idle' ? 'gs-shadow 2.2s ease-in-out infinite' : 'none'
       }} />
       {/* קפיצה קטנה בכל שלב חדש */}
       <span key={stepKey} style={{ position: 'absolute', inset: 0, animation: still ? 'none' : 'gs-hop .45s ease-out' }}>
-        <span style={{ position: 'absolute', inset: 0, transformOrigin: `${bx}px ${by + D / 2}px`, animation: body }}>
+        <span style={{ position: 'absolute', inset: 0, transformOrigin: mood === 'loading' ? `${bx}px ${by}px` : `${bx}px ${by + D / 2}px`, animation: body }}>
           <span style={{
             position: 'absolute', inset: 0, transformOrigin: `${bx}px ${by}px`,
             transform: `translate(${lx * size * 0.04}px, ${ly * size * 0.025}px) rotate(${lx * 7}deg)`,

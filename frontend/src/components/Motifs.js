@@ -20,7 +20,7 @@ const pentagon = (cx, cy, r) => Array.from({ length: 5 }, (_, i) => {
 const PANELS = [[8, 8, 5.5], [28, 15, 6.5], [10, 28, 6.5], [30, 36, 5.5], [18, 44, 5]]
   .flatMap(([x, y, r]) => [[x, y, r], [x + 40, y, r]]);
 
-// הכדור של ההמתנה הוא גולי בפרצוף "וואו" שמכדרר (components/GoliSprite.js,
+// הכדור של ההמתנה הוא גולי שמתגלגל מצד לצד (components/GoliSprite.js,
 // מצב loading). השם נשאר, כדי שכל המסכים שמשתמשים בו יקבלו את גולי בלי שינוי
 export function BallLoader({ size = 44, label }) {
   return (
