@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import Goli3D from './Goli3D';
+import GoliSprite from './GoliSprite';
 import { teamScarf } from './goliScarf';
 import { reducedMotion } from '../services/motion';
 
@@ -36,7 +36,7 @@ export default function GoliPop() {
       }}
     >
       <style>{'@keyframes goliPopIn { 0% { transform: translateY(120%) scale(.6); opacity: 0 } 100% { transform: none; opacity: 1 } }'}</style>
-      <Goli3D mood={pop.mood || 'celebrate'} stepKey={pop.key} size={78} still={still} scarf={teamScarf()} />
+      <GoliSprite mood={pop.mood || 'celebrate'} stepKey={pop.key} size={78} still={still} scarf={teamScarf()} />
       <div style={{
         background: 'var(--surface, #fff)', color: 'var(--text, #23272f)', borderRadius: '16px', padding: '0.55rem 0.85rem',
         fontWeight: 800, fontSize: 'var(--fs-sm)', boxShadow: '0 8px 26px rgba(0,0,0,0.25)', maxWidth: '230px', lineHeight: 1.35

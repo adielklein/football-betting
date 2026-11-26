@@ -18,7 +18,7 @@ import Score from '../Score';
 import { textOn } from '../../services/readableColor';
 import { API_URL as API_BASE } from '../../config';
 import { weekRevealed, isMatchLocked, nextLockAt } from '../../services/betLock';
-import Goli3D from '../Goli3D';
+import GoliSprite from '../GoliSprite';
 import { goliPop } from '../../services/goliPop';
 
 function AllBetsViewer({ weeks, user, active = true }) {
@@ -303,7 +303,7 @@ function AllBetsViewer({ weeks, user, active = true }) {
 
       {!selectedWeek && filteredWeeks.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '2rem', background: 'var(--info-bg, #f8f9ff)' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.4rem' }}><Goli3D mood="sleep" talk={false} size={84} /></div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.4rem' }}><GoliSprite mood="sleep" talk={false} size={84} /></div>
           <p style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-sm)', margin: 0 }}>ההימורים של כולם ייחשפו כשהמשחקים יתחילו</p>
         </div>
       ) : !selectedWeek ? (

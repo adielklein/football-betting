@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import Goli3D from '../Goli3D';
+import GoliSprite from '../GoliSprite';
 import { teamScarf } from '../goliScarf';
 import { API_URL } from '../../config';
 import { reducedMotion } from '../../services/motion';
@@ -109,7 +109,7 @@ export default function GoliWeeklySummary({ weeks, user, blocked, onOpenTable })
       >
         <style>{'@keyframes goliWeekIn { 0% { transform: translateY(24px) scale(.94); opacity: 0 } 100% { transform: none; opacity: 1 } }'}</style>
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: '-0.2rem' }}>
-          <Goli3D mood={data.mood} stepKey={data.weekId} size={104} still={still} crown={data.rank === 1} scarf={teamScarf()} />
+          <GoliSprite mood={data.mood} stepKey={data.weekId} size={104} still={still} crown={data.rank === 1} scarf={teamScarf()} />
         </div>
         <h3 id="goli-week-title" style={{ margin: '0.25rem 0 0.4rem', fontSize: 'var(--fs-lg)', fontWeight: 900 }}>{data.title}</h3>
         <div style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.6, color: 'var(--text-2, #3d434c)' }}>

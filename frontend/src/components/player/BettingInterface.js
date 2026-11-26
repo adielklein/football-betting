@@ -20,7 +20,7 @@ import { textOn } from '../../services/readableColor';
 import { API_URL as API_BASE } from '../../config';
 import { CountdownRing, GoalNetShot, LockSnap } from '../Motifs';
 import { lockModeOf, isMatchLocked, nextLockAt } from '../../services/betLock';
-import Goli3D from '../Goli3D';
+import GoliSprite from '../GoliSprite';
 import { goliPop } from '../../services/goliPop';
 
 // קבוצה לחיצה - פותחת את חלון הנתונים. חולצה ומתחתיה השם, באותם גדלים
@@ -429,7 +429,7 @@ function BettingInterface({ selectedWeek, matches, bets, user, onBetUpdate, onBe
         background: 'var(--info-bg, #f8f9ff)'
       }}>
         {/* גולי ישן עד שהשבוע הבא נפתח */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem' }}><Goli3D mood="sleep" talk={false} size={92} /></div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem' }}><GoliSprite mood="sleep" talk={false} size={92} /></div>
         <h2 style={{ fontSize: 'var(--fs-md)', color: 'var(--text-2, #444)', marginBottom: '0.3rem' }}>ממתינים לשבוע החדש</h2>
         <p style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-sm)' }}>השבוע עדיין לא הופעל על ידי המנהל</p>
       </div>

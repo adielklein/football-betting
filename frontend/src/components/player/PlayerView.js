@@ -19,7 +19,7 @@ import { syncPushSubscription } from '../../services/pushSync';
 import { API_URL as API_BASE } from '../../config';
 import Walkthrough from '../Walkthrough';
 import GoliPop from '../GoliPop';
-import Goli3D from '../Goli3D';
+import GoliSprite from '../GoliSprite';
 import GoliWeeklySummary from './GoliWeeklySummary';
 import { buildTourSteps } from './tourSteps';
 
@@ -265,7 +265,7 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
         alignItems: 'center'
       }}>
         {/* גולי מכדרר בזמן הטעינה */}
-        <div style={{ marginBottom: '0.6rem' }}><Goli3D mood="loading" talk={false} size={72} /></div>
+        <div style={{ marginBottom: '0.6rem' }}><GoliSprite mood="loading" talk={false} size={72} /></div>
         <h2 style={{ color: 'var(--text-3, #888)', fontSize: 'var(--fs-md)', fontWeight: '500' }}>טוען נתונים...</h2>
       </div>
     );

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import Goli3D from './Goli3D';
+import GoliSprite from './GoliSprite';
 import { getStage, getEnvironment } from '../three/stage';
 import { buildMedal } from '../three/medal';
 import { buildGoal, GOAL_DUR } from '../three/goal';
@@ -20,13 +20,12 @@ const pentagon = (cx, cy, r) => Array.from({ length: 5 }, (_, i) => {
 const PANELS = [[8, 8, 5.5], [28, 15, 6.5], [10, 28, 6.5], [30, 36, 5.5], [18, 44, 5]]
   .flatMap(([x, y, r]) => [[x, y, r], [x + 40, y, r]]);
 
-// הכדור של ההמתנה הוא גולי שעושה ג'אגלינג (components/Goli3D.js, מצב
-// loading). בלי WebGL - גולי הדו-ממדי. השם נשאר, כדי שכל המסכים שמשתמשים
-// בו יקבלו את גולי בלי שינוי
+// הכדור של ההמתנה הוא גולי בפרצוף "וואו" שמכדרר (components/GoliSprite.js,
+// מצב loading). השם נשאר, כדי שכל המסכים שמשתמשים בו יקבלו את גולי בלי שינוי
 export function BallLoader({ size = 44, label }) {
   return (
     <span role={label ? 'img' : 'status'} aria-label={label || 'טוען'} style={{ display: 'inline-flex', justifyContent: 'center' }}>
-      <Goli3D mood="loading" talk={false} size={Math.round(size * 1.35)} />
+      <GoliSprite mood="loading" talk={false} size={Math.round(size * 1.35)} />
     </span>
   );
 }
