@@ -280,6 +280,21 @@ router.get('/audit', requireAdmin, async (req, res) => {
   }
 });
 
+// GET /api/scores/version - "גרסת" הניקוד: מתי חושב לאחרונה ניקוד בשבוע כלשהו.
+// האפליקציה בודקת אותה מדי חצי דקה כשהיא פתוחה, ומרעננת את הטבלאות כשהיא
+// משתנה - כך משחק שהסתיים בזמן שמישהו באפליקציה מופיע בטבלה בלי לצאת ולחזור.
+// שאילתה זעירה (שדה אחד, מסמך אחד), כדי שבדיקה תכופה לא תעמיס
+router.get('/version', async (req, res) => {
+  try {
+    const w = await Week.findOne({ scoresCalculatedAt: { $ne: null } }, 'scoresCalculatedAt')
+      .sort({ scoresCalculatedAt: -1 }).lean();
+    res.set('Cache-Control', 'no-store');
+    res.json({ v: w?.scoresCalculatedAt ? new Date(w.scoresCalculatedAt).getTime() : 0 });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 router.get('/leaderboard', async (req, res) => {
   try {
     const scores = await Score.aggregate([

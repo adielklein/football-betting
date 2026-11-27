@@ -3,6 +3,7 @@ import { API_URL } from '../../config';
 import { applyTheme } from '../../themes';
 import ColorSchemeToggle from '../ColorSchemeToggle';
 import { HeaderCrest } from '../StadiumDecor';
+import { SCORES_UPDATED } from '../../services/scoresVersion';
 
 function PlayerHeader({ user, selectedWeek, onLogout, onOpenSettings, settingsOpen }) {
 
@@ -15,7 +16,7 @@ function PlayerHeader({ user, selectedWeek, onLogout, onOpenSettings, settingsOp
   }, [user, user?.theme]);
 
   // המקום שלי בטבלה החודשית - כמו בסרטון, תמיד מול העיניים. נטען מחדש כשחוזרים
-  // לאפליקציה, כי הניקוד מתעדכן ברקע אחרי כל משחק
+  // לאפליקציה וכשהניקוד בשרת מתעדכן, כי הוא משתנה אחרי כל משחק
   const [standing, setStanding] = useState(null);
   useEffect(() => {
     const uid = user?.id || user?._id;
@@ -28,7 +29,9 @@ function PlayerHeader({ user, selectedWeek, onLogout, onOpenSettings, settingsOp
     load();
     const onVisible = () => { if (document.visibilityState === 'visible') load(); };
     document.addEventListener('visibilitychange', onVisible);
-    return () => { alive = false; document.removeEventListener('visibilitychange', onVisible); };
+    // משחק הסתיים בזמן שהאפליקציה פתוחה (services/scoresVersion.js)
+    window.addEventListener(SCORES_UPDATED, load);
+    return () => { alive = false; document.removeEventListener('visibilitychange', onVisible); window.removeEventListener(SCORES_UPDATED, load); };
   }, [user?.id, user?._id, selectedWeek?._id]);
 
   return (

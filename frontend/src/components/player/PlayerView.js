@@ -22,6 +22,7 @@ import GoliPop from '../GoliPop';
 import GoliSprite from '../GoliSprite';
 import GoliWeeklySummary from './GoliWeeklySummary';
 import { buildTourSteps } from './tourSteps';
+import { startScoresWatch, SCORES_UPDATED } from '../../services/scoresVersion';
 
 // הסיור המודרך נפתח לבד פעם אחת לכל משתמש במכשיר. גרסה בשם המפתח, כדי
 // שסיור שהתעדכן משמעותית יוכל להיפתח שוב
@@ -175,6 +176,15 @@ function PlayerView({ user, onLogout, onThemeChange, onProfileChange }) {
       console.error('Error refreshing leaderboard:', error);
     }
   };
+
+  // משחק הסתיים בזמן שהאפליקציה פתוחה: השרת חישב ניקוד חדש - הטבלה הכללית
+  // מתרעננת בשקט (שאר הטבלאות - דרך useReturnRefresh)
+  useEffect(() => startScoresWatch(API_URL), []);
+  useEffect(() => {
+    const onScores = () => refreshLeaderboard();
+    window.addEventListener(SCORES_UPDATED, onScores);
+    return () => window.removeEventListener(SCORES_UPDATED, onScores);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleBetUpdate = async () => {
     if (selectedWeek && selectedWeek._id) {
