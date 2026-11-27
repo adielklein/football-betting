@@ -1,6 +1,6 @@
 {
   "short_name": "הימורי כדורגל",
-  "name": "אפליקציית הימורי כדורגל - פרמיירליג, לה ליגה וליגת העל",
+  "name": "Gamball",
   "icons": [
     {
       "src": "favicon.ico",
@@ -22,10 +22,14 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#007bff",
-  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "background_color": "#000000",
   "orientation": "any",
-  "categories": ["sports", "games", "entertainment"],
+  "categories": [
+    "sports",
+    "games",
+    "entertainment"
+  ],
   "description": "אפליקציית הימורי כדורגל - הימורים על משחקי פרמיירליג, לה ליגה וליגת העל הישראלית",
   "dir": "rtl",
   "lang": "he",

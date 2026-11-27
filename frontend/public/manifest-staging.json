@@ -1,6 +1,6 @@
 {
   "short_name": "סביבת עבודה",
-  "name": "הימורי כדורגל - סביבת עבודה (Staging)",
+  "name": "Gamball · סביבת ניסוי",
   "icons": [
     {
       "src": "favicon.ico",
@@ -23,7 +23,7 @@
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#f59e0b",
-  "background_color": "#ffffff",
+  "background_color": "#000000",
   "orientation": "any",
   "categories": [
     "sports",
